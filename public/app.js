@@ -1223,9 +1223,14 @@ async function startSpeechLabAudio() {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     STATE.audioStream = stream;
 
-    // Web Audio API Waveform Visualizer
+    // Web Audio API Waveform Visualizer (cross-platform mobile resume support)
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    STATE.audioContext = new AudioCtx();
+    if (!STATE.audioContext) {
+      STATE.audioContext = new AudioCtx();
+    }
+    if (STATE.audioContext.state === 'suspended') {
+      await STATE.audioContext.resume();
+    }
     const source = STATE.audioContext.createMediaStreamSource(stream);
     STATE.analyser = STATE.audioContext.createAnalyser();
     STATE.analyser.fftSize = 256;
@@ -1461,7 +1466,14 @@ function initTeleprompter() {
   cameraBtn?.addEventListener('click', async () => {
     const video = $('#anchor-video');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: true
+      });
       video.srcObject = stream;
       showToast('Camera feed live! Ready to broadcast.');
     } catch {

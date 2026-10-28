@@ -561,7 +561,8 @@ input, select, textarea {
   border-radius: var(--radius-md);
   color: var(--text-main);
   font-family: var(--font-body);
-  font-size: 14.5px;
+  font-size: 16px; /* 16px prevents automatic zoom-in on iOS Safari & Android Chrome */
+  min-height: 44px; /* Accessible 44px touch target on mobile */
   transition: var(--transition);
 }
 
@@ -1308,13 +1309,86 @@ tr:hover td { background: var(--surface-hover); }
   to { transform: translateX(0); opacity: 1; }
 }
 
-/* ─── 19. RESPONSIVE BREAKPOINTS ──────────────────────────────────────────── */
-@media (max-width: 640px) {
-  .header-container { padding: 10px 14px; }
+/* ─── 19. RESPONSIVE BREAKPOINTS (CROSS-PLATFORM MOBILE & TABLET) ────────── */
+@media (max-width: 768px) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .top-broadcast-bar {
+    font-size: 11.5px;
+    padding: 6px max(12px, env(safe-area-inset-right)) 6px max(12px, env(safe-area-inset-left));
+    justify-content: center;
+    text-align: center;
+  }
+  .header-container {
+    padding: 10px max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
+    flex-wrap: wrap;
+    gap: 10px;
+  }
   .brand-copy .brand-subtitle { display: none; }
-  .top-broadcast-bar { font-size: 11.5px; padding: 4px 10px; }
-  main { padding: 16px 12px 60px; }
-  .card { padding: 16px; }
-  .cards-grid { grid-template-columns: 1fr; }
-  .hero-heading { font-size: 32px; }
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .theme-switcher {
+    flex-shrink: 0;
+  }
+  .theme-btn {
+    padding: 6px 10px;
+    font-size: 11.5px;
+  }
+  .sub-navbar {
+    top: 105px;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .tab-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-height: 42px;
+  }
+  main {
+    padding: 16px max(12px, env(safe-area-inset-right)) 60px max(12px, env(safe-area-inset-left));
+  }
+  .hero-stage {
+    padding: 20px 0 16px;
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 24px;
+  }
+  .hero-heading {
+    font-size: clamp(28px, 8vw, 42px);
+  }
+  .hero-sub {
+    font-size: 15px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-actions .btn {
+    width: 100%;
+  }
+  .card {
+    padding: 16px;
+    border-radius: var(--radius-md);
+  }
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .speech-lab-layout,
+  .broadcast-stage-grid,
+  .debate-stage {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .dimensions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .btn {
+    min-height: 44px;
+  }
 }
