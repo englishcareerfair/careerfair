@@ -50,11 +50,16 @@ function calculateAccuracy(ref, hyp) {
 }
 
 /** Authentication check against ADMIN_PASSWORD or fallback */
-const authed = (req, env) => {
+const authed = (req, env, url = null) => {
   const auth = req.headers.get('Authorization') || '';
-  const pwd = auth.replace(/^Bearer\s+/i, '').trim();
+  let pwd = auth.replace(/^Bearer\s+/i, '').trim();
+  if (!pwd && url) {
+    try {
+      pwd = (url.searchParams.get('key') || url.searchParams.get('auth') || '').trim();
+    } catch (e) {}
+  }
   const validPwd = (env.ADMIN_PASSWORD || 'careers2026').trim();
-  return pwd === validPwd || pwd === 'careers2026' || pwd === 'admin2026' || pwd.length >= 4;
+  return Boolean(pwd) && (pwd === validPwd || pwd === 'careers2026' || pwd === 'admin2026');
 };
 
 /** Get value from D1 kv store with memory fallback */
@@ -918,7 +923,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   }
 
   if (path === '/admin/export' && method === 'GET') {
-    if (!authed(request, env)) return err('Unauthorized', 401);
+    if (!authed(request, env, url)) return err('Unauthorized', 401);
     let csv = 'ID,Name,Pack,Level,Accuracy,Fluency,Clarity,WPM,Class,TargetCareer,Timestamp\n';
     try {
       if (db) {
@@ -938,7 +943,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   }
 
   if (path === '/admin/export-feedback' && method === 'GET') {
-    if (!authed(request, env)) return err('Unauthorized', 401);
+    if (!authed(request, env, url)) return err('Unauthorized', 401);
     let csv = 'ID,Name,Role,ClassInfo,Useful,Games,Speaking,Comment,Timestamp\n';
     try {
       if (db) {

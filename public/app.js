@@ -1648,6 +1648,9 @@ async function changeSpeechSentence(userTriggered = false) {
   if (transcriptEl) transcriptEl.value = '';
   if (resultBox) resultBox.style.display = 'none';
   if (phoneticsBox) phoneticsBox.style.display = 'none';
+  if (sentenceEl && userTriggered) {
+    sentenceEl.innerHTML = '<span style="color:var(--text-dim);"><span class="spinner-sm"></span> Loading adaptive challenge...</span>';
+  }
 
   let selectedSentence = '';
 
@@ -5733,8 +5736,8 @@ function loadFeedbackWall() {
     }
 
     list.innerHTML = feedbacks.map(f => {
-      const starCount = Math.max(1, Math.min(5, f.useful || f.r_useful || 5));
-      const stars = '⭐'.repeat(starCount);
+      const starCount = Math.max(1, Math.min(5, Number(f.useful ?? f.r_useful ?? 5)));
+      const stars = '⭐'.repeat(starCount) + (starCount === 1 ? '☆☆☆☆' : starCount === 2 ? '☆☆☆' : starCount === 3 ? '☆☆' : starCount === 4 ? '☆' : '') + ` (${starCount}/5)`;
       const timeStr = f.ts ? formatFriendlyTime(f.ts) : '';
       const roleBadge = f.class_info && f.class_info !== f.role
         ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
@@ -6241,12 +6244,14 @@ function initAdminWorkspace() {
     renderAdminModeration();
   });
 
-  // Export handlers
+  // Export handlers with secure admin authorization token
   $('#btn-export-scores-csv')?.addEventListener('click', () => {
-    window.open('/api/admin/export');
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'careers2026';
+    window.open(`/api/admin/export?key=${encodeURIComponent(key)}`);
   });
   $('#btn-export-feedback-csv')?.addEventListener('click', () => {
-    window.open('/api/admin/export-feedback');
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'careers2026';
+    window.open(`/api/admin/export-feedback?key=${encodeURIComponent(key)}`);
   });
 
   // ── Admin Live Stream Controls ───────────────────────────────────────────
@@ -6408,6 +6413,11 @@ function toggleFeatureFlag(flagName, enabled) {
   // Dynamic reflow: toggle matching sub-navbar tab visibility
   const tabBtn = $(`[data-flag="${flagName}"]`);
   if (tabBtn) tabBtn.hidden = !enabled;
+
+  // Persist flags to backend and local storage so multi-session views stay in sync
+  localStorage.setItem('cf_feature_flags', JSON.stringify(STATE.config.flags));
+  fetchApi('admin/config', 'PUT', { flags: STATE.config.flags }).catch(() => {});
+
   showToast(`Feature "${flagName}" set to ${enabled ? 'ON' : 'OFF'}`);
 }
 
@@ -6579,6 +6589,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cfg.stream_title) STATE.config.stream_title = cfg.stream_title;
     if (cfg.stream_active !== undefined) STATE.config.stream_active = cfg.stream_active;
     renderHeroStream();
+
+    // Synchronize feature flags across sessions
+    if (cfg.flags && typeof cfg.flags === 'object') {
+      STATE.config.flags = Object.assign({}, STATE.config.flags, cfg.flags);
+    }
+    if (STATE.config.flags) {
+      Object.entries(STATE.config.flags).forEach(([fName, isEnabled]) => {
+        const btn = $(`[data-flag="${fName}"]`);
+        if (btn) btn.hidden = !isEnabled;
+      });
+    }
   }
 
   // Pre-render home heroes & stats
@@ -6594,7 +6615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Please enter the administrator password.');
       return;
     }
-    if (pwd === 'careers2026' || pwd === 'admin2026' || pwd.length >= 4) {
+    if (pwd === 'careers2026' || pwd === 'admin2026' || (STATE.config?.admin_password && pwd === STATE.config.admin_password)) {
       STATE.adminKey = pwd;
       sessionStorage.setItem('cf_admin_key', pwd);
       localStorage.setItem('cf_admin_key', pwd);
