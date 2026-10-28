@@ -3518,6 +3518,22 @@ function renderJobtris(mount) {
 
           <div class="semantris-well" id="semantris-well"></div>
 
+          <!-- Start Game Modal Overlay -->
+          <div class="semantris-gameover-overlay" id="semantris-start-screen" style="display:flex;">
+            <div style="font-size:48px;margin-bottom:8px;">🎮</div>
+            <h2 style="font-size:24px;margin-bottom:6px;color:#fff;">Jobtris · Semantic Word Arcade</h2>
+            <p style="font-size:13.5px;color:var(--text-muted);max-width:320px;line-height:1.45;margin-bottom:14px;">
+              Type any word, tool, or concept related to a job in the stack to blast it. Connected same-color blocks chain-pop together!
+            </p>
+            <div style="margin-bottom:18px;display:inline-flex;align-items:center;gap:8px;" class="semantris-stat-badge">
+              <span style="color:var(--text-dim);">Best Score:</span>
+              <strong style="color:var(--accent-gold);" id="semantris-start-highscore">0</strong>
+            </div>
+            <button class="btn btn-primary" id="btn-semantris-start" style="padding:14px 38px;font-size:16px;font-weight:800;box-shadow:0 0 24px rgba(0,240,255,0.45);cursor:pointer;">
+              <span>▶️</span> <span>Start Game</span>
+            </button>
+          </div>
+
           <!-- Game Over Modal Overlay -->
           <div class="semantris-gameover-overlay" id="semantris-gameover" style="display:none;">
             <div style="font-size:42px;margin-bottom:8px;">💥</div>
@@ -3551,7 +3567,7 @@ function renderJobtris(mount) {
           <div class="card" style="padding:14px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
               <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">Quick Clue Ideas:</span>
-              <button class="btn btn-secondary btn-sm" id="btn-semantris-pause" type="button" style="padding:2px 8px;font-size:11.5px;">⏸️ Pause</button>
+              <div style="display:flex;gap:6px;"><button class="btn btn-primary btn-sm" id="btn-semantris-quick-start" type="button" style="padding:2px 10px;font-size:11.5px;">▶️ Start</button><button class="btn btn-secondary btn-sm" id="btn-semantris-pause" type="button" style="padding:2px 8px;font-size:11.5px;">⏸️ Pause</button></div>
             </div>
             <div class="semantris-clues-shelf" id="semantris-chips">
               <span class="semantris-clue-chip">flight</span>
@@ -3600,10 +3616,34 @@ function renderJobtris(mount) {
       this.dangerLine = $('#semantris-danger-line');
       this.dangerBadge = $('#semantris-danger-badge');
       this.gameOverScreen = $('#semantris-gameover');
+      this.startScreen = $('#semantris-start-screen');
 
       this.initDeck();
       this.initEvents();
-      this.start();
+      this.showStartScreen();
+    }
+
+    showStartScreen() {
+      this.isStarted = false;
+      this.isGameOver = false;
+      this.isPaused = false;
+      if (this.dropTimer) clearInterval(this.dropTimer);
+
+      const high = parseInt(localStorage.getItem('cf_jobtris_highscore') || '0', 10);
+      const highEl = $('#semantris-start-highscore');
+      if (highEl) highEl.textContent = high.toLocaleString();
+
+      if (this.startScreen) this.startScreen.style.display = 'flex';
+      if (this.gameOverScreen) this.gameOverScreen.style.display = 'none';
+
+      // Render 4 preview blocks in the background so the board looks ready
+      this.stack = [];
+      for (let i = 0; i < 4; i++) {
+        this.stack.push(this.drawUniqueCareer());
+      }
+      this.renderStack();
+      if (this.dangerLine) this.dangerLine.classList.remove('active');
+      if (this.dangerBadge) this.dangerBadge.classList.remove('active');
     }
 
     initDeck() {
@@ -3624,6 +3664,7 @@ function renderJobtris(mount) {
     }
 
     start() {
+      this.isStarted = true;
       this.stack = [];
       this.score = 0;
       this.combo = 1;
@@ -3632,7 +3673,12 @@ function renderJobtris(mount) {
       this.isGameOver = false;
       this.isPaused = false;
       this.dropInterval = 6200;
-      this.gameOverScreen.style.display = 'none';
+
+      if (this.startScreen) this.startScreen.style.display = 'none';
+      if (this.gameOverScreen) this.gameOverScreen.style.display = 'none';
+
+      const quickBtn = $('#btn-semantris-quick-start');
+      if (quickBtn) quickBtn.textContent = '🔄 Restart';
 
       // Seed initial stack with 5 diverse, non-repeating blocks
       for (let i = 0; i < 5; i++) {
@@ -3642,7 +3688,8 @@ function renderJobtris(mount) {
       this.renderStack();
       this.updateHUD();
       this.startDropTimer();
-      this.input.focus();
+      semantrisAudio.playDrop();
+      if (this.input) this.input.focus();
     }
 
     startDropTimer() {
@@ -3719,6 +3766,10 @@ function renderJobtris(mount) {
     }
 
     submitClue() {
+      if (!this.isStarted) {
+        this.start();
+        return;
+      }
       if (this.isGameOver || this.isPaused) return;
       const raw = this.input.value.trim().toLowerCase();
       if (!raw) return;
@@ -3904,6 +3955,16 @@ function renderJobtris(mount) {
     }
 
     initEvents() {
+      $('#btn-semantris-start')?.addEventListener('click', () => this.start());
+      $('#btn-semantris-quick-start')?.addEventListener('click', () => {
+        if (!this.isStarted || this.isGameOver) {
+          this.start();
+        } else {
+          if (confirm('Restart Jobtris game? Current score will reset.')) {
+            this.start();
+          }
+        }
+      });
       $('#btn-semantris-submit')?.addEventListener('click', () => this.submitClue());
       this.input?.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
