@@ -860,21 +860,76 @@ const EXAMS_DATA = [
   }
 ];
 
-// Vocabulary Flash Cards & Etymology
-const FLASH_CARDS = [
-  { word: "Rhetoric", phonetic: "/ˈrɛt.ər.ɪk/", pos: "noun", meaning: "The art of effective or persuasive speaking or writing.", sentence: "The advocate's rhetoric united the room in defense of free speech.", origin: "Greek 'rhētorikē' (art of an orator)" },
-  { word: "Eloquence", phonetic: "/ˈɛl.ə.kwəns/", pos: "noun", meaning: "Fluent, graceful, or persuasive speaking or writing.", sentence: "She argued the constitutional petition with remarkable eloquence.", origin: "Latin 'eloqui' (to speak out)" },
-  { word: "Articulate", phonetic: "/ɑːrˈtɪk.jə.lət/", pos: "adjective", meaning: "Expressing ideas clearly, fluently, and effectively.", sentence: "An articulate spokesperson is essential during a corporate crisis.", origin: "Latin 'articulatus' (jointed distinctly)" },
-  { word: "Brevity", phonetic: "/ˈbrɛv.ɪ.ti/", pos: "noun", meaning: "Concise and exact use of words in writing or speech.", sentence: "Brevity is the soul of wit in modern journalism.", origin: "Latin 'brevis' (short)" },
-  { word: "Pedagogy", phonetic: "/ˈpɛd.ə.ɡɒdʒ.i/", pos: "noun", meaning: "The method and practice of teaching, especially as an academic subject.", sentence: "Innovative pedagogy transforms grammar lessons into memorable challenges.", origin: "Greek 'paidagogia' (leading a child)" },
-  { word: "Nuance", phonetic: "/ˈnjuː.ɑːns/", pos: "noun", meaning: "A subtle difference in meaning, expression, or sound.", sentence: "A skilled translator captures every delicate cultural nuance.", origin: "French 'nuer' (to shade)" },
-  { word: "Jurisprudence", phonetic: "/ˌdʒʊə.rɪsˈpruː.dəns/", pos: "noun", meaning: "The theoretical philosophy and science of law.", sentence: "Constitutional jurisprudence safeguards democratic institutions.", origin: "Latin 'juris prudentia' (knowledge of law)" },
-  { word: "Soliloquy", phonetic: "/səˈlɪl.ə.kwi/", pos: "noun", meaning: "An act of speaking one's thoughts aloud when alone on stage.", sentence: "Hamlet's famous soliloquy reflects deeply on human existence.", origin: "Latin 'solus' (alone) + 'loqui' (to speak)" },
-  { word: "Ubiquitous", phonetic: "/juːˈbɪk.wɪ.təs/", pos: "adjective", meaning: "Present, appearing, or found everywhere simultaneously.", sentence: "Smartphones have become ubiquitous in modern communications.", origin: "Latin 'ubique' (everywhere)" },
-  { word: "Empirical", phonetic: "/ɪmˈpɪr.ɪ.kəl/", pos: "adjective", meaning: "Based on verifiable observation or experience rather than theory.", sentence: "Scholars require empirical data before publishing medical findings.", origin: "Greek 'empeiria' (experience)" },
+// Vocabulary Flash Cards & Etymology — Predefined Offline Database (70+ Lexicon Terms)
+const OFFLINE_FLASH_CARDS = [
+  { word: "Rhetoric", phonetic: "/ˈrɛt.ər.ɪk/", pos: "noun", meaning: "The art of effective or persuasive speaking or writing.", sentence: "The advocate's rhetoric united the room in defense of constitutional rights.", origin: "Greek 'rhētorikē' (art of an orator)" },
+  { word: "Eloquence", phonetic: "/ˈɛl.ə.kwəns/", pos: "noun", meaning: "Fluent, graceful, or persuasive speaking or writing.", sentence: "She argued the public interest petition with remarkable eloquence.", origin: "Latin 'eloqui' (to speak out)" },
+  { word: "Articulate", phonetic: "/ɑːrˈtɪk.jə.lət/", pos: "adjective", meaning: "Expressing ideas clearly, fluently, and effectively.", sentence: "An articulate spokesperson is essential during a high-stakes media conference.", origin: "Latin 'articulatus' (jointed distinctly)" },
+  { word: "Brevity", phonetic: "/ˈbrɛv.ɪ.ti/", pos: "noun", meaning: "Concise and exact use of words in writing or speech.", sentence: "Brevity is the soul of wit in prime-time journalistic broadcasting.", origin: "Latin 'brevis' (short)" },
+  { word: "Pedagogy", phonetic: "/ˈpɛd.ə.ɡɒdʒ.i/", pos: "noun", meaning: "The method and practice of teaching, especially as an academic subject.", sentence: "Innovative pedagogy transforms grammar lessons into engaging challenges.", origin: "Greek 'paidagogia' (leading a child)" },
+  { word: "Nuance", phonetic: "/ˈnjuː.ɑːns/", pos: "noun", meaning: "A subtle difference in meaning, expression, or sound.", sentence: "A skilled simultaneous translator captures every delicate cultural nuance.", origin: "French 'nuer' (to shade)" },
+  { word: "Jurisprudence", phonetic: "/ˌdʒʊə.rɪsˈpruː.dəns/", pos: "noun", meaning: "The theoretical philosophy and science of law.", sentence: "Constitutional jurisprudence safeguards democratic civil liberties.", origin: "Latin 'juris prudentia' (knowledge of law)" },
+  { word: "Soliloquy", phonetic: "/səˈlɪl.ə.kwi/", pos: "noun", meaning: "An act of speaking one's thoughts aloud when alone on stage.", sentence: "Hamlet's famous soliloquy reflects deeply on human existence and mortality.", origin: "Latin 'solus' (alone) + 'loqui' (to speak)" },
+  { word: "Ubiquitous", phonetic: "/juːˈbɪk.wɪ.təs/", pos: "adjective", meaning: "Present, appearing, or found everywhere simultaneously.", sentence: "Artificial intelligence has become ubiquitous across modern enterprise tools.", origin: "Latin 'ubique' (everywhere)" },
+  { word: "Empirical", phonetic: "/ɪmˈpɪr.ɪ.kəl/", pos: "adjective", meaning: "Based on verifiable observation or experience rather than pure theory.", sentence: "Clinical researchers require rigorous empirical data before trials.", origin: "Greek 'empeiria' (experience)" },
   { word: "Meticulous", phonetic: "/məˈtɪk.jʊ.ləs/", pos: "adjective", meaning: "Showing great attention to detail; very careful and precise.", sentence: "The sub-editor was meticulous in cross-checking every historical citation.", origin: "Latin 'metus' (fear, careful anxiety)" },
-  { word: "Tenacious", phonetic: "/təˈneɪ.ʃəs/", pos: "adjective", meaning: "Tending to keep a firm hold; determined and persistent.", sentence: "Her tenacious investigative reporting uncovered the truth.", origin: "Latin 'tenax' (holding fast)" }
+  { word: "Tenacious", phonetic: "/təˈneɪ.ʃəs/", pos: "adjective", meaning: "Tending to keep a firm hold; determined and persistent.", sentence: "Her tenacious investigative reporting uncovered the truth behind the deal.", origin: "Latin 'tenax' (holding fast)" },
+  { word: "Manuscript", phonetic: "/ˈmæn.jə.skrɪpt/", pos: "noun", meaning: "A book, document, or piece of music written by hand or typed before printing.", sentence: "The author submitted her completed manuscript to the chief editor.", origin: "Latin 'manu scriptus' (written by hand)" },
+  { word: "Editorial", phonetic: "/ˌed.ɪˈtɔː.ri.əl/", pos: "noun", meaning: "A newspaper article written by an editor expressing an official opinion.", sentence: "The Sunday national editorial examined international education policies.", origin: "Latin 'editor' (one who brings forth)" },
+  { word: "Litigation", phonetic: "/ˌlɪt.ɪˈɡeɪ.ʃən/", pos: "noun", meaning: "The process of taking legal action through a court of law.", sentence: "Both parties settled the trademark dispute amicably without litigation.", origin: "Latin 'litigare' (to dispute)" },
+  { word: "Advocacy", phonetic: "/ˈæd.və.kə.si/", pos: "noun", meaning: "Public support for or recommendation of a particular cause or policy.", sentence: "Persistent student advocacy led to new science laboratories on campus.", origin: "Latin 'advocare' (to call to one's aid)" },
+  { word: "Lexicon", phonetic: "/ˈlek.sɪ.kən/", pos: "noun", meaning: "The vocabulary of a person, language, or branch of knowledge.", sentence: "Emerging technological disciplines add fresh terms to our daily lexicon.", origin: "Greek 'lexikon' (word book)" },
+  { word: "Syntax", phonetic: "/ˈsɪn.tæks/", pos: "noun", meaning: "The arrangement of words and phrases to create well-formed sentences.", sentence: "Clear syntax guarantees that your arguments remain persuasive and transparent.", origin: "Greek 'syntaxis' (together arrangement)" },
+  { word: "Semantics", phonetic: "/sɪˈmæn.tɪks/", pos: "noun", meaning: "The branch of linguistics and logic concerned with meaning.", sentence: "Let us avoid squabbling over mere semantics and focus on actionable solutions.", origin: "Greek 'semantikos' (significant meaning)" },
+  { word: "Concise", phonetic: "/kənˈsaɪs/", pos: "adjective", meaning: "Giving a lot of information clearly and in few words; brief.", sentence: "Keep your executive summaries concise, structured, and punchy.", origin: "Latin 'concisus' (cut short)" },
+  { word: "Preamble", phonetic: "/priːˈæm.bəl/", pos: "noun", meaning: "A preliminary or preparatory statement; an introduction.", sentence: "We analyzed the fundamental values enshrined in the Preamble.", origin: "Latin 'praeambulare' (to walk before)" },
+  { word: "Synopsis", phonetic: "/sɪˈnɒp.sɪs/", pos: "noun", meaning: "A brief summary or general survey of something.", sentence: "Please review the two-page project synopsis before the board meeting.", origin: "Greek 'sunopsis' (general view)" },
+  { word: "Plagiarism", phonetic: "/ˈpleɪ.dʒər.ɪ.zəm/", pos: "noun", meaning: "The practice of taking someone else's work or ideas and passing them off as one's own.", sentence: "Academic integrity strictly prohibits any intentional or negligent plagiarism.", origin: "Latin 'plagiarius' (kidnapper)" },
+  { word: "Vernacular", phonetic: "/vəˈnæk.jə.lər/", pos: "noun", meaning: "The language or dialect spoken by ordinary people in a country or region.", sentence: "He documented historical oral folklore preserved in the local vernacular.", origin: "Latin 'vernaculus' (native, domestic)" },
+  { word: "Ephemeral", phonetic: "/ɪˈfem.ər.əl/", pos: "adjective", meaning: "Lasting for a very short time; fleeting or transient.", sentence: "Trends on social media are ephemeral, but core writing skills endure.", origin: "Greek 'ephemeros' (lasting only one day)" },
+  { word: "Ambiguous", phonetic: "/æmˈbɪɡ.ju.əs/", pos: "adjective", meaning: "Open to more than one interpretation; having a double or uncertain meaning.", sentence: "The legislative statute was ambiguous and required judicial interpretation.", origin: "Latin 'ambigere' (to wander, dispute)" },
+  { word: "Pragmatic", phonetic: "/præɡˈmæt.ɪk/", pos: "adjective", meaning: "Dealing with things sensibly and realistically based on practical considerations.", sentence: "The engineering team adopted a pragmatic approach to system delivery.", origin: "Greek 'pragma' (deed, act)" },
+  { word: "Benevolent", phonetic: "/bəˈnev.əl.ənt/", pos: "adjective", meaning: "Well meaning and kindly; dedicated to charitable purposes.", sentence: "A benevolent philanthropist endowed full university scholarships for scholars.", origin: "Latin 'bene volens' (wishing well)" },
+  { word: "Juxtapose", phonetic: "/ˌdʒʌk.stəˈpəʊz/", pos: "verb", meaning: "Place or deal with close together for contrasting effect.", sentence: "The exhibition juxtaposed classical rhetoric with modern digital prose.", origin: "Latin 'juxta' (next to) + French 'poser'" },
+  { word: "Paradox", phonetic: "/ˈpær.ə.dɒks/", pos: "noun", meaning: "A seemingly absurd or self-contradictory statement that proves true.", sentence: "It is an educational paradox that slowing down often accelerates mastery.", origin: "Greek 'para' (contrary to) + 'doxa' (opinion)" },
+  { word: "Resilient", phonetic: "/rɪˈzɪl.jənt/", pos: "adjective", meaning: "Able to withstand or recover quickly from difficult conditions.", sentence: "Resilient speakers embrace constructive critique to refine their delivery.", origin: "Latin 'resilire' (to leap back)" },
+  { word: "Plausible", phonetic: "/ˈplɔː.zə.bəl/", pos: "adjective", meaning: "Seeming reasonable or probable; believable.", sentence: "The defence attorney presented a plausible sequence of historical events.", origin: "Latin 'plausibilis' (worthy of applause)" },
+  { word: "Inference", phonetic: "/ˈɪn.fər.əns/", pos: "noun", meaning: "A conclusion reached on the basis of evidence and logical reasoning.", sentence: "Effective reading comprehension tests your skill in drawing accurate inferences.", origin: "Latin 'inferre' (to bring in)" },
+  { word: "Scrutinize", phonetic: "/ˈskruː.tɪ.naɪz/", pos: "verb", meaning: "Examine or inspect closely and thoroughly.", sentence: "Auditors will scrutinize the balance sheet before signing the merger.", origin: "Latin 'scrutinium' (a search)" },
+  { word: "Perspicacity", phonetic: "/ˌpɜː.spɪˈkæs.ə.ti/", pos: "noun", meaning: "The quality of having ready insight and acute understanding.", sentence: "Her perspicacity as a diplomat defused tensions during multilateral talks.", origin: "Latin 'perspicere' (to look through)" },
+  { word: "Verisimilitude", phonetic: "/ˌver.ɪ.sɪˈmɪl.ɪ.tjuːd/", pos: "noun", meaning: "The appearance of being true or real in creative storytelling.", sentence: "The courtroom screenplay achieved gripping verisimilitude in dialogue.", origin: "Latin 'verus' (true) + 'similis' (like)" },
+  { word: "Anachronism", phonetic: "/əˈnæk.rə.nɪ.zəm/", pos: "noun", meaning: "Something belonging to a time period other than that in which it exists.", sentence: "A futuristic wristwatch in a Renaissance painting is an anachronism.", origin: "Greek 'ana' (backward) + 'khronos' (time)" },
+  { word: "Fastidious", phonetic: "/fæsˈtɪd.i.əs/", pos: "adjective", meaning: "Very attentive to and concerned about accuracy, etiquette, and detail.", sentence: "He was fastidious regarding typography and grammatical consistency.", origin: "Latin 'fastidium' (loathing, squeamishness)" },
+  { word: "Grandiloquent", phonetic: "/ɡrænˈdɪl.ə.kwənt/", pos: "adjective", meaning: "Pompous or extravagant in language, style, or manner.", sentence: "A grandiloquent speech often obscures simple truths with needless jargon.", origin: "Latin 'grandis' (grand) + 'loqui' (to speak)" },
+  { word: "Laconic", phonetic: "/ləˈkɒn.ɪk/", pos: "adjective", meaning: "Using very few words; concise to the point of seeming rude.", sentence: "His laconic reply of 'Proceed' conveyed supreme confidence.", origin: "Greek 'Lakonikos' (Spartan brevity)" },
+  { word: "Magnanimous", phonetic: "/mæɡˈnæn.ɪ.məs/", pos: "adjective", meaning: "Generous or forgiving, especially toward a rival or less powerful person.", sentence: "The victorious debater was magnanimous in congratulating the opposing team.", origin: "Latin 'magnus' (great) + 'animus' (mind)" },
+  { word: "Nefarious", phonetic: "/nɪˈfeə.ri.əs/", pos: "adjective", meaning: "Wicked, villainous, or criminal.", sentence: "The cybersecurity SOC thwarted a nefarious ransomware campaign.", origin: "Latin 'nefas' (crime, impiety)" },
+  { word: "Obsequious", phonetic: "/əbˈsiː.kwi.əs/", pos: "adjective", meaning: "Obedient or attentive to an excessive or servile degree.", sentence: "True leaders value honest counsel over obsequious flattery.", origin: "Latin 'obsequi' (to comply)" },
+  { word: "Panacea", phonetic: "/ˌpæn.əˈsiː.ə/", pos: "noun", meaning: "A solution or remedy for all difficulties or diseases.", sentence: "Technology alone is not a panacea for educational disparities.", origin: "Greek 'pan' (all) + 'akos' (cure)" },
+  { word: "Sagacious", phonetic: "/səˈɡeɪ.ʃəs/", pos: "adjective", meaning: "Having or showing keen mental discernment and good judgment.", sentence: "The judge was revered for her sagacious guidance on constitutional ethics.", origin: "Latin 'sagax' (wise, keen)" },
+  { word: "Taciturn", phonetic: "/ˈtæs.ɪ.tɜːn/", pos: "adjective", meaning: "Reserved or uncommunicative in speech; saying little.", sentence: "Though taciturn in casual conversation, his written briefs were brilliant.", origin: "Latin 'tacitus' (silent)" },
+  { word: "Vacillate", phonetic: "/ˈvæs.ɪ.leɪt/", pos: "verb", meaning: "Waver between different opinions or actions; be indecisive.", sentence: "Leaders cannot vacillate when emergency protocols require immediate action.", origin: "Latin 'vacillare' (to sway)" },
+  { word: "Zealous", phonetic: "/ˈzel.əs/", pos: "adjective", meaning: "Having or showing great energy or enthusiasm in pursuit of a cause.", sentence: "The student environmental committee was zealous in promoting solar power.", origin: "Greek 'zelos' (ardor)" },
+  { word: "Capricious", phonetic: "/kəˈprɪʃ.əs/", pos: "adjective", meaning: "Given to sudden and unaccountable changes of mood or behavior.", sentence: "Financial markets can be capricious during unexpected geopolitical shifts.", origin: "Italian 'capriccio' (whim)" },
+  { word: "Deleterious", phonetic: "/ˌdel.ɪˈtɪə.ri.əs/", pos: "adjective", meaning: "Causing harm or damage.", sentence: "Chronic sleep deprivation exerts deleterious effects on cognitive focus.", origin: "Greek 'deleterios' (harmful)" },
+  { word: "Effervescent", phonetic: "/ˌef.əˈves.ənt/", pos: "adjective", meaning: "Vivacious and enthusiastic; bubbly.", sentence: "Her effervescent opening remarks set an upbeat tone for the international summit.", origin: "Latin 'effervescere' (to boil up)" },
+  { word: "Garrulous", phonetic: "/ˈɡær.əl.əs/", pos: "adjective", meaning: "Excessively talkative, especially on trivial matters.", sentence: "The garrulous witness took forty minutes to recount a five-minute event.", origin: "Latin 'garrire' (to chatter)" },
+  { word: "Judicious", phonetic: "/dʒuːˈdɪʃ.əs/", pos: "adjective", meaning: "Having, showing, or done with good sense and judgment.", sentence: "Judicious allocation of study hours ensures comprehensive exam readiness.", origin: "Latin 'judicium' (judgment)" },
+  { word: "Lugubrious", phonetic: "/luːˈɡuː.bri.əs/", pos: "adjective", meaning: "Looking or sounding sad, dismal, or mournful.", sentence: "The actor adopted a lugubrious tone to convey Shakespearean sorrow.", origin: "Latin 'lugere' (to mourn)" },
+  { word: "Munificent", phonetic: "/mjuːˈnɪf.ɪ.sənt/", pos: "adjective", meaning: "Larger or more generous than is usual or necessary.", sentence: "The alumni made a munificent donation to construct the new robotics wing.", origin: "Latin 'munus' (gift) + 'facere' (to make)" },
+  { word: "Ostentatious", phonetic: "/ˌɒs.tenˈteɪ.ʃəs/", pos: "adjective", meaning: "Characterized by pretentious display designed to impress.", sentence: "He preferred understated elegance over ostentatious displays of wealth.", origin: "Latin 'ostendere' (to show)" },
+  { word: "Pellucid", phonetic: "/pəˈluː.sɪd/", pos: "adjective", meaning: "Translucently clear; easily understood in meaning and style.", sentence: "The physics professor offered a pellucid explanation of quantum entanglement.", origin: "Latin 'pellucidus' (shining through)" },
+  { word: "Quixotic", phonetic: "/kwɪkˈsɒt.ɪk/", pos: "adjective", meaning: "Exceedingly idealistic; unrealistic and impractical.", sentence: "Embarking on the trans-ocean voyage without modern instruments seemed quixotic.", origin: "After Cervantes' Don Quixote" },
+  { word: "Resplendent", phonetic: "/rɪˈsplen.dənt/", pos: "adjective", meaning: "Attractive and impressive through being richly colorful or shining.", sentence: "The auditorium stage was resplendent in celebratory banners for graduation.", origin: "Latin 'resplendere' (to shine out)" },
+  { word: "Surreptitious", phonetic: "/ˌsʌr.əpˈtɪʃ.əs/", pos: "adjective", meaning: "Kept secret, especially because it would not be approved of.", sentence: "The agents held a surreptitious briefing at midnight behind closed doors.", origin: "Latin 'surripere' (to seize secretly)" },
+  { word: "Trepidation", phonetic: "/ˌtrep.ɪˈdeɪ.ʃən/", pos: "noun", meaning: "A feeling of fear or agitation about something that may happen.", sentence: "She walked onto the keynote stage without a trace of nervous trepidation.", origin: "Latin 'trepidare' (to tremble)" },
+  { word: "Whimsical", phonetic: "/ˈwɪm.zɪ.kəl/", pos: "adjective", meaning: "Playfully quaint or fanciful, especially in an appealing way.", sentence: "The illustrated children's book was celebrated for its whimsical poetry.", origin: "English 'whim' (sudden fancy)" },
+  { word: "Circumlocution", phonetic: "/ˌsɜː.kəm.ləˈkjuː.ʃən/", pos: "noun", meaning: "The use of many words where fewer would do, especially in a deliberate attempt to be vague.", sentence: "The politician resorted to circumlocution to dodge the direct question.", origin: "Latin 'circum' (around) + 'loqui' (to speak)" },
+  { word: "Diatribe", phonetic: "/ˈdaɪ.ə.traɪb/", pos: "noun", meaning: "A forceful and bitter verbal attack against someone or something.", sentence: "The editorial avoided personal diatribe and stayed focused on verified data.", origin: "Greek 'diatribe' (discourse, wearing away)" },
+  { word: "Enervate", phonetic: "/ˈen.ə.veɪt/", pos: "verb", meaning: "Cause someone to feel drained of energy or vitality; weaken.", sentence: "The sweltering afternoon humidity threatened to enervate the marathon runners.", origin: "Latin 'enervare' (to weaken sinews)" }
 ];
+
+const FLASH_CARDS = OFFLINE_FLASH_CARDS;
 
 // ─── 3. TAB NAVIGATION CONTROLLER ─────────────────────────────────────────────
 function setupHorizontalScrollShelf(track, leftBtn, rightBtn, step = 280) {
@@ -3034,53 +3089,215 @@ function renderWordle(mount) {
   $('#wordle-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') guess(); });
 }
 
-// GAME 3: Flash Cards Studio
+// GAME 3: Flash Cards Studio (AI Dynamic Generation & Extensive Offline Dataset)
+const flashCardSession = {
+  history: [],
+  historyIndex: -1,
+  isRevealed: false,
+  learnedSet: new Set(JSON.parse(localStorage.getItem('cf_learned_flashcards') || '[]')),
+  seenSet: new Set(JSON.parse(localStorage.getItem('cf_seen_flashcards') || '[]'))
+};
+
 function renderFlashCards(mount) {
-  let idx = 0;
   mount.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🃏 Flash Cards Studio · 40+ Power Words</h3>
-      <span style="font-size:13px;color:var(--text-dim);" id="flash-card-counter">Word 1 of ${FLASH_CARDS.length}</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <h3 style="font-size:20px;">🃏 Flash Cards Studio</h3>
+      <div style="font-size:13.5px;font-weight:600;color:var(--text-main);">
+        Words Learned: <span class="badge-pill badge-global" id="fc-learned-count" style="font-size:13px;margin-left:4px;">0</span>
+      </div>
     </div>
 
-    <div style="max-width:540px;margin:20px auto;perspective:1000px;" id="flash-card-box">
-      <div class="card" style="min-height:240px;display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-strong);">
+    <div style="max-width:540px;margin:20px auto;" id="flash-card-box">
+      <div class="card" id="flash-card-surface" style="min-height:250px;display:flex;flex-direction:column;justify-content:space-between;border-color:var(--border-strong);cursor:pointer;user-select:none;transition:transform 0.2s, box-shadow 0.2s;" title="Click anywhere on card to reveal meaning &amp; example">
         <div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span class="badge-pill badge-global" id="fc-pos">noun</span>
-            <button class="btn btn-secondary btn-sm" id="btn-fc-speak">🔊 Pronounce</button>
+            <button class="btn btn-secondary btn-sm" id="btn-fc-speak" type="button" style="pointer-events:auto;">🔊 Pronounce</button>
           </div>
-          <h2 style="font-size:36px;color:var(--accent-cyan);margin-bottom:4px;" id="fc-word">Rhetoric</h2>
-          <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-dim);" id="fc-phonetic">/ˈrɛt.ər.ɪk/</span>
-          <p style="font-size:15px;color:var(--text-main);margin:12px 0;" id="fc-meaning">The art of effective or persuasive speaking or writing.</p>
-          <div style="font-size:13px;color:var(--text-muted);font-style:italic;" id="fc-sentence">"The speech was full of inspiring rhetoric."</div>
+          <h2 style="font-size:36px;color:var(--accent-cyan);margin-bottom:4px;letter-spacing:-0.02em;" id="fc-word">Loading...</h2>
+          <span style="font-family:var(--font-mono);font-size:14px;color:var(--text-dim);" id="fc-phonetic"></span>
+
+          <!-- Reveal Prompt Banner (shown initially) -->
+          <div id="fc-reveal-hint" style="margin:24px 0 12px;padding:14px;background:rgba(0,240,255,0.06);border:1px dashed rgba(0,240,255,0.35);border-radius:var(--radius-md);text-align:center;font-size:13.5px;color:var(--accent-cyan);font-weight:600;">
+            👆 Click card to reveal meaning &amp; usage
+          </div>
+
+          <!-- Hidden Details (revealed upon user click) -->
+          <div id="fc-details-box" style="display:none;margin-top:14px;border-top:1px dashed var(--border);padding-top:12px;">
+            <p style="font-size:15px;color:var(--text-main);line-height:1.5;margin-bottom:10px;">
+              <strong style="color:var(--accent-gold);">Meaning: </strong><span id="fc-meaning"></span>
+            </p>
+            <div style="font-size:13.5px;color:var(--text-muted);font-style:italic;line-height:1.4;margin-bottom:10px;">
+              <strong style="font-style:normal;color:var(--accent-emerald);">Example: </strong><span id="fc-sentence"></span>
+            </div>
+            <div style="font-size:12px;color:var(--text-dim);" id="fc-origin"></div>
+          </div>
         </div>
-        <div style="border-top:1px dashed var(--border);padding-top:8px;font-size:12px;color:var(--text-dim);" id="fc-origin">Etymology: Greek 'rhētorikē'</div>
+        <div style="text-align:right;font-size:11px;color:var(--text-dim);margin-top:8px;">
+          <span id="fc-provider-pill">Lexicon Verified</span>
+        </div>
       </div>
     </div>
 
     <div style="display:flex;justify-content:center;gap:12px;">
-      <button class="btn btn-secondary" id="btn-fc-prev">⬅️ Previous Word</button>
-      <button class="btn btn-primary" id="btn-fc-next">Next Word ➡️</button>
+      <button class="btn btn-secondary" id="btn-fc-prev" type="button">⬅️ Previous Word</button>
+      <button class="btn btn-primary" id="btn-fc-next" type="button">Next Word ➡️</button>
     </div>
   `;
 
-  const loadCard = () => {
-    const c = FLASH_CARDS[idx];
-    $('#fc-word').textContent = c.word;
-    $('#fc-phonetic').textContent = c.phonetic;
-    $('#fc-pos').textContent = c.pos;
-    $('#fc-meaning').textContent = c.meaning;
-    $('#fc-sentence').textContent = `"${c.sentence}"`;
-    $('#fc-origin').textContent = `Etymology: ${c.origin}`;
-    $('#flash-card-counter').textContent = `Word ${idx + 1} of ${FLASH_CARDS.length}`;
+  const surface = $('#flash-card-surface');
+  const detailsBox = $('#fc-details-box');
+  const revealHint = $('#fc-reveal-hint');
+  const learnedCount = $('#fc-learned-count');
+  const prevBtn = $('#btn-fc-prev');
+  const nextBtn = $('#btn-fc-next');
+  const speakBtn = $('#btn-fc-speak');
+
+  const updateLearnedCounter = () => {
+    if (learnedCount) {
+      learnedCount.textContent = flashCardSession.learnedSet.size;
+    }
   };
 
-  $('#btn-fc-next')?.addEventListener('click', () => { idx = (idx + 1) % FLASH_CARDS.length; loadCard(); });
-  $('#btn-fc-prev')?.addEventListener('click', () => { idx = (idx - 1 + FLASH_CARDS.length) % FLASH_CARDS.length; loadCard(); });
-  $('#btn-fc-speak')?.addEventListener('click', function() { speak(FLASH_CARDS[idx].word, this); });
+  const renderCurrentCard = () => {
+    if (flashCardSession.historyIndex < 0 || flashCardSession.historyIndex >= flashCardSession.history.length) return;
+    const card = flashCardSession.history[flashCardSession.historyIndex];
 
-  loadCard();
+    $('#fc-word').textContent = card.word;
+    $('#fc-phonetic').textContent = card.phonetic || '';
+    $('#fc-pos').textContent = card.pos || 'term';
+    $('#fc-meaning').textContent = card.meaning || '';
+    $('#fc-sentence').textContent = card.sentence ? `"${card.sentence}"` : '';
+    $('#fc-origin').textContent = card.origin ? `Etymology: ${card.origin}` : '';
+    if ($('#fc-provider-pill')) {
+      $('#fc-provider-pill').textContent = card.provider || 'Lexicon Verified';
+    }
+
+    // Always hide meaning initially on new/loaded card
+    flashCardSession.isRevealed = false;
+    if (detailsBox) detailsBox.style.display = 'none';
+    if (revealHint) revealHint.style.display = 'block';
+
+    updateLearnedCounter();
+    if (prevBtn) prevBtn.disabled = flashCardSession.historyIndex <= 0;
+  };
+
+  // Toggle reveal upon clicking flashcard surface
+  surface?.addEventListener('click', () => {
+    flashCardSession.isRevealed = !flashCardSession.isRevealed;
+    if (flashCardSession.isRevealed) {
+      if (detailsBox) detailsBox.style.display = 'block';
+      if (revealHint) revealHint.style.display = 'none';
+    } else {
+      if (detailsBox) detailsBox.style.display = 'none';
+      if (revealHint) revealHint.style.display = 'block';
+    }
+  });
+
+  // Pronounce button stops event bubbling so card doesn't flip/reveal
+  speakBtn?.addEventListener('click', e => {
+    e.stopPropagation();
+    const cur = flashCardSession.history[flashCardSession.historyIndex];
+    if (cur && cur.word) {
+      speak(cur.word, speakBtn);
+    }
+  });
+
+  // Function to acquire next unrepeated word (AI + Predefined Offline Lexicon)
+  const fetchNextUniqueWord = async () => {
+    let nextCard = null;
+
+    // 1. Try AI Generation via Cloudflare Pages Function (/api/ai)
+    try {
+      const avoidList = Array.from(flashCardSession.seenSet).slice(-40);
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task: 'generate-flashcard',
+          avoid: avoidList
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.card && data.card.word) {
+          const w = data.card.word.trim();
+          if (!flashCardSession.seenSet.has(w.toLowerCase())) {
+            nextCard = {
+              word: w.charAt(0).toUpperCase() + w.slice(1),
+              phonetic: data.card.phonetic || generateIpaApprox(w),
+              pos: data.card.pos || 'noun',
+              meaning: data.card.meaning || '',
+              sentence: data.card.sentence || '',
+              origin: data.card.origin || 'Etymology',
+              provider: '✨ Gemini AI'
+            };
+          }
+        }
+      }
+    } catch {}
+
+    // 2. Predefined Offline API / Rich Lexicon Dataset
+    if (!nextCard) {
+      // Find cards from OFFLINE_FLASH_CARDS not yet seen
+      let unseen = OFFLINE_FLASH_CARDS.filter(c => !flashCardSession.seenSet.has(c.word.toLowerCase()));
+      if (unseen.length === 0) {
+        // If all offline words have been visited once, reset seen set to allow continuous cycling without lock
+        flashCardSession.seenSet.clear();
+        unseen = OFFLINE_FLASH_CARDS;
+      }
+      const pick = unseen[Math.floor(Math.random() * unseen.length)];
+      nextCard = { ...pick, provider: 'Offline Lexicon' };
+    }
+
+    if (nextCard) {
+      flashCardSession.seenSet.add(nextCard.word.toLowerCase());
+      localStorage.setItem('cf_seen_flashcards', JSON.stringify([...flashCardSession.seenSet]));
+      flashCardSession.history.push(nextCard);
+      flashCardSession.historyIndex = flashCardSession.history.length - 1;
+      renderCurrentCard();
+    }
+  };
+
+  // Next Word button
+  nextBtn?.addEventListener('click', async () => {
+    // 1. Mark current card as learned
+    const current = flashCardSession.history[flashCardSession.historyIndex];
+    if (current && current.word) {
+      flashCardSession.learnedSet.add(current.word.toLowerCase());
+      localStorage.setItem('cf_learned_flashcards', JSON.stringify([...flashCardSession.learnedSet]));
+      updateLearnedCounter();
+    }
+
+    // 2. If in past history, advance
+    if (flashCardSession.historyIndex < flashCardSession.history.length - 1) {
+      flashCardSession.historyIndex++;
+      renderCurrentCard();
+      return;
+    }
+
+    // 3. Otherwise fetch new continuous unrepeated word
+    nextBtn.disabled = true;
+    nextBtn.innerHTML = 'Next Word ⏳';
+    await fetchNextUniqueWord();
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = 'Next Word ➡️';
+  });
+
+  // Previous Word button
+  prevBtn?.addEventListener('click', () => {
+    if (flashCardSession.historyIndex > 0) {
+      flashCardSession.historyIndex--;
+      renderCurrentCard();
+    }
+  });
+
+  // Initial load
+  if (flashCardSession.history.length === 0) {
+    fetchNextUniqueWord();
+  } else {
+    renderCurrentCard();
+  }
 }
 
 // GAME 4: Live Dictionary & Word Check

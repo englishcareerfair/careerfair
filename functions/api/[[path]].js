@@ -558,6 +558,49 @@ Requirements:
       }
     }
 
+    // 8b. Dynamic Flashcard Word Generation
+    if (task === 'generate-flashcard') {
+      const avoidWords = Array.isArray(body.avoid) ? body.avoid.slice(-30).join(', ') : '';
+      if (geminiKey) {
+        try {
+          const vocabPrompt = `You are an expert English vocabulary & lexicography coach at the English Careers Forum 2026.
+Generate exactly ONE distinct, sophisticated English vocabulary word (such as found in GRE/SAT, professional law, journalism, medicine, or aviation).
+${avoidWords ? `Do NOT repeat any of these recently seen words: ${avoidWords}.` : ''}
+Return a strict JSON object with this exact structure:
+{
+  "word": "VocabularyWord",
+  "pos": "noun/verb/adjective",
+  "phonetic": "/ipa_phonetic/",
+  "meaning": "Clear, concise definition (10-25 words).",
+  "sentence": "An engaging, professional example sentence demonstrating usage.",
+  "origin": "Etymology note (e.g. Latin 'root' (meaning))"
+}
+Return ONLY valid raw JSON without markdown code fences or extra text.`;
+
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: vocabPrompt }] }],
+              generationConfig: { maxOutputTokens: 160, temperature: 0.95 }
+            })
+          });
+
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const textRaw = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+            const jsonMatch = textRaw.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const cardData = JSON.parse(jsonMatch[0]);
+              if (cardData.word && cardData.meaning) {
+                return json({ card: cardData, provider: 'Google Gemini AI' });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
     if (geminiKey) {
       try {
         const fullPrompt = `You are the lead AI Career & English Communication Coach at the English Careers Forum 2026 for Kanakia International School students.
