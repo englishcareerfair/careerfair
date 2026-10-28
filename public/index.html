@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en" data-theme="cinematic">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07090e">
+  <meta name="description" content="Every Career Speaks English — Student Career Fair & English Communication Intelligence Platform. Explore 32+ careers, accredited colleges, speech evaluation, and arcade games.">
+  <title>Career Fair · Every Career Speaks English</title>
+  
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  
+  <!-- Preconnect & Distinctive Typography: Syne, Space Grotesk, Plus Jakarta Sans, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- ── 1. AMBIENT BROADCAST & SCHOOL BRANDING BAR ── -->
+  <div class="top-broadcast-bar" id="top-bar">
+    <div class="school-tag" id="school-branding-wrap">
+      <span class="school-badge">SUPW COMMUNITY FAIR</span>
+      <span id="school-branding-name">Kanakia International School Mira Road &copy;</span>
+    </div>
+    
+    <div class="broadcast-alert" id="broadcast-alert-wrap">
+      <span class="live-pulse" aria-hidden="true"></span>
+      <span id="broadcast-text">Welcome to the SUPW Career Fair · Explore 32+ Careers Where English Opens Doors!</span>
+    </div>
+    
+    <div id="live-timer-wrap" hidden>
+      <span class="timer-pill" id="live-timer-pill">⏳ Practice Timer: <strong id="timer-display">00:00</strong></span>
+    </div>
+  </div>
+
+  <!-- ── 2. SITE HEADER ── -->
+  <header class="site-header" id="top">
+    <div class="header-container">
+      <div class="site-brand" onclick="window.scrollTo({top:0, behavior:'smooth'})" role="button" tabindex="0">
+        <div class="brand-icon" aria-hidden="true">🎙️</div>
+        <div class="brand-copy">
+          <div class="brand-name">open mic <span style="font-size:14px;color:var(--accent-cyan);font-family:var(--font-mono)">· hub</span></div>
+          <div class="brand-subtitle">EVERY CAREER SPEAKS ENGLISH</div>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <!-- Interactive Theme Switcher -->
+        <div class="theme-switcher" role="radiogroup" aria-label="Select visual theme">
+          <button class="theme-btn active" data-theme-val="cinematic" title="Dark Cinematic Space (igloo.inc style)">Cinema</button>
+          <button class="theme-btn" data-theme-val="festival" title="Vibrant SUPW Carnival">Festival</button>
+          <button class="theme-btn" data-theme-val="corporate" title="Corporate Clean">Corporate</button>
+          <button class="theme-btn" data-theme-val="enamel" title="English SUPW Warm Enamel">Enamel</button>
+        </div>
+        
+        <!-- Spoken Greeting Button -->
+        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to introductory audio">
+          <span>🔊</span> <span>Listen Greeting</span>
+        </button>
+
+        <!-- Admin Control Room Button -->
+        <button class="btn btn-secondary btn-sm" id="btn-open-admin" type="button" aria-label="Open Admin Control Room">
+          <span>⚙️</span> <span>Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── 3. STICKY SUB-NAVBAR TABS ── -->
+  <nav class="sub-navbar" id="sub-nav" aria-label="Platform navigation">
+    <div class="nav-tabs-wrapper">
+      <button class="tab-btn active" data-tab="hero"><span>⚡</span> Overview</button>
+      <button class="tab-btn" data-tab="careers" data-flag="careers"><span>🎯</span> Careers <span class="tab-badge">32+</span></button>
+      <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges &amp; Accreditations <span class="tab-badge">NAAC/NIRF</span></button>
+      <button class="tab-btn" data-tab="exams" data-flag="exams"><span>📝</span> Exams</button>
+      <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Ladder</span></button>
+      <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
+      <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
+      <button class="tab-btn" data-tab="debate" data-flag="debate"><span>⚖️</span> Boardroom Debate &amp; Roleplay</button>
+      <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">Jobtris/Wordle</span></button>
+      <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
+      <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
+      <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback</button>
+    </div>
+  </nav>
+
+  <!-- ── 4. MAIN WORKSPACE CONTENT ── -->
+  <main id="app-content">
+
+    <!-- ── SECTION: HERO STAGE ── -->
+    <section class="section-shell" id="sec-hero">
+      <div class="hero-stage">
+        <div class="hero-left">
+          <div class="hero-eyebrow">
+            <span>✨</span> <span>STUDENT CAREER INTELLIGENCE &amp; ENGLISH LAB</span>
+          </div>
+          <h1 class="hero-heading">
+            Good English<br>
+            <span class="gradient-text">opens every door.</span>
+          </h1>
+          <p class="hero-sub">
+            Not just for board exams. For the patient consults, the air traffic clearances, the courtrooms you address, the venture decks you present, and the future you build.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="switchTab('speak')">
+              <span>🎙️</span> <span>Test Pronunciation &amp; Speech</span>
+            </button>
+            <button class="btn btn-secondary" onclick="switchTab('colleges')">
+              <span>🏛️</span> <span>Explore Accredited Colleges</span>
+            </button>
+            <button class="btn btn-secondary" onclick="switchTab('games')">
+              <span>🎮</span> <span>Play Jobtris &amp; Wordle</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="hero-visualizer-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span style="font-family:var(--font-sub);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--accent-cyan);text-transform:uppercase;">
+                VOICE INTELLIGENCE RADAR
+              </span>
+              <span class="badge-pill badge-naac" id="mic-status-pill">Ready to Listen</span>
+            </div>
+            
+            <canvas class="hero-canvas" id="hero-wave-canvas"></canvas>
+            
+            <div class="hero-metrics-grid">
+              <div class="hero-stat-box">
+                <strong id="stat-careers-count">32+</strong>
+                <span>Career Tracks</span>
+              </div>
+              <div class="hero-stat-box">
+                <strong id="stat-colleges-count">25+</strong>
+                <span>Accredited Institutes</span>
+              </div>
+              <div class="hero-stat-box">
+                <strong id="stat-games-count">10</strong>
+                <span>Arcade Games</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION: CAREERS DIRECTORY ── -->
+    <section class="section-shell" id="sec-careers" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">CAREER INTELLIGENCE ARCHIVE</div>
+          <h2 class="section-title">Where English is Your Superpower</h2>
+        </div>
+        <p class="section-desc">
+          Every profession demands articulate communication. Discover entry salaries, peak packages, required entrance tests, and why English unlocks top compensation.
+        </p>
+      </div>
+
+      <!-- Filters & Search -->
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <input type="search" id="career-search-input" placeholder="Search by career, skill, or keyword (e.g. Pilot, Surgeon, Law, AI)..." style="max-width:400px;">
+        <div class="filter-row" id="career-category-filters" style="margin-bottom:0;">
+          <button class="filter-chip active" data-cat="All">All Categories</button>
+          <button class="filter-chip" data-cat="Health">Healthcare &amp; Medicine</button>
+          <button class="filter-chip" data-cat="Aviation">Aviation &amp; Defense</button>
+          <button class="filter-chip" data-cat="Tech">Software &amp; Tech</button>
+          <button class="filter-chip" data-cat="Law">Law &amp; Justice</button>
+          <button class="filter-chip" data-cat="Media">Media &amp; Journalism</button>
+          <button class="filter-chip" data-cat="Business">Business &amp; Finance</button>
+          <button class="filter-chip" data-cat="Creative">Creative Arts &amp; Cinema</button>
+          <button class="filter-chip" data-cat="Public Policy">Public Policy</button>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="careers-cards-container"></div>
+    </section>
+
+    <!-- ── SECTION: COLLEGES & ACCREDITATIONS ── -->
+    <section class="section-shell" id="sec-colleges" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">ACADEMIC EXCELLENCE &amp; STATUTORY RATINGS</div>
+          <h2 class="section-title">Premier Colleges &amp; Accreditations</h2>
+        </div>
+        <p class="section-desc">
+          Verified academic standards across Maharashtra, India, and overseas institutions — featuring official NAAC grades, NIRF ranks, UGC autonomous statuses, and professional regulatory approvals.
+        </p>
+      </div>
+
+      <!-- Region Switcher & Filters -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div class="filter-row" id="college-region-filters" style="margin-bottom:0;">
+          <button class="filter-chip active" data-region="Maharashtra">🏛️ Maharashtra Premier</button>
+          <button class="filter-chip" data-region="PanIndia">🇮🇳 Top Indian Universities &amp; INIs</button>
+          <button class="filter-chip" data-region="Abroad">🌍 Global Study Abroad</button>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;">
+          <label style="font-size:13px;color:var(--text-muted);font-weight:600;">Filter Accreditation:</label>
+          <select id="college-accreditation-filter" style="width:auto;padding:6px 12px;font-size:13px;">
+            <option value="All">All Accreditations</option>
+            <option value="NAAC A++">NAAC A++ (Highest Grade)</option>
+            <option value="NAAC A+">NAAC A+ / A</option>
+            <option value="NIRF Top">NIRF Top Ranked</option>
+            <option value="Autonomous">UGC Autonomous / INI</option>
+            <option value="Professional">BCI / NMC / NBA / DGCA</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cards-grid" id="colleges-cards-container"></div>
+    </section>
+
+    <!-- ── SECTION: ENTRANCE EXAMS ── -->
+    <section class="section-shell" id="sec-exams" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">GATEWAYS TO PRESTIGIOUS CAREERS</div>
+          <h2 class="section-title">National &amp; Global Entrance Exams</h2>
+        </div>
+        <p class="section-desc">
+          Comprehensive breakdown of competitive admissions: examination formats, annual timelines, syllabus structure, and the critical English component tested.
+        </p>
+      </div>
+
+      <div class="cards-grid" id="exams-cards-container"></div>
+    </section>
+
+    <!-- ── SECTION: SPEAK & PRONUNCIATION LADDER ── -->
+    <section class="section-shell" id="sec-speak" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">VOICE ACCURACY &amp; PHONETICS</div>
+          <h2 class="section-title">Pronunciation Ladder &amp; Speech Rungs</h2>
+        </div>
+        <p class="section-desc">
+          Climb through progressive spoken English levels. Listen to native reference pronunciations, record your voice, check phonetic syllables, and unlock consecutive rungs!
+        </p>
+      </div>
+
+      <!-- Pack Selector -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div class="filter-row" id="speak-pack-filters" style="margin-bottom:0;">
+          <button class="filter-chip active" data-pack="Everyday">Everyday Fluency</button>
+          <button class="filter-chip" data-pack="Journalism">Broadcast Journalism</button>
+          <button class="filter-chip" data-pack="Law">Courtroom Advocacy</button>
+          <button class="filter-chip" data-pack="Academic">Scholarly Academic</button>
+        </div>
+
+        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">
+          Passing Requirement: <strong id="ladder-pass-label">70% Accuracy</strong>
+        </div>
+      </div>
+
+      <div class="speech-lab-layout">
+        <!-- Left: Progressive Ladder Rungs -->
+        <div class="ladder-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="font-size:18px;">Ladder Progression</h3>
+            <span class="badge-pill badge-nirf" id="ladder-level-badge">Level 1 of 10</span>
+          </div>
+          <div class="ladder-rungs" id="ladder-rungs-list"></div>
+        </div>
+
+        <!-- Right: Current Challenge Card & Audio Testing -->
+        <div class="card" style="box-shadow:var(--card-shadow);justify-content:space-between;">
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <span class="badge-pill badge-reg" id="active-challenge-pack-tag">Everyday Fluency</span>
+              <span style="font-size:13px;color:var(--text-dim);" id="active-challenge-num">Rung 1</span>
+            </div>
+
+            <h4 style="font-size:20px;line-height:1.4;margin-bottom:16px;color:var(--text-main);" id="speak-target-sentence">
+              Loading challenge sentence...
+            </h4>
+
+            <!-- Listen button & Phonetics tip -->
+            <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-listen-target" type="button">
+                <span>🔊</span> <span>Listen Reference Audio</span>
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-show-phonetics" type="button">
+                <span>📖</span> <span>Phonetic Breakdown</span>
+              </button>
+            </div>
+
+            <div id="phonetic-breakdown-box" style="display:none;background:var(--bg-subtle);padding:12px;border-radius:var(--radius-md);margin-bottom:16px;font-size:13.5px;border:1px solid var(--border);"></div>
+
+            <!-- Student Name for Score Recording -->
+            <div style="margin-bottom:12px;">
+              <label style="font-size:13px;color:var(--text-muted);font-weight:600;">Your Nickname / Roll No (for Leaderboard):</label>
+              <input type="text" id="speak-student-name" placeholder="Enter your name (e.g. Ananya Class 10)" style="margin-top:4px;">
+            </div>
+
+            <!-- Speech Recording Controls -->
+            <div class="record-orb-container">
+              <button class="record-orb" id="speak-record-orb" type="button" aria-label="Start recording speech">
+                🎙️
+              </button>
+              <p style="margin-top:12px;font-size:13.5px;" id="speak-status-text">Click the microphone and read the sentence aloud clearly.</p>
+            </div>
+
+            <!-- Transcript Preview & Manual Fallback -->
+            <div style="margin-top:10px;">
+              <label style="font-size:12px;color:var(--text-dim);font-weight:600;">Recognized Spoken Transcript:</label>
+              <textarea id="speak-transcript-preview" placeholder="Your speech transcription will appear here in real-time..." style="height:70px;margin-top:4px;font-size:13.5px;"></textarea>
+            </div>
+          </div>
+
+          <!-- Evaluation Results Area -->
+          <div id="speak-eval-result" style="margin-top:16px;display:none;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION: AI SPEECH LAB (6D COACH) ── -->
+    <section class="section-shell" id="sec-speechLab" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">ADVANCED MULTI-AXIS AI FEEDBACK</div>
+          <h2 class="section-title">AI Speech Lab &amp; Fluency Coach</h2>
+        </div>
+        <p class="section-desc">
+          Real-time speaking rate (WPM) gauge, verbatim filler-word detection (um, uh, like), 6-dimension scoring, live waveform visualization, and instant "Say It Better" rewrite synthesis.
+        </p>
+      </div>
+
+      <div class="speech-lab-layout">
+        <!-- Left: Recording Stage & Real-time Meters -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:18px;">Speech Capture Stage</h3>
+            <span class="badge-pill badge-nirf" id="speech-session-state">Standby</span>
+          </div>
+
+          <!-- Waveform Canvas -->
+          <canvas id="speech-lab-waveform" style="width:100%;height:100px;background:#000;border-radius:var(--radius-md);margin-bottom:14px;"></canvas>
+
+          <!-- WPM Pace Meter -->
+          <div class="wpm-gauge-container">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:13.5px;">Speaking Pace (Words Per Minute)</strong>
+              <span style="font-family:var(--font-mono);font-size:14px;color:var(--accent-cyan);" id="wpm-value-label">0 WPM</span>
+            </div>
+            <div class="wpm-track">
+              <div class="wpm-needle" id="wpm-needle-indicator" style="left: 0%;"></div>
+            </div>
+            <div class="wpm-labels">
+              <span>Too Slow (&lt;100)</span>
+              <span style="color:var(--accent-emerald);">Ideal (120–150 WPM)</span>
+              <span>Rushing (&gt;165)</span>
+            </div>
+          </div>
+
+          <!-- Filler words detector box -->
+          <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <strong style="font-size:13px;">Verbatim Filler Words Detected:</strong>
+              <span class="badge-pill badge-global" id="filler-count-label">0 Fillers</span>
+            </div>
+            <div id="fillers-chips-container" style="display:flex;flex-wrap:wrap;gap:6px;min-height:26px;">
+              <span style="font-size:12px;color:var(--text-dim);">No hesitation fillers detected yet.</span>
+            </div>
+          </div>
+
+          <!-- Transcript Input -->
+          <label style="font-size:13px;color:var(--text-muted);font-weight:600;">Spoken / Typed Answer:</label>
+          <textarea id="speech-lab-transcript" placeholder="Speak into the microphone or paste a speech answer to analyze..." style="height:110px;margin-top:4px;"></textarea>
+
+          <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn btn-primary" id="btn-speech-lab-record" type="button">
+              <span>🎙️</span> <span>Record Voice</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-speech-lab-stop" type="button" disabled>
+              <span>⏹️</span> <span>Stop Recording</span>
+            </button>
+            <button class="btn btn-accent" id="btn-speech-lab-analyze" type="button">
+              <span>✨</span> <span>Analyze My English</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: 6-Dimension Scorecard & AI Coaching -->
+        <div class="card" id="speech-lab-results-card">
+          <h3 style="font-size:18px;margin-bottom:8px;">6-Dimension Speech Assessment</h3>
+          <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:16px;">Calculated using audio cadence, sentence structure, and vocabulary diversity.</p>
+
+          <!-- 6 Dimensions Grid -->
+          <div class="dimensions-grid">
+            <div class="dim-card"><div class="dim-score" id="dim-pronunciation">--</div><div class="dim-name">Pronunciation</div></div>
+            <div class="dim-card"><div class="dim-score" id="dim-fluency">--</div><div class="dim-name">Fluency</div></div>
+            <div class="dim-card"><div class="dim-score" id="dim-clarity">--</div><div class="dim-name">Clarity</div></div>
+            <div class="dim-card"><div class="dim-score" id="dim-vocab">--</div><div class="dim-name">Vocabulary</div></div>
+            <div class="dim-card"><div class="dim-score" id="dim-grammar">--</div><div class="dim-name">Structure</div></div>
+            <div class="dim-card"><div class="dim-score" id="dim-confidence">--</div><div class="dim-name">Confidence</div></div>
+          </div>
+
+          <!-- Spider Radar Canvas Visualizer -->
+          <div style="text-align:center;margin:10px 0;">
+            <canvas id="radar-canvas" width="280" height="200" style="max-width:100%;display:inline-block;"></canvas>
+          </div>
+
+          <!-- AI Coaching & Say It Better -->
+          <div id="ai-coaching-box" style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-top:10px;font-size:14px;">
+            <strong style="color:var(--accent-cyan);display:block;margin-bottom:6px;">✨ Speech Coach Suggestions:</strong>
+            <p style="color:var(--text-muted);font-size:13.5px;" id="ai-coaching-text">
+              Complete an evaluation to receive targeted recommendations and an upgraded "Say It Better" rewrite.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION: NEWS ANCHOR & MOCK INTERVIEW ── -->
+    <section class="section-shell" id="sec-teleprompter" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">LIVE BROADCAST &amp; ON-CAMERA STUDIO</div>
+          <h2 class="section-title">News Anchor Teleprompter &amp; AI Interview</h2>
+        </div>
+        <p class="section-desc">
+          Step in front of the camera or connect an OBS Virtual Feed. Practice teleprompter scripts with authentic lower-third broadcast overlays and on-device recording.
+        </p>
+      </div>
+
+      <div class="broadcast-stage-grid">
+        <!-- Live Video & Broadcast Frame -->
+        <div class="video-frame-container" id="video-stage-wrapper">
+          <video class="video-element" id="anchor-video" autoplay playsinline muted></video>
+          
+          <!-- Auto-scrolling Teleprompter Overlay -->
+          <div class="teleprompter-overlay" id="teleprompter-box">
+            <p id="teleprompter-text">
+              "Good evening, we are broadcasting live from the SUPW Community Career Fair at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+            </p>
+          </div>
+
+          <!-- Authentic Lower-Third Broadcast Banner -->
+          <div class="news-lower-third" id="news-banner">
+            <span class="lower-third-tag">BREAKING NEWS</span>
+            <div class="lower-third-headline" id="lower-third-copy">
+              STUDENT BROADCAST · CLASS X · KANAKIA INTERNATIONAL SCHOOL
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Controls & Script Options -->
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:12px;">Studio Controls</h3>
+          
+          <div style="margin-bottom:12px;">
+            <label style="font-size:13px;font-weight:600;">Your Reporter Name:</label>
+            <input type="text" id="anchor-name-input" value="Ananya Sharma" placeholder="Your name">
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:13px;font-weight:600;">Select Script / Roleplay:</label>
+            <select id="anchor-script-select">
+              <option value="breaking">Breaking News Bulletin (Media Anchor)</option>
+              <option value="pilot">Aviation ATC Clearance (Commercial Pilot)</option>
+              <option value="doctor">Emergency Medical Briefing (Chief Surgeon)</option>
+              <option value="tech">Software Architecture Standup (Tech Lead)</option>
+              <option value="pitch">30-Second Elevator Pitch (Founder)</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;">Teleprompter Scroll Speed:</label>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="filter-chip" id="speed-slow">Slow</button>
+              <button class="filter-chip active" id="speed-normal">Normal</button>
+              <button class="filter-chip" id="speed-fast">Fast</button>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-primary" id="btn-start-camera" type="button">
+              <span>📹</span> <span>Launch Camera / OBS Feed</span>
+            </button>
+            <button class="btn btn-accent" id="btn-record-anchor" type="button">
+              <span>⏺️</span> <span>Record Broadcast Clip</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-scroll-teleprompter" type="button">
+              <span>▶️</span> <span>Start Teleprompter Scroll</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION: BOARDROOM DEBATE & MAYDAY ROLEPLAY ── -->
+    <section class="section-shell" id="sec-debate" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">TURN-BASED STAGE &amp; HIGH-STRESS DIALOGUE</div>
+          <h2 class="section-title">Boardroom Debate &amp; Mayday Roleplay</h2>
+        </div>
+        <p class="section-desc">
+          Two speakers, one device. Debate compelling motions with a live 60-second countdown and comparative scorecards, or tackle high-pressure Mayday emergency roleplays.
+        </p>
+      </div>
+
+      <!-- Debate Motion Selector -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <span class="badge-pill badge-reg">CURRENT DEBATE MOTION</span>
+            <h3 style="font-size:18px;margin-top:6px;" id="debate-motion-title">
+              "AI will enhance, rather than replace, human journalists and authors."
+            </h3>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-next-motion" type="button">
+            <span>🔄</span> <span>Next Motion</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Two Speakers Stage -->
+      <div class="debate-stage">
+        <!-- Speaker 1: Proposition -->
+        <div class="debate-speaker-pod pod-active" id="pod-speaker-1">
+          <span class="debate-turn-badge badge-prop">SPEAKER 1 · PROPOSITION</span>
+          <h4 style="font-size:18px;margin-bottom:6px;">In Favor of the Motion</h4>
+          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Deliver 3 distinct arguments highlighting innovation, ethics, and human creativity.</p>
+          
+          <div style="font-family:var(--font-mono);font-size:24px;color:var(--accent-cyan);margin-bottom:12px;" id="speaker-1-timer">60s</div>
+          
+          <button class="btn btn-primary btn-sm" id="btn-record-spk1" type="button">
+            <span>🎙️</span> <span>Speak Turn (60s)</span>
+          </button>
+          
+          <div id="spk1-feedback" style="margin-top:12px;font-size:13px;display:none;"></div>
+        </div>
+
+        <!-- Speaker 2: Opposition -->
+        <div class="debate-speaker-pod" id="pod-speaker-2">
+          <span class="debate-turn-badge badge-opp">SPEAKER 2 · OPPOSITION</span>
+          <h4 style="font-size:18px;margin-bottom:6px;">Against the Motion</h4>
+          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Rebut Proposition claims with empirical counterexamples and cautionary evidence.</p>
+          
+          <div style="font-family:var(--font-mono);font-size:24px;color:var(--accent-magenta);margin-bottom:12px;" id="speaker-2-timer">60s</div>
+          
+          <button class="btn btn-secondary btn-sm" id="btn-record-spk2" type="button">
+            <span>🎙️</span> <span>Speak Turn (60s)</span>
+          </button>
+          
+          <div id="spk2-feedback" style="margin-top:12px;font-size:13px;display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Mayday High-Stress Scenarios Selector -->
+      <div style="margin-top:36px;">
+        <h3 style="font-size:20px;margin-bottom:12px;">Mayday Scenarios · High-Stress Workplace Roleplay</h3>
+        <div class="cards-grid" id="mayday-scenarios-container"></div>
+      </div>
+    </section>
+
+    <!-- ── SECTION: ARCADE GAMES SUITE ── -->
+    <section class="section-shell" id="sec-games" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">INTERACTIVE LANGUAGE GAMIFICATION</div>
+          <h2 class="section-title">Career Language Arcade</h2>
+        </div>
+        <p class="section-desc">
+          10 immersive games: Jobtris semantic matching, Wordle 6-guess vocabulary, Flash Cards studio, Spelling Bee, Fix the Email, Jargon Match, and Guess the Package.
+        </p>
+      </div>
+
+      <!-- Game Picker Shelf -->
+      <div class="filter-row" id="game-picker-tabs">
+        <button class="filter-chip active" data-game="jobtris">🎮 Jobtris (Semantic Tetris)</button>
+        <button class="filter-chip" data-game="wordle">🟩 Wordle (6-Guess Vocabulary)</button>
+        <button class="filter-chip" data-game="flashcards">🃏 Flash Cards (40+ Power Words)</button>
+        <button class="filter-chip" data-game="dict">📖 Live Dictionary &amp; Word Check</button>
+        <button class="filter-chip" data-game="spelling">🐝 Spelling Bee Challenge</button>
+        <button class="filter-chip" data-game="email">✉️ Fix the Email</button>
+        <button class="filter-chip" data-game="hangman">🪢 Career Hangman</button>
+        <button class="filter-chip" data-game="package">💰 Guess the Package</button>
+      </div>
+
+      <!-- Dynamic Game Arena Container -->
+      <div id="game-arena-mount" class="card" style="box-shadow:var(--card-shadow);margin-top:16px;min-height:440px;"></div>
+    </section>
+
+    <!-- ── SECTION: MY PLAN & QUIZ ── -->
+    <section class="section-shell" id="sec-roadmap" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">PERSONALIZED CAREER BLUEPRINT</div>
+          <h2 class="section-title">"My Plan" Roadmap &amp; Discovery Quiz</h2>
+        </div>
+        <p class="section-desc">
+          Generate an actionable timeline tailored to your current class (Class 8 &amp; below up to Class 12+), create a shareable Future Business Card with QR code, and compare parent vs. student career aspirations.
+        </p>
+      </div>
+
+      <!-- Tool Switcher -->
+      <div class="filter-row" id="plan-tools-tabs">
+        <button class="filter-chip active" data-tool="myplan">🗺️ My Plan Roadmap Generator</button>
+        <button class="filter-chip" data-tool="quiz">🧭 5-Question Career Quiz</button>
+        <button class="filter-chip" data-tool="bizcard">🪪 Future Business Card Generator</button>
+        <button class="filter-chip" data-tool="dreammatch">🤝 Parent vs. Child Match</button>
+      </div>
+
+      <div id="plan-tool-arena" class="card" style="margin-top:16px;"></div>
+    </section>
+
+    <!-- ── SECTION: LEADERBOARD ── -->
+    <section class="section-shell" id="sec-leaderboard" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">REAL-TIME FAIR RANKINGS</div>
+          <h2 class="section-title">Exhibition Speaking Leaderboard</h2>
+        </div>
+        <p class="section-desc">
+          Live scores from student speech evaluations and games across Speaking Packs and Classes. Top performers earn commendation badges!
+        </p>
+      </div>
+
+      <!-- Filter Controls -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div class="filter-row" id="leaderboard-pack-filters" style="margin-bottom:0;">
+          <button class="filter-chip active" data-board-pack="All">All Packs</button>
+          <button class="filter-chip" data-board-pack="Everyday">Everyday</button>
+          <button class="filter-chip" data-board-pack="Journalism">Journalism</button>
+          <button class="filter-chip" data-board-pack="Law">Law</button>
+          <button class="filter-chip" data-board-pack="Academic">Academic</button>
+        </div>
+
+        <button class="btn btn-secondary btn-sm" id="btn-refresh-leaderboard" type="button">
+          <span>🔄</span> <span>Refresh Scores</span>
+        </button>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px;">Rank</th>
+              <th>Student Name</th>
+              <th>Class</th>
+              <th>Speaking Pack</th>
+              <th>Level</th>
+              <th>Accuracy</th>
+              <th>Fluency</th>
+              <th>WPM</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-table-body">
+            <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-dim);">Loading leaderboard rankings...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── SECTION: FEEDBACK & TESTIMONIALS ── -->
+    <section class="section-shell" id="sec-feedback" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">VISITOR THOUGHTS &amp; COMMUNITY VOICES</div>
+          <h2 class="section-title">Fair Feedback &amp; Review Wall</h2>
+        </div>
+        <p class="section-desc">
+          Share your reflections on the English Career Fair exhibits. Your ratings help shape future SUPW learning initiatives!
+        </p>
+      </div>
+
+      <div class="cards-grid" style="grid-template-columns: 1fr 1fr;">
+        <!-- Submission Card -->
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:14px;">Leave Your Feedback</h3>
+          <form id="feedback-form">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:13px;font-weight:600;">Your Name / Initial:</label>
+              <input type="text" id="fb-name" required placeholder="e.g. Riya S. or Parent of Grade 9">
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+              <div>
+                <label style="font-size:13px;font-weight:600;">Role:</label>
+                <select id="fb-role">
+                  <option value="Student">Student</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Teacher">Teacher / Faculty</option>
+                  <option value="Guest">Fair Guest</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:13px;font-weight:600;">Class / Section:</label>
+                <select id="fb-class">
+                  <option value="Class 8 & below">Class 8 &amp; below</option>
+                  <option value="Class 9">Class 9</option>
+                  <option value="Class 10" selected>Class 10</option>
+                  <option value="Class 11">Class 11</option>
+                  <option value="Class 12">Class 12</option>
+                  <option value="Parent / Guest">Parent / Guest</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:13px;font-weight:600;">How useful was the Career Fair for your aspirations? (1 to 5 Stars):</label>
+              <div style="display:flex;gap:12px;margin-top:6px;" id="star-selector-useful">
+                <button type="button" class="btn btn-secondary btn-sm active" data-val="5">⭐ 5</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-val="4">⭐ 4</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-val="3">⭐ 3</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-val="2">⭐ 2</button>
+              </div>
+            </div>
+
+            <div style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:600;">What was the most memorable insight or game today?</label>
+              <textarea id="fb-comment" placeholder="Tell us about the career path or speech challenge you enjoyed most..."></textarea>
+            </div>
+
+            <button class="btn btn-primary" type="submit">
+              <span>🚀</span> <span>Submit Review</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Approved Public Testimonial Wall -->
+        <div class="card">
+          <h3 style="font-size:18px;margin-bottom:14px;">Recent Visitor Reflections</h3>
+          <div id="feedback-wall-list" style="display:flex;flex-direction:column;gap:12px;max-height:480px;overflow-y:auto;padding-right:6px;"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── 5. ADMIN CONTROL ROOM MODAL ── -->
+  <div class="modal-backdrop" id="admin-modal" hidden>
+    <div class="modal-card">
+      <button class="modal-close-btn" id="btn-close-admin" type="button" aria-label="Close admin modal">&times;</button>
+      
+      <!-- Screen 1: Password Gate -->
+      <div id="admin-gate-screen">
+        <h3 style="font-size:22px;margin-bottom:6px;">Project Control Room</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
+          Operational management console for feature toggles, visual styles, live banners, and AI routing.
+        </p>
+
+        <form id="admin-login-form">
+          <label style="font-size:13px;font-weight:600;">Admin Password:</label>
+          <input type="password" id="admin-pwd-input" placeholder="Enter password (default: careers2026)" required style="margin:6px 0 16px;">
+          <button class="btn btn-primary" type="submit">Unlock Control Room 🔓</button>
+        </form>
+      </div>
+
+      <!-- Screen 2: Admin Dashboard Workspace -->
+      <div id="admin-workspace-screen" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;">
+          <div>
+            <h3 style="font-size:20px;">Admin Console Active</h3>
+            <span style="font-size:12px;color:var(--accent-emerald);">● Authenticated &amp; Ready</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-admin-logout" type="button">Log Out</button>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="filter-row" id="admin-tab-row">
+          <button class="filter-chip active" data-admin-view="features">Feature Flags</button>
+          <button class="filter-chip" data-admin-view="broadcast">Announcement &amp; Timer</button>
+          <button class="filter-chip" data-admin-view="branding">Branding &amp; Theme</button>
+          <button class="filter-chip" data-admin-view="ai">AI &amp; Speech Router</button>
+          <button class="filter-chip" data-admin-view="data">Moderation &amp; Exports</button>
+        </div>
+
+        <!-- View 1: Feature Flags Toggles -->
+        <div id="admin-view-features" class="admin-view-panel">
+          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Toggle modules on or off in real-time. Toggled-off features cleanly disappear with dynamic reflow.</p>
+          <div id="admin-flags-container"></div>
+        </div>
+
+        <!-- View 2: Broadcast Alert & Synchronized Timer -->
+        <div id="admin-view-broadcast" class="admin-view-panel" hidden>
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;">Live Banner Announcement:</label>
+            <input type="text" id="admin-banner-input" placeholder="e.g. Round 2 of Speech Ladder starting in Room 302!">
+          </div>
+
+          <div style="margin-bottom:16px;">
+            <label style="font-size:13px;font-weight:600;">Set Synchronized Exam/Practice Timer (Minutes):</label>
+            <input type="number" id="admin-timer-input" min="0" max="180" placeholder="0 to disable">
+          </div>
+
+          <button class="btn btn-primary btn-sm" id="btn-save-broadcast" type="button">Save Broadcast Changes</button>
+        </div>
+
+        <!-- View 3: Branding & Visual Theme -->
+        <div id="admin-view-branding" class="admin-view-panel" hidden>
+          <div class="toggle-switch-row">
+            <div>
+              <strong>Show School Branding</strong>
+              <div style="font-size:12px;color:var(--text-dim);">Displays school name with &copy; symbol in top bar and cards</div>
+            </div>
+            <input type="checkbox" id="admin-branding-toggle" style="width:20px;height:20px;">
+          </div>
+
+          <div style="margin:16px 0;">
+            <label style="font-size:13px;font-weight:600;">School Name Label:</label>
+            <input type="text" id="admin-school-name-input" value="Kanakia International School Mira Road">
+          </div>
+
+          <button class="btn btn-primary btn-sm" id="btn-save-branding" type="button">Save Branding</button>
+        </div>
+
+        <!-- View 4: AI & Speech Router -->
+        <div id="admin-view-ai" class="admin-view-panel" hidden>
+          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">
+            Configure AI LLM &amp; STT failover parameters. If keys are not set, platform automatically uses on-device deterministic heuristics.
+          </p>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:13px;font-weight:600;">Google Gemini API Key (or comma-separated pool):</label>
+            <input type="password" id="admin-gemini-key" placeholder="AIzaSy...">
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:13px;font-weight:600;">ElevenLabs STT API Key (optional):</label>
+            <input type="password" id="admin-eleven-key" placeholder="sk_...">
+          </div>
+
+          <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save API Credentials</button>
+        </div>
+
+        <!-- View 5: Moderation & CSV Exports -->
+        <div id="admin-view-data" class="admin-view-panel" hidden>
+          <h4 style="font-size:15px;margin-bottom:8px;">Data Exports (.CSV)</h4>
+          <div style="display:flex;gap:10px;margin-bottom:20px;">
+            <button class="btn btn-secondary btn-sm" id="btn-export-scores-csv" type="button">📥 Export Scores (.CSV)</button>
+            <button class="btn btn-secondary btn-sm" id="btn-export-feedback-csv" type="button">📥 Export Feedback (.CSV)</button>
+          </div>
+
+          <h4 style="font-size:15px;margin-bottom:8px;color:var(--accent-magenta);">Danger Zone</h4>
+          <button class="btn btn-accent btn-sm" id="btn-reset-scores" type="button">⚠️ Reset All Leaderboard Scores</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. SITE FOOTER ── -->
+  <footer style="background:var(--surface-raised);border-top:1px solid var(--border);padding:30px 20px;text-align:center;font-size:13.5px;color:var(--text-dim);position:relative;z-index:20;">
+    <p><strong>Career Fair: Every Career Speaks English</strong> · SUPW Community Fair Initiative</p>
+    <p style="margin-top:6px;" id="footer-school-brand">Guided by the English Department · Kanakia International School Mira Road &copy;</p>
+    <p style="margin-top:6px;font-size:12px;">Accreditations &amp; entrance test formats are cross-indexed from UGC, NAAC, NIRF, BCI, NMC, and DGCA guidelines.</p>
+  </footer>
+
+  <!-- Toast Container -->
+  <div id="toast-container" aria-live="polite"></div>
+
+</body>
+</html>
