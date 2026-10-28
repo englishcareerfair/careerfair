@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=5.7">
+  <link rel="stylesheet" href="styles.css?v=5.8">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=5.7" defer></script>
+  <script src="app.js?v=5.8" defer></script>
 </head>
 <body>
 
@@ -1023,24 +1023,38 @@
           </div>
 
           <div style="margin-bottom:14px;">
-            <label style="font-size:13px;font-weight:600;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
-            <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:6px;">
+              <label style="font-size:13px;font-weight:700;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
+              <button class="btn btn-secondary btn-xs" id="btn-verify-eleven" type="button" style="font-size:11px;padding:3px 8px;">Verify &amp; Load Voices 🔄</button>
+            </div>
+            <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key (or set ELEVEN_KEY in Cloudflare)">
+            <div id="admin-eleven-status" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;"></div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
-              Powers authentic studio-grade Indian accent text-to-speech across the entire website (ElevenLabs Multilingual v2 with Indian accent). If not configured, platform gracefully runs high-fidelity on-device Indian English (en-IN) neural voice.
+              Powers authentic studio-grade Indian accent text-to-speech across the entire website (ElevenLabs Multilingual v2). If not configured, platform gracefully runs high-fidelity on-device Indian English (en-IN) neural voice.
             </div>
           </div>
 
           <div style="margin-bottom:14px;">
-            <label style="font-size:13px;font-weight:600;">ElevenLabs Indian Voice ID (Optional):</label>
-            <input type="text" id="admin-eleven-voice" placeholder="Default: EtEf6yOMlronn3UoIDrF (Ankit - Indian Accent)">
-            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
-              Enter any preferred Indian voice ID from your ElevenLabs Voice Library (e.g. Ankit, Aditi, Akash), or leave blank for default Indian voice.
-            </div>
+            <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px;">Select Account Voice (Indian Accent):</label>
+            <select id="admin-eleven-voice-select" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;margin-bottom:6px;">
+              <option value="">-- Auto-detect Best Indian Voice in Account --</option>
+            </select>
+            <div id="admin-eleven-voice-hint" style="font-size:11.5px;color:var(--accent-cyan);margin-bottom:6px;display:none;"></div>
+            <details style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+              <summary style="cursor:pointer;color:var(--text-muted);font-weight:600;">Custom Voice ID Override (Advanced)</summary>
+              <div style="margin-top:6px;">
+                <input type="text" id="admin-eleven-voice" placeholder="e.g. EtEf6yOMlronn3UoIDrF (Ankit) or VoiceLab ID">
+                <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">
+                  Tip: In ElevenLabs, go to <strong>Voice Library</strong>, search <em>'Ankit'</em> or <em>'Aditi'</em>, click <strong>'Add to VoiceLab'</strong>. Community voices must be added to your VoiceLab before they can be used via API.
+                </div>
+              </div>
+            </details>
           </div>
 
-          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save API Credentials</button>
             <button class="btn btn-secondary btn-sm" id="btn-test-tts-voice" type="button">Test Humanoid Voice 🔊</button>
+            <span id="admin-tts-test-status" style="font-size:12px;font-weight:600;margin-left:4px;"></span>
           </div>
         </div>
 

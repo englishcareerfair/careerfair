@@ -204,8 +204,8 @@ export async function onRequest(ctx) {
     const stream_active = (await kvGet(db, 'stream_active', '1')) === '1';
 
     const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
-    const eleven_voice = await kvGet(db, 'eleven_voice', '');
-    const eleven_key = await kvGet(db, 'eleven_key', '');
+    const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
+    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (env.ELEVEN_KEY ? 'configured' : '');
 
     return json({
       pass,
@@ -222,7 +222,8 @@ export async function onRequest(ctx) {
       gemini_keys,
       gemini_key: gemini_keys,
       eleven_voice,
-      eleven_key
+      eleven_key,
+      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', '')))
     });
   }
 
@@ -963,6 +964,90 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     });
   }
 
+  // ── 10a. GET & POST /tts/voices (Fetch available ElevenLabs voices & quota status) ───────
+  if ((path === '/tts/voices' || path === '/tts-voices') && (method === 'GET' || method === 'POST')) {
+    let body = {};
+    if (method === 'POST') {
+      try { body = await request.json(); } catch { body = {}; }
+    }
+    const elevenKey = (body.apiKey || request.headers.get('xi-api-key') || url.searchParams.get('key') || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || '').trim();
+
+    if (!elevenKey) {
+      return json({
+        ok: false,
+        status: 'missing_key',
+        message: 'No ElevenLabs API key configured. Enter your XI-API-KEY in Admin Settings or set ELEVEN_KEY in Cloudflare.'
+      });
+    }
+
+    try {
+      const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+        headers: { 'xi-api-key': elevenKey }
+      });
+
+      if (!vRes.ok) {
+        const errDetail = await vRes.text().catch(() => '');
+        return json({
+          ok: false,
+          status: vRes.status === 401 ? 'invalid_key' : 'api_error',
+          statusCode: vRes.status,
+          message: vRes.status === 401 ? 'Invalid ElevenLabs API Key. Please verify your key on elevenlabs.io.' : `ElevenLabs API error (${vRes.status}): ${errDetail.slice(0, 120)}`
+        });
+      }
+
+      const vData = await vRes.json();
+      const rawVoices = vData.voices || [];
+
+      // Check subscription quota
+      let subscription = null;
+      try {
+        const subRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+          headers: { 'xi-api-key': elevenKey }
+        });
+        if (subRes.ok) {
+          subscription = await subRes.json();
+        }
+      } catch {}
+
+      const voices = rawVoices.map(v => {
+        const acc = (v.labels?.accent || '').toLowerCase();
+        const desc = (v.description || '').toLowerCase();
+        const name = (v.name || '').toLowerCase();
+        const isIndian = acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || name.includes('deepika') || name.includes('priya') || name.includes('ravi') || name.includes('kabir') || desc.includes('indian');
+        return {
+          id: v.voice_id,
+          name: v.name,
+          category: v.category || 'premade',
+          accent: v.labels?.accent || (isIndian ? 'Indian' : ''),
+          isIndian: isIndian,
+          preview_url: v.preview_url || ''
+        };
+      });
+
+      const indianVoice = voices.find(v => v.isIndian) || null;
+
+      return json({
+        ok: true,
+        total: voices.length,
+        hasIndianVoice: Boolean(indianVoice),
+        recommendedIndianVoice: indianVoice,
+        subscription: subscription ? {
+          tier: subscription.tier || 'free',
+          character_count: subscription.character_count || 0,
+          character_limit: subscription.character_limit || 10000,
+          status: subscription.status || 'active'
+        } : null,
+        voices: voices
+      });
+    } catch (e) {
+      return json({
+        ok: false,
+        status: 'network_error',
+        message: 'Could not connect to ElevenLabs API: ' + e.message
+      });
+    }
+  }
+
   // ── 10. POST /tts (Humanoid Indian Accent Audio Synthesis) ──────────────────────────────
   if (path === '/tts' && method === 'POST') {
     let body;
@@ -971,61 +1056,125 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     
     // Resolve key from body, header, database KV, or env
     const elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || '').trim();
-    let voiceId = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
+    let requestedVoiceId = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
 
-    if (elevenKey) {
+    if (!elevenKey) {
+      return json({
+        fallback: true,
+        status: 'missing_key',
+        message: 'ElevenLabs API key not configured. Add XI-API-KEY in Admin Settings or Cloudflare ELEVEN_KEY.'
+      });
+    }
+
+    try {
+      // 1. Fetch available voices in user\'s account to validate or pick best Indian voice
+      let accountVoices = [];
+      let accountIndianVoice = null;
       try {
-        if (!voiceId) {
-          // Attempt to find any Indian accent voice in the user's ElevenLabs account library
-          try {
-            const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
-              headers: { 'xi-api-key': elevenKey }
-            });
-            if (vRes.ok) {
-              const vData = await vRes.json();
-              const indianVoice = (vData.voices || []).find(v => {
-                const acc = (v.labels?.accent || '').toLowerCase();
-                const desc = (v.description || '').toLowerCase();
-                const name = (v.name || '').toLowerCase();
-                return acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || desc.includes('indian');
-              });
-              if (indianVoice) {
-                voiceId = indianVoice.voice_id;
-              }
+        const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+          headers: { 'xi-api-key': elevenKey }
+        });
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          accountVoices = vData.voices || [];
+          accountIndianVoice = accountVoices.find(v => {
+            const acc = (v.labels?.accent || '').toLowerCase();
+            const desc = (v.description || '').toLowerCase();
+            const name = (v.name || '').toLowerCase();
+            return acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || name.includes('priya') || name.includes('deepika') || name.includes('ravi') || name.includes('kabir') || desc.includes('indian');
+          });
+        } else if (vRes.status === 401) {
+          return json({
+            fallback: true,
+            status: 'invalid_key',
+            message: 'ElevenLabs API key is invalid or unauthorized.'
+          });
+        }
+      } catch (e) {}
+
+      // 2. Resolve Voice ID:
+      // Priority 1: If requestedVoiceId is in their account, use it.
+      // Priority 2: If user account has an Indian voice, use that!
+      // Priority 3: If requestedVoiceId was provided, test it.
+      // Priority 4: Fall back to first available account voice (Rachel, Adam, etc.) so TTS DOES NOT FAIL.
+      let voiceId = '';
+      let resolvedVoiceName = 'Default';
+
+      if (requestedVoiceId && accountVoices.some(v => v.voice_id === requestedVoiceId)) {
+        voiceId = requestedVoiceId;
+        resolvedVoiceName = accountVoices.find(v => v.voice_id === requestedVoiceId)?.name || 'Custom';
+      } else if (accountIndianVoice) {
+        voiceId = accountIndianVoice.voice_id;
+        resolvedVoiceName = accountIndianVoice.name;
+      } else if (requestedVoiceId) {
+        voiceId = requestedVoiceId;
+        resolvedVoiceName = 'Custom ID';
+      } else if (accountVoices.length > 0) {
+        voiceId = accountVoices[0].voice_id;
+        resolvedVoiceName = accountVoices[0].name;
+      } else {
+        voiceId = 'EtEf6yOMlronn3UoIDrF'; // Ankit
+        resolvedVoiceName = 'Ankit';
+      }
+
+      // 3. Multi-tier model attempts
+      const modelAttempts = [
+        {
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+        },
+        {
+          model_id: 'eleven_turbo_v2_5',
+          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+        },
+        {
+          model_id: 'eleven_flash_v2_5',
+          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+        },
+        {
+          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+        }
+      ];
+
+      let ttsRes = null;
+      let lastErrMsg = '';
+      let lastStatus = 0;
+
+      for (const config of modelAttempts) {
+        try {
+          ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'xi-api-key': elevenKey
+            },
+            body: JSON.stringify({
+              text: text,
+              ...config
+            })
+          });
+          if (ttsRes && ttsRes.ok) break;
+          if (ttsRes) {
+            lastStatus = ttsRes.status;
+            const errTxt = await ttsRes.text().catch(() => '');
+            try {
+              const parsed = JSON.parse(errTxt);
+              lastErrMsg = parsed.detail?.message || parsed.message || errTxt;
+            } catch {
+              lastErrMsg = errTxt;
             }
-          } catch {}
-        }
-
-        // Default to Ankit if still empty
-        if (!voiceId) {
-          voiceId = 'EtEf6yOMlronn3UoIDrF';
-        }
-
-        // Multi-tier model attempts for exact voiceId:
-        // Tier 1: eleven_multilingual_v2 with safe stability & similarity (omits style/boost which fail on custom voices)
-        // Tier 2: eleven_turbo_v2_5 (universal compatibility across all Voice Library & custom voices)
-        // Tier 3: eleven_flash_v2_5 (high speed & low latency across all voices)
-        // Tier 4: Default voice model
-        const modelAttempts = [
-          {
-            model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-          },
-          {
-            model_id: 'eleven_turbo_v2_5',
-            voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-          },
-          {
-            model_id: 'eleven_flash_v2_5',
-            voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-          },
-          {
-            voice_settings: { stability: 0.65, similarity_boost: 0.75 }
           }
-        ];
+        } catch (e) {
+          lastErrMsg = e.message;
+        }
+      }
 
-        let ttsRes = null;
-        for (const config of modelAttempts) {
+      // If requested custom voice failed with 400 (e.g. voice_not_found) and we haven't tried account fallback voice yet:
+      if ((!ttsRes || !ttsRes.ok) && accountVoices.length > 0 && voiceId !== accountVoices[0].voice_id) {
+        const fallbackVoice = accountIndianVoice ? accountIndianVoice.voice_id : accountVoices[0].voice_id;
+        if (fallbackVoice !== voiceId) {
+          voiceId = fallbackVoice;
+          resolvedVoiceName = accountIndianVoice ? accountIndianVoice.name : accountVoices[0].name;
           try {
             ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
               method: 'POST',
@@ -1035,26 +1184,42 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
               },
               body: JSON.stringify({
                 text: text,
-                ...config
+                model_id: 'eleven_multilingual_v2',
+                voice_settings: { stability: 0.65, similarity_boost: 0.75 }
               })
             });
-            if (ttsRes && ttsRes.ok) break;
           } catch (e) {}
         }
+      }
 
-        if (ttsRes && ttsRes.ok) {
-          const audioBuffer = await ttsRes.arrayBuffer();
-          return new Response(audioBuffer, {
-            headers: {
-              'Content-Type': 'audio/mpeg',
-              'Access-Control-Allow-Origin': '*'
-            }
-          });
-        }
-      } catch (e) {}
+      if (ttsRes && ttsRes.ok) {
+        const audioBuffer = await ttsRes.arrayBuffer();
+        return new Response(audioBuffer, {
+          headers: {
+            'Content-Type': 'audio/mpeg',
+            'x-eleven-voice': resolvedVoiceName,
+            'x-eleven-voice-id': voiceId,
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id'
+          }
+        });
+      }
+
+      // If ElevenLabs returned an error (quota, etc.)
+      return json({
+        fallback: true,
+        status: lastStatus === 429 ? 'quota_exceeded' : (lastStatus === 401 ? 'invalid_key' : 'eleven_error'),
+        statusCode: lastStatus,
+        message: lastErrMsg ? `ElevenLabs error (${lastStatus}): ${lastErrMsg}` : 'ElevenLabs synthesis failed. Using browser Indian voice.'
+      });
+
+    } catch (e) {
+      return json({
+        fallback: true,
+        status: 'error',
+        message: 'ElevenLabs request failed: ' + e.message
+      });
     }
-
-    return json({ fallback: true, message: 'Neural client-side synthesis active (Indian English en-IN)' });
   }
 
   return err('Route not found', 404);

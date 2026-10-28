@@ -187,7 +187,8 @@ async function speak(text, btn = null) {
     activeSpeechButton = targetBtn;
   }
 
-  const savedElevenKey = ($('#admin-eleven-key')?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
+  const rawKey = ($('#admin-eleven-key')?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
+  const effectiveKey = (rawKey && rawKey !== 'configured') ? rawKey : '';
   const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Indian Accent API
@@ -196,11 +197,11 @@ async function speak(text, btn = null) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(savedElevenKey ? { 'xi-api-key': savedElevenKey } : {})
+        ...(effectiveKey ? { 'xi-api-key': effectiveKey } : {})
       },
       body: JSON.stringify({
         text: text,
-        apiKey: savedElevenKey,
+        apiKey: effectiveKey,
         voiceId: savedVoiceId,
         accent: 'indian'
       })
@@ -212,6 +213,8 @@ async function speak(text, btn = null) {
       const audioUrl = URL.createObjectURL(audioBlob);
       currentTtsAudio = new Audio(audioUrl);
 
+      const activeVoiceName = res.headers.get('x-eleven-voice') || 'Studio Indian Accent';
+
       currentTtsAudio.onended = () => {
         stopAllVoice();
       };
@@ -220,15 +223,36 @@ async function speak(text, btn = null) {
         fallbackIndianNeuralSpeech(text, targetBtn);
       };
 
+      if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+        const testStatus = $('#admin-tts-test-status');
+        if (testStatus) {
+          testStatus.textContent = `✅ Playing ElevenLabs (${activeVoiceName})!`;
+          testStatus.style.color = 'var(--accent-green, #10b981)';
+        }
+      }
+
       await currentTtsAudio.play();
       return;
     } else {
       let errInfo = '';
+      let errStatus = '';
       try {
         const errJson = await res.json();
-        errInfo = errJson.error || errJson.details || errJson.message || '';
+        errInfo = errJson.message || errJson.error || errJson.details || '';
+        errStatus = errJson.status || '';
       } catch (e) {}
-      if (errInfo) console.warn('TTS response non-audio:', res.status, errInfo);
+
+      if (errInfo) {
+        console.warn('ElevenLabs TTS response info:', res.status, errInfo);
+        if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+          const testStatus = $('#admin-tts-test-status');
+          if (testStatus) {
+            testStatus.textContent = `⚠️ Fallback to Browser Indian Voice (${errInfo})`;
+            testStatus.style.color = 'var(--accent-amber, #f59e0b)';
+          }
+          showToast(`⚠️ ElevenLabs: ${errInfo}`, 5000);
+        }
+      }
     }
   } catch (err) {
     console.warn('ElevenLabs Indian TTS API unreachable, falling back to Indian neural voice:', err);
@@ -265,15 +289,22 @@ function fallbackIndianNeuralSpeech(text, targetBtn) {
       || voices.find(v => v.lang.toLowerCase().includes('in') && v.lang.toLowerCase().startsWith('en'))
       || voices.find(v => {
         const n = v.name.toLowerCase();
-        return n.includes('india') || n.includes('heera') || n.includes('neerja') || n.includes('ravi') || n.includes('prabhat') || n.includes('veena') || n.includes('kavita');
+        return n.includes('india') || n.includes('heera') || n.includes('neerja') || n.includes('ravi') || n.includes('prabhat') || n.includes('veena') || n.includes('kavita') || n.includes('aarav') || n.includes('ananya');
       })
-      || voices.find(v => v.lang.startsWith('en'));
+      // Bilingual Indian voices (Hindi) that speak accented English natively
+      || voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi_IN')
+      || voices.find(v => {
+        const n = v.name.toLowerCase();
+        return n.includes('hindi') || n.includes('kalpana') || n.includes('hemant');
+      });
 
     if (indianVoice) {
       utt.voice = indianVoice;
-      if (indianVoice.lang.startsWith('en')) {
-        utt.lang = indianVoice.lang;
-      }
+      utt.lang = 'en-IN';
+    } else {
+      // If no explicit Indian voice pack installed, KEEP utt.lang = 'en-IN'
+      // DO NOT force utt.voice to American David or Zira!
+      utt.lang = 'en-IN';
     }
   }
 
@@ -6177,15 +6208,86 @@ function initAdminWorkspace() {
     geminiInput.addEventListener('change', persistGemini);
   }
 
+  // ElevenLabs Voice Verification & Loader
+  const verifyAndLoadElevenVoices = async (silent = false) => {
+    const statusEl = $('#admin-eleven-status');
+    const selectEl = $('#admin-eleven-voice-select');
+    const hintEl = $('#admin-eleven-voice-hint');
+    const customVoiceInput = $('#admin-eleven-voice');
+    const keyVal = (elevenInput?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
+    const effectiveKey = (keyVal && keyVal !== 'configured') ? keyVal : '';
+
+    if (statusEl && !silent) {
+      statusEl.innerHTML = '<span style="color:var(--accent-cyan);">⏳ Verifying ElevenLabs credentials & voices...</span>';
+    }
+
+    try {
+      const res = await fetch('/api/tts/voices' + (effectiveKey ? `?key=${encodeURIComponent(effectiveKey)}` : ''), {
+        headers: effectiveKey ? { 'xi-api-key': effectiveKey } : {}
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        const quotaStr = data.subscription ? ` · Quota: ${data.subscription.character_count?.toLocaleString() || 0} / ${data.subscription.character_limit?.toLocaleString() || 10000} chars` : '';
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ ElevenLabs Connected (${data.total || 0} voices available${quotaStr})</span>`;
+        }
+
+        if (selectEl && Array.isArray(data.voices)) {
+          selectEl.innerHTML = '<option value="">-- Auto-detect Best Indian Voice in Account --</option>';
+          const savedVoice = (customVoiceInput?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
+
+          data.voices.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            const badge = v.isIndian ? '✨ [Indian Accent] ' : '';
+            opt.textContent = `${badge}${v.name} (${v.accent || v.category || 'voice'})`;
+            if (savedVoice && (savedVoice === v.id || savedVoice === v.name)) {
+              opt.selected = true;
+            }
+            selectEl.appendChild(opt);
+          });
+
+          if (data.hasIndianVoice) {
+            if (hintEl) {
+              hintEl.style.display = 'block';
+              hintEl.style.color = 'var(--accent-green, #10b981)';
+              hintEl.textContent = `🎯 Indian Voice Active: "${data.recommendedIndianVoice.name}" ready for studio synthesis!`;
+            }
+          } else {
+            if (hintEl) {
+              hintEl.style.display = 'block';
+              hintEl.style.color = 'var(--accent-amber, #f59e0b)';
+              hintEl.innerHTML = `💡 <strong>Authentic Indian Accent:</strong> In your ElevenLabs account, go to <strong>Voice Library</strong>, search <em>'Ankit'</em> or <em>'Aditi'</em>, click <strong>'Add to VoiceLab'</strong>, then click Verify here.`;
+            }
+          }
+        }
+
+        if (!silent) showToast('✅ ElevenLabs verified successfully!');
+      } else {
+        const errMsg = data.message || 'ElevenLabs key not active.';
+        if (statusEl) {
+          statusEl.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">⚠️ ${escapeHtml(errMsg)} (Fallback: Browser Indian en-IN active)</span>`;
+        }
+        if (!silent) showToast(`⚠️ ElevenLabs: ${errMsg}`);
+      }
+    } catch (err) {
+      if (statusEl && !silent) {
+        statusEl.innerHTML = `<span style="color:var(--accent-magenta, #ff2a85);">⚠️ Could not reach ElevenLabs: ${escapeHtml(err.message)}</span>`;
+      }
+    }
+  };
+
   if (elevenInput) {
     const savedEleven = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
-    elevenInput.value = savedEleven;
+    if (savedEleven && savedEleven !== 'configured') {
+      elevenInput.value = savedEleven;
+    }
     const persistEleven = () => {
       const v = elevenInput.value.trim();
-      if (v) {
-        localStorage.setItem('cf_eleven_key', v);
-        STATE.config.eleven_key = v;
-      }
+      localStorage.setItem('cf_eleven_key', v);
+      STATE.config.eleven_key = v;
     };
     elevenInput.addEventListener('input', persistEleven);
     elevenInput.addEventListener('change', persistEleven);
@@ -6196,28 +6298,37 @@ function initAdminWorkspace() {
     elevenVoiceInput.value = savedVoice;
     const persistVoice = () => {
       const v = elevenVoiceInput.value.trim();
-      if (v) {
-        localStorage.setItem('cf_eleven_voice', v);
-        STATE.config.eleven_voice = v;
-      }
+      localStorage.setItem('cf_eleven_voice', v);
+      STATE.config.eleven_voice = v;
     };
     elevenVoiceInput.addEventListener('input', persistVoice);
     elevenVoiceInput.addEventListener('change', persistVoice);
   }
+
+  $('#admin-eleven-voice-select')?.addEventListener('change', function() {
+    const v = this.value;
+    if (elevenVoiceInput) {
+      elevenVoiceInput.value = v;
+      localStorage.setItem('cf_eleven_voice', v);
+      STATE.config.eleven_voice = v;
+    }
+  });
+
+  $('#btn-verify-eleven')?.addEventListener('click', () => {
+    verifyAndLoadElevenVoices(false);
+  });
 
   // Save AI Credentials & Backup Keys Pool
   $('#btn-save-ai')?.addEventListener('click', async () => {
     const geminiKeys = ($('#admin-gemini-key')?.value || '').trim();
     const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
     const elevenVoice = ($('#admin-eleven-voice')?.value || '').trim();
-    if (elevenKey) {
-      localStorage.setItem('cf_eleven_key', elevenKey);
-      STATE.config.eleven_key = elevenKey;
-    }
-    if (elevenVoice) {
-      localStorage.setItem('cf_eleven_voice', elevenVoice);
-      STATE.config.eleven_voice = elevenVoice;
-    }
+    
+    localStorage.setItem('cf_eleven_key', elevenKey);
+    STATE.config.eleven_key = elevenKey;
+    localStorage.setItem('cf_eleven_voice', elevenVoice);
+    STATE.config.eleven_voice = elevenVoice;
+    
     if (geminiKeys) {
       STATE.config.gemini_keys = geminiKeys;
       STATE.config.gemini_key = geminiKeys;
@@ -6233,16 +6344,29 @@ function initAdminWorkspace() {
       eleven_voice: elevenVoice
     });
     showToast('AI & Indian Voice Credentials saved successfully');
+    verifyAndLoadElevenVoices(true);
   });
 
   // Test Humanoid Voice button in Admin - tests the EXACT configured Voice ID directly
   $('#btn-test-tts-voice')?.addEventListener('click', async function() {
+    const testStatus = $('#admin-tts-test-status');
+    if (testStatus) {
+      testStatus.textContent = '🔊 Synthesizing live voice test...';
+      testStatus.style.color = 'var(--accent-cyan)';
+    }
     const customVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
     const testText = customVoiceId
-      ? `Hello! This is a live voice test using your configured voice ID: ${customVoiceId}. Every career pathway speaks with clarity and confidence.`
+      ? `Hello! This is a live voice test using voice ID: ${customVoiceId}. Every career pathway speaks with clarity and confidence.`
       : "Welcome to the English Careers Forum 2026. This voice test demonstrates authentic Indian English pronunciation for all thirty-two careers.";
     await speak(testText, this);
   });
+
+  // Auto-verify ElevenLabs voices on admin load if key exists
+  setTimeout(() => {
+    if (localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || STATE.config.has_eleven_key) {
+      verifyAndLoadElevenVoices(true);
+    }
+  }, 400);
 
   // Broadcast settings save
   $('#btn-save-broadcast')?.addEventListener('click', async () => {
@@ -6630,11 +6754,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchApi('admin/config', 'PUT', { gemini_keys: localGemini, gemini_key: localGemini.split(/[\r\n,]+/)[0].trim() });
     }
 
-    if (cfg.eleven_key) {
+    if (cfg.eleven_key && cfg.eleven_key !== 'configured') {
       STATE.config.eleven_key = cfg.eleven_key;
       localStorage.setItem('cf_eleven_key', cfg.eleven_key);
-    } else if (localElevenKey) {
+    } else if (localElevenKey && localElevenKey !== 'configured') {
       STATE.config.eleven_key = localElevenKey;
+    } else if (cfg.has_eleven_key) {
+      STATE.config.has_eleven_key = true;
     }
 
     if (cfg.eleven_voice) {
