@@ -6235,13 +6235,15 @@ function initAdminWorkspace() {
         }
 
         if (selectEl && Array.isArray(data.voices)) {
-          selectEl.innerHTML = '<option value="">-- Auto-detect Best Indian Voice in Account --</option>';
+          selectEl.innerHTML = '<option value="">-- Auto-detect Best Voice (Auto-Heal Active) --</option>';
           const savedVoice = (customVoiceInput?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
           data.voices.forEach(v => {
             const opt = document.createElement('option');
             opt.value = v.id;
-            const badge = v.isIndian ? '✨ [Indian Accent] ' : '';
+            let badge = '';
+            if (v.isIndian) badge = '✨ [Indian Accent - VoiceLab] ';
+            else if (v.category === 'premade') badge = '🟢 [Free API Ready] ';
             opt.textContent = `${badge}${v.name} (${v.accent || v.category || 'voice'})`;
             if (savedVoice && (savedVoice === v.id || savedVoice === v.name)) {
               opt.selected = true;
@@ -6249,18 +6251,10 @@ function initAdminWorkspace() {
             selectEl.appendChild(opt);
           });
 
-          if (data.hasIndianVoice) {
-            if (hintEl) {
-              hintEl.style.display = 'block';
-              hintEl.style.color = 'var(--accent-green, #10b981)';
-              hintEl.textContent = `🎯 Indian Voice Active: "${data.recommendedIndianVoice.name}" ready for studio synthesis!`;
-            }
-          } else {
-            if (hintEl) {
-              hintEl.style.display = 'block';
-              hintEl.style.color = 'var(--accent-amber, #f59e0b)';
-              hintEl.innerHTML = `💡 <strong>Authentic Indian Accent:</strong> In your ElevenLabs account, go to <strong>Voice Library</strong>, search <em>'Ankit'</em> or <em>'Aditi'</em>, click <strong>'Add to VoiceLab'</strong>, then click Verify here.`;
-            }
+          if (hintEl) {
+            hintEl.style.display = 'block';
+            hintEl.innerHTML = `💡 <strong>ElevenLabs API Notice:</strong> Community voices (e.g. <em>Aditi</em>) require an ElevenLabs Starter subscription for API access. On the Free tier, our backend auto-heals by streaming studio-quality premade voices (e.g. <em>Sarah, Rachel, Alice</em>) with Multilingual v2, or you can select a 🟢 [Free API Ready] voice above!`;
+            hintEl.style.color = 'var(--accent-cyan)';
           }
         }
 

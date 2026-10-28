@@ -1018,6 +1018,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
           id: v.voice_id,
           name: v.name,
           category: v.category || 'premade',
+          isPremade: (v.category === 'premade' || !v.category),
           accent: v.labels?.accent || (isIndian ? 'Indian' : ''),
           isIndian: isIndian,
           preview_url: v.preview_url || ''
@@ -1169,14 +1170,18 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
       }
 
-      // If requested custom voice failed with 400 (e.g. voice_not_found) and we haven't tried account fallback voice yet:
-      if ((!ttsRes || !ttsRes.ok) && accountVoices.length > 0 && voiceId !== accountVoices[0].voice_id) {
-        const fallbackVoice = accountIndianVoice ? accountIndianVoice.voice_id : accountVoices[0].voice_id;
-        if (fallbackVoice !== voiceId) {
-          voiceId = fallbackVoice;
-          resolvedVoiceName = accountIndianVoice ? accountIndianVoice.name : accountVoices[0].name;
+      // Auto-Heal for 402 (Free user library voice restriction) or 400 (voice_not_found):
+      // If a library voice was rejected because user is on ElevenLabs Free Tier, auto-switch to their account's premade voice
+      if ((!ttsRes || !ttsRes.ok) && accountVoices.length > 0) {
+        const premadeVoice = accountVoices.find(v => v.category === 'premade' && v.voice_id !== voiceId)
+          || accountVoices.find(v => v.voice_id !== voiceId)
+          || accountVoices[0];
+
+        if (premadeVoice && premadeVoice.voice_id !== voiceId) {
+          const fallbackVoiceId = premadeVoice.voice_id;
+          const fallbackVoiceName = premadeVoice.name;
           try {
-            ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+            const fallbackRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${fallbackVoiceId}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1188,6 +1193,18 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
                 voice_settings: { stability: 0.65, similarity_boost: 0.75 }
               })
             });
+            if (fallbackRes && fallbackRes.ok) {
+              const audioBuffer = await fallbackRes.arrayBuffer();
+              return new Response(audioBuffer, {
+                headers: {
+                  'Content-Type': 'audio/mpeg',
+                  'x-eleven-voice': `${fallbackVoiceName} (Studio Free-Tier Voice)`,
+                  'x-eleven-voice-id': fallbackVoiceId,
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id'
+                }
+              });
+            }
           } catch (e) {}
         }
       }
