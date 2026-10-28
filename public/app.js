@@ -2155,35 +2155,451 @@ function drawSpiderRadar(scores) {
 }
 
 // ─── 7. NEWS ANCHOR & TELEPROMPTER STUDIO ─────────────────────────────────────
-let teleprompterInterval = null;
+let teleprompterState = {
+  initialized: false,
+  isRecording: false,
+  isCameraOn: false,
+  isPrompterPaused: false,
+  currentSpeed: 2.4, // px per frame
+  tickerOffset: 0,
+  prompterAnimId: null,
+  idleAnimId: null,
+  recordTimer: null,
+  recordSeconds: 0,
+  mediaRecorder: null,
+  recordedChunks: [],
+  lastBlobUrl: null,
+  lastFileName: null,
+  cameraStream: null
+};
 
 function initTeleprompter() {
   const cameraBtn = $('#btn-start-camera');
   const scrollBtn = $('#btn-scroll-teleprompter');
   const recordBtn = $('#btn-record-anchor');
+  const downloadBtn = $('#btn-download-clip');
   const scriptSelect = $('#anchor-script-select');
   const nameInput = $('#anchor-name-input');
+  const video = $('#anchor-video');
+  const canvas = $('#anchor-idle-canvas');
+  const track = $('#teleprompter-track');
+  const s1 = $('#teleprompter-sentence-1');
+  const s2 = $('#teleprompter-sentence-2');
+  const speedSlow = $('#speed-slow');
+  const speedNormal = $('#speed-normal');
+  const speedFast = $('#speed-fast');
+  const lowerTag = $('#lower-third-tag');
+  const lowerCopy = $('#lower-third-copy');
 
   const SCRIPTS = {
-    breaking: "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery.",
-    pilot: "Tower, Air India 102 heavy ready for departure runway 27 Right, request immediate radar climb out to flight level 320 on course to London Heathrow.",
-    doctor: "Code blue in trauma bay two. Prepare rapid sequence intubation, cross-match four units of O-negative blood, and notify the attending pediatric trauma specialist immediately.",
-    tech: "Our distributed microservices latency spiked following the morning database migration. We have isolated the lock contention and are rolling forward the zero-downtime hotfix.",
-    pitch: "Ninety percent of students choose careers based on familiar stereotypes. Our platform bridges the vocabulary and confidence gap, unlocking top global careers through articulate spoken English."
+    breaking: {
+      tag: "BREAKING NEWS",
+      role: "Media Anchor",
+      text: "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how articulate English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+    },
+    pilot: {
+      tag: "FLIGHT DECK ATC",
+      role: "Commercial Pilot",
+      text: "Mumbai Radar, Air India 102 Heavy is holding short runway 27 Right, ready for immediate departure, climbing out to flight level 340 on course to London Heathrow via direct waypoint ARNAN."
+    },
+    doctor: {
+      tag: "TRAUMA CODE BLUE",
+      role: "Chief Trauma Surgeon",
+      text: "Code Blue in Trauma Bay Two. Prepare rapid sequence intubation, cross-match four units of O-negative packed red cells, and notify the pediatric neurosurgery team for immediate surgical intervention."
+    },
+    lawyer: {
+      tag: "SUPREME COURT BENCH",
+      role: "Senior Advocate",
+      text: "May it please Your Lordships, Article 21 guarantees not merely biological existence, but a dignified life encompassing environmental protection and digital privacy as inalienable fundamental rights under constitutional jurisprudence."
+    },
+    diplomat: {
+      tag: "UN GENERAL ASSEMBLY",
+      role: "Chief Diplomat",
+      text: "Distinguished delegates, the climate emergency recognizes neither national borders nor economic status. We call upon all sovereign member states to ratify the binding 2030 decarbonization framework without reservation."
+    },
+    rocket: {
+      tag: "MISSION CONTROL",
+      role: "Flight Director",
+      text: "All flight controllers, this is Mission Control. We are T-minus 20 seconds and counting. Guidance internal, propellant chilldown verified, main engine ignition sequence start... three, two, one, liftoff of the Artemis deep-space mission!"
+    },
+    cricket: {
+      tag: "WORLD CUP FINAL",
+      role: "Sports Broadcaster",
+      text: "Six needed off the final delivery! The bowler steams in from the pavilion end, bowls a yorker right in the slot, lofted cleanly over extra cover, that is sailing into the stands! What a sensational victory for India!"
+    },
+    ciso: {
+      tag: "CYBER DEFENSE SOC",
+      role: "Chief InfoSec Officer",
+      text: "Security Operations Command update: we detected anomalous credential stuffing against our perimeter gateways. Zero-trust token revocation has executed successfully, all session tokens are rotated, and database isolation remains fully intact."
+    },
+    tech: {
+      tag: "SYSTEM ARCHITECTURE",
+      role: "Tech Lead",
+      text: "Our microservices event bus processed forty-eight million concurrent transactions with sub-five-millisecond p99 latency during peak load, proving our zero-downtime distributed consensus architecture is battle-ready."
+    },
+    pitch: {
+      tag: "SILICON VALLEY PITCH",
+      role: "Startup Founder",
+      text: "Ninety percent of global enterprise communication is hindered by fragmented vocabulary and language hesitation. Our AI real-time fluency engine is solving this fifty-billion-dollar bottleneck with eighty percent month-over-month growth."
+    },
+    wildlife: {
+      tag: "NAT GEO EXPEDITION",
+      role: "Wildlife Biologist",
+      text: "Broadcasting from the heart of the Sundarbans mangrove delta. We are tracking a Bengal tigress through the tidal creeks, documenting how rising sea levels are altering keystone predator hunting corridors."
+    },
+    banker: {
+      tag: "WALL STREET M&A",
+      role: "Investment Banker",
+      text: "The special committee has unanimously approved the twelve-billion-dollar definitive merger agreement. The combined balance sheet unlocks substantial operational synergies and cements market leadership across Asia-Pacific."
+    },
+    chef: {
+      tag: "MICHELIN KITCHEN",
+      role: "Executive Chef",
+      text: "Service please! Table four ordering the roasted langoustine with caviar emulsion and white truffle reduction. Check temperatures on the duck breasts, plate with absolute precision, and hold the sauces until pass!"
+    },
+    pr: {
+      tag: "GLOBAL PRESS BRIEFING",
+      role: "PR Director",
+      text: "Good afternoon ladies and gentlemen of the press. We take full accountability for yesterday's supply chain disruption. We have dispatched regional task forces, compensated affected consumers, and initiated an independent external forensic audit."
+    },
+    f1: {
+      tag: "F1 PIT WALL RADIO",
+      role: "Race Strategist",
+      text: "Box, box, box! Box this lap for fresh soft compound tires. Rain is approaching Turn 7 in three minutes, undercut window is open against Car 44, execute a sub-two-second stop and push on the out-lap!"
+    },
+    ocean: {
+      tag: "DEEP SEA EXPEDITION",
+      role: "Marine Geologist",
+      text: "Submersible Alvin descending through the hadal zone at nine thousand meters depth. Sonar telemetry reveals hydrothermal venting minerals and bioluminescent fauna never before cataloged in modern marine science."
+    }
   };
 
+  // Helper to update displayed script and lower-third copy
+  const applyScript = key => {
+    const data = SCRIPTS[key] || SCRIPTS.breaking;
+    if (s1) s1.textContent = `"${data.text}"`;
+    if (s2) s2.textContent = `"${data.text}"`;
+    if (lowerTag) lowerTag.textContent = data.tag;
+    const nameVal = nameInput?.value.trim() || 'STUDENT';
+    if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · ${data.role.toUpperCase()} · KANAKIA INTERNATIONAL SCHOOL`;
+    teleprompterState.tickerOffset = 0;
+    if (track) track.style.transform = 'translateX(0px)';
+  };
+
+  // 1. Moving Sentence Teleprompter Engine
+  const runMovingPrompter = () => {
+    if (teleprompterState.prompterAnimId) cancelAnimationFrame(teleprompterState.prompterAnimId);
+
+    const step = () => {
+      if (!teleprompterState.isPrompterPaused && track && s1) {
+        teleprompterState.tickerOffset -= teleprompterState.currentSpeed;
+        const s1Width = s1.offsetWidth;
+        const sepWidth = 64; // approximate margin + separator width
+        const resetThreshold = s1Width + sepWidth;
+        if (Math.abs(teleprompterState.tickerOffset) >= resetThreshold) {
+          teleprompterState.tickerOffset += resetThreshold;
+        }
+        track.style.transform = `translateX(${teleprompterState.tickerOffset}px)`;
+      }
+      teleprompterState.prompterAnimId = requestAnimationFrame(step);
+    };
+    teleprompterState.prompterAnimId = requestAnimationFrame(step);
+  };
+
+  // 2. Cool Animated Studio Backdrop (Active when camera is off)
+  const runStudioCanvasAnimation = () => {
+    if (!canvas) return;
+    if (teleprompterState.idleAnimId) cancelAnimationFrame(teleprompterState.idleAnimId);
+
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1280;
+    canvas.height = 720;
+
+    let globeAngle = 0;
+    let spotlightPhase = 0;
+    const particles = [];
+    for (let i = 0; i < 45; i++) {
+      particles.push({
+        x: Math.random() * 1280,
+        y: Math.random() * 720,
+        r: Math.random() * 2 + 1,
+        vy: Math.random() * 0.7 + 0.3,
+        alpha: Math.random() * 0.7 + 0.3
+      });
+    }
+
+    const drawFrame = () => {
+      if (teleprompterState.isCameraOn) return; // paused when camera is active
+
+      ctx.clearRect(0, 0, 1280, 720);
+
+      // Deep studio background
+      const bgGrad = ctx.createRadialGradient(640, 240, 50, 640, 360, 750);
+      bgGrad.addColorStop(0, '#0c1630');
+      bgGrad.addColorStop(0.5, '#070c1d');
+      bgGrad.addColorStop(1, '#020409');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1280, 720);
+
+      // Studio Spotlight Beams
+      spotlightPhase += 0.015;
+      const spotLeftX = 640 + Math.sin(spotlightPhase) * 260;
+      const spotRightX = 640 - Math.cos(spotlightPhase) * 260;
+
+      // Left beam (cyan)
+      const gradLeft = ctx.createLinearGradient(120, 0, spotLeftX, 720);
+      gradLeft.addColorStop(0, 'rgba(0, 240, 255, 0.22)');
+      gradLeft.addColorStop(0.5, 'rgba(0, 240, 255, 0.07)');
+      gradLeft.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      ctx.fillStyle = gradLeft;
+      ctx.beginPath();
+      ctx.moveTo(80, 0);
+      ctx.lineTo(160, 0);
+      ctx.lineTo(spotLeftX + 90, 720);
+      ctx.lineTo(spotLeftX - 90, 720);
+      ctx.closePath();
+      ctx.fill();
+
+      // Right beam (magenta)
+      const gradRight = ctx.createLinearGradient(1160, 0, spotRightX, 720);
+      gradRight.addColorStop(0, 'rgba(255, 42, 133, 0.2)');
+      gradRight.addColorStop(0.5, 'rgba(255, 42, 133, 0.06)');
+      gradRight.addColorStop(1, 'rgba(255, 42, 133, 0)');
+      ctx.fillStyle = gradRight;
+      ctx.beginPath();
+      ctx.moveTo(1120, 0);
+      ctx.lineTo(1200, 0);
+      ctx.lineTo(spotRightX + 90, 720);
+      ctx.lineTo(spotRightX - 90, 720);
+      ctx.closePath();
+      ctx.fill();
+
+      // Ground Perspective Floor Grid
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)';
+      ctx.lineWidth = 1;
+      const horizonY = 500;
+      for (let y = horizonY; y <= 720; y += 22 + (y - horizonY) * 0.18) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(1280, y);
+        ctx.stroke();
+      }
+      for (let x = -200; x <= 1480; x += 110) {
+        ctx.beginPath();
+        ctx.moveTo(640 + (x - 640) * 0.15, horizonY);
+        ctx.lineTo(x, 720);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Floating dust particles
+      ctx.save();
+      for (let p of particles) {
+        p.y -= p.vy;
+        if (p.y < 0) {
+          p.y = 720;
+          p.x = Math.random() * 1280;
+        }
+        ctx.fillStyle = `rgba(0, 240, 255, ${p.alpha * 0.7})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Rotating 3D Holographic Globe
+      globeAngle += 0.012;
+      const cx = 640;
+      const cy = 350;
+      const R = 135;
+
+      ctx.save();
+      // Outer atmosphere halo
+      const globeGlow = ctx.createRadialGradient(cx, cy, R * 0.6, cx, cy, R * 1.3);
+      globeGlow.addColorStop(0, 'rgba(0, 240, 255, 0.25)');
+      globeGlow.addColorStop(0.8, 'rgba(0, 240, 255, 0.08)');
+      globeGlow.addColorStop(1, 'rgba(0, 240, 255, 0)');
+      ctx.fillStyle = globeGlow;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R * 1.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Globe sphere outline
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Latitudinal rings
+      const lats = [-55, -30, 0, 30, 55];
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+      ctx.lineWidth = 1.2;
+      lats.forEach(deg => {
+        const rad = deg * Math.PI / 180;
+        const latY = cy + Math.sin(rad) * R;
+        const latR = Math.cos(rad) * R;
+        ctx.beginPath();
+        ctx.ellipse(cx, latY, latR, latR * 0.28, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // Rotating Longitudinal meridians
+      for (let m = 0; m < 8; m++) {
+        const offset = globeAngle + (m * Math.PI / 4);
+        const radiusX = Math.cos(offset) * R;
+        ctx.strokeStyle = m % 2 === 0 ? 'rgba(0, 240, 255, 0.65)' : 'rgba(255, 42, 133, 0.5)';
+        ctx.lineWidth = m % 2 === 0 ? 1.5 : 1;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, Math.abs(radiusX), R, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // Outer tilted orbit ring & orbiting node
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, R * 1.5, R * 0.45, -0.28, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const satX = cx + Math.cos(globeAngle * 1.8) * (R * 1.5) * Math.cos(-0.28) - Math.sin(globeAngle * 1.8) * (R * 0.45) * Math.sin(-0.28);
+      const satY = cy + Math.cos(globeAngle * 1.8) * (R * 1.5) * Math.sin(-0.28) + Math.sin(globeAngle * 1.8) * (R * 0.45) * Math.cos(-0.28);
+      ctx.fillStyle = '#ff2a85';
+      ctx.shadowColor = '#ff2a85';
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(satX, satY, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // Audio Frequency Spectrum Equalizer Bars
+      ctx.save();
+      const numBars = 36;
+      const barWidth = 14;
+      const gap = 8;
+      const startX = cx - ((numBars * (barWidth + gap)) / 2);
+      const baseY = 670;
+      const now = Date.now() * 0.005;
+
+      for (let b = 0; b < numBars; b++) {
+        const h = Math.abs(Math.sin(now + b * 0.38)) * 36 + Math.abs(Math.cos(now * 1.4 + b * 0.2)) * 22 + 8;
+        const x = startX + b * (barWidth + gap);
+        const gradBar = ctx.createLinearGradient(0, baseY - h, 0, baseY);
+        gradBar.addColorStop(0, '#00f0ff');
+        gradBar.addColorStop(1, 'rgba(181, 23, 158, 0.7)');
+        ctx.fillStyle = gradBar;
+        ctx.fillRect(x, baseY - h, barWidth, h);
+      }
+      ctx.restore();
+
+      // Studio HUD Telemetry Overlay
+      ctx.save();
+      ctx.font = '700 13px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#00f0ff';
+      ctx.fillText('● STUDIO ON-AIR STANDBY  |  1080P 60FPS', 40, 110);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.font = '600 12px "Space Grotesk", sans-serif';
+      const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+      ctx.fillText(`KANAKIA MEDIA LAB · UTC ${timeStr}`, 980, 110);
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.font = '700 14px "Space Grotesk", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('READY TO BROADCAST — CLICK "LAUNCH CAMERA" OR "RECORD BROADCAST CLIP"', 640, 520);
+      ctx.restore();
+
+      teleprompterState.idleAnimId = requestAnimationFrame(drawFrame);
+    };
+
+    teleprompterState.idleAnimId = requestAnimationFrame(drawFrame);
+  };
+
+  // Start prompter & studio canvas immediately
+  applyScript(scriptSelect?.value || 'breaking');
+  runMovingPrompter();
+  if (!teleprompterState.isCameraOn) {
+    runStudioCanvasAnimation();
+  }
+
+  // Prevent multiple bindings if initTeleprompter is called on tab switches
+  if (teleprompterState.initialized) return;
+  teleprompterState.initialized = true;
+
+  // 3. Teleprompter Speed Buttons (Slow, Normal, Fast)
+  const setSpeed = (spd, btn) => {
+    [speedSlow, speedNormal, speedFast].forEach(b => b?.classList.remove('active'));
+    btn?.classList.add('active');
+    if (spd === 'slow') {
+      teleprompterState.currentSpeed = 1.2;
+      showToast('Teleprompter speed set to Slow (Paced Delivery)');
+    } else if (spd === 'normal') {
+      teleprompterState.currentSpeed = 2.4;
+      showToast('Teleprompter speed set to Normal');
+    } else if (spd === 'fast') {
+      teleprompterState.currentSpeed = 4.2;
+      showToast('Teleprompter speed set to Fast (Breaking News Pace)');
+    }
+  };
+
+  speedSlow?.addEventListener('click', () => setSpeed('slow', speedSlow));
+  speedNormal?.addEventListener('click', () => setSpeed('normal', speedNormal));
+  speedFast?.addEventListener('click', () => setSpeed('fast', speedFast));
+
+  // 4. Pause / Resume Scroll Button
+  scrollBtn?.addEventListener('click', () => {
+    teleprompterState.isPrompterPaused = !teleprompterState.isPrompterPaused;
+    const txt = $('#prompter-scroll-btn-text');
+    if (teleprompterState.isPrompterPaused) {
+      if (txt) txt.textContent = 'Resume Teleprompter Scroll';
+      scrollBtn.querySelector('span:first-child').textContent = '▶️';
+      showToast('Teleprompter paused');
+    } else {
+      if (txt) txt.textContent = 'Pause Teleprompter Scroll';
+      scrollBtn.querySelector('span:first-child').textContent = '⏸️';
+      showToast('Teleprompter scrolling resumed');
+    }
+  });
+
+  // 5. Script / Roleplay Dropdown Selection
   scriptSelect?.addEventListener('change', e => {
-    const text = SCRIPTS[e.target.value] || SCRIPTS.breaking;
-    $('#teleprompter-text').textContent = `"${text}"`;
+    applyScript(e.target.value);
   });
 
-  nameInput?.addEventListener('input', e => {
-    const val = e.target.value.trim() || 'STUDENT';
-    $('#lower-third-copy').textContent = `${val.toUpperCase()} · CLASS X · KANAKIA INTERNATIONAL SCHOOL`;
+  // 6. Name input listener
+  nameInput?.addEventListener('input', () => {
+    const scriptKey = scriptSelect?.value || 'breaking';
+    applyScript(scriptKey);
   });
 
+  // 7. Camera Toggle Button (Launch Camera <-> Turn Off Camera)
   cameraBtn?.addEventListener('click', async () => {
-    const video = $('#anchor-video');
+    const camText = $('#camera-btn-text');
+    if (teleprompterState.isCameraOn) {
+      // Turn Off Camera -> Return to cool studio animation
+      if (teleprompterState.cameraStream) {
+        teleprompterState.cameraStream.getTracks().forEach(t => t.stop());
+        teleprompterState.cameraStream = null;
+      }
+      if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+      }
+      if (canvas) canvas.style.display = 'block';
+      teleprompterState.isCameraOn = false;
+      if (camText) camText.textContent = 'Launch Camera / OBS Feed';
+      cameraBtn.querySelector('span:first-child').textContent = '📹';
+      runStudioCanvasAnimation();
+      showToast('Camera turned off. Studio animation backdrop active.');
+      return;
+    }
+
+    // Launch Camera
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -2193,32 +2609,161 @@ function initTeleprompter() {
         },
         audio: true
       });
-      video.srcObject = stream;
+      teleprompterState.cameraStream = stream;
+      if (video) {
+        video.srcObject = stream;
+        video.style.display = 'block';
+      }
+      if (canvas) canvas.style.display = 'none';
+      if (teleprompterState.idleAnimId) {
+        cancelAnimationFrame(teleprompterState.idleAnimId);
+        teleprompterState.idleAnimId = null;
+      }
+      teleprompterState.isCameraOn = true;
+      if (camText) camText.textContent = 'Turn Off Camera';
+      cameraBtn.querySelector('span:first-child').textContent = '📷';
       showToast('Camera feed live! Ready to broadcast.');
     } catch {
-      showToast('Camera device not found or access denied.');
+      showToast('Camera device not found or access denied. Using animated studio background.');
     }
   });
 
-  scrollBtn?.addEventListener('click', () => {
-    const box = $('#teleprompter-box');
-    if (teleprompterInterval) {
-      clearInterval(teleprompterInterval);
-      teleprompterInterval = null;
-      scrollBtn.textContent = '▶️ Resume Scroll';
+  // 8. Recording and Downloading (Toggle Record Clip <-> Stop Recording)
+  recordBtn?.addEventListener('click', async () => {
+    const recText = $('#record-btn-text');
+    const studentName = nameInput?.value.trim();
+
+    // STOP RECORDING
+    if (teleprompterState.isRecording) {
+      clearInterval(teleprompterState.recordTimer);
+      teleprompterState.recordTimer = null;
+      teleprompterState.isRecording = false;
+
+      recordBtn.classList.remove('btn-recording');
+      if (recText) recText.textContent = 'Record Broadcast Clip';
+      recordBtn.querySelector('span:first-child').textContent = '⏺️';
+
+      if (teleprompterState.mediaRecorder && teleprompterState.mediaRecorder.state !== 'inactive') {
+        teleprompterState.mediaRecorder.stop();
+      }
+      showToast('Finalizing broadcast recording...');
       return;
     }
-    scrollBtn.textContent = '⏸️ Pause Scroll';
-    teleprompterInterval = setInterval(() => {
-      box.scrollTop += 1;
-      if (box.scrollTop >= box.scrollHeight - box.clientHeight) {
-        box.scrollTop = 0;
-      }
-    }, 45);
-  });
 
-  recordBtn?.addEventListener('click', () => {
-    showToast('Recording clip... (Demo simulation: records on-device WebM video)');
+    // START RECORDING
+    if (!studentName) {
+      showToast('Please enter your name before recording your broadcast clip!');
+      nameInput?.focus();
+      return;
+    }
+
+    try {
+      let recordStream = null;
+
+      if (teleprompterState.isCameraOn && teleprompterState.cameraStream && teleprompterState.cameraStream.active) {
+        recordStream = teleprompterState.cameraStream;
+      } else if (canvas) {
+        // Record from the animated studio canvas
+        recordStream = canvas.captureStream(30);
+        // Attempt to capture microphone audio for voiceover
+        try {
+          const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const audioTracks = mic.getAudioTracks();
+          if (audioTracks.length > 0) {
+            recordStream = new MediaStream([
+              ...recordStream.getVideoTracks(),
+              ...audioTracks
+            ]);
+          }
+        } catch {
+          // Audio not available, record video only
+        }
+      }
+
+      if (!recordStream) {
+        showToast('Unable to capture broadcast stream.');
+        return;
+      }
+
+      teleprompterState.recordedChunks = [];
+      let supportedMime = '';
+      const mimeCandidates = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+        'video/mp4'
+      ];
+      for (const m of mimeCandidates) {
+        if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) {
+          supportedMime = m;
+          break;
+        }
+      }
+
+      const recorderOptions = supportedMime ? { mimeType: supportedMime } : undefined;
+      const recorder = new MediaRecorder(recordStream, recorderOptions);
+
+      recorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) {
+          teleprompterState.recordedChunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(teleprompterState.recordedChunks, { type: supportedMime || 'video/webm' });
+        const blobUrl = URL.createObjectURL(blob);
+        const safeName = studentName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const fileName = `EnglishCareers_${safeName}_${Date.now()}.webm`;
+
+        teleprompterState.lastBlobUrl = blobUrl;
+        teleprompterState.lastFileName = fileName;
+
+        // 1. Automatic Immediate Download
+        const dlLink = document.createElement('a');
+        dlLink.href = blobUrl;
+        dlLink.download = fileName;
+        document.body.appendChild(dlLink);
+        dlLink.click();
+        document.body.removeChild(dlLink);
+
+        // 2. Reveal dedicated Download Video Clip button
+        if (downloadBtn) {
+          downloadBtn.style.display = 'inline-flex';
+          downloadBtn.onclick = () => {
+            const reDl = document.createElement('a');
+            reDl.href = teleprompterState.lastBlobUrl || blobUrl;
+            reDl.download = teleprompterState.lastFileName || fileName;
+            document.body.appendChild(reDl);
+            reDl.click();
+            document.body.removeChild(reDl);
+            showToast('Downloading saved video clip...');
+          };
+        }
+
+        showToast('✅ Broadcast clip saved! Video downloaded to your device.');
+      };
+
+      recorder.start(250);
+      teleprompterState.mediaRecorder = recorder;
+      teleprompterState.isRecording = true;
+      teleprompterState.recordSeconds = 0;
+
+      recordBtn.classList.add('btn-recording');
+      if (recText) recText.textContent = 'Stop Recording (00:00)';
+      recordBtn.querySelector('span:first-child').textContent = '⏹️';
+
+      teleprompterState.recordTimer = setInterval(() => {
+        teleprompterState.recordSeconds++;
+        const mins = String(Math.floor(teleprompterState.recordSeconds / 60)).padStart(2, '0');
+        const secs = String(teleprompterState.recordSeconds % 60).padStart(2, '0');
+        if (recText) recText.textContent = `Stop Recording (${mins}:${secs})`;
+      }, 1000);
+
+      showToast('🔴 Recording started! Speak clearly and read the moving teleprompter.');
+    } catch (err) {
+      console.error('Recording error:', err);
+      showToast('Recording error: Device permissions or codec unsupported.');
+    }
   });
 }
 

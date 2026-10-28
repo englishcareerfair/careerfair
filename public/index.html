@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=3.7">
+  <link rel="stylesheet" href="styles.css?v=3.8">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.7" defer></script>
+  <script src="app.js?v=3.8" defer></script>
 </head>
 <body>
 
@@ -520,20 +520,36 @@
       <div class="broadcast-stage-grid">
         <!-- Live Video & Broadcast Frame -->
         <div class="video-frame-container" id="video-stage-wrapper">
-          <video class="video-element" id="anchor-video" autoplay playsinline muted></video>
+          <!-- Animated Cyber Newsroom Studio Background (Active when camera is off) -->
+          <canvas class="video-element" id="anchor-idle-canvas"></canvas>
+          <!-- Live Camera Stream Video (Shown when camera is active) -->
+          <video class="video-element" id="anchor-video" autoplay playsinline muted style="display:none;"></video>
           
-          <!-- Auto-scrolling Teleprompter Overlay -->
-          <div class="teleprompter-overlay" id="teleprompter-box">
-            <p id="teleprompter-text">
-              "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
-            </p>
+          <!-- Moving Sentence Teleprompter HUD -->
+          <div class="teleprompter-ticker-container" id="teleprompter-box">
+            <div class="teleprompter-ticker-badge">
+              <span class="teleprompter-live-dot"></span>
+              <span>PROMPTER</span>
+            </div>
+            <div class="teleprompter-ticker-viewport" id="teleprompter-viewport">
+              <div class="teleprompter-ticker-track" id="teleprompter-track">
+                <span class="teleprompter-sentence-text" id="teleprompter-sentence-1">
+                  "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how articulate English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+                </span>
+                <span class="teleprompter-ticker-sep">✦</span>
+                <span class="teleprompter-sentence-text" id="teleprompter-sentence-2">
+                  "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how articulate English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+                </span>
+              </div>
+            </div>
+            <div class="teleprompter-center-guide" title="Eye-level center reading line"></div>
           </div>
 
           <!-- Authentic Lower-Third Broadcast Banner -->
           <div class="news-lower-third" id="news-banner">
-            <span class="lower-third-tag">BREAKING NEWS</span>
+            <span class="lower-third-tag" id="lower-third-tag">BREAKING NEWS</span>
             <div class="lower-third-headline" id="lower-third-copy">
-              STUDENT BROADCAST · CLASS X · KANAKIA INTERNATIONAL SCHOOL
+              STUDENT BROADCAST · KANAKIA INTERNATIONAL SCHOOL
             </div>
           </div>
         </div>
@@ -551,10 +567,21 @@
             <label style="font-size:13px;font-weight:600;">Select Script / Roleplay:</label>
             <select id="anchor-script-select">
               <option value="breaking">Breaking News Bulletin (Media Anchor)</option>
-              <option value="pilot">Aviation ATC Clearance (Commercial Pilot)</option>
-              <option value="doctor">Emergency Medical Briefing (Chief Surgeon)</option>
-              <option value="tech">Software Architecture Standup (Tech Lead)</option>
-              <option value="pitch">30-Second Elevator Pitch (Founder)</option>
+              <option value="pilot">Aviation ATC Clearance (Commercial Airline Captain)</option>
+              <option value="doctor">Emergency Medical Briefing (Chief Trauma Surgeon)</option>
+              <option value="lawyer">Supreme Court Constitutional Argument (Senior Advocate)</option>
+              <option value="diplomat">UN General Assembly Climate Address (Chief Diplomat)</option>
+              <option value="rocket">ISRO / NASA Launch Countdown (Mission Flight Director)</option>
+              <option value="cricket">Cricket World Cup Final Over (Live Sports Broadcaster)</option>
+              <option value="ciso">Cyber Incident Response SOC Standup (CISO)</option>
+              <option value="tech">Distributed Systems Architecture (Chief Technology Officer)</option>
+              <option value="pitch">Silicon Valley Series A Pitch (Startup Founder)</option>
+              <option value="wildlife">Sundarbans Delta Wildlife Tracking (Nat Geo Biologist)</option>
+              <option value="banker">Cross-Border $12B M&A Briefing (Wall Street Banker)</option>
+              <option value="chef">Three-Star Michelin Kitchen Service (Executive Chef)</option>
+              <option value="pr">Corporate Crisis Press Briefing (PR Spokesperson)</option>
+              <option value="f1">Formula 1 Rain Strategy Radio (F1 Race Engineer)</option>
+              <option value="ocean">Deep-Sea Mariana Trench Exploration (Marine Geologist)</option>
             </select>
           </div>
 
@@ -569,13 +596,16 @@
 
           <div style="display:flex;flex-direction:column;gap:10px;">
             <button class="btn btn-primary" id="btn-start-camera" type="button">
-              <span>📹</span> <span>Launch Camera / OBS Feed</span>
+              <span>📹</span> <span id="camera-btn-text">Launch Camera / OBS Feed</span>
             </button>
             <button class="btn btn-accent" id="btn-record-anchor" type="button">
-              <span>⏺️</span> <span>Record Broadcast Clip</span>
+              <span>⏺️</span> <span id="record-btn-text">Record Broadcast Clip</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-download-clip" type="button" style="display:none;">
+              <span>💾</span> <span>Download Video Clip</span>
             </button>
             <button class="btn btn-secondary" id="btn-scroll-teleprompter" type="button">
-              <span>▶️</span> <span>Start Teleprompter Scroll</span>
+              <span>⏸️</span> <span id="prompter-scroll-btn-text">Pause Teleprompter Scroll</span>
             </button>
           </div>
         </div>
