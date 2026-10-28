@@ -1,13 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="forumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#00f0ff" />
-      <stop offset="100%" stop-color="#7928ca" />
+      <stop offset="60%" stop-color="#7209b7" />
+      <stop offset="100%" stop-color="#f72585" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb703" />
+      <stop offset="100%" stop-color="#fb8500" />
     </linearGradient>
   </defs>
+  <!-- Background Shield -->
   <rect width="64" height="64" rx="16" fill="#07090e" />
-  <circle cx="32" cy="32" r="24" fill="none" stroke="url(#grad)" stroke-width="3" opacity="0.3" />
-  <rect x="25" y="16" width="14" height="22" rx="7" fill="url(#grad)" />
-  <path d="M19 28c0 7.2 5.8 13 13 13s13-5.8 13-13" fill="none" stroke="#f3f6ff" stroke-width="3" stroke-linecap="round" />
-  <path d="M32 41v8m-7 0h14" stroke="#f3f6ff" stroke-width="3" stroke-linecap="round" />
+  <path d="M32 6L12 15v18c0 14 8.5 22.5 20 25 11.5-2.5 20-11 20-25V15L32 6z" fill="none" stroke="url(#forumGrad)" stroke-width="2.5" />
+  <!-- Academic Torch & Book / Global Forum Pillars -->
+  <path d="M22 42h20M25 46h14" stroke="#f3f6ff" stroke-width="2" stroke-linecap="round" />
+  <!-- Classical Forum Columns -->
+  <path d="M25 24v14M32 20v18M39 24v14" stroke="url(#forumGrad)" stroke-width="2.5" stroke-linecap="round" />
+  <!-- Pediment / Star -->
+  <polygon points="32,12 36,18 28,18" fill="url(#goldGrad)" />
 </svg>

@@ -172,7 +172,7 @@ export async function onRequest(ctx) {
   // ── 1. GET /config ─────────────────────────────────────────────────────────
   if (path === '/config' && method === 'GET') {
     const pass = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
-    const banner = await kvGet(db, 'banner', 'Welcome to SUPW Career Fair · Explore 32+ Careers Where English Opens Doors!');
+    const banner = await kvGet(db, 'banner', 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!');
     const timer = parseInt(await kvGet(db, 'timer', '0'), 10) || 0;
     const theme = await kvGet(db, 'theme', 'cinematic');
     const school_branding = await kvGet(db, 'school_branding', '1') === '1';
@@ -520,7 +520,7 @@ export async function onRequest(ctx) {
 
     if (geminiKey) {
       try {
-        const fullPrompt = `You are the lead AI Career & English Communication Coach at the SUPW Career Fair for Kanakia International School students.
+        const fullPrompt = `You are the lead AI Career & English Communication Coach at the English Careers Forum 2026 for Kanakia International School students.
 Task: ${task}
 Input text/metrics: ${text} | ${JSON.stringify(metrics)}
 Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance. Highlight strengths, offer one "Say It Better" rewrite, and give 2 clear action points.'}`;
@@ -648,6 +648,44 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         'Access-Control-Allow-Origin': '*'
       }
     });
+  }
+
+  // ── 10. POST /tts (Humanoid Audio Synthesis) ──────────────────────────────
+  if (path === '/tts' && method === 'POST') {
+    let body;
+    try { body = await request.json(); } catch { body = {}; }
+    const text = body.text || 'Welcome to the English Careers Forum 2026 at Kanakia International School. Good English is the universal language that unlocks thirty-two global career pathways.';
+    const elevenKey = (body.apiKey || env.ELEVEN_KEY || '').trim();
+
+    if (elevenKey) {
+      try {
+        const voiceId = body.voiceId || '21m00Tcm4TlvDq8ikWAM'; // Rachel - warm natural humanoid voice
+        const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': elevenKey
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: 'eleven_multilingual_v2',
+            voice_settings: { stability: 0.65, similarity_boost: 0.8 }
+          })
+        });
+
+        if (ttsRes.ok) {
+          const audioBuffer = await ttsRes.arrayBuffer();
+          return new Response(audioBuffer, {
+            headers: {
+              'Content-Type': 'audio/mpeg',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    return json({ fallback: true, message: 'Neural client-side synthesis active' });
   }
 
   return err('Route not found', 404);

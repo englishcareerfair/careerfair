@@ -10,10 +10,10 @@ const STATE = {
   activeTab: 'hero',
   studentName: localStorage.getItem('cf_student_name') || '',
   studentClass: localStorage.getItem('cf_student_class') || 'Class 10',
-  adminKey: localStorage.getItem('cf_admin_key') || '',
+  adminKey: sessionStorage.getItem('cf_admin_key') || '',
   config: {
     pass: 70,
-    banner: 'Welcome to SUPW Career Fair · Explore 32+ Careers Where English Opens Doors!',
+    banner: 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!',
     timer: 0,
     school_branding: true,
     school_name: 'Kanakia International School Mira Road',
@@ -70,28 +70,135 @@ async function fetchApi(endpoint, options = {}) {
   return null;
 }
 
-// Natural Text-To-Speech Output
-function speak(text) {
-  if (!('speechSynthesis' in window)) {
-    showToast('Speech synthesis not supported in this browser.');
+// Humanoid Studio Voice Engine & Natural Fallback
+let isGreetingPlaying = false;
+let currentGreetingAudio = null;
+
+async function speakGreeting() {
+  const btn = $('#btn-greeting');
+  const greetingText = "Welcome to the English Careers Forum 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
+
+  if (isGreetingPlaying) {
+    if (currentGreetingAudio) {
+      currentGreetingAudio.pause();
+      currentGreetingAudio = null;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    isGreetingPlaying = false;
+    if (btn) {
+      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+      btn.classList.remove('playing');
+    }
     return;
   }
+
+  isGreetingPlaying = true;
+  if (btn) {
+    btn.innerHTML = '<span>⏳</span> <span class="greeting-btn-text">Generating Voice...</span>';
+    btn.classList.add('playing');
+  }
+
+  const savedElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
+
+  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs / Server API
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: greetingText,
+        apiKey: savedElevenKey
+      })
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('audio')) {
+      const audioBlob = await res.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      currentGreetingAudio = new Audio(audioUrl);
+
+      if (btn) {
+        btn.innerHTML = '<span>⏹</span> <span class="greeting-btn-text">Stop Audio</span>';
+      }
+
+      currentGreetingAudio.onended = () => {
+        isGreetingPlaying = false;
+        currentGreetingAudio = null;
+        if (btn) {
+          btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+          btn.classList.remove('playing');
+        }
+      };
+
+      currentGreetingAudio.onerror = () => {
+        fallbackNeuralSpeech(greetingText, btn);
+      };
+
+      await currentGreetingAudio.play();
+      return;
+    }
+  } catch (err) {
+    console.warn('TTS API error, falling back to neural speech:', err);
+  }
+
+  // 2. Fallback to High-Fidelity Humanoid Browser Neural Synthesis
+  fallbackNeuralSpeech(greetingText, btn);
+}
+
+function fallbackNeuralSpeech(text, btn) {
+  if (!('speechSynthesis' in window)) {
+    showToast('Speech synthesis not supported in this browser.');
+    if (btn) {
+      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+      btn.classList.remove('playing');
+    }
+    isGreetingPlaying = false;
+    return;
+  }
+
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = 'en-US';
-  utt.rate = 0.95;
-  utt.pitch = 1.0;
+  utt.rate = 0.94; // Conversational human pace
+  utt.pitch = 1.02; // Warm humanoid inflection
 
   const voices = window.speechSynthesis.getVoices();
   if (voices.length) {
-    const preferred = voices.find(v => v.lang.startsWith('en') && (
-      v.name.includes('Natural') || v.name.includes('Google US') ||
-      v.name.includes('Samantha') || v.name.includes('Zira') || v.name.includes('Jenny')
-    )) || voices.find(v => v.lang.startsWith('en'));
+    const preferred = voices.find(v => v.name.includes('Natural') || v.name.includes('Neural2'))
+      || voices.find(v => v.name.includes('Google US English'))
+      || voices.find(v => v.name.includes('Jenny') || v.name.includes('Guy'))
+      || voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en'))
+      || voices.find(v => v.lang.startsWith('en'));
     if (preferred) utt.voice = preferred;
   }
 
-  setTimeout(() => window.speechSynthesis.speak(utt), 40);
+  if (btn) {
+    btn.innerHTML = '<span>⏹</span> <span class="greeting-btn-text">Stop Audio</span>';
+  }
+
+  utt.onend = () => {
+    isGreetingPlaying = false;
+    if (btn) {
+      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+      btn.classList.remove('playing');
+    }
+  };
+
+  utt.onerror = () => {
+    isGreetingPlaying = false;
+    if (btn) {
+      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+      btn.classList.remove('playing');
+    }
+  };
+
+  setTimeout(() => window.speechSynthesis.speak(utt), 50);
+}
+
+function speak(text) {
+  fallbackNeuralSpeech(text, null);
 }
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
@@ -711,7 +818,7 @@ function initNavigation() {
 
   // Spoken greeting button
   $('#btn-greeting')?.addEventListener('click', () => {
-    speak("Welcome to the SUPW Career Fair. Good English is not just an examination subject; it is the universal language that opens doors to every modern profession.");
+    speakGreeting();
   });
 }
 
@@ -1446,7 +1553,7 @@ function initTeleprompter() {
   const nameInput = $('#anchor-name-input');
 
   const SCRIPTS = {
-    breaking: "Good evening, we are broadcasting live from the SUPW Community Career Fair at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery.",
+    breaking: "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery.",
     pilot: "Tower, Air India 102 heavy ready for departure runway 27 Right, request immediate radar climb out to flight level 320 on course to London Heathrow.",
     doctor: "Code blue in trauma bay two. Prepare rapid sequence intubation, cross-match four units of O-negative blood, and notify the attending pediatric trauma specialist immediately.",
     tech: "Our distributed microservices latency spiked following the morning database migration. We have isolated the lock contention and are rolling forward the zero-downtime hotfix.",
@@ -2281,13 +2388,22 @@ function loadFeedbackWall() {
 
 // ─── 12. ADMIN CONTROL ROOM TAB CONTROLLER ─────────────────────────────────
 function renderAdminView() {
+  const gateScreen = $('#admin-gate-screen');
+  const workspaceScreen = $('#admin-workspace-screen');
+  if (!gateScreen || !workspaceScreen) return;
+
   if (STATE.adminKey) {
-    $('#admin-gate-screen').hidden = true;
-    $('#admin-workspace-screen').hidden = false;
+    gateScreen.hidden = true;
+    workspaceScreen.hidden = false;
     initAdminWorkspace();
   } else {
-    $('#admin-gate-screen').hidden = false;
-    $('#admin-workspace-screen').hidden = true;
+    gateScreen.hidden = false;
+    workspaceScreen.hidden = true;
+    const pwdInput = $('#admin-pwd-input');
+    if (pwdInput) {
+      pwdInput.value = '';
+      setTimeout(() => pwdInput.focus(), 150);
+    }
   }
 }
 
@@ -2314,14 +2430,58 @@ function initAdminWorkspace() {
     `).join('');
   }
 
+  // Load existing AI Keys
+  const geminiInput = $('#admin-gemini-key');
+  if (geminiInput && STATE.config.gemini_key) {
+    geminiInput.value = STATE.config.gemini_key;
+  }
+  const elevenInput = $('#admin-eleven-key');
+  if (elevenInput) {
+    elevenInput.value = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
+  }
+
+  // Save AI Credentials
+  $('#btn-save-ai')?.addEventListener('click', async () => {
+    const geminiKey = ($('#admin-gemini-key')?.value || '').trim();
+    const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
+    if (elevenKey) {
+      localStorage.setItem('cf_eleven_key', elevenKey);
+      STATE.config.eleven_key = elevenKey;
+    }
+    if (geminiKey) {
+      STATE.config.gemini_key = geminiKey;
+    }
+    await fetchApi('admin/config', 'PUT', { gemini_key: geminiKey, eleven_key: elevenKey });
+    showToast('AI & Voice Credentials saved successfully');
+  });
+
+  // Test Humanoid Voice button in Admin
+  $('#btn-test-tts-voice')?.addEventListener('click', () => {
+    speakGreeting();
+  });
+
+  // Broadcast settings save
+  $('#btn-save-broadcast')?.addEventListener('click', async () => {
+    const banner = ($('#admin-banner-input')?.value || '').trim();
+    const timer = parseInt($('#admin-timer-input')?.value || '0', 10) || 0;
+    if (banner) {
+      STATE.config.banner = banner;
+      $('#broadcast-text').textContent = banner;
+    }
+    STATE.config.timer = timer;
+    await fetchApi('admin/config', 'PUT', { banner, timer });
+    showToast('Broadcast banner updated');
+  });
+
   // Branding save
-  $('#btn-save-branding')?.addEventListener('click', () => {
+  $('#btn-save-branding')?.addEventListener('click', async () => {
     const show = $('#admin-branding-toggle').checked;
     const name = $('#admin-school-name-input').value;
     STATE.config.school_branding = show;
     STATE.config.school_name = name;
     $('#school-branding-wrap').hidden = !show;
     $('#school-branding-name').textContent = `${name} ©`;
+    await fetchApi('admin/config', 'PUT', { school_branding: show, school_name: name });
     showToast('Branding settings updated');
   });
 
@@ -2351,6 +2511,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   initNavigation();
   initSpeakLadder();
 
+  // Password visibility toggle handler
+  $('#btn-toggle-pwd-vis')?.addEventListener('click', () => {
+    const pwdInput = $('#admin-pwd-input');
+    const toggleBtn = $('#btn-toggle-pwd-vis');
+    if (!pwdInput || !toggleBtn) return;
+    const isPwd = pwdInput.type === 'password';
+    pwdInput.type = isPwd ? 'text' : 'password';
+    toggleBtn.textContent = isPwd ? '🙈' : '👁️';
+  });
+
   // Fetch initial config from backend
   const cfg = await fetchApi('config');
   if (cfg) {
@@ -2366,9 +2536,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Admin login submission
   $('#admin-login-form')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const pwd = $('#admin-pwd-input').value.trim();
-    if (pwd === 'careers2026' || pwd.length >= 4) {
+    const pwd = ($('#admin-pwd-input')?.value || '').trim();
+    if (!pwd) {
+      showToast('Please enter the administrator password.');
+      return;
+    }
+    if (pwd === 'careers2026' || pwd === 'admin2026' || pwd.length >= 4) {
       STATE.adminKey = pwd;
+      sessionStorage.setItem('cf_admin_key', pwd);
       localStorage.setItem('cf_admin_key', pwd);
       $('#admin-gate-screen').hidden = true;
       $('#admin-workspace-screen').hidden = false;
@@ -2379,11 +2554,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Admin lock / switch session
+  $('#btn-admin-lock')?.addEventListener('click', () => {
+    STATE.adminKey = '';
+    sessionStorage.removeItem('cf_admin_key');
+    localStorage.removeItem('cf_admin_key');
+    renderAdminView();
+    showToast('Admin console locked.');
+  });
+
   $('#btn-admin-logout')?.addEventListener('click', () => {
     STATE.adminKey = '';
+    sessionStorage.removeItem('cf_admin_key');
     localStorage.removeItem('cf_admin_key');
-    $('#admin-gate-screen').hidden = false;
-    $('#admin-workspace-screen').hidden = true;
+    renderAdminView();
     showToast('Logged out of Admin.');
   });
 });

@@ -46,7 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_feedback_ts ON feedback(ts DESC);
 
 -- Initial configuration seeds
 INSERT OR IGNORE INTO kv (k, v) VALUES ('pass', '70');
-INSERT OR IGNORE INTO kv (k, v) VALUES ('banner', 'Welcome to SUPW Career Fair · Explore 32+ Careers Where English Opens Doors!');
+INSERT OR IGNORE INTO kv (k, v) VALUES ('banner', 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('timer', '0');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('theme', 'cinematic');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('school_branding', '1');

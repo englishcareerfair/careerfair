@@ -4,32 +4,32 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover">
   <meta name="theme-color" content="#07090e">
-  <meta name="description" content="Every Career Speaks English — Student Career Fair & English Communication Intelligence Platform. Explore 32+ careers, accredited colleges, speech evaluation, and arcade games.">
-  <title>Career Fair · Every Career Speaks English</title>
+  <meta name="description" content="English Careers Forum 2026 — Student Career Intelligence &amp; Spoken English Platform. Explore 32+ careers, accredited colleges, speech evaluation, and arcade games.">
+  <title>English Careers Forum 2026 · Every Career Speaks English</title>
   
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   
-  <!-- Preconnect & Distinctive Typography: Syne, Space Grotesk, Plus Jakarta Sans, JetBrains Mono -->
+  <!-- Preconnect & Typography: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.4">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=2.2" defer></script>
+  <script src="app.js?v=2.4" defer></script>
 </head>
 <body>
 
   <!-- ── 1. AMBIENT BROADCAST & SCHOOL BRANDING BAR ── -->
   <div class="top-broadcast-bar" id="top-bar">
     <div class="school-tag" id="school-branding-wrap">
-      <span class="school-badge">SUPW COMMUNITY FAIR</span>
+      <span class="school-badge">FORUM 2026</span>
       <span id="school-branding-name">Kanakia International School Mira Road &copy;</span>
     </div>
     
     <div class="broadcast-alert" id="broadcast-alert-wrap">
       <span class="live-pulse" aria-hidden="true"></span>
-      <span id="broadcast-text">Welcome to the SUPW Career Fair · Explore 32+ Careers Where English Opens Doors!</span>
+      <span id="broadcast-text">Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!</span>
     </div>
     
     <div id="live-timer-wrap" hidden>
@@ -40,27 +40,43 @@
   <!-- ── 2. SITE HEADER ── -->
   <header class="site-header" id="top">
     <div class="header-container">
-      <div class="site-brand" onclick="window.scrollTo({top:0, behavior:'smooth'})" role="button" tabindex="0">
-        <div class="brand-icon" aria-hidden="true">🎙️</div>
-        <div class="brand-copy">
-          <div class="brand-name">open mic <span style="font-size:14px;color:var(--accent-cyan);font-family:var(--font-mono)">· hub</span></div>
-          <div class="brand-subtitle">EVERY CAREER SPEAKS ENGLISH</div>
+      <div class="header-brand-row">
+        <div class="site-brand" onclick="switchTab('hero')" role="button" tabindex="0">
+          <div class="brand-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+              <path d="M16 2.5L4 8v10c0 7.5 5 11.5 12 13 7-1.5 12-5.5 12-13V8L16 2.5z" stroke="url(#forumGradHdr)" stroke-width="2" fill="rgba(0,240,255,0.08)" />
+              <path d="M10 22h12M12 24h8" stroke="#f3f6ff" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M11 12v7M16 10v9M21 12v7" stroke="url(#forumGradHdr)" stroke-width="1.8" stroke-linecap="round"/>
+              <polygon points="16,6 18,9 14,9" fill="#ffb703"/>
+              <defs>
+                <linearGradient id="forumGradHdr" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#00f0ff"/>
+                  <stop offset="0.6" stop-color="#7209b7"/>
+                  <stop offset="1" stop-color="#ff2a85"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <div class="brand-name">English Careers Forum <span style="color:var(--accent-cyan);font-weight:700;">2026</span></div>
+            <div class="brand-subtitle">KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD</div>
+          </div>
         </div>
+
+        <!-- Spoken Greeting Button -->
+        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
+          <span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>
+        </button>
       </div>
       
-      <div class="header-actions">
+      <div class="header-actions-row">
         <!-- Interactive Theme Switcher -->
         <div class="theme-switcher" role="radiogroup" aria-label="Select visual theme">
-          <button class="theme-btn active" data-theme-val="cinematic" title="Dark Cinematic Space (igloo.inc style)">Cinema</button>
-          <button class="theme-btn" data-theme-val="festival" title="Vibrant SUPW Carnival">Festival</button>
+          <button class="theme-btn active" data-theme-val="cinematic" title="Dark Cinematic Space">Cinema</button>
+          <button class="theme-btn" data-theme-val="festival" title="Vibrant Festival">Festival</button>
           <button class="theme-btn" data-theme-val="corporate" title="Corporate Clean">Corporate</button>
-          <button class="theme-btn" data-theme-val="enamel" title="English SUPW Warm Enamel">Enamel</button>
+          <button class="theme-btn" data-theme-val="enamel" title="Warm Paper Enamel">Enamel</button>
         </div>
-        
-        <!-- Spoken Greeting Button -->
-        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to introductory audio">
-          <span>🔊</span> <span>Listen Greeting</span>
-        </button>
       </div>
     </div>
   </header>
@@ -431,7 +447,7 @@
           <!-- Auto-scrolling Teleprompter Overlay -->
           <div class="teleprompter-overlay" id="teleprompter-box">
             <p id="teleprompter-text">
-              "Good evening, we are broadcasting live from the SUPW Community Career Fair at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+              "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
             </p>
           </div>
 
@@ -663,7 +679,7 @@
           <h2 class="section-title">Fair Feedback &amp; Review Wall</h2>
         </div>
         <p class="section-desc">
-          Share your reflections on the English Career Fair exhibits. Your ratings help shape future SUPW learning initiatives!
+          Share your reflections on the English Careers Forum exhibits. Your ratings and feedback help shape future student learning initiatives!
         </p>
       </div>
 
@@ -740,28 +756,41 @@
       </div>
 
       <!-- Screen 1: Password Gate -->
-      <div id="admin-gate-screen" class="card" style="max-width:520px;margin:30px auto;text-align:center;">
-        <div style="font-size:36px;margin-bottom:8px;">🔒</div>
-        <h3 style="font-size:22px;margin-bottom:6px;">Restricted Access</h3>
-        <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
-          Enter the project administrator password to access operational controls.
+      <div id="admin-gate-screen" class="card">
+        <div class="admin-lock-icon">🔒</div>
+        <h3 style="font-size:22px;margin-bottom:6px;font-weight:800;">Admin Control Room</h3>
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:20px;max-width:380px;margin-left:auto;margin-right:auto;">
+          Enter administrator password to access live feature toggles, broadcast alerts, and data exports.
         </p>
 
-        <form id="admin-login-form" style="text-align:left;">
-          <label style="font-size:13px;font-weight:600;">Admin Password:</label>
-          <input type="password" id="admin-pwd-input" placeholder="Enter admin password" required style="margin:6px 0 16px;">
-          <button class="btn btn-primary" type="submit" style="width:100%;">Unlock Control Room 🔓</button>
+        <form id="admin-login-form" style="max-width:380px;margin:0 auto;text-align:left;">
+          <label style="font-size:12.5px;font-weight:700;color:var(--text-muted);letter-spacing:0.04em;text-transform:uppercase;">
+            Administrator Password
+          </label>
+          <div class="admin-pwd-wrapper">
+            <input type="password" id="admin-pwd-input" placeholder="Enter password (e.g. careers2026)" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pwd" id="btn-toggle-pwd-vis" title="Toggle password visibility" aria-label="Toggle password visibility">👁️</button>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%;padding:12px;font-size:15px;font-weight:700;justify-content:center;">
+            Unlock Control Room 🔓
+          </button>
+          <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-dim);">
+            Default access passcode: <strong style="color:var(--accent-cyan);font-family:var(--font-mono);">careers2026</strong>
+          </div>
         </form>
       </div>
 
       <!-- Screen 2: Admin Dashboard Workspace -->
       <div id="admin-workspace-screen" class="card" hidden>
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
           <div>
-            <h3 style="font-size:20px;">Admin Console Active</h3>
-            <span style="font-size:12px;color:var(--accent-emerald);">● Authenticated &amp; Ready</span>
+            <h3 style="font-size:20px;font-weight:800;color:var(--text-main);">Admin Console Active</h3>
+            <span style="font-size:12px;color:var(--accent-emerald);font-weight:600;">● Authenticated Session Active</span>
           </div>
-          <button class="btn btn-secondary btn-sm" id="btn-admin-logout" type="button">Log Out</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary btn-sm" id="btn-admin-lock" type="button" title="Lock and show password screen">🔒 Lock Console</button>
+            <button class="btn btn-secondary btn-sm" id="btn-admin-logout" type="button">Log Out</button>
+          </div>
         </div>
 
         <!-- Admin Tabs -->
@@ -824,11 +853,17 @@
           </div>
 
           <div style="margin-bottom:14px;">
-            <label style="font-size:13px;font-weight:600;">ElevenLabs STT API Key (optional):</label>
-            <input type="password" id="admin-eleven-key" placeholder="sk_...">
+            <label style="font-size:13px;font-weight:600;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
+            <input type="password" id="admin-eleven-key" placeholder="sk_... or xi_...">
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+              Powers studio-grade natural humanoid AI greeting voice (Rachel model). If not configured, platform gracefully runs high-fidelity on-device neural voice.
+            </div>
           </div>
 
-          <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save API Credentials</button>
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save API Credentials</button>
+            <button class="btn btn-secondary btn-sm" id="btn-test-tts-voice" type="button">Test Humanoid Voice 🔊</button>
+          </div>
         </div>
 
         <!-- View 5: Moderation & CSV Exports -->
@@ -849,7 +884,7 @@
 
   <!-- ── 6. SITE FOOTER ── -->
   <footer style="background:var(--surface-raised);border-top:1px solid var(--border);padding:30px 20px;text-align:center;font-size:13.5px;color:var(--text-dim);position:relative;z-index:20;">
-    <p><strong>Career Fair: Every Career Speaks English</strong> · SUPW Community Fair Initiative</p>
+    <p><strong>English Careers Forum 2026 · Every Career Speaks English</strong></p>
     <p style="margin-top:6px;" id="footer-school-brand">Guided by the English Department · Kanakia International School Mira Road &copy;</p>
     <p style="margin-top:6px;font-size:12px;">Accreditations &amp; entrance test formats are cross-indexed from UGC, NAAC, NIRF, BCI, NMC, and DGCA guidelines.</p>
   </footer>

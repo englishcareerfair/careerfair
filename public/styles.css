@@ -5,7 +5,7 @@
 
 /* ─── 1. DESIGN TOKEN PALETTES & THEMES ───────────────────────────────────── */
 :root {
-  --font-display: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-sub: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', SFMono-Regular, Consolas, monospace;
@@ -89,7 +89,7 @@
   --card-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
-/* Theme 4: English SUPW Warm Enamel */
+/* Theme 4: English Forum Warm Enamel */
 [data-theme="enamel"] {
   --bg-canvas: #f5f2ea;
   --bg-subtle: #eae5d7;
@@ -266,11 +266,23 @@ button, input, select, textarea {
 .header-container {
   max-width: 1320px;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 10px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.header-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .site-brand {
@@ -278,30 +290,34 @@ button, input, select, textarea {
   align-items: center;
   gap: 12px;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .brand-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  background: var(--brand-gradient);
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   display: grid;
   place-items: center;
   color: #fff;
-  font-size: 20px;
-  box-shadow: 0 4px 14px rgba(0, 240, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
 }
 
 .brand-copy .brand-name {
-  font-size: 20px;
-  letter-spacing: -0.03em;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   display: flex;
   align-items: center;
   gap: 6px;
+  line-height: 1.2;
 }
 
 .brand-copy .brand-subtitle {
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: var(--font-sub);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -328,7 +344,7 @@ button, input, select, textarea {
 .theme-btn {
   background: transparent;
   border: none;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-full);
   color: var(--text-muted);
   font-size: 12px;
@@ -363,11 +379,24 @@ button, input, select, textarea {
   gap: 6px;
   cursor: pointer;
   transition: var(--transition);
+  white-space: nowrap;
 }
 
 .audio-greeting-btn:hover {
   background: rgba(0, 240, 255, 0.2);
   transform: translateY(-1px);
+}
+
+.audio-greeting-btn.playing {
+  background: rgba(255, 42, 133, 0.15);
+  border-color: var(--accent-magenta);
+  color: var(--accent-magenta);
+  animation: pulseGreeting 1.4s infinite alternate;
+}
+
+@keyframes pulseGreeting {
+  0% { box-shadow: 0 0 0 0 rgba(255, 42, 133, 0.4); }
+  100% { box-shadow: 0 0 14px 4px rgba(255, 42, 133, 0.2); }
 }
 
 /* ─── 5. STICKY SUB-NAVBAR TABS ───────────────────────────────────────────── */
@@ -764,11 +793,14 @@ input:focus, select:focus, textarea:focus {
 }
 
 .hero-heading {
-  font-size: clamp(34px, 5.5vw, 62px);
+  font-family: var(--font-display);
+  font-size: clamp(26px, 4.4vw, 50px);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  margin-bottom: 18px;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 .hero-heading .gradient-text {
@@ -1309,6 +1341,84 @@ tr:hover td { background: var(--surface-hover); }
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* ─── 18. ADMIN CONTROL ROOM & GATE ────────────────────────────────────────── */
+#admin-gate-screen {
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), var(--border-glow);
+  padding: 36px 28px;
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  margin: 30px auto;
+  text-align: center;
+  position: relative;
+  z-index: 10;
+}
+
+.admin-lock-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 16px;
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.25);
+}
+
+.admin-pwd-wrapper {
+  position: relative;
+  margin: 8px 0 18px;
+}
+
+#admin-pwd-input {
+  width: 100%;
+  padding: 13px 44px 13px 16px;
+  background: rgba(7, 9, 14, 0.9);
+  border: 2px solid var(--accent-cyan);
+  border-radius: var(--radius-md);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: var(--transition);
+}
+
+[data-theme="festival"] #admin-pwd-input,
+[data-theme="corporate"] #admin-pwd-input,
+[data-theme="enamel"] #admin-pwd-input {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+#admin-pwd-input:focus {
+  outline: none;
+  border-color: var(--accent-brand);
+  box-shadow: 0 0 28px rgba(0, 240, 255, 0.45);
+}
+
+.btn-toggle-pwd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px;
+  line-height: 1;
+}
+
+.admin-view-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
 /* ─── 19. RESPONSIVE BREAKPOINTS (CROSS-PLATFORM MOBILE & TABLET) ────────── */
 @media (max-width: 768px) {
   body {
@@ -1321,26 +1431,70 @@ tr:hover td { background: var(--surface-hover); }
     text-align: center;
   }
   .header-container {
-    padding: 10px max(14px, env(safe-area-inset-right)) 10px max(14px, env(safe-area-inset-left));
-    flex-wrap: wrap;
-    gap: 10px;
+    padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
   }
-  .brand-copy .brand-subtitle { display: none; }
-  .header-actions {
-    width: 100%;
+  .header-brand-row {
+    display: flex;
+    align-items: center;
     justify-content: space-between;
-    overflow-x: auto;
-    padding-bottom: 4px;
+    width: 100%;
+    gap: 8px;
   }
-  .theme-switcher {
+  .site-brand {
+    gap: 8px;
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
   }
-  .theme-btn {
-    padding: 6px 10px;
+  .brand-copy .brand-name {
+    font-size: 14.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .brand-copy .brand-subtitle {
+    display: none;
+  }
+  .audio-greeting-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    height: 32px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    gap: 4px;
+  }
+  .audio-greeting-btn .greeting-btn-text {
     font-size: 11.5px;
   }
+  .header-actions-row {
+    width: 100%;
+  }
+  .theme-switcher {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 3px;
+    gap: 2px;
+    background: var(--surface-raised);
+    border-radius: var(--radius-full);
+  }
+  .theme-btn {
+    width: 100%;
+    text-align: center;
+    padding: 5px 2px;
+    font-size: 11px;
+    border-radius: var(--radius-full);
+  }
   .sub-navbar {
-    top: 105px;
+    top: 92px;
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
@@ -1359,7 +1513,10 @@ tr:hover td { background: var(--surface-hover); }
     gap: 24px;
   }
   .hero-heading {
-    font-size: clamp(28px, 8vw, 42px);
+    font-size: clamp(22px, 6.2vw, 32px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
   }
   .hero-sub {
     font-size: 15px;
@@ -1390,5 +1547,9 @@ tr:hover td { background: var(--surface-hover); }
   }
   .btn {
     min-height: 44px;
+  }
+  #admin-gate-screen {
+    padding: 24px 16px;
+    margin: 16px auto;
   }
 }

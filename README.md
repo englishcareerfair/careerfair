@@ -71,9 +71,9 @@ Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 
 - **Feature Flags**: Global toggles for every single module (Speech Lab, Anchor Mode, Colleges, Games, etc.). When toggled off, the UI dynamically reflows!
 - **Instant Theme Switcher**: 4 distinct visual identities:
   1. *Cinema*: Dark Cinematic Space (Awwwards igloo.inc style)
-  2. *Festival*: Vibrant SUPW Carnival with warm paper and vivid accents
+  2. *Festival*: Vibrant Forum Carnival with warm paper and vivid accents
   3. *Corporate*: Scholastic clean architectural slate
-  4. *Enamel*: English SUPW warm pressed paper, deep teal-night, and brass rails
+  4. *Enamel*: English Forum warm pressed paper, deep teal-night, and brass rails
 - **Live Announcement Banner & Synchronized Exam Timer**.
 - **Data Moderation & Exports**: One-click `.CSV` export for Leaderboard scores and Feedback logs.
 
