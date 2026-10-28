@@ -1039,6 +1039,11 @@ function renderExams() {
           <span class="badge-pill badge-reg">${escapeHtml(ex.cat)}</span>
         </div>
       </div>
+      <div class="accreditation-badges" style="margin: 8px 0 12px; display: flex; flex-wrap: wrap; gap: 6px;">
+        <span class="badge-pill badge-naac">🏛️ ${escapeHtml(ex.conductedBy)}</span>
+        <span class="badge-pill badge-nirf">📋 ${escapeHtml(ex.format.split('·')[0].trim())}</span>
+        <span class="badge-pill badge-global">📅 ${escapeHtml(ex.date)}</span>
+      </div>
       <p class="card-body" style="font-size:13.5px;"><strong>Admissions Target:</strong> ${escapeHtml(ex.target)}</p>
       <div style="background:var(--bg-subtle);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:12px;border:1px solid var(--border);">
         <strong style="color:var(--accent-cyan);font-size:12px;display:block;margin-bottom:3px;">ENGLISH WEIGHT &amp; SKILL TESTED:</strong>
