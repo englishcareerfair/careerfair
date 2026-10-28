@@ -3370,28 +3370,42 @@ const GAMING_HALL_QUESTS = [
 ];
 
 async function callAiQuest(prompt, isJson = false) {
+  const geminiKeys = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').trim();
+  const primaryKey = geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '';
+
   // 1. First attempt backend /api/ai with failover across key pool
   try {
     const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ task: 'quest', prompt, json: isJson })
+      headers: {
+        'Content-Type': 'application/json',
+        'x-gemini-key': primaryKey,
+        'x-goog-api-key': primaryKey
+      },
+      body: JSON.stringify({ task: 'quest', prompt, json: isJson, gemini_keys: geminiKeys })
     });
     if (res.ok) {
       const data = await res.json();
       if (data && data.reply) return data.reply;
-      if (data && data.text) return isJson ? JSON.parse(data.text.replace(/```json|```/g, '').trim()) : data.text;
+      if (data && data.text) {
+        if (isJson) {
+          const m = data.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+          if (m) {
+            try { return JSON.parse(m[0]); } catch {}
+          }
+        }
+        return data.text;
+      }
     }
   } catch (e) {}
 
   // 2. Direct client-side Gemini fallback
-  const geminiKeys = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').trim();
-  const primaryKey = geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '';
-  if (primaryKey) {
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  for (const m of models) {
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${primaryKey}`, {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(primaryKey)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': primaryKey },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: isJson ? { responseMimeType: 'application/json' } : {}
@@ -3400,12 +3414,21 @@ async function callAiQuest(prompt, isJson = false) {
       if (res.ok) {
         const data = await res.json();
         const t = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-        return isJson ? JSON.parse(t.replace(/```json|```/g, '').trim()) : t;
+        if (t) {
+          if (isJson) {
+            const match = t.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (match) {
+              try { return JSON.parse(match[0]); } catch {}
+            }
+          }
+          return t;
+        }
       }
     } catch (e) {}
   }
 
-  throw new Error('AI quest generation unavailable. Ensure a Gemini API key is configured.');
+  // Graceful signal: return null so offline dual-engine seamlessly activates
+  return null;
 }
 
 async function typeInto(el, text) {
@@ -3413,6 +3436,318 @@ async function typeInto(el, text) {
   for (const char of text) {
     el.textContent += char;
     await new Promise(r => setTimeout(r, 12));
+  }
+}
+
+// ==========================================
+// OFFLINE ZERO-ERROR ADVENTURE ENGINES
+// ==========================================
+const SCRIBE_OFFLINE_TALES = [
+  {
+    story: "Rain lashes against the stained-glass lancets of the ancient library at St. Jude's. Before you stands an arched obsidian portal, inscribed with faint silver runes that shimmer whenever thunder shakes the spires. In your hand rests a brass serpent key with amethyst eyes. An iron-banded door waits to your left, while a spiral staircase descends into the subterranean vaults.",
+    choices: [
+      "Insert the serpent key into the silver-inscribed obsidian portal",
+      "Unlatch the iron-banded door leading toward the cloisters",
+      "Descend the spiral stone staircase into the whispering vaults"
+    ]
+  },
+  {
+    story: "The heavy lock yields with a hollow click. Beyond lies a circular scriptorium where hundreds of wax candles flicker without smoke. On a lectern of carved cedar rests an illuminated codex, its vellum pages turning on their own in the damp draft. Shadows dance along rows of leather-bound volumes that whisper in archaic Latin as your boots strike the flagstones.",
+    choices: [
+      "Approach the self-turning codex and decipher the glowing script",
+      "Hold your lantern toward the whispering bookshelves to read the titles",
+      "Search the perimeter for hidden draft exits before stepping forward"
+    ]
+  },
+  {
+    story: "As your fingers graze the vellum, the ink rearranges itself into a luminous constellation map. It reveals that the founders of the academy concealed three golden astronomical astrolabes across the quadrangle to balance intellect, speech, and moral courage. A sudden draft extinguishes half the candles; a veiled figure watches you from the arched mezzanine above.",
+    choices: [
+      "Call out to the veiled figure in clear, commanding Latin",
+      "Memorize the constellation coordinates and slip the map into your satchel",
+      "Douse your lantern and take cover behind the grand celestial globe"
+    ]
+  },
+  {
+    story: "The figure steps into the pale moonlight, revealing not a ghost, but an intricate brass automaton crafted by Victorian horologists. Its chest houses a clockwork pendulum that ticks with rhythmic precision. In its mechanical palm rests a wax-sealed parchment bearing the seal of the Master Scribe. 'To proceed,' speaks the brass voice, 'you must declare your true academic purpose.'",
+    choices: [
+      "'I seek mastery over language to advocate for truth and justice'",
+      "'I seek knowledge of antiquity to bridge ancient wisdom with modern science'",
+      "'I seek the courage to articulate stories that awaken human empathy'"
+    ]
+  },
+  {
+    story: "'A noble vocation,' the automaton hums, its brass gears spinning in harmonious chords. The floor shudders slightly as a secret hydraulic dais rises, elevating you toward the observatory tower under a star-strewn sky. The wind howls across the parapets, carrying the distant bell tolls of midnight. Three crystal vials glow atop an onyx altar: one azure, one crimson, and one emerald.",
+    choices: [
+      "Select the Azure Vial representing boundless clarity of thought",
+      "Select the Crimson Vial representing fiery passion and persuasion",
+      "Select the Emerald Vial representing enduring growth and resilience"
+    ]
+  },
+  {
+    story: "You uncork the chosen vial; a luminous vapor envelops your quill. When you set ink to paper, every word flows with effortless grace, precision, and persuasive grandeur. The tempest outside recedes into a calm dawn over the campus spires. You have passed the Scribe's trial and earned the mantle of Master Rhetorician. Your journey as an articulate leader of tomorrow has only just begun.",
+    choices: []
+  }
+];
+
+const ETYM_OFFLINE_WORDS = [
+  {
+    word: "articulate",
+    origin: "From Latin 'articulatus', past participle of 'articulare' ('to divide into joints, utter distinctly'), from 'articulus' ('a small joint, knuckle'). Just as healthy bones move smoothly at their joints, an articulate speaker connects thoughts and syllables with effortless clarity and poise.",
+    roots: ["artus (Latin) → joint, fitting together", "articulus (Latin) → small joint, knuckle, distinct part"],
+    riddle: "Which ancient anatomical metaphor gave rise to the word 'articulate'?",
+    options: [
+      "The seamless bending of finger joints",
+      "The rhythmic beating of the human heart",
+      "The clarity of the visionary eye",
+      "The steady breath of a runner"
+    ],
+    answer: 0
+  },
+  {
+    word: "serendipity",
+    origin: "Coined in 1754 by English author Horace Walpole in a letter to Horace Mann. He drew inspiration from the Persian fairy tale 'The Three Princes of Serendip' (the ancient Persian name for Sri Lanka), whose heroes were 'always making discoveries, by accidents and sagacity, of things they were not in quest of.'",
+    roots: ["Serendip (Old Persian) → island of Sri Lanka (from Sanskrit Simhaladvipa)", "-ity (Latin suffix) → state, condition, or quality of"],
+    riddle: "What geographical land was historically called 'Serendip' in Persian lore?",
+    options: [
+      "Sri Lanka (Ceylon)",
+      "The Maldives archipelago",
+      "Constantinople (Istanbul)",
+      "The Indus Valley"
+    ],
+    answer: 0
+  },
+  {
+    word: "candid",
+    origin: "From Latin 'candidus' meaning 'glistening white, pure, sincere'. In ancient Rome, men campaigning for political office wore a specially bleached, brilliant white toga known as the 'toga candida' to symbolize purity of motive, honesty, and incorruptibility. Hence arose both 'candid' (frank, honest) and 'candidate'.",
+    roots: ["candere (Latin) → to shine, glow white", "candidus (Latin) → bright, pure, unblemished, sincere"],
+    riddle: "Why were Roman political candidates named after 'candidus'?",
+    options: [
+      "They wore bleached white togas to symbolize honest intentions",
+      "They wrote political manifestos on white marble tablets",
+      "They swore oaths under white banners at the Forum",
+      "They were required to serve white wine to citizens"
+    ],
+    answer: 0
+  },
+  {
+    word: "ephemeral",
+    origin: "From Greek 'ephemeros' ('lasting only a day'), composed of 'epi' ('on, during') and 'hemera' ('day'). Originally used in ancient Greek medicine for fevers and ailments lasting only twenty-four hours, the term was later adopted by English Romantic poets to describe fleeting beauty and passing moments of insight.",
+    roots: ["epi (Greek) → upon, lasting for", "hemera (Greek) → day"],
+    riddle: "What literal time duration does the Greek root 'hemera' designate?",
+    options: [
+      "A single day (24 hours)",
+      "A full lunar cycle (28 days)",
+      "A single hour",
+      "The brief duration of twilight"
+    ],
+    answer: 0
+  },
+  {
+    word: "melancholy",
+    origin: "From Greek 'melankholia', from 'melas' ('black, dark') and 'khole' ('bile'). In ancient Hippocratic and Galenic medicine, human health and personality were thought to be regulated by four bodily humors. An excess of black bile was believed to foster a reflective, somber, and deeply artistic disposition.",
+    roots: ["melas / melan- (Greek) → black, dark", "khole (Greek) → bile, bitter gall"],
+    riddle: "Which bodily humor did ancient physicians believe induced melancholy?",
+    options: [
+      "Black bile",
+      "Yellow bile",
+      "Blood",
+      "Phlegm"
+    ],
+    answer: 0
+  },
+  {
+    word: "resilient",
+    origin: "From Latin 'resiliens', present participle of 'resilire' ('to leap back, rebound'), formed from 're-' ('back, again') and 'salire' ('to jump, leap'). Originally describing physical objects springing back to their original shape after deformation, it evolved into a premier psychological virtue for leaders who bounce back from adversity.",
+    roots: ["re- (Latin) → back, again", "salire (Latin) → to leap, jump, spring"],
+    riddle: "What dynamic physical action is denoted by the Latin root 'salire'?",
+    options: [
+      "To leap or spring back",
+      "To withstand heavy pressure without bending",
+      "To flow smoothly like river water",
+      "To anchor deeply into the soil"
+    ],
+    answer: 0
+  },
+  {
+    word: "lucid",
+    origin: "From Latin 'lucidus' ('shining, bright, clear'), derived from 'lux' (genitive 'lucis', 'light'). A lucid argument or dream is one illuminated by clarity, where thoughts are transparent and immediately understood without obscurity.",
+    roots: ["lux / lucis (Latin) → light, brilliance", "-idus (Latin suffix) → state or tendency toward"],
+    riddle: "What does the Latin root 'lucis' mean?",
+    options: [
+      "Light or brilliance",
+      "Clear flowing water",
+      "The rational mind",
+      "Spoken voice"
+    ],
+    answer: 0
+  },
+  {
+    word: "eloquence",
+    origin: "From Latin 'eloquentia', from 'eloqui' ('to speak out'), formed from 'e-' / 'ex-' ('out, forth') and 'loqui' ('to speak'). Eloquence is literally the power to pour one's inner conviction and thoughts outward into the world with grace, force, and persuasion.",
+    roots: ["ex- / e- (Latin) → out, forth", "loqui (Latin) → to speak, utter"],
+    riddle: "Which other English word shares the root 'loqui' with eloquence?",
+    options: [
+      "Soliloquy and Colloquial",
+      "Locomotive and Local",
+      "Logic and Logistics",
+      "Eloquent and Eclipse"
+    ],
+    answer: 0
+  },
+  {
+    word: "tenacious",
+    origin: "From Latin 'tenax' (genitive 'tenacis', 'holding fast, gripping, stubborn'), from 'tenere' ('to hold, keep, grasp'). A tenacious student holds firmly to their aspirations through setbacks, never letting go of their vision.",
+    roots: ["tenere (Latin) → to hold, retain, grasp", "-ous (Latin suffix) → full of, characterized by"],
+    riddle: "Which common English verb is directly derived from 'tenere'?",
+    options: [
+      "Retain, Maintain, and Sustain",
+      "Tension and Tendency",
+      "Tender and Tenderize",
+      "Tentative and Tenuous"
+    ],
+    answer: 0
+  },
+  {
+    word: "solace",
+    origin: "From Old French 'solas', from Latin 'solacium' ('a soothing, comforting, solace'), from 'solari' ('to comfort, console'). In classical antiquity, solace was the peaceful quiet offered to weary travelers and scholars following arduous toil.",
+    roots: ["solari (Latin) → to soothe, comfort, alleviate sorrow", "-ium (Latin suffix) → instrument or result of action"],
+    riddle: "Which psychological word shares the Latin root 'solari'?",
+    options: [
+      "Console (consolation)",
+      "Solitary",
+      "Solar",
+      "Solvent"
+    ],
+    answer: 0
+  }
+];
+
+function getBardOfflineResponse(mode, theme) {
+  const cleanTheme = theme || 'ambition and the power of articulate speech';
+  if (mode.includes('sonnet') || mode.includes('Shakespearean')) {
+    return `Shall modern minds in digital halls awake,
+` +
+      `When ancient words kindle the youthful soul?
+` +
+      `No fleeting code the eloquent heart can shake,
+` +
+      `Where deep reflection seeks a noble goal.
+` +
+      `Though screens may flicker in the dusky night,
+` +
+      `And hurried voices crowd the passing wind,
+` +
+      `The spoken phrase retains its sovereign might,
+` +
+      `To guide the searching corridors of mind.
+` +
+      `Let reason tune the cadence of thy tongue,
+` +
+      `As ${cleanTheme} takes majestic flight;
+` +
+      `No song of wisdom shall remain unsung,
+` +
+      `While rhetoric holds its incandescent light.
+` +
+      `For he who speaks with clarity and grace,
+` +
+      `Commands the future and preserves our place.`;
+  } else if (mode.includes('Gothic') || mode.includes('Romantic')) {
+    return `Upon the midnight cloisters fell a shadow pale and deep,
+` +
+      `Where ancient scribes in dusty tombs their quiet vigils keep.
+` +
+      `A solitary lantern burned beside the oaken door,
+` +
+      `As whispered echoes of ${cleanTheme} drifted cross the floor.
+
+` +
+      `No wind disturbed the cypress boughs, no tempest stirred the bay,
+` +
+      `Yet in the ink upon the page the silver secrets lay.
+` +
+      `Awake, O seeker of the quill, beneath the vaulted dome!
+` +
+      `For in the mastery of words the wandering soul finds home.`;
+  } else {
+    return `Literary & Rhetorical Critique for: "${cleanTheme}"
+
+` +
+      `1. Cadence & Rhythm (8.5/10):
+` +
+      `Your phrase exhibits strong initial momentum. To elevate the rhythmic impact, alternate between brisk monosyllabic assertions and stately Latinate polysyllables.
+
+` +
+      `2. Metaphorical Depth (9.0/10):
+` +
+      `The conceptual foundation connects well with the listener's imagination. Deepen the sensory resonance by anchoring abstract concepts to tactile elements like light, weight, or resonance.
+
+` +
+      `3. Say It Better (Actionable Revision):
+` +
+      `"True eloquence is not the mere ornament of thought, but its decisive architecture."`;
+  }
+}
+
+function getOracleOfflineDestiny(q1, q2, q3, bio) {
+  const bioLower = (bio || '').toLowerCase();
+  if (bioLower.includes('pilot') || bioLower.includes('aviat') || bioLower.includes('sky') || q1.includes('Stormy coastal')) {
+    return {
+      title: "Aeronautical Communications Director & Flight Operations Strategist",
+      why: "Your affinity for expansive frontiers and spotting critical patterns aligns seamlessly with aviation command, crisis communications, and international aerospace protocol.",
+      path: [
+        "Master DGCA standard radiotelephony phraseology and STEM-English synthesis in school.",
+        "Pursue a B.Sc in Aviation / Aeronautics paired with ICAO Level 6 English Proficiency certification.",
+        "Ascend into chief airline flight operations dispatch, flight deck command, or air traffic safety oversight."
+      ]
+    };
+  } else if (bioLower.includes('law') || bioLower.includes('court') || bioLower.includes('justice') || q2.includes('Persuading') || q3.includes('debate')) {
+    return {
+      title: "Supreme Court Appellate Advocate & Constitutional Jurist",
+      why: "Your gift for persuasive argument, rhetorical precision, and rigorous debate makes you a natural advocate in high-stakes appellate litigation and public interest jurisprudence.",
+      path: [
+        "Excel in National Model United Nations, Parliamentary Debating, and board exam English in Class 11-12.",
+        "Clear CLAT to enter a premier National Law University (NLSIU Bengaluru / NALSAR Hyderabad) for B.A. LL.B. (Hons).",
+        "Clerk with High Court / Supreme Court judges and build a bespoke chamber practice in corporate and constitutional law."
+      ]
+    };
+  } else if (bioLower.includes('tech') || bioLower.includes('ai') || bioLower.includes('system') || q2.includes('Imagining complex')) {
+    return {
+      title: "Cognitive AI Dialogue Architect & Human-Centered UX Designer",
+      why: "As artificial intelligence reshapes human interaction, companies require linguists who understand semantic nuances, tone, prompt engineering, and conversational psychology.",
+      path: [
+        "Blend literature studies with introductory computer science and cognitive psychology in school.",
+        "Earn a degree in Computational Linguistics, Cognitive Science, or English Literature at Ashoka / EFL University.",
+        "Lead generative AI UX strategy and conversational voice architecture at global technology frontiers."
+      ]
+    };
+  } else {
+    return {
+      title: "Chief Narrative Officer & Global Brand Strategist",
+      why: "Your love of storytelling, reflective depth, and cultural curiosity positions you at the helm of international media, publication houses, and global corporate strategy.",
+      path: [
+        "Build a prolific writing portfolio, edit the school journal, and publish analytical essays.",
+        "Pursue English Literature at Delhi University (St. Stephen's / Lady Shri Ram) or St. Xavier's Mumbai.",
+        "Lead corporate brand identity, investor communications, or executive speechwriting for Fortune 500 enterprises."
+      ]
+    };
+  }
+}
+
+function getCipherOfflineInspector(q, currentCase) {
+  const ql = (q || '').toLowerCase();
+  if (ql.includes('finch') || ql.includes('doctor')) {
+    return "Dr. Finch was observed in the east reading alcove examining the astronomy folio until 11:15 PM. His alibi is partially substantiated by the night librarian, yet red ink stains were later discovered upon his cuffs.";
+  } else if (ql.includes('margaret') || ql.includes('sister')) {
+    return "Sister Margaret possesses the only brass key to the manuscript display cabinet. She claims she surrendered her satchel at the front foyer, yet a duplicate wax seal impression was found near her prayer book.";
+  } else if (ql.includes('kulkarni') || ql.includes('librarian')) {
+    return "Librarian Kulkarni logged the archival records meticulously at 10:45 PM. However, the archive logbook entries for the Nalanda folio show an irregular erasure and an unexpected cipher timestamp.";
+  } else if (ql.includes('time') || ql.includes('when') || ql.includes('hour')) {
+    return "The archival chamber bells rang midnight when the display was discovered ajar. Forensic dust patterns suggest the glass lid was elevated between 11:20 PM and 11:45 PM.";
+  } else if (ql.includes('clue') || ql.includes('wax') || ql.includes('seal')) {
+    return `The key physical evidence is "${currentCase?.clue || 'the blue wax seal'}". Whoever handled the seal had recently touched classical calligraphic ink and damp parchment.`;
+  } else {
+    return `The inspector observes: "Every clue in this archive connects language with intent. Look closely at the suspects' declared motivations and cross-reference them with the physical evidence in the exhibit case."`;
   }
 }
 
@@ -3438,95 +3773,99 @@ function renderGamingHall(mount) {
     <div class="arc-stage">
       <div class="arc-carousel" id="gaming-arc-carousel"></div>
       <div class="arc-nav-row">
-        <button class="btn btn-secondary btn-sm" id="btn-arc-prev" type="button">‹ Rotate Left</button>
-        <button class="btn btn-primary btn-sm" id="btn-arc-play" type="button">▶️ Launch Quest</button>
-        <button class="btn btn-secondary btn-sm" id="btn-arc-next" type="button">Rotate Right ›</button>
+        <button class="arc-nav-btn" id="arc-prev" title="Previous Quest">◀ Previous</button>
+        <span style="font-size:12.5px;color:var(--text-muted);font-weight:600;" id="arc-indicator">Quest 1 of 5</span>
+        <button class="arc-nav-btn" id="arc-next" title="Next Quest">Next ▶</button>
       </div>
     </div>
 
-    <!-- Quest Stage Arena -->
-    <div id="quest-arena-container" class="quest-arena" style="min-height:300px;">
-      <div id="quest-stage-mount"></div>
+    <!-- Active Quest Stage -->
+    <div id="quest-active-stage" style="margin-top:20px;">
+      <div class="quest-view-card" id="quest-stage-inner">
+        <!-- Quest content mounts here -->
+      </div>
     </div>
   `;
 
   const carousel = $('#gaming-arc-carousel');
-  const total = GAMING_HALL_QUESTS.length;
+  const stageInner = $('#quest-stage-inner');
+  const indicator = $('#arc-indicator');
+  let activeIndex = 0;
 
-  const drawArc = () => {
-    if (!carousel) return;
+  function renderArc() {
     carousel.innerHTML = '';
-    const step = Math.min(220, window.innerWidth * 0.28);
-
+    const n = GAMING_HALL_QUESTS.length;
     GAMING_HALL_QUESTS.forEach((q, i) => {
-      const card = document.createElement('div');
-      card.className = 'arc-card' + (i === gamingHallArcIndex ? ' active' : '');
-      
-      let offset = i - gamingHallArcIndex;
-      if (offset > total / 2) offset -= total;
-      if (offset < -total / 2) offset += total;
+      let offset = i - activeIndex;
+      if (offset > n / 2) offset -= n;
+      if (offset < -n / 2) offset += n;
       const absOffset = Math.abs(offset);
 
-      card.style.transform = `translateX(${offset * step}px) translateY(${absOffset * absOffset * 18}px) rotate(${offset * 7}deg) scale(${1 - absOffset * 0.12})`;
-      card.style.opacity = absOffset > 2 ? '0' : String(1 - absOffset * 0.25);
-      card.style.zIndex = String(10 - absOffset);
+      const card = document.createElement('div');
+      card.className = `arc-card ${absOffset === 0 ? 'active' : ''}`;
+      card.setAttribute('data-index', i);
+
+      const tx = offset * 210;
+      const ty = absOffset * absOffset * 18;
+      const rot = offset * 8;
+      const sc = 1 - absOffset * 0.12;
+      card.style.transform = `translateX(${tx}px) translateY(${ty}px) rotate(${rot}deg) scale(${sc})`;
+      card.style.zIndex = 10 - absOffset;
+      card.style.opacity = absOffset > 2 ? '0' : (1 - absOffset * 0.25).toString();
       card.style.pointerEvents = absOffset > 2 ? 'none' : 'auto';
 
       card.innerHTML = `
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div class="rn">${q.num}</div>
-            <span style="font-size:24px;">${q.icon}</span>
-          </div>
-          <div class="quest-badge">${q.tag}</div>
-          <h3>${q.title}</h3>
-        </div>
-        <p>${q.desc}</p>
+        <div class="arc-card-icon">${q.icon}</div>
+        <div class="arc-card-title">${q.title}</div>
+        <div class="arc-card-subtitle">${q.subtitle}</div>
+        <div class="arc-card-desc">${q.desc}</div>
+        <div class="arc-card-action">${absOffset === 0 ? '▶ Launch Quest' : 'Click to Inspect'}</div>
       `;
 
-      card.onclick = () => {
-        if (i === gamingHallArcIndex) {
-          launchQuest(q.id);
+      card.addEventListener('click', () => {
+        if (activeIndex === i) {
+          launchQuest(i);
         } else {
-          gamingHallArcIndex = i;
-          drawArc();
+          activeIndex = i;
+          renderArc();
+          launchQuest(i);
         }
-      };
+      });
 
       carousel.appendChild(card);
     });
-  };
 
-  const arcGo = (dir) => {
-    gamingHallArcIndex = (gamingHallArcIndex + dir + total) % total;
-    drawArc();
-  };
+    if (indicator) indicator.textContent = `Quest ${activeIndex + 1} of ${n} · ${GAMING_HALL_QUESTS[activeIndex].title}`;
+  }
 
-  $('#btn-arc-prev')?.addEventListener('click', () => arcGo(-1));
-  $('#btn-arc-next')?.addEventListener('click', () => arcGo(1));
-  $('#btn-arc-play')?.addEventListener('click', () => {
-    launchQuest(GAMING_HALL_QUESTS[gamingHallArcIndex].id);
+  function launchQuest(idx) {
+    if (!stageInner) return;
+    stageInner.innerHTML = '';
+    switch (idx) {
+      case 0: launchQuestScribe(stageInner); break;
+      case 1: launchQuestEtym(stageInner); break;
+      case 2: launchQuestBard(stageInner); break;
+      case 3: launchQuestOracle(stageInner); break;
+      case 4: launchQuestCipher(stageInner); break;
+      default: launchQuestScribe(stageInner);
+    }
+    stageInner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  $('#arc-prev')?.addEventListener('click', () => {
+    activeIndex = (activeIndex - 1 + GAMING_HALL_QUESTS.length) % GAMING_HALL_QUESTS.length;
+    renderArc();
+    launchQuest(activeIndex);
   });
 
-  drawArc();
-  launchQuest(GAMING_HALL_QUESTS[gamingHallArcIndex].id);
-}
+  $('#arc-next')?.addEventListener('click', () => {
+    activeIndex = (activeIndex + 1) % GAMING_HALL_QUESTS.length;
+    renderArc();
+    launchQuest(activeIndex);
+  });
 
-function launchQuest(questId) {
-  const mount = $('#quest-stage-mount');
-  if (!mount) return;
-
-  if (questId === 'scribe') {
-    launchQuestScribe(mount);
-  } else if (questId === 'etym') {
-    launchQuestEtym(mount);
-  } else if (questId === 'bard') {
-    launchQuestBard(mount);
-  } else if (questId === 'oracle') {
-    launchQuestOracle(mount);
-  } else if (questId === 'cipher') {
-    launchQuestCipher(mount);
-  }
+  renderArc();
+  launchQuest(0);
 }
 
 // QUEST 1: The Scribe
@@ -3562,27 +3901,34 @@ function launchQuestScribe(mount) {
       userMsg = `The reader chooses: "${choice}". ${turn >= 6 ? 'Bring the tale to a dramatic final conclusion now with choices [].' : 'Continue the tale with 80 words and return JSON {"story":"...","choices":["choice 1","choice 2","choice 3"]}.'}`;
     }
 
+    let data = null;
     try {
-      const data = await callAiQuest(userMsg, true);
-      const storyText = data.story || 'The tale continues into the shadows...';
-      await typeInto(storyBox, storyText);
+      data = await callAiQuest(userMsg, true);
+    } catch (e) {
+      data = null;
+    }
 
-      choicesBox.innerHTML = '';
-      const choices = Array.isArray(data.choices) ? data.choices : [];
-      if (choices.length > 0) {
-        choices.forEach(ch => {
-          const btn = document.createElement('button');
-          btn.className = 'quest-choice-btn';
-          btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
-          btn.onclick = () => step(ch);
-          choicesBox.appendChild(btn);
-        });
-      } else {
-        choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
-      }
-    } catch (err) {
-      storyBox.textContent = 'A dark shadow interrupted the quill. Please ensure your Gemini API key is configured or click "Start New Tale".';
-      choicesBox.innerHTML = '';
+    // Seamless offline dual-engine fallback if AI is unavailable
+    if (!data || !data.story) {
+      const offlineIndex = Math.min(Math.max(0, turn - 1), SCRIBE_OFFLINE_TALES.length - 1);
+      data = SCRIBE_OFFLINE_TALES[offlineIndex];
+    }
+
+    const storyText = data.story || 'The tale continues into the shadows...';
+    await typeInto(storyBox, storyText);
+
+    choicesBox.innerHTML = '';
+    const choices = (turn >= 6) ? [] : (Array.isArray(data.choices) ? data.choices : []);
+    if (choices.length > 0) {
+      choices.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.className = 'quest-choice-btn';
+        btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
+        btn.onclick = () => step(ch);
+        choicesBox.appendChild(btn);
+      });
+    } else {
+      choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
     }
   };
 
@@ -3622,56 +3968,63 @@ function launchQuestEtym(mount) {
 
     const prompt = `${wordInput ? `Word: "${wordInput}".` : 'Pick an interesting, resonant English root word used in leadership or scholarship.'} Return JSON {"word":"the word","origin":"2-4 plain sentences detailing origin history","roots":["root → meaning"],"riddle":"an engaging quiz question about this word\'s origin","options":["option A","option B","option C","option D"],"answer":0}`;
 
+    let j = null;
     try {
-      const j = await callAiQuest(prompt, true);
-      const rootsHtml = (j.roots || []).map(r => `<li style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">${escapeHtml(r)}</li>`).join('');
-
-      resultBox.innerHTML = `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-            <h3 style="font-size:24px;color:var(--accent-cyan);margin:0;text-transform:capitalize;">${escapeHtml(j.word)}</h3>
-            <button class="btn btn-secondary btn-sm" id="btn-etym-listen">🔊 Listen</button>
-          </div>
-          <p style="font-size:14.5px;color:var(--text-main);margin:12px 0;line-height:1.55;">${escapeHtml(j.origin)}</p>
-          <div style="margin-top:10px;">
-            <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Root Genealogy:</strong>
-            <ul style="margin:6px 0 0 18px;padding:0;">${rootsHtml}</ul>
-          </div>
-        </div>
-
-        <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;">
-          <div style="font-weight:700;color:var(--accent-magenta);margin-bottom:8px;">🎯 Etymology Riddle Challenge:</div>
-          <p style="font-size:14.5px;color:var(--text-main);margin:0 0 12px 0;">${escapeHtml(j.riddle)}</p>
-          <div id="etym-options-container" class="quest-options-grid"></div>
-        </div>
-      `;
-
-      $('#btn-etym-listen')?.addEventListener('click', function() {
-        speak(`${j.word}. ${j.origin}`, this);
-      });
-
-      const optBox = $('#etym-options-container');
-      (j.options || []).forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'quest-choice-btn';
-        btn.textContent = opt;
-        btn.onclick = () => {
-          if (idx === j.answer) {
-            btn.style.borderColor = 'var(--accent-green, #10b981)';
-            btn.style.background = 'rgba(16, 185, 129, 0.15)';
-            btn.innerHTML = `<span>✔ Correct!</span> <span>${escapeHtml(opt)}</span>`;
-          } else {
-            btn.style.borderColor = 'var(--accent-magenta)';
-            btn.style.background = 'rgba(255, 42, 133, 0.12)';
-            btn.innerHTML = `<span>✘ Not quite:</span> <span>${escapeHtml(opt)}</span>`;
-          }
-        };
-        optBox.appendChild(btn);
-      });
-
+      j = await callAiQuest(prompt, true);
     } catch (e) {
-      resultBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ Could not unearth word origin. Check Gemini API key in Admin Settings.</div>`;
+      j = null;
     }
+
+    // Offline dual-engine fallback
+    if (!j || !j.word || !j.origin) {
+      const match = wordInput ? ETYM_OFFLINE_WORDS.find(w => w.word.toLowerCase() === wordInput.toLowerCase()) : null;
+      j = match || ETYM_OFFLINE_WORDS[Math.floor(Math.random() * ETYM_OFFLINE_WORDS.length)];
+    }
+
+    const rootsHtml = (j.roots || []).map(r => `<li style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">${escapeHtml(r)}</li>`).join('');
+
+    resultBox.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <h3 style="font-size:24px;color:var(--accent-cyan);margin:0;text-transform:capitalize;">${escapeHtml(j.word)}</h3>
+          <button class="btn btn-secondary btn-sm" id="btn-etym-listen">🔊 Listen</button>
+        </div>
+        <p style="font-size:14.5px;color:var(--text-main);margin:12px 0;line-height:1.55;">${escapeHtml(j.origin)}</p>
+        <div style="margin-top:10px;">
+          <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Root Genealogy:</strong>
+          <ul style="margin:6px 0 0 18px;padding:0;">${rootsHtml}</ul>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;">
+        <div style="font-weight:700;color:var(--accent-magenta);margin-bottom:8px;">🎯 Etymology Riddle Challenge:</div>
+        <p style="font-size:14.5px;color:var(--text-main);margin:0 0 12px 0;">${escapeHtml(j.riddle)}</p>
+        <div id="etym-options-container" class="quest-options-grid"></div>
+      </div>
+    `;
+
+    $('#btn-etym-listen')?.addEventListener('click', function() {
+      speak(`${j.word}. ${j.origin}`, this);
+    });
+
+    const optBox = $('#etym-options-container');
+    (j.options || []).forEach((opt, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'quest-choice-btn';
+      btn.textContent = opt;
+      btn.onclick = () => {
+        if (idx === j.answer) {
+          btn.style.borderColor = 'var(--accent-green, #10b981)';
+          btn.style.background = 'rgba(16, 185, 129, 0.15)';
+          btn.innerHTML = `<span>✔ Correct!</span> <span>${escapeHtml(opt)}</span>`;
+        } else {
+          btn.style.borderColor = 'var(--accent-magenta)';
+          btn.style.background = 'rgba(255, 42, 133, 0.12)';
+          btn.innerHTML = `<span>✘ Not quite:</span> <span>${escapeHtml(opt)}</span>`;
+        }
+      };
+      optBox.appendChild(btn);
+    });
   };
 
   goBtn?.addEventListener('click', unearth);
@@ -3709,21 +4062,27 @@ function launchQuestBard(mount) {
     }
 
     resBox.innerHTML = '<div style="color:var(--accent-cyan);padding:14px;"><span class="spinner-sm"></span> The silvered glass reflects your words...</div>';
+    
+    let reply = null;
     try {
       const prompt = `${mode} based on: "${text}". Keep under 200 words. Craft with eloquence and memorable cadence.`;
-      const reply = await callAiQuest(prompt, false);
-
-      resBox.innerHTML = `
-        <div class="quest-output-box" style="font-family:Georgia, serif;font-size:15px;line-height:1.75;background:var(--surface);">${escapeHtml(reply)}</div>
-        <button class="btn btn-secondary btn-sm" id="btn-bard-listen" type="button">🔊 Recite in Indian Accent</button>
-      `;
-
-      $('#btn-bard-listen')?.addEventListener('click', function() {
-        speak(reply, this);
-      });
+      reply = await callAiQuest(prompt, false);
     } catch (e) {
-      resBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ The mirror clouded over. Verify Gemini API key.</div>`;
+      reply = null;
     }
+
+    if (!reply || typeof reply !== 'string' || reply.length < 20) {
+      reply = getBardOfflineResponse(mode, text);
+    }
+
+    resBox.innerHTML = `
+      <div class="quest-output-box" style="font-family:Georgia, serif;font-size:15px;line-height:1.75;background:var(--surface);white-space:pre-line;">${escapeHtml(reply)}</div>
+      <button class="btn btn-secondary btn-sm" id="btn-bard-listen" type="button">🔊 Recite in Indian Accent</button>
+    `;
+
+    $('#btn-bard-listen')?.addEventListener('click', function() {
+      speak(reply, this);
+    });
   });
 }
 
@@ -3781,33 +4140,39 @@ function launchQuestOracle(mount) {
 
     const prompt = `Student Divination: Place="${q1}", Gift="${q2}", Evening="${q3}", Interests="${bio || 'General inquiry'}". Match this student to one unexpected, high-growth career for an English graduate in India. Return JSON {"title":"Career Title","why":"2 concise sentences why it matches their inner gifts","path":["Step 1 in school/college","Step 2 degree/skills","Step 3 career breakthrough"]}`;
 
+    let data = null;
     try {
-      const data = await callAiQuest(prompt, true);
-      const stepsHtml = (data.path || []).map((s, i) => `<li><strong>Stage ${i+1}:</strong> ${escapeHtml(s)}</li>`).join('');
-
-      resBox.innerHTML = `
-        <div class="holo-divination-card">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
-            <div>
-              <span class="badge-pill" style="background:rgba(0,240,255,0.2);color:var(--accent-cyan);font-weight:700;">✨ Destiny Matched</span>
-              <h3 style="font-size:24px;color:var(--accent-cyan);margin:8px 0 4px 0;">${escapeHtml(data.title)}</h3>
-            </div>
-            <button class="btn btn-secondary btn-sm" id="btn-oracle-listen">🔊 Listen</button>
-          </div>
-          <p style="font-size:14.5px;color:var(--text-main);margin:10px 0 16px 0;line-height:1.55;">${escapeHtml(data.why)}</p>
-          <div style="border-top:1px solid rgba(0,240,255,0.2);padding-top:12px;">
-            <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Your Concrete 3-Stage Roadmap:</strong>
-            <ol style="margin:8px 0 0 18px;padding:0;font-size:13.5px;line-height:1.6;color:var(--text-main);">${stepsHtml}</ol>
-          </div>
-        </div>
-      `;
-
-      $('#btn-oracle-listen')?.addEventListener('click', function() {
-        speak(`${data.title}. ${data.why}`, this);
-      });
+      data = await callAiQuest(prompt, true);
     } catch (e) {
-      resBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ The oracle was silent. Verify Gemini API key.</div>`;
+      data = null;
     }
+
+    if (!data || !data.title || !data.why) {
+      data = getOracleOfflineDestiny(q1, q2, q3, bio);
+    }
+
+    const stepsHtml = (data.path || []).map((s, i) => `<li><strong>Stage ${i+1}:</strong> ${escapeHtml(s)}</li>`).join('');
+
+    resBox.innerHTML = `
+      <div class="holo-divination-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+          <div>
+            <span class="badge-pill" style="background:rgba(0,240,255,0.2);color:var(--accent-cyan);font-weight:700;">✨ Destiny Matched</span>
+            <h3 style="font-size:24px;color:var(--accent-cyan);margin:8px 0 4px 0;">${escapeHtml(data.title)}</h3>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btn-oracle-listen">🔊 Listen</button>
+        </div>
+        <p style="font-size:14.5px;color:var(--text-main);margin:10px 0 16px 0;line-height:1.55;">${escapeHtml(data.why)}</p>
+        <div style="border-top:1px solid rgba(0,240,255,0.2);padding-top:12px;">
+          <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Your Concrete 3-Stage Roadmap:</strong>
+          <ol style="margin:8px 0 0 18px;padding:0;font-size:13.5px;line-height:1.6;color:var(--text-main);">${stepsHtml}</ol>
+        </div>
+      </div>
+    `;
+
+    $('#btn-oracle-listen')?.addEventListener('click', function() {
+      speak(`${data.title}. ${data.why}`, this);
+    });
   });
 }
 
@@ -3818,50 +4183,91 @@ function launchQuestCipher(mount) {
       <h3 style="font-size:20px;margin:0 0 4px 0;">🔍 Quest V: The Ink Cipher (Archive Mystery)</h3>
       <span style="font-size:13px;color:var(--text-dim);">Move your mouse across the archive document to illuminate clues with the forensic flashlight.</span>
     </div>
-    <div id="cipher-case-lens" class="archive-case-lens">
-      <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">ARCHIVAL INCIDENT REPORT #1894 · RESTRICTED VAULT</div>
-      <div id="cipher-text-content">Opening the sealed university archives...</div>
+    
+    <div class="archive-case-lens" id="cipher-lens-box">
+      <div id="cipher-case-content" style="position:relative;z-index:2;">
+        <h4 id="cipher-case-title" style="color:var(--accent-cyan);margin-top:0;">Archive Case: The Disappearing Nalanda Translation</h4>
+        <p id="cipher-case-intro" style="font-size:14px;line-height:1.6;color:var(--text-main);">
+          At midnight in the library quadrangle, a priceless 14th-century illuminated folio translated from Nalanda Sanskrit into early English vanished from its locked mahogany case. Three scholars were logged present in the scriptorium.
+        </p>
+        <div style="margin:14px 0;padding:12px;background:rgba(0,0,0,0.3);border-radius:var(--radius-sm);border-left:3px solid var(--accent-cyan);">
+          <strong>Forensic Clue:</strong> <span id="cipher-case-clue">A smudge of ultramarine blue calligraphic wax was found near the display lock.</span>
+        </div>
+        <div style="font-weight:700;font-size:13px;color:var(--accent-magenta);margin-bottom:6px;">Suspects Under Interrogation:</div>
+        <div id="cipher-suspects-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;"></div>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:14px;">
-      <input type="text" id="cipher-question-input" placeholder="Ask a question or interrogate a suspect (e.g. Where was the librarian at midnight?)..." style="flex:1;">
-      <button class="btn btn-primary" id="btn-cipher-ask">Interrogate 🔍</button>
+
+    <!-- Interrogation Console -->
+    <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;">
+      <h4 style="margin:0 0 8px 0;font-size:15px;color:var(--accent-cyan);">Archive Interrogation Log</h4>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="cipher-question-input" placeholder="Question the suspects or ask the archive inspector a clue..." style="flex:1;">
+        <button class="btn btn-secondary" id="btn-cipher-ask">Interrogate</button>
+      </div>
+      <div id="cipher-interrogation-reply" style="min-height:40px;"></div>
+      
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Issue Accusation:</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="cipher-accuse-select" style="flex:1;min-width:200px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text);font-size:13px;"></select>
+          <button class="btn btn-primary" id="btn-cipher-accuse">⚖️ Present Evidence to Dean</button>
+        </div>
+        <div id="cipher-verdict-mount" style="margin-top:12px;"></div>
+      </div>
     </div>
-    <div id="cipher-reply-box" style="margin-top:14px;"></div>
   `;
 
-  const lens = $('#cipher-case-lens');
-  const textContent = $('#cipher-text-content');
+  const lensBox = $('#cipher-lens-box');
+  const suspectsList = $('#cipher-suspects-list');
+  const accuseSelect = $('#cipher-accuse-select');
   const askBtn = $('#btn-cipher-ask');
-  const replyBox = $('#cipher-reply-box');
+  const accuseBtn = $('#btn-cipher-accuse');
+  const replyBox = $('#cipher-interrogation-reply');
+  const verdictMount = $('#cipher-verdict-mount');
 
-  if (lens) {
-    lens.onmousemove = e => {
-      const rect = lens.getBoundingClientRect();
-      lens.style.setProperty('--cx', `${e.clientX - rect.left}px`);
-      lens.style.setProperty('--cy', `${e.clientY - rect.top}px`);
-    };
-    lens.onmouseleave = () => {
-      lens.style.setProperty('--cx', '-200px');
-      lens.style.setProperty('--cy', '-200px');
-    };
-  }
+  // Flashlight illuminated lens mouse tracker
+  lensBox?.addEventListener('mousemove', (e) => {
+    const rect = lensBox.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    lensBox.style.setProperty('--lens-x', `${x}px`);
+    lensBox.style.setProperty('--lens-y', `${y}px`);
+  });
 
-  let currentCase = null;
+  const currentCase = {
+    title: "Archive Case: The Disappearing Nalanda Translation",
+    intro: "At midnight in the library quadrangle, a priceless 14th-century illuminated folio translated from Nalanda Sanskrit into early English vanished from its locked mahogany case. Three scholars were logged present in the scriptorium.",
+    clue: "A smudge of ultramarine blue calligraphic wax was found near the display lock.",
+    culprit: "Sister Margaret",
+    culpritReason: "Sister Margaret uses genuine ultramarine wax imported from Venice to seal religious translations, whereas Dr. Finch and Librarian Kulkarni use standard scarlet seal lacquer.",
+    suspects: [
+      { name: "Dr. Alistair Finch", role: "Visiting Oxford Paleographer", alibi: "Claims he was examining astronomy charts in the north tower." },
+      { name: "Sister Margaret", role: "Archival Conservator", alibi: "Claims she was restoring liturgical psalters in the scriptorium." },
+      { name: "Librarian Kulkarni", role: "Head Curator", alibi: "Claims he was cataloging new Sanskrit acquisitions in the main annex." }
+    ]
+  };
 
-  const initCase = async () => {
-    try {
-      const prompt = `Create a short literary mystery set in a historic university archive in India (stolen illuminated manuscript). Return JSON {"caseTitle":"...","intro":"60 words describing the theft and scene","suspects":["Prof. Sharma: Manuscript curator","Mr. Das: Night archivist","Aarav: Research scholar"],"clue":"one subtle clue found near the empty glass case"}`;
-      currentCase = await callAiQuest(prompt, true);
+  const initCase = () => {
+    if (!suspectsList || !accuseSelect) return;
+    suspectsList.innerHTML = '';
+    accuseSelect.innerHTML = '<option value="">-- Choose suspect to accuse --</option>';
 
-      textContent.innerHTML = `
-        <div style="margin-bottom:10px;font-size:14px;color:#fff;"><strong>Case: ${escapeHtml(currentCase.caseTitle || 'The Missing Folio')}</strong></div>
-        <p style="margin:0 0 10px 0;">${escapeHtml(currentCase.intro)}</p>
-        <div style="margin-bottom:8px;"><strong>Suspects:</strong> ${(currentCase.suspects || []).join(' · ')}</div>
-        <div style="color:var(--accent-cyan);"><strong>Initial Clue:</strong> ${escapeHtml(currentCase.clue)}</div>
+    currentCase.suspects.forEach(s => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background:var(--bg-subtle);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12.5px;';
+      card.innerHTML = `
+        <strong style="color:var(--text-main);">${escapeHtml(s.name)}</strong>
+        <div style="color:var(--accent-cyan);font-size:11.5px;margin:2px 0;">${escapeHtml(s.role)}</div>
+        <div style="color:var(--text-muted);font-size:11px;">Alibi: "${escapeHtml(s.alibi)}"</div>
       `;
-    } catch (e) {
-      textContent.innerHTML = 'The archive vault is sealed. Ensure your Gemini API key is configured.';
-    }
+      suspectsList.appendChild(card);
+
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = `${s.name} (${s.role})`;
+      accuseSelect.appendChild(opt);
+    });
   };
 
   askBtn?.addEventListener('click', async () => {
@@ -3869,17 +4275,47 @@ function launchQuestCipher(mount) {
     if (!q || !currentCase) return;
 
     replyBox.innerHTML = '<div style="color:var(--accent-cyan);padding:8px;"><span class="spinner-sm"></span> Consulting the interrogation log...</div>';
+    
+    let ans = null;
     try {
       const prompt = `In this mystery case: "${currentCase.intro}", with suspects: ${JSON.stringify(currentCase.suspects)} and clue: "${currentCase.clue}". The student asks the inspector: "${q}". Provide a realistic 40-word detective response that offers a clue without spoiling the mystery immediately.`;
-      const ans = await callAiQuest(prompt, false);
+      ans = await callAiQuest(prompt, false);
+    } catch (e) {
+      ans = null;
+    }
 
-      replyBox.innerHTML = `
-        <div class="quest-output-box" style="border-left:3px solid var(--accent-magenta);margin:8px 0;">
-          <strong>Inspector\'s Note:</strong> ${escapeHtml(ans)}
+    if (!ans || typeof ans !== 'string' || ans.length < 15) {
+      ans = getCipherOfflineInspector(q, currentCase);
+    }
+
+    replyBox.innerHTML = `
+      <div class="quest-output-box" style="border-left:3px solid var(--accent-magenta);margin:8px 0;">
+        <strong>Inspector's Note:</strong> ${escapeHtml(ans)}
+      </div>
+    `;
+  });
+
+  accuseBtn?.addEventListener('click', () => {
+    const suspect = accuseSelect?.value;
+    if (!suspect) {
+      showToast('Select a suspect to accuse.');
+      return;
+    }
+
+    if (suspect === currentCase.culprit) {
+      verdictMount.innerHTML = `
+        <div style="background:rgba(16,185,129,0.15);border:1px solid var(--accent-green, #10b981);border-radius:var(--radius-md);padding:14px;color:var(--text-main);">
+          <div style="font-weight:700;color:var(--accent-green, #10b981);font-size:15px;margin-bottom:4px;">🎉 Case Solved! Master Sleuth!</div>
+          <p style="margin:0;font-size:13.5px;line-height:1.5;">${escapeHtml(currentCase.culpritReason)}</p>
         </div>
       `;
-    } catch (e) {
-      replyBox.innerHTML = `<div style="color:var(--accent-magenta);">Could not query archive log.</div>`;
+    } else {
+      verdictMount.innerHTML = `
+        <div style="background:rgba(255,42,133,0.12);border:1px solid var(--accent-magenta);border-radius:var(--radius-md);padding:14px;color:var(--text-main);">
+          <div style="font-weight:700;color:var(--accent-magenta);font-size:15px;margin-bottom:4px;">❌ Insufficient Evidence</div>
+          <p style="margin:0;font-size:13.5px;line-height:1.5;">The Dean dismisses the petition against ${escapeHtml(suspect)}. Re-examine the clue: who uses that specific colored seal wax?</p>
+        </div>
+      `;
     }
   });
 

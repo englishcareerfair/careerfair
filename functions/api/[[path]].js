@@ -635,11 +635,13 @@ export async function onRequest(ctx) {
     const rawSources = [];
 
     // 1. Client header or body (passed from frontend Admin settings)
-    const headerKeys = request?.headers?.get('x-gemini-keys') || request?.headers?.get('x-gemini-key');
+    const headerKeys = request?.headers?.get('x-gemini-keys') || request?.headers?.get('x-gemini-key') || request?.headers?.get('x-goog-api-key');
     if (headerKeys) rawSources.push(headerKeys);
     if (body.keys && Array.isArray(body.keys)) rawSources.push(body.keys.join(','));
     if (body.geminiKeys) rawSources.push(Array.isArray(body.geminiKeys) ? body.geminiKeys.join(',') : String(body.geminiKeys));
+    if (body.gemini_keys) rawSources.push(Array.isArray(body.gemini_keys) ? body.gemini_keys.join(',') : String(body.gemini_keys));
     if (body.geminiKey) rawSources.push(String(body.geminiKey));
+    if (body.gemini_key) rawSources.push(String(body.gemini_key));
 
     // 2. D1 Database stored config if available
     if (db) {
@@ -652,6 +654,9 @@ export async function onRequest(ctx) {
     // 3. Cloudflare environment variables
     if (env?.GEMINI_API_KEYS) rawSources.push(env.GEMINI_API_KEYS);
     if (env?.GEMINI_API_KEY) rawSources.push(env.GEMINI_API_KEY);
+
+    // 4. Fallback studio key from config
+    // Key pool supplied via Cloudflare env or Admin Settings
 
     const pool = [];
     for (const src of rawSources) {
@@ -674,45 +679,54 @@ export async function onRequest(ctx) {
     }
 
     const errors = [];
+    const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+
     for (let i = 0; i < keysPool.length; i++) {
       const key = keysPool[i];
-      try {
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents,
-            generationConfig: Object.assign({ maxOutputTokens: 600, temperature: 0.7 }, generationConfig)
-          })
-        });
 
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            return {
-              ok: true,
-              text,
-              usedKeyIndex: i + 1,
-              totalKeys: keysPool.length,
-              provider: keysPool.length > 1 ? `Google Gemini AI (Key ${i + 1}/${keysPool.length})` : 'Google Gemini AI'
-            };
+      for (const model of models) {
+        try {
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': key
+            },
+            body: JSON.stringify({
+              contents,
+              generationConfig: Object.assign({ maxOutputTokens: 600, temperature: 0.7 }, generationConfig)
+            })
+          });
+
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              return {
+                ok: true,
+                text,
+                usedKeyIndex: i + 1,
+                totalKeys: keysPool.length,
+                provider: `Google Gemini AI (${model})`
+              };
+            }
           }
-        }
 
-        const errText = await geminiRes.text().catch(() => '');
-        // Check if quota exhausted or rate limited
-        if (geminiRes.status === 429 || geminiRes.status === 403 || errText.includes('RESOURCE_EXHAUSTED') || errText.includes('quota') || errText.includes('API_KEY_INVALID')) {
-          EXHAUSTED_GEMINI_KEYS.add(key);
-          errors.push(`Key #${i + 1} exhausted (${geminiRes.status}). Discarded.`);
-          continue; // Switch to next backup key!
-        } else {
-          errors.push(`Key #${i + 1} error (${geminiRes.status}): ${errText.slice(0, 100)}`);
-          continue;
+          if (geminiRes.status === 404) {
+            continue;
+          }
+
+          const errText = await geminiRes.text().catch(() => '');
+          if (geminiRes.status === 429 || geminiRes.status === 403 || errText.includes('RESOURCE_EXHAUSTED') || errText.includes('quota') || errText.includes('API_KEY_INVALID')) {
+            EXHAUSTED_GEMINI_KEYS.add(key);
+            errors.push(`Key #${i + 1} exhausted (${geminiRes.status}). Discarded.`);
+            break;
+          } else {
+            errors.push(`Key #${i + 1} [${model}] error (${geminiRes.status}): ${errText.slice(0, 100)}`);
+          }
+        } catch (e) {
+          errors.push(`Key #${i + 1} [${model}] network exception: ${e.message}`);
         }
-      } catch (e) {
-        errors.push(`Key #${i + 1} network exception: ${e.message}`);
-        continue;
       }
     }
 
@@ -861,8 +875,32 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
       }
     }
 
-    // 8d. General & Speech Coaching with Failover
-    if (keysPool.length > 0) {
+    // 8d. Interactive AI Quest & Literary Tasks
+    if (task === 'quest' || task === 'prompt') {
+      const promptText = String(body.prompt || prompt || '').slice(0, 4000);
+      const isJson = Boolean(body.json);
+      if (keysPool.length > 0) {
+        const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: promptText }] }], {
+          maxOutputTokens: 1000,
+          temperature: 0.8,
+          responseMimeType: isJson ? 'application/json' : undefined
+        });
+        if (aiRes.ok && aiRes.text) {
+          let parsed = aiRes.text;
+          if (isJson) {
+            const jsonMatch = aiRes.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (jsonMatch) {
+              try { parsed = JSON.parse(jsonMatch[0]); } catch { parsed = aiRes.text; }
+            }
+          }
+          return json({ ok: true, text: aiRes.text, reply: parsed, provider: aiRes.provider });
+        }
+      }
+      return json({ ok: false, error: 'AI quest synthesis unavailable' }, 200);
+    }
+
+    // 8e. General & Speech Coaching with Failover
+    if (task === 'speech-coaching' && keysPool.length > 0) {
       try {
         const fullPrompt = `You are the lead AI Career & English Communication Coach at the English Careers Forum 2026 for Kanakia International School students.
 Task: ${task}
@@ -898,35 +936,6 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
 
       responseText = `**Speech Coach Insights:**\n\n${suggestions.join('\n\n')}\n\n**"Say It Better" Model Delivery:**\n"${text ? text.replace(/\b(um+|uh+|like|you know)\b/gi, '').trim() : 'Effective communication connects our ideas directly with the hearts and minds of listeners.'}"`;
-    } else if (task === 'quest' || task === 'prompt') {
-      const promptText = String(body.prompt || prompt || '').slice(0, 4000);
-      const isJson = Boolean(body.json);
-      if (keysPool.length > 0) {
-        for (const k of keysPool) {
-          try {
-            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${k}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ parts: [{ text: promptText }] }],
-                generationConfig: isJson ? { responseMimeType: 'application/json' } : {}
-              })
-            });
-            if (aiRes.ok) {
-              const data = await aiRes.json();
-              const reply = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-              if (reply) {
-                let parsed = reply;
-                if (isJson) {
-                  try { parsed = JSON.parse(reply.replace(/```json|```/g, '').trim()); } catch {}
-                }
-                return json({ ok: true, text: reply, reply: parsed, provider: 'Gemini AI' });
-              }
-            }
-          } catch (e) {}
-        }
-      }
-      return json({ ok: false, error: 'AI quest synthesis unavailable' }, 500);
     } else if (task === 'email-fix') {
       responseText = `**Professional Polish:**\n\nSubject: Update Regarding Project Deliverables and Schedule\n\nDear Team,\n\nI hope this email finds you well. I am writing to share our progress on this week's milestones and confirm our upcoming review meeting. Please let me know if you require any additional details.\n\nBest regards,\nClass X Representative`;
     } else {
