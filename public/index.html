@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2.7">
+  <link rel="stylesheet" href="styles.css?v=2.8">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=2.7" defer></script>
+  <script src="app.js?v=2.8" defer></script>
 </head>
 <body>
 
@@ -132,19 +132,51 @@
 
         <div class="hero-right">
           <div class="hero-visualizer-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <span style="font-family:var(--font-sub);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--accent-cyan);text-transform:uppercase;">
-                VOICE INTELLIGENCE RADAR
-              </span>
-              <span class="badge-pill badge-naac" id="mic-status-pill">Active Resonance</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-family:var(--font-sub);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--accent-cyan);text-transform:uppercase;">
+                  FORUM LIVE BROADCAST
+                </span>
+              </div>
+              <span class="badge-live-pulse" id="stream-live-badge">● LIVE STREAM</span>
             </div>
             
-            <div style="position:relative;">
-              <canvas class="hero-canvas" id="hero-wave-canvas"></canvas>
-              <div style="position:absolute;bottom:8px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.7);pointer-events:none;">
-                <span>Acoustic Frequency: <strong style="color:var(--accent-cyan);">44.1 kHz</strong></span>
-                <span>Articulation Sense: <strong style="color:var(--accent-emerald);">Live</strong></span>
+            <!-- 16:9 Stream Frame / Standby Wrapper -->
+            <div class="hero-stream-frame-wrap" id="hero-stream-container">
+              <!-- Active iframe (populated dynamically with YouTube stream) -->
+              <iframe
+                id="hero-youtube-iframe"
+                src=""
+                title="English Careers Forum 2026 Live Broadcast"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen
+                hidden>
+              </iframe>
+
+              <!-- Standby Mode Card (shown when stream is offline or unconfigured) -->
+              <div class="hero-stream-standby" id="hero-stream-standby">
+                <div class="standby-icon">📡</div>
+                <h4 style="font-size:15px;font-weight:700;margin-bottom:4px;color:var(--text-main);">Live Stream Standby</h4>
+                <p style="font-size:12px;color:var(--text-muted);max-width:320px;margin-bottom:12px;line-height:1.4;">
+                  The official auditorium broadcast will appear here once the feed goes live.
+                </p>
+                <span class="badge-pill" style="font-size:11px;background:rgba(0,240,255,0.08);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.25);">
+                  🏛️ Kanakia International School Auditorium Feed
+                </span>
               </div>
+            </div>
+
+            <!-- Stream Meta & Quick Action Strip -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:2px 0;font-size:12px;flex-wrap:wrap;gap:8px;">
+              <div style="display:flex;align-items:center;gap:6px;min-width:0;flex:1;">
+                <span style="color:#ef4444;font-size:10px;">🔴</span>
+                <span id="hero-stream-title-text" style="font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                  English Careers Forum 2026 — Live Stage Broadcast
+                </span>
+              </div>
+              <a id="hero-stream-external-link" href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" hidden>
+                <span>Watch on YouTube</span> <span>↗</span>
+              </a>
             </div>
             
             <div class="hero-metrics-grid">
@@ -803,15 +835,121 @@
 
         <!-- Admin Tabs -->
         <div class="filter-row" id="admin-tab-row">
-          <button class="filter-chip active" data-admin-view="features">Feature Flags</button>
+          <button class="filter-chip active" data-admin-view="stream">🔴 Live Stream</button>
+          <button class="filter-chip" data-admin-view="features">Feature Flags</button>
           <button class="filter-chip" data-admin-view="broadcast">Announcement &amp; Timer</button>
           <button class="filter-chip" data-admin-view="branding">Branding &amp; Theme</button>
           <button class="filter-chip" data-admin-view="ai">AI &amp; Speech Router</button>
           <button class="filter-chip" data-admin-view="data">Moderation &amp; Exports</button>
         </div>
 
+        <!-- View 0: YouTube Live Stream & Broadcast Setup -->
+        <div id="admin-view-stream" class="admin-view-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:2px;">YouTube Live Stream &amp; Broadcast Setup</h4>
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                Embed the auditorium live feed or YouTube video directly onto the homepage hero section.
+              </p>
+            </div>
+            <span class="badge-pill" id="admin-stream-status-pill" style="font-size:11.5px;background:rgba(0,240,255,0.1);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">Live Stream Ready</span>
+          </div>
+
+          <div class="card" style="background:var(--bg-subtle);border:1px solid var(--border);padding:18px;margin-bottom:16px;">
+            <!-- Stream Enable Switch -->
+            <div class="toggle-switch-row" style="margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:14px;">
+              <div>
+                <strong style="color:var(--text-main);font-size:14px;">Broadcast Live Stream on Homepage</strong>
+                <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">When enabled, the video will stream continuously in the hero showcase. When disabled, an elegant standby card is shown.</div>
+              </div>
+              <input type="checkbox" id="admin-stream-active-toggle" checked style="width:22px;height:22px;accent-color:var(--accent-cyan);">
+            </div>
+
+            <!-- YouTube URL or Video ID -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text-main);">
+                YouTube Stream URL or 11-Character Video ID:
+              </label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input
+                  type="text"
+                  id="admin-stream-url-input"
+                  placeholder="Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)"
+                  style="flex:1;min-width:260px;font-family:var(--font-mono);font-size:13px;"
+                >
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-preview-stream">
+                  🔍 Preview Video
+                </button>
+              </div>
+              <div id="admin-stream-url-status" style="font-size:12px;margin-top:6px;color:var(--text-muted);">
+                Accepts: Standard watch URLs, shortened links (<code>youtu.be</code>), Live streams (<code>youtube.com/live</code>), or raw 11-character video IDs.
+              </div>
+            </div>
+
+            <!-- Stream Display Title -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text-main);">
+                Broadcast Title / Headline:
+              </label>
+              <input
+                type="text"
+                id="admin-stream-title-input"
+                placeholder="e.g. English Careers Forum 2026 — Keynote &amp; Live Stage Broadcast"
+                value="English Careers Forum 2026 — Live Stage Broadcast"
+              >
+            </div>
+
+            <!-- Continuous Autoplay Toggle -->
+            <div class="toggle-switch-row" style="margin-bottom:18px;background:rgba(0,0,0,0.2);padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);">
+              <div>
+                <strong style="font-size:13px;">Continuous Autoplay</strong>
+                <div style="font-size:11.5px;color:var(--text-dim);">Plays automatically on page load (starts muted to satisfy browser autoplay security policies; viewers can unmute with one tap).</div>
+              </div>
+              <input type="checkbox" id="admin-stream-autoplay-toggle" checked style="width:20px;height:20px;accent-color:var(--accent-cyan);">
+            </div>
+
+            <!-- Admin Live Preview Window -->
+            <div style="margin-bottom:18px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.04em;">
+                  Admin Live Feed Preview:
+                </span>
+                <span id="admin-preview-indicator" style="font-size:11px;color:var(--text-dim);">Awaiting link</span>
+              </div>
+              <div style="max-width:520px;aspect-ratio:16/9;background:#050811;border-radius:var(--radius-md);overflow:hidden;border:1px solid rgba(0,240,255,0.25);position:relative;">
+                <iframe
+                  id="admin-stream-preview-frame"
+                  src=""
+                  title="Admin Stream Preview"
+                  style="width:100%;height:100%;border:0;"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                  hidden>
+                </iframe>
+                <div id="admin-stream-preview-placeholder" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-dim);font-size:12.5px;padding:16px;text-align:center;">
+                  <span style="font-size:26px;margin-bottom:6px;">📺</span>
+                  <span>Enter a YouTube link above and click "Preview Video" to verify playback.</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-primary" id="btn-save-stream" type="button" style="padding:10px 22px;font-weight:700;">
+                💾 Save &amp; Publish Stream
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-load-sample-stream" type="button" title="Load sample live presentation">
+                ⚡ Load Sample Stream Link
+              </button>
+              <button class="btn btn-secondary btn-sm" id="btn-turn-off-stream" type="button" style="color:#ef4444;" title="Set hero embed to standby mode">
+                ✕ Set to Standby Mode
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- View 1: Feature Flags Toggles -->
-        <div id="admin-view-features" class="admin-view-panel">
+        <div id="admin-view-features" class="admin-view-panel" hidden>
           <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Toggle modules on or off in real-time. Toggled-off features cleanly disappear with dynamic reflow.</p>
           <div id="admin-flags-container"></div>
         </div>

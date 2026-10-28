@@ -17,6 +17,10 @@ const STATE = {
     timer: 0,
     school_branding: true,
     school_name: 'Kanakia International School Mira Road',
+    stream_url: localStorage.getItem('cf_stream_url') || '',
+    stream_title: localStorage.getItem('cf_stream_title') || 'English Careers Forum 2026 — Live Stage Broadcast',
+    stream_active: localStorage.getItem('cf_stream_active') !== 'false',
+    stream_autoplay: localStorage.getItem('cf_stream_autoplay') !== 'false',
     flags: {
       speechLab: true, mockInterview: true, anchorMode: true, roleplay: true,
       debate: true, careers: true, colleges: true, exams: true,
@@ -2738,6 +2742,159 @@ function initAdminWorkspace() {
   $('#btn-export-feedback-csv')?.addEventListener('click', () => {
     window.open('/api/admin/export-feedback');
   });
+
+  // ── Admin Live Stream Controls ───────────────────────────────────────────
+  const streamUrlInput = $('#admin-stream-url-input');
+  const streamTitleInput = $('#admin-stream-title-input');
+  const streamActiveToggle = $('#admin-stream-active-toggle');
+  const streamAutoplayToggle = $('#admin-stream-autoplay-toggle');
+  const streamStatusPill = $('#admin-stream-status-pill');
+  const streamStatusText = $('#admin-stream-url-status');
+  const previewFrame = $('#admin-stream-preview-frame');
+  const previewPlaceholder = $('#admin-stream-preview-placeholder');
+  const previewIndicator = $('#admin-preview-indicator');
+
+  if (streamUrlInput) {
+    streamUrlInput.value = STATE.config.stream_url || '';
+  }
+  if (streamTitleInput) {
+    streamTitleInput.value = STATE.config.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+  }
+  if (streamActiveToggle) {
+    streamActiveToggle.checked = STATE.config.stream_active !== false;
+  }
+  if (streamAutoplayToggle) {
+    streamAutoplayToggle.checked = STATE.config.stream_autoplay !== false;
+  }
+
+  function validateAdminStreamInput(val) {
+    const id = extractYouTubeId(val);
+    if (!val || !val.trim()) {
+      if (streamStatusText) streamStatusText.innerHTML = 'Enter a YouTube link or 11-character video ID above.';
+      if (streamStatusPill) {
+        streamStatusPill.textContent = 'Standby Mode';
+        streamStatusPill.style.background = 'rgba(148, 163, 184, 0.15)';
+        streamStatusPill.style.color = 'var(--text-dim)';
+        streamStatusPill.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+      }
+      return '';
+    }
+    if (id) {
+      if (streamStatusText) {
+        streamStatusText.innerHTML = `<span style="color:var(--accent-emerald);font-weight:600;">✓ Valid YouTube Video ID: <strong>${id}</strong></span>`;
+      }
+      if (streamStatusPill) {
+        streamStatusPill.textContent = 'Stream Link Valid';
+        streamStatusPill.style.background = 'rgba(16, 185, 129, 0.15)';
+        streamStatusPill.style.color = 'var(--accent-emerald)';
+        streamStatusPill.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      }
+      return id;
+    } else {
+      if (streamStatusText) {
+        streamStatusText.innerHTML = '<span style="color:#ef4444;font-weight:600;">✕ Invalid link. Please check the YouTube URL format.</span>';
+      }
+      if (streamStatusPill) {
+        streamStatusPill.textContent = 'Invalid URL';
+        streamStatusPill.style.background = 'rgba(239, 68, 68, 0.15)';
+        streamStatusPill.style.color = '#ef4444';
+        streamStatusPill.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+      }
+      return '';
+    }
+  }
+
+  function setAdminPreview(id) {
+    if (!previewFrame || !previewPlaceholder) return;
+    if (id) {
+      previewFrame.src = buildYouTubeEmbedUrl(id, false);
+      previewFrame.hidden = false;
+      previewPlaceholder.hidden = true;
+      if (previewIndicator) previewIndicator.textContent = 'Preview active';
+    } else {
+      previewFrame.src = '';
+      previewFrame.hidden = true;
+      previewPlaceholder.hidden = false;
+      if (previewIndicator) previewIndicator.textContent = 'No preview';
+    }
+  }
+
+  streamUrlInput?.addEventListener('input', e => {
+    validateAdminStreamInput(e.target.value);
+  });
+
+  $('#btn-admin-preview-stream')?.addEventListener('click', () => {
+    const val = streamUrlInput ? streamUrlInput.value.trim() : '';
+    const id = validateAdminStreamInput(val);
+    if (id) {
+      setAdminPreview(id);
+      showToast(`Previewing YouTube video [${id}]`);
+    } else {
+      showToast('Please enter a valid YouTube video or stream link.');
+    }
+  });
+
+  $('#btn-save-stream')?.addEventListener('click', async () => {
+    const urlVal = streamUrlInput ? streamUrlInput.value.trim() : '';
+    const titleVal = streamTitleInput ? streamTitleInput.value.trim() : 'English Careers Forum 2026 — Live Stage Broadcast';
+    const activeVal = streamActiveToggle ? streamActiveToggle.checked : true;
+    const autoVal = streamAutoplayToggle ? streamAutoplayToggle.checked : true;
+
+    if (activeVal && urlVal && !extractYouTubeId(urlVal)) {
+      showToast('Warning: YouTube URL format is unrecognized. Please check before saving.');
+      return;
+    }
+
+    STATE.config.stream_url = urlVal;
+    STATE.config.stream_title = titleVal;
+    STATE.config.stream_active = activeVal;
+    STATE.config.stream_autoplay = autoVal;
+
+    localStorage.setItem('cf_stream_url', urlVal);
+    localStorage.setItem('cf_stream_title', titleVal);
+    localStorage.setItem('cf_stream_active', String(activeVal));
+    localStorage.setItem('cf_stream_autoplay', String(autoVal));
+
+    await fetchApi('admin/config', 'PUT', {
+      stream_url: urlVal,
+      stream_title: titleVal,
+      stream_active: activeVal
+    });
+
+    renderHeroStream();
+    showToast('Live stream settings updated and broadcast published!');
+  });
+
+  $('#btn-load-sample-stream')?.addEventListener('click', () => {
+    const sample = 'https://www.youtube.com/watch?v=jfKfPfyJRdk';
+    if (streamUrlInput) streamUrlInput.value = sample;
+    if (streamActiveToggle) streamActiveToggle.checked = true;
+    const id = validateAdminStreamInput(sample);
+    setAdminPreview(id);
+    showToast('Sample stream URL loaded. Click "Save & Publish Stream" to push live.');
+  });
+
+  $('#btn-turn-off-stream')?.addEventListener('click', async () => {
+    if (streamActiveToggle) streamActiveToggle.checked = false;
+    STATE.config.stream_active = false;
+    localStorage.setItem('cf_stream_active', 'false');
+
+    await fetchApi('admin/config', 'PUT', { stream_active: false });
+    renderHeroStream();
+    if (streamStatusPill) {
+      streamStatusPill.textContent = 'Standby Mode';
+      streamStatusPill.style.background = 'rgba(148, 163, 184, 0.15)';
+      streamStatusPill.style.color = 'var(--text-dim)';
+      streamStatusPill.style.borderColor = 'rgba(148, 163, 184, 0.3)';
+    }
+    showToast('Hero stream set to standby mode.');
+  });
+
+  // Check initial state for preview if already present
+  if (streamUrlInput && streamUrlInput.value) {
+    const id = validateAdminStreamInput(streamUrlInput.value);
+    if (id) setAdminPreview(id);
+  }
 }
 
 function toggleFeatureFlag(flagName, enabled) {
@@ -2748,70 +2905,104 @@ function toggleFeatureFlag(flagName, enabled) {
   showToast(`Feature "${flagName}" set to ${enabled ? 'ON' : 'OFF'}`);
 }
 
-// ─── AMBIENT HERO VOICE RADAR VISUALIZER ─────────────────────────────────────
-function initHeroWaveVisualizer() {
-  const canvas = $('#hero-wave-canvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  let phase = 0;
+// ─── HERO LIVE STREAM & YOUTUBE PARSING ───────────────────────────────────────
+function extractYouTubeId(urlOrId) {
+  if (!urlOrId || typeof urlOrId !== 'string') return '';
+  const trimmed = urlOrId.trim();
 
-  function resize() {
-    canvas.width = canvas.offsetWidth * window.devicePixelRatio || 400;
-    canvas.height = canvas.offsetHeight * window.devicePixelRatio || 160;
+  // Pure 11-char ID
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
   }
-  resize();
-  window.addEventListener('resize', resize);
 
-  function draw() {
-    const w = canvas.width;
-    const h = canvas.height;
-    if (!w || !h) {
-      requestAnimationFrame(draw);
-      return;
-    }
-    ctx.clearRect(0, 0, w, h);
-    const midY = h / 2;
-
-    // Radar grid
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < w; x += 36) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    ctx.beginPath();
-    ctx.moveTo(0, midY);
-    ctx.lineTo(w, midY);
-    ctx.stroke();
-
-    // Harmonic Audio Sine Waves
-    const ampBoost = isGreetingPlaying ? 2.2 : 1.0;
-    const waves = [
-      { color: 'rgba(0, 240, 255, 0.8)', freq: 0.016, amp: 26 * ampBoost, speed: 0.04 },
-      { color: 'rgba(255, 42, 133, 0.7)', freq: 0.024, amp: 18 * ampBoost, speed: -0.035 },
-      { color: 'rgba(114, 9, 183, 0.55)', freq: 0.009, amp: 14 * ampBoost, speed: 0.02 }
-    ];
-
-    waves.forEach(wave => {
-      ctx.beginPath();
-      ctx.strokeStyle = wave.color;
-      ctx.lineWidth = 2.2;
-      for (let x = 0; x < w; x++) {
-        const envelope = Math.sin((x / w) * Math.PI);
-        const y = midY + Math.sin(x * wave.freq + phase * wave.speed) * wave.amp * envelope;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+  // URL parser
+  try {
+    const parsed = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+    if (parsed.hostname.includes('youtube.com')) {
+      if (parsed.searchParams.has('v')) {
+        const v = parsed.searchParams.get('v');
+        if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) return v;
       }
-      ctx.stroke();
-    });
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (['embed', 'live', 'v', 'shorts'].includes(parts[0]) && parts[1]) {
+        if (/^[a-zA-Z0-9_-]{11}$/.test(parts[1])) return parts[1];
+      }
+    } else if (parsed.hostname === 'youtu.be') {
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      if (parts[0] && /^[a-zA-Z0-9_-]{11}$/.test(parts[0])) return parts[0];
+    }
+  } catch (e) {}
 
-    phase += 1;
-    requestAnimationFrame(draw);
+  // Regex fallback
+  const match = trimmed.match(/(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|live\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : '';
+}
+
+function buildYouTubeEmbedUrl(input, autoplay = true) {
+  const id = extractYouTubeId(input);
+  if (!id) return '';
+  // playsinline=1 keeps inline on mobile without fullscreen takeover
+  // rel=0 avoids irrelevant recommended videos
+  // modestbranding=1 keeps player clean
+  // autoplay=1&mute=1 satisfies browser autoplay policies for continuous playback
+  const autoParam = autoplay ? '&autoplay=1&mute=1' : '';
+  return `https://www.youtube-nocookie.com/embed/${id}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1${autoParam}`;
+}
+
+function renderHeroStream() {
+  const iframe = $('#hero-youtube-iframe');
+  const standby = $('#hero-stream-standby');
+  const badge = $('#stream-live-badge');
+  const titleEl = $('#hero-stream-title-text');
+  const linkEl = $('#hero-stream-external-link');
+  if (!iframe || !standby) return;
+
+  const rawUrl = STATE.config.stream_url || '';
+  const isActive = STATE.config.stream_active !== false;
+  const isAutoplay = STATE.config.stream_autoplay !== false;
+  const title = STATE.config.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+  const videoId = extractYouTubeId(rawUrl);
+
+  if (isActive && videoId) {
+    const embedUrl = buildYouTubeEmbedUrl(videoId, isAutoplay);
+    if (iframe.dataset.currentSrc !== embedUrl) {
+      iframe.src = embedUrl;
+      iframe.dataset.currentSrc = embedUrl;
+    }
+    iframe.hidden = false;
+    standby.hidden = true;
+
+    if (badge) {
+      badge.className = 'badge-live-pulse';
+      badge.textContent = '● LIVE STREAM';
+    }
+    if (titleEl) {
+      titleEl.textContent = title;
+    }
+    if (linkEl) {
+      linkEl.href = `https://www.youtube.com/watch?v=${videoId}`;
+      linkEl.hidden = false;
+    }
+  } else {
+    // Standby mode
+    if (iframe.dataset.currentSrc) {
+      iframe.src = '';
+      iframe.dataset.currentSrc = '';
+    }
+    iframe.hidden = true;
+    standby.hidden = false;
+
+    if (badge) {
+      badge.className = 'badge-standby';
+      badge.textContent = 'STANDBY MODE';
+    }
+    if (titleEl) {
+      titleEl.textContent = 'Live Stream Standby';
+    }
+    if (linkEl) {
+      linkEl.hidden = true;
+    }
   }
-
-  requestAnimationFrame(draw);
 }
 
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
@@ -2825,7 +3016,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initGamePicker();
   initPlanTools();
   initLeaderboard();
-  initHeroWaveVisualizer();
+  renderHeroStream();
 
   // Password visibility toggle handler
   $('#btn-toggle-pwd-vis')?.addEventListener('click', () => {
@@ -2843,6 +3034,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     STATE.config = Object.assign({}, STATE.config, cfg);
     if (cfg.banner) $('#broadcast-text').textContent = cfg.banner;
     if (cfg.school_name) $('#school-branding-name').textContent = `${cfg.school_name} ©`;
+    if (cfg.stream_url !== undefined && cfg.stream_url !== '') STATE.config.stream_url = cfg.stream_url;
+    if (cfg.stream_title) STATE.config.stream_title = cfg.stream_title;
+    if (cfg.stream_active !== undefined) STATE.config.stream_active = cfg.stream_active;
+    renderHeroStream();
   }
 
   // Pre-render home heroes & stats

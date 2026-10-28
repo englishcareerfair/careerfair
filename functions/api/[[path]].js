@@ -194,7 +194,11 @@ export async function onRequest(ctx) {
       }
     }
 
-    return json({ pass, banner, timer, theme, school_branding, school_name, flags, packs });
+    const stream_url = await kvGet(db, 'stream_url', '');
+    const stream_title = await kvGet(db, 'stream_title', 'English Careers Forum 2026 — Live Stage Broadcast');
+    const stream_active = (await kvGet(db, 'stream_active', '1')) === '1';
+
+    return json({ pass, banner, timer, theme, school_branding, school_name, flags, packs, stream_url, stream_title, stream_active });
   }
 
   // ── 2. PUT /admin/config ───────────────────────────────────────────────────
@@ -210,6 +214,9 @@ export async function onRequest(ctx) {
     if (body.school_branding !== undefined) await kvSet(db, 'school_branding', body.school_branding ? '1' : '0');
     if (body.school_name !== undefined) await kvSet(db, 'school_name', body.school_name);
     if (body.flags !== undefined) await kvSet(db, 'flags', JSON.stringify(body.flags));
+    if (body.stream_url !== undefined) await kvSet(db, 'stream_url', body.stream_url);
+    if (body.stream_title !== undefined) await kvSet(db, 'stream_title', body.stream_title);
+    if (body.stream_active !== undefined) await kvSet(db, 'stream_active', body.stream_active ? '1' : '0');
 
     for (const p of ['Everyday', 'Journalism', 'Law', 'Academic']) {
       if (body[`pack_${p}`] !== undefined) {
