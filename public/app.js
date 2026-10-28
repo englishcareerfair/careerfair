@@ -5075,19 +5075,27 @@ async function loadLeaderboard(filterPack = 'All') {
     }
   } catch (e) {}
 
-  if (!scores.length) {
+  const isReset = localStorage.getItem('cf_scores_reset') === 'true';
+  const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
+
+  if (!scores.length && !isReset) {
     const BENCHMARK_SCORES = [
-      { name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
-      { name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
-      { name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
-      { name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
-      { name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
-      { name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
+      { id: 'bm_1', name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
+      { id: 'bm_2', name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
+      { id: 'bm_3', name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
+      { id: 'bm_4', name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
+      { id: 'bm_5', name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
+      { id: 'bm_6', name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
     ];
 
     scores = (filterPack && filterPack !== 'All')
       ? BENCHMARK_SCORES.filter(s => s.pack.toLowerCase() === filterPack.toLowerCase())
       : BENCHMARK_SCORES;
+  }
+
+  // Filter out any scores deleted by administrator
+  if (deletedScores.length > 0) {
+    scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
   }
 
   tbody.innerHTML = '';
@@ -5096,12 +5104,18 @@ async function loadLeaderboard(filterPack = 'All') {
     return;
   }
 
+  const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+
   scores.forEach((sc, i) => {
     const tr = document.createElement('tr');
     const medal = i === 0 ? '🥇 1st' : i === 1 ? '🥈 2nd' : i === 2 ? '🥉 3rd' : `#${i + 1}`;
+    const delBtnHtml = isAdmin
+      ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:8px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" onclick="window.adminDeleteScore('${escapeHtml(String(sc.id || ''))}', '${escapeHtml(sc.name)}')">🗑️</button>`
+      : '';
+
     tr.innerHTML = `
       <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
-      <td><strong>${escapeHtml(sc.name)}</strong></td>
+      <td><strong>${escapeHtml(sc.name)}</strong>${delBtnHtml}</td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack)}</span></td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
@@ -5200,6 +5214,11 @@ function loadFeedbackWall() {
         ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
         : escapeHtml(f.role || 'Visitor');
 
+      const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+      const delBtnHtml = isAdmin
+        ? `<button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="margin-left:auto;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;" onclick="window.adminDeleteFeedback('${escapeHtml(String(f.id || ''))}', '${escapeHtml(f.comment || '')}')">🗑️ Delete (Admin)</button>`
+        : '';
+
       return `
         <div class="feedback-item">
           <div class="feedback-item-header">
@@ -5207,7 +5226,10 @@ function loadFeedbackWall() {
               <strong style="font-size:14.5px;">${escapeHtml(f.name || 'Anonymous')}</strong>
               <span class="feedback-item-badge">${roleBadge}</span>
             </div>
-            <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
+              ${delBtnHtml}
+            </div>
           </div>
           <p class="feedback-item-comment">"${escapeHtml(f.comment || '')}"</p>
           ${timeStr ? `<div class="feedback-item-time">🕒 ${timeStr}</div>` : ''}
@@ -5334,6 +5356,175 @@ function renderAdminView() {
   }
 }
 
+
+// ─── ADMIN MODERATION ACTIONS & DELETION HANDLERS ─────────────────────────
+window.adminDeleteFeedback = async function(id, comment) {
+  if (!confirm('Are you sure you want to delete this visitor reflection?')) return;
+  
+  try {
+    await fetchApi('admin/del-feedback', 'POST', { id, comment });
+  } catch (e) {}
+
+  try {
+    const raw = localStorage.getItem('cf_user_feedbacks');
+    if (raw) {
+      let items = JSON.parse(raw);
+      items = items.filter(f => {
+        if (id && String(f.id) === String(id)) return false;
+        if (comment && String(f.comment).trim() === String(comment).trim()) return false;
+        return true;
+      });
+      localStorage.setItem('cf_user_feedbacks', JSON.stringify(items));
+    }
+  } catch (e) {}
+
+  showToast('Visitor reflection deleted');
+  loadFeedbackWall();
+  renderAdminModeration();
+};
+
+window.adminDeleteScore = async function(id, name) {
+  if (!confirm(`Are you sure you want to delete score attempt for ${name}?`)) return;
+
+  try {
+    await fetchApi('admin/del', 'POST', { id, name });
+  } catch (e) {}
+
+  try {
+    const deleted = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
+    if (name && !deleted.includes(name)) deleted.push(name);
+    if (id && !deleted.includes(String(id))) deleted.push(String(id));
+    localStorage.setItem('cf_deleted_scores', JSON.stringify(deleted));
+  } catch (e) {}
+
+  showToast(`Score attempt for ${name} removed`);
+  loadLeaderboard();
+  renderAdminModeration();
+};
+
+async function renderAdminModeration() {
+  // 1. Render Visitor Reflections list in Admin Portal
+  const feedbackList = $('#admin-feedback-list');
+  const feedbackCount = $('#admin-feedback-count');
+
+  if (feedbackList) {
+    let allFeedbacks = [];
+    try {
+      const raw = localStorage.getItem('cf_user_feedbacks');
+      if (raw) allFeedbacks = JSON.parse(raw);
+    } catch {}
+
+    try {
+      const res = await fetchApi('feedback');
+      const serverItems = res?.results || res?.feedback || [];
+      if (Array.isArray(serverItems) && serverItems.length > 0) {
+        const seen = new Set(allFeedbacks.map(f => (f.comment || '').trim()));
+        for (const item of serverItems) {
+          const c = (item.comment || '').trim();
+          if (c && !seen.has(c)) {
+            allFeedbacks.push({
+              id: item.id,
+              name: item.name || 'Visitor',
+              role: item.role || 'Student',
+              class_info: item.class_info || '',
+              useful: item.r_useful || 5,
+              comment: item.comment,
+              ts: item.ts || Date.now()
+            });
+            seen.add(c);
+          }
+        }
+      }
+    } catch {}
+
+    allFeedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    if (feedbackCount) {
+      feedbackCount.textContent = `${allFeedbacks.length} Review${allFeedbacks.length === 1 ? '' : 's'}`;
+    }
+
+    if (!allFeedbacks.length) {
+      feedbackList.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-muted);">No visitor reflections currently submitted.</div>`;
+    } else {
+      feedbackList.innerHTML = allFeedbacks.map(f => {
+        const starCount = Math.max(1, Math.min(5, f.useful || f.r_useful || 5));
+        const timeStr = f.ts ? new Date(Number(f.ts)).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+        return `
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                <strong>${escapeHtml(f.name || 'Anonymous')}</strong>
+                <span class="badge-pill badge-reg" style="font-size:11px;">${escapeHtml(f.role || 'Student')}${f.class_info ? ' · ' + escapeHtml(f.class_info) : ''}</span>
+                <span style="font-size:12px;color:var(--accent-gold);">${'⭐'.repeat(starCount)} (${starCount}/5)</span>
+                ${timeStr ? `<span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${timeStr}</span>` : ''}
+              </div>
+              <div style="font-size:13.5px;color:var(--text-main);font-style:italic;">"${escapeHtml(f.comment || '')}"</div>
+            </div>
+            <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="window.adminDeleteFeedback('${escapeHtml(String(f.id || ''))}', '${escapeHtml(f.comment || '')}')">🗑️ Delete</button>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // 2. Render Leaderboard Scores table in Admin Portal
+  const scoresTbody = $('#admin-scores-table-body');
+  const scoresCount = $('#admin-scores-count');
+
+  if (scoresTbody) {
+    const isReset = localStorage.getItem('cf_scores_reset') === 'true';
+    const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
+
+    let scores = [];
+    try {
+      const data = await fetchApi('scores');
+      if (Array.isArray(data) && data.length > 0) scores = data;
+    } catch {}
+
+    if (!scores.length && !isReset) {
+      scores = [
+        { id: 'bm_1', name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
+        { id: 'bm_2', name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
+        { id: 'bm_3', name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
+        { id: 'bm_4', name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
+        { id: 'bm_5', name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
+        { id: 'bm_6', name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
+      ];
+    }
+
+    if (deletedScores.length > 0) {
+      scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
+    }
+
+    if (scoresCount) {
+      scoresCount.textContent = `${scores.length} Attempt${scores.length === 1 ? '' : 's'}`;
+    }
+
+    if (!scores.length) {
+      scoresTbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No score attempts recorded.</td></tr>`;
+    } else {
+      scoresTbody.innerHTML = scores.map((sc, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+        const timeStr = sc.ts ? new Date(Number(sc.ts)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        return `
+          <tr>
+            <td><strong>${medal}</strong></td>
+            <td><strong>${escapeHtml(sc.name)}</strong></td>
+            <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'General')}</span></td>
+            <td><strong style="color:var(--accent-emerald);">${sc.acc || 0}%</strong></td>
+            <td>${sc.fluency || '--'}%</td>
+            <td>${sc.wpm || 130}</td>
+            <td style="font-size:12px;color:var(--text-dim);">${timeStr}</td>
+            <td style="text-align:center;">
+              <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;" onclick="window.adminDeleteScore('${escapeHtml(String(sc.id || ''))}', '${escapeHtml(sc.name)}')">🗑️ Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+}
+
 function initAdminWorkspace() {
   // Admin tabs switching
   $$('#admin-tab-row .filter-chip').forEach(btn => {
@@ -5343,6 +5534,9 @@ function initAdminWorkspace() {
       const view = btn.dataset.adminView;
       $$('.admin-view-panel').forEach(p => p.hidden = true);
       $(`#admin-view-${view}`).hidden = false;
+      if (view === 'data') {
+        renderAdminModeration();
+      }
     });
   });
 
@@ -5483,6 +5677,42 @@ function initAdminWorkspace() {
     $('#school-branding-name').textContent = `${name} ©`;
     await fetchApi('admin/config', 'PUT', { school_branding: show, school_name: name });
     showToast('Branding settings updated');
+  });
+
+  // Moderation & Deletion handlers
+  renderAdminModeration();
+
+  $('#btn-refresh-admin-feedback')?.addEventListener('click', () => {
+    renderAdminModeration();
+    showToast('Refreshed visitor reflections');
+  });
+
+  $('#btn-clear-all-feedback')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to delete ALL visitor reflections? This action cannot be undone.')) return;
+    try {
+      await fetchApi('admin/reset-feedback', 'POST', {});
+    } catch {}
+    localStorage.removeItem('cf_user_feedbacks');
+    showToast('All visitor reflections deleted');
+    loadFeedbackWall();
+    renderAdminModeration();
+  });
+
+  $('#btn-refresh-admin-scores')?.addEventListener('click', () => {
+    renderAdminModeration();
+    showToast('Refreshed leaderboard scores');
+  });
+
+  $('#btn-reset-scores')?.addEventListener('click', async () => {
+    if (!confirm('Are you sure you want to reset ALL leaderboard scores? All recorded attempts will be erased.')) return;
+    try {
+      await fetchApi('admin/reset', 'POST', {});
+    } catch {}
+    localStorage.setItem('cf_scores_reset', 'true');
+    localStorage.removeItem('cf_deleted_scores');
+    showToast('All leaderboard scores reset');
+    loadLeaderboard();
+    renderAdminModeration();
   });
 
   // Export handlers
@@ -5845,6 +6075,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#admin-gate-screen').hidden = true;
       $('#admin-workspace-screen').hidden = false;
       initAdminWorkspace();
+      loadFeedbackWall();
+      loadLeaderboard();
       showToast('Admin Control Room Unlocked 🔓');
     } else {
       showToast('Incorrect password.');
@@ -5865,6 +6097,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     sessionStorage.removeItem('cf_admin_key');
     localStorage.removeItem('cf_admin_key');
     renderAdminView();
+    loadFeedbackWall();
+    loadLeaderboard();
     showToast('Logged out of Admin.');
   });
 });

@@ -879,26 +879,42 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    if (db && body.id) {
-      await db.prepare('DELETE FROM scores WHERE id=?').bind(body.id).run();
+    if (db) {
+      if (body.id) {
+        await db.prepare('DELETE FROM scores WHERE id=?').bind(body.id).run();
+      }
+      if (body.name) {
+        await db.prepare('DELETE FROM scores WHERE name=?').bind(body.name).run();
+      }
     }
-    return json({ ok: true });
+    return json({ ok: true, message: 'Score deleted' });
   }
 
   if (path === '/admin/del-feedback' && method === 'POST') {
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    if (db && body.id) {
-      await db.prepare('DELETE FROM feedback WHERE id=?').bind(body.id).run();
+    if (db) {
+      if (body.id) {
+        await db.prepare('DELETE FROM feedback WHERE id=?').bind(body.id).run();
+      }
+      if (body.comment) {
+        await db.prepare('DELETE FROM feedback WHERE comment=?').bind(body.comment).run();
+      }
     }
-    return json({ ok: true });
+    return json({ ok: true, message: 'Feedback deleted' });
   }
 
   if (path === '/admin/reset' && method === 'POST') {
     if (!authed(request, env)) return err('Unauthorized', 401);
     if (db) await db.prepare('DELETE FROM scores').run();
-    return json({ ok: true });
+    return json({ ok: true, message: 'All scores reset' });
+  }
+
+  if (path === '/admin/reset-feedback' && method === 'POST') {
+    if (!authed(request, env)) return err('Unauthorized', 401);
+    if (db) await db.prepare('DELETE FROM feedback').run();
+    return json({ ok: true, message: 'All feedback reset' });
   }
 
   if (path === '/admin/export' && method === 'GET') {

@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=4.9">
+  <link rel="stylesheet" href="styles.css?v=5.0">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=4.9" defer></script>
+  <script src="app.js?v=5.0" defer></script>
 </head>
 <body>
 
@@ -1112,16 +1112,83 @@
           </div>
         </div>
 
-        <!-- View 5: Moderation & CSV Exports -->
+        <!-- View 5: Moderation & Content Management -->
         <div id="admin-view-data" class="admin-view-panel" hidden>
-          <h4 style="font-size:15px;margin-bottom:8px;">Data Exports (.CSV)</h4>
-          <div style="display:flex;gap:10px;margin-bottom:20px;">
-            <button class="btn btn-secondary btn-sm" id="btn-export-scores-csv" type="button">📥 Export Scores (.CSV)</button>
-            <button class="btn btn-secondary btn-sm" id="btn-export-feedback-csv" type="button">📥 Export Feedback (.CSV)</button>
+          
+          <!-- 1. Visitor Reflections Moderation -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h4 style="font-size:16px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+                  <span>💬</span> <span>Visitor Reflections Moderation</span>
+                  <span class="badge-pill badge-reg" id="admin-feedback-count" style="font-size:11px;">0 Reviews</span>
+                </h4>
+                <p style="font-size:12.5px;color:var(--text-muted);margin:0;">
+                  Manage and delete visitor feedback reflections submitted across the platform.
+                </p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" id="btn-refresh-admin-feedback" type="button">🔄 Refresh</button>
+                <button class="btn btn-accent btn-sm" id="btn-clear-all-feedback" type="button" style="background:rgba(239,68,68,0.12);color:#ef4444;border-color:rgba(239,68,68,0.3);">🗑️ Delete All Reflections</button>
+              </div>
+            </div>
+
+            <div id="admin-feedback-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-subtle);padding:10px;display:flex;flex-direction:column;gap:8px;">
+              <div style="text-align:center;padding:24px;color:var(--text-muted);">Loading visitor reflections...</div>
+            </div>
           </div>
 
-          <h4 style="font-size:15px;margin-bottom:8px;color:var(--accent-magenta);">Danger Zone</h4>
-          <button class="btn btn-accent btn-sm" id="btn-reset-scores" type="button">⚠️ Reset All Leaderboard Scores</button>
+          <!-- 2. Leaderboard Scores Moderation -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h4 style="font-size:16px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+                  <span>🏆</span> <span>Leaderboard Scores Moderation</span>
+                  <span class="badge-pill badge-nirf" id="admin-scores-count" style="font-size:11px;">0 Attempts</span>
+                </h4>
+                <p style="font-size:12.5px;color:var(--text-muted);margin:0;">
+                  Delete specific student score attempts or reset all leaderboard rankings.
+                </p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-secondary btn-sm" id="btn-refresh-admin-scores" type="button">🔄 Refresh</button>
+                <button class="btn btn-accent btn-sm" id="btn-reset-scores" type="button">⚠️ Reset All Leaderboard Scores</button>
+              </div>
+            </div>
+
+            <div class="table-wrapper" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+              <table style="width:100%;font-size:13px;">
+                <thead>
+                  <tr>
+                    <th style="width:50px;">#</th>
+                    <th>Student Name</th>
+                    <th>Speaking Pack</th>
+                    <th>Accuracy</th>
+                    <th>Fluency</th>
+                    <th>WPM</th>
+                    <th>Time</th>
+                    <th style="width:90px;text-align:center;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-scores-table-body">
+                  <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading scores...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 3. Data Exports (.CSV) -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;box-shadow:var(--card-shadow);">
+            <h4 style="font-size:15px;margin-bottom:8px;">📥 Data Exports (.CSV)</h4>
+            <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 12px 0;">
+              Download statutory and offline CSV records of all scores and student feedback.
+            </p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-secondary btn-sm" id="btn-export-scores-csv" type="button">📥 Export Scores (.CSV)</button>
+              <button class="btn btn-secondary btn-sm" id="btn-export-feedback-csv" type="button">📥 Export Feedback (.CSV)</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
