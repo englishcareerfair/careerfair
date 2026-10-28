@@ -294,16 +294,22 @@ button, input, select, textarea {
 }
 
 .brand-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
   background: var(--surface-raised);
-  border: 1px solid var(--border-strong);
+  border: 1.5px solid var(--border-strong);
   display: grid;
   place-items: center;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(0, 240, 255, 0.15);
   flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.brand-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 18px rgba(0, 240, 255, 0.28);
 }
 
 .brand-copy .brand-name {
@@ -1419,6 +1425,122 @@ tr:hover td { background: var(--surface-hover); }
   animation: fadeIn 0.2s ease-out;
 }
 
+/* ─── 20. REAL-WORLD SITE FOOTER ─────────────────────────────────────────── */
+.site-footer {
+  background: var(--surface-raised);
+  border-top: 1px solid var(--border);
+  padding: 48px 20px 28px;
+  position: relative;
+  z-index: 20;
+}
+
+.footer-container {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.footer-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1.1fr 1.1fr;
+  gap: 36px;
+  margin-bottom: 32px;
+}
+
+.footer-col-brand .footer-tagline {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-width: 440px;
+  margin-bottom: 14px;
+}
+
+.footer-school-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.footer-heading {
+  font-family: var(--font-sub);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-cyan);
+  margin-bottom: 14px;
+}
+
+.footer-links-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-links-list a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: var(--transition);
+}
+
+.footer-links-list a:hover {
+  color: var(--accent-brand);
+  transform: translateX(4px);
+  display: inline-block;
+}
+
+.footer-accred-bar {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.footer-accred-title {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.footer-accred-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer-bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-bottom-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ─── 19. RESPONSIVE BREAKPOINTS (CROSS-PLATFORM MOBILE & TABLET) ────────── */
 @media (max-width: 768px) {
   body {
@@ -1450,8 +1572,8 @@ tr:hover td { background: var(--surface-hover); }
     flex-shrink: 1;
   }
   .brand-icon {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     flex-shrink: 0;
   }
   .brand-copy .brand-name {
@@ -1551,5 +1673,20 @@ tr:hover td { background: var(--surface-hover); }
   #admin-gate-screen {
     padding: 24px 16px;
     margin: 16px auto;
+  }
+  .site-footer {
+    padding: 32px 16px 20px;
+  }
+  .footer-main-grid {
+    grid-template-columns: 1fr;
+    gap: 26px;
+  }
+  .footer-accred-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .footer-bottom-bar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

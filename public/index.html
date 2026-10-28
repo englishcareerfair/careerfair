@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2.4">
+  <link rel="stylesheet" href="styles.css?v=2.5">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=2.4" defer></script>
+  <script src="app.js?v=2.5" defer></script>
 </head>
 <body>
 
@@ -43,7 +43,7 @@
       <div class="header-brand-row">
         <div class="site-brand" onclick="switchTab('hero')" role="button" tabindex="0">
           <div class="brand-icon" aria-hidden="true">
-            <svg viewBox="0 0 32 32" width="22" height="22" fill="none">
+            <svg viewBox="0 0 32 32" width="34" height="34" fill="none">
               <path d="M16 2.5L4 8v10c0 7.5 5 11.5 12 13 7-1.5 12-5.5 12-13V8L16 2.5z" stroke="url(#forumGradHdr)" stroke-width="2" fill="rgba(0,240,255,0.08)" />
               <path d="M10 22h12M12 24h8" stroke="#f3f6ff" stroke-width="1.5" stroke-linecap="round"/>
               <path d="M11 12v7M16 10v9M21 12v7" stroke="url(#forumGradHdr)" stroke-width="1.8" stroke-linecap="round"/>
@@ -86,7 +86,7 @@
     <div class="nav-tabs-wrapper">
       <button class="tab-btn active" data-tab="hero"><span>⚡</span> Overview</button>
       <button class="tab-btn" data-tab="careers" data-flag="careers"><span>🎯</span> Careers <span class="tab-badge">32+</span></button>
-      <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges &amp; Accreditations <span class="tab-badge">NAAC/NIRF</span></button>
+      <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges <span class="tab-badge">NAAC/NIRF</span></button>
       <button class="tab-btn" data-tab="exams" data-flag="exams"><span>📝</span> Exams</button>
       <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Ladder</span></button>
       <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
@@ -122,7 +122,7 @@
               <span>🎙️</span> <span>Test Pronunciation &amp; Speech</span>
             </button>
             <button class="btn btn-secondary" onclick="switchTab('colleges')">
-              <span>🏛️</span> <span>Explore Accredited Colleges</span>
+              <span>🏛️</span> <span>Explore Colleges</span>
             </button>
             <button class="btn btn-secondary" onclick="switchTab('games')">
               <span>🎮</span> <span>Play Jobtris &amp; Wordle</span>
@@ -191,12 +191,12 @@
       <div class="cards-grid" id="careers-cards-container"></div>
     </section>
 
-    <!-- ── SECTION: COLLEGES & ACCREDITATIONS ── -->
+    <!-- ── SECTION: COLLEGES ── -->
     <section class="section-shell" id="sec-colleges" hidden>
       <div class="section-head">
         <div>
           <div class="section-label">ACADEMIC EXCELLENCE &amp; STATUTORY RATINGS</div>
-          <h2 class="section-title">Premier Colleges &amp; Accreditations</h2>
+          <h2 class="section-title">Colleges</h2>
         </div>
         <p class="section-desc">
           Verified academic standards across Maharashtra, India, and overseas institutions — featuring official NAAC grades, NIRF ranks, UGC autonomous statuses, and professional regulatory approvals.
@@ -743,6 +743,8 @@
           <div id="feedback-wall-list" style="display:flex;flex-direction:column;gap:12px;max-height:480px;overflow-y:auto;padding-right:6px;"></div>
         </div>
       </div>
+    </section>
+
     <!-- ── SECTION: ADMIN CONTROL ROOM ── -->
     <section class="section-shell" id="sec-admin" hidden>
       <div class="section-head">
@@ -883,10 +885,81 @@
   </main>
 
   <!-- ── 6. SITE FOOTER ── -->
-  <footer style="background:var(--surface-raised);border-top:1px solid var(--border);padding:30px 20px;text-align:center;font-size:13.5px;color:var(--text-dim);position:relative;z-index:20;">
-    <p><strong>English Careers Forum 2026 · Every Career Speaks English</strong></p>
-    <p style="margin-top:6px;" id="footer-school-brand">Guided by the English Department · Kanakia International School Mira Road &copy;</p>
-    <p style="margin-top:6px;font-size:12px;">Accreditations &amp; entrance test formats are cross-indexed from UGC, NAAC, NIRF, BCI, NMC, and DGCA guidelines.</p>
+  <footer class="site-footer">
+    <div class="footer-container">
+      <!-- Upper Section: Brand & Navigation Columns -->
+      <div class="footer-main-grid">
+        <!-- Brand & School Col -->
+        <div class="footer-col-brand">
+          <div class="site-brand" onclick="switchTab('hero')" role="button" tabindex="0" style="margin-bottom:12px;display:inline-flex;">
+            <div class="brand-icon" style="width:40px;height:40px;" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+                <path d="M16 2.5L4 8v10c0 7.5 5 11.5 12 13 7-1.5 12-5.5 12-13V8L16 2.5z" stroke="url(#forumGradHdr)" stroke-width="2" fill="rgba(0,240,255,0.08)" />
+                <path d="M10 22h12M12 24h8" stroke="#f3f6ff" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M11 12v7M16 10v9M21 12v7" stroke="url(#forumGradHdr)" stroke-width="1.8" stroke-linecap="round"/>
+                <polygon points="16,6 18,9 14,9" fill="#ffb703"/>
+              </svg>
+            </div>
+            <div class="brand-copy">
+              <div class="brand-name" style="font-size:16px;">English Careers Forum <span style="color:var(--accent-cyan);font-weight:700;">2026</span></div>
+              <div class="brand-subtitle">KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD</div>
+            </div>
+          </div>
+          <p class="footer-tagline">
+            Bridging high-school academic preparation with international career articulation. Every modern profession speaks English.
+          </p>
+          <div class="footer-school-pill">
+            <span>🏫</span> Guided by the English Department · Kanakia International School Mira Road &copy;
+          </div>
+        </div>
+
+        <!-- Col 2: Navigation Pathways -->
+        <div class="footer-col-nav">
+          <h4 class="footer-heading">Platform Modules</h4>
+          <ul class="footer-links-list">
+            <li><a href="javascript:void(0)" onclick="switchTab('careers')">🎯 32+ Global Careers</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('colleges')">🏛️ Verified Colleges</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('speak')">🗣️ Speech Ladder &amp; Pronunciation</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('speechLab')">🎙️ 6D AI Speech Evaluation Coach</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Interactive Studio -->
+        <div class="footer-col-nav">
+          <h4 class="footer-heading">Interactive Studio</h4>
+          <ul class="footer-links-list">
+            <li><a href="javascript:void(0)" onclick="switchTab('games')">🎮 Language Arcade &amp; Jobtris</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('roadmap')">🗺️ "My Plan" Roadmap &amp; Quiz</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('leaderboard')">🏆 Exhibition Leaderboard</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('admin')">⚙️ Administrator Control Console</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Mid Section: Statutory Accreditations Badge Bar -->
+      <div class="footer-accred-bar">
+        <span class="footer-accred-title">Statutory Academic Standards &amp; Regulatory Cross-Indexing:</span>
+        <div class="footer-accred-tags">
+          <span class="badge-pill badge-naac">NAAC Grade A++ / A+</span>
+          <span class="badge-pill badge-nirf">NIRF Top-Tier</span>
+          <span class="badge-pill badge-reg">UGC Autonomous / INI</span>
+          <span class="badge-pill badge-global">BCI / NMC / NBA</span>
+          <span class="badge-pill badge-nirf">DGCA ICAO Aviation</span>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Copyright & Legal Meta -->
+      <div class="footer-bottom-bar">
+        <div>
+          &copy; 2026 English Careers Forum · Department of English, Kanakia International School Mira Road. All rights reserved.
+        </div>
+        <div class="footer-bottom-meta">
+          <span>Student Career Intelligence &amp; Spoken English Platform</span>
+          <span>·</span>
+          <span>Cross-Platform Responsive PWA</span>
+        </div>
+      </div>
+    </div>
   </footer>
 
   <!-- Toast Container -->

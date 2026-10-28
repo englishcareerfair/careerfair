@@ -820,6 +820,11 @@ function initNavigation() {
   $('#btn-greeting')?.addEventListener('click', () => {
     speakGreeting();
   });
+
+  // Initialize interactive sub-shelf pickers
+  initGamePicker();
+  initPlanTools();
+  initLeaderboard();
 }
 
 function switchTab(tabId) {
@@ -1687,6 +1692,8 @@ function renderGameArena(gameKey) {
   const mount = $('#game-arena-mount');
   if (!mount) return;
 
+  initGamePicker();
+
   $$('#game-picker-tabs .filter-chip').forEach(b => {
     b.classList.toggle('active', b.dataset.game === gameKey);
   });
@@ -1705,9 +1712,19 @@ function renderGameArena(gameKey) {
     renderFixTheEmail(mount);
   } else if (gameKey === 'package') {
     renderGuessPackage(mount);
+  } else if (gameKey === 'hangman') {
+    renderHangman(mount);
   } else {
     mount.innerHTML = `<div style="text-align:center;padding:40px;">Select a game to begin playing!</div>`;
   }
+}
+
+function initGamePicker() {
+  $$('#game-picker-tabs .filter-chip').forEach(btn => {
+    btn.onclick = () => {
+      renderGameArena(btn.dataset.game);
+    };
+  });
 }
 
 // GAME 1: Jobtris (Semantic Block Matching)
@@ -2053,10 +2070,92 @@ function renderGuessPackage(mount) {
   `;
 }
 
+// GAME 8: Career Word Hangman / Letter Guess
+function renderHangman(mount) {
+  const WORDS = [
+    { word: "ASTRONAUT", clue: "Space exploration & orbital research" },
+    { word: "SURGEON", clue: "Critical operating room surgical procedures" },
+    { word: "DIPLOMAT", clue: "International treaties and foreign embassy relations" },
+    { word: "ARCHITECT", clue: "Designing sustainable skyscrapers & urban masterplans" },
+    { word: "JOURNALIST", clue: "Investigative reporting & live news broadcasting" },
+    { word: "ADVOCATE", clue: "Courtroom litigation & constitutional rights defense" }
+  ];
+  let current = WORDS[Math.floor(Math.random() * WORDS.length)];
+  let guessedLetters = new Set();
+  let remainingMistakes = 6;
+
+  function renderState() {
+    const displayWord = current.word.split('').map(l => guessedLetters.has(l) ? l : '_').join(' ');
+    const isWon = current.word.split('').every(l => guessedLetters.has(l));
+    const isLost = remainingMistakes <= 0;
+
+    mount.innerHTML = `
+      <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+        <h3 style="font-size:20px;">🪢 Career Word Hangman</h3>
+        <p style="font-size:13.5px;color:var(--text-dim);">Guess the letters of high-impact professions. Clue: <strong>${current.clue}</strong></p>
+      </div>
+
+      <div style="text-align:center;max-width:540px;margin:20px auto;">
+        <div style="font-size:14px;color:var(--accent-gold);margin-bottom:10px;">
+          Chances Left: <strong>${remainingMistakes} / 6</strong>
+        </div>
+
+        <div style="font-family:var(--font-mono);font-size:32px;letter-spacing:0.25em;color:var(--accent-cyan);margin:24px 0;" id="hangman-display">
+          ${displayWord}
+        </div>
+
+        ${isWon ? `
+          <div style="background:rgba(0,245,155,0.15);border:1px solid var(--accent-emerald);color:var(--accent-emerald);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;">
+            🎉 Bravo! You deduced the profession: <strong>${current.word}</strong>!
+          </div>
+          <button class="btn btn-primary" id="btn-hangman-restart">Play Next Profession ➡️</button>
+        ` : isLost ? `
+          <div style="background:rgba(255,42,133,0.15);border:1px solid var(--accent-magenta);color:var(--accent-magenta);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;">
+            Game Over! The target career was <strong>${current.word}</strong>.
+          </div>
+          <button class="btn btn-primary" id="btn-hangman-restart">Try Again 🔄</button>
+        ` : `
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:440px;margin:0 auto;" id="hangman-alphabet-grid">
+            ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => `
+              <button class="filter-chip" data-letter="${char}" ${guessedLetters.has(char) ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''} style="min-width:36px;padding:6px 0;font-family:var(--font-mono);font-weight:700;">
+                ${char}
+              </button>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+
+    $('#btn-hangman-restart')?.addEventListener('click', () => {
+      current = WORDS[Math.floor(Math.random() * WORDS.length)];
+      guessedLetters.clear();
+      remainingMistakes = 6;
+      renderState();
+    });
+
+    $$('#hangman-alphabet-grid [data-letter]').forEach(btn => {
+      btn.onclick = () => {
+        const letter = btn.dataset.letter;
+        if (!guessedLetters.has(letter) && !isWon && !isLost) {
+          guessedLetters.add(letter);
+          if (!current.word.includes(letter)) {
+            remainingMistakes--;
+          }
+          renderState();
+        }
+      };
+    });
+  }
+
+  renderState();
+}
+
 // ─── 10. ROADMAP & EXPLORATION TOOLS (MY PLAN & QUIZ) ─────────────────────────
 function renderPlanTool(toolKey) {
   const mount = $('#plan-tool-arena');
   if (!mount) return;
+
+  initPlanTools();
 
   $$('#plan-tools-tabs .filter-chip').forEach(b => {
     b.classList.toggle('active', b.dataset.tool === toolKey);
@@ -2066,6 +2165,20 @@ function renderPlanTool(toolKey) {
     renderMyPlan(mount);
   } else if (toolKey === 'quiz') {
     renderCareerQuiz(mount);
+  } else if (toolKey === 'bizcard') {
+    renderFutureBusinessCard(mount);
+  } else if (toolKey === 'dreammatch') {
+    renderParentChildMatch(mount);
+  }
+}
+
+function initPlanTools() {
+  $$('#plan-tools-tabs .filter-chip').forEach(btn => {
+    btn.onclick = () => {
+      renderPlanTool(btn.dataset.tool);
+    };
+  });
+}
   } else if (toolKey === 'bizcard') {
     renderFutureBusinessCard(mount);
   } else if (toolKey === 'dreammatch') {
@@ -2161,34 +2274,133 @@ function renderMyPlan(mount) {
   });
 }
 
-// TOOL 2: Career Quiz
+// TOOL 2: 5-Question Career Curiosity Quiz
 function renderCareerQuiz(mount) {
-  mount.innerHTML = `
-    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🧭 5-Question Career Curiosity Quiz</h3>
-      <p style="font-size:13.5px;color:var(--text-dim);">Discover the sectors that match your natural energy and communication style.</p>
-    </div>
+  const QUESTIONS = [
+    {
+      q: "1. Which school activity energizes you the most?",
+      options: [
+        { text: "A. Directing plays, writing magazine articles, or anchoring morning assemblies", sector: "Media & Journalism" },
+        { text: "B. Debating rules, defending principles in Model UN, or moot court arguments", sector: "Law & Corporate Advocacy" },
+        { text: "C. Writing code, automating spreadsheets, and dissecting computer networks", sector: "Technology & Software Architecture" },
+        { text: "D. Dissecting biology specimens, first-aid, and counseling distressed friends", sector: "Medicine & Healthcare" }
+      ]
+    },
+    {
+      q: "2. In an emergency or crisis, what is your instinctive role?",
+      options: [
+        { text: "A. The Communicator — interviewing witnesses and broadcasting verified facts calmly", sector: "Media & Journalism" },
+        { text: "B. The Arbitrator — reviewing policies, analyzing liability, and finding compromise", sector: "Law & Corporate Advocacy" },
+        { text: "C. The Systems Architect — diagnosing root causes and deploying hotfix automations", sector: "Technology & Software Architecture" },
+        { text: "D. The Caregiver — administering immediate triage and keeping patients stable", sector: "Medicine & Healthcare" }
+      ]
+    },
+    {
+      q: "3. What English superpower matters most to your future ambition?",
+      options: [
+        { text: "A. Storytelling eloquence & live teleprompter poise under broadcast lights", sector: "Media & Journalism" },
+        { text: "B. Razor-sharp statutory precision & cross-examination rhetoric", sector: "Law & Corporate Advocacy" },
+        { text: "C. Structured technical documentation & clear cross-functional architecture reviews", sector: "Technology & Software Architecture" },
+        { text: "D. Empathic patient communication & high-pressure multidisciplinary clinical briefs", sector: "Medicine & Healthcare" }
+      ]
+    },
+    {
+      q: "4. What kind of books or podcasts do you naturally pick up?",
+      options: [
+        { text: "A. Geopolitics, investigative journalism exposés, and global cultural essays", sector: "Media & Journalism" },
+        { text: "B. Landmark court rulings, constitutional debates, and corporate boardroom battles", sector: "Law & Corporate Advocacy" },
+        { text: "C. Artificial intelligence research, startup founder stories, and distributed systems", sector: "Technology & Software Architecture" },
+        { text: "D. Neuroscience breakthroughs, surgical biographies, and public health memoirs", sector: "Medicine & Healthcare" }
+      ]
+    },
+    {
+      q: "5. What is your ultimate 15-year career goal?",
+      options: [
+        { text: "A. Prime-time international news anchor or chief documentary producer", sector: "Media & Journalism" },
+        { text: "B. Senior Partner at a Tier-1 corporate law firm or Supreme Court Advocate", sector: "Law & Corporate Advocacy" },
+        { text: "C. Chief Technology Officer or founder of a global venture-backed startup", sector: "Technology & Software Architecture" },
+        { text: "D. Chief Surgeon or director of a specialized pediatric hospital wing", sector: "Medicine & Healthcare" }
+      ]
+    }
+  ];
 
-    <div id="quiz-question-card">
-      <h4 style="font-size:18px;margin-bottom:12px;">Question 1: What kind of project gives you the most excitement?</h4>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button class="btn btn-secondary" onclick="quizAnswer('Media')">A. Directing a school video, writing articles, or anchoring assemblies</button>
-        <button class="btn btn-secondary" onclick="quizAnswer('Law')">B. Debating rules, defending principles, and solving complex arguments</button>
-        <button class="btn btn-secondary" onclick="quizAnswer('Tech')">C. Building web apps, solving logic puzzles, and automating tasks</button>
-        <button class="btn btn-secondary" onclick="quizAnswer('Health')">D. Understanding biology, helping people in distress, and clinical care</button>
+  let currentQ = 0;
+  let scores = {
+    "Media & Journalism": 0,
+    "Law & Corporate Advocacy": 0,
+    "Technology & Software Architecture": 0,
+    "Medicine & Healthcare": 0
+  };
+
+  function showQuestion() {
+    if (currentQ >= QUESTIONS.length) {
+      let topSector = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+      mount.innerHTML = `
+        <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+          <h3 style="font-size:20px;">🧭 Career Discovery Diagnosis Complete</h3>
+          <p style="font-size:13.5px;color:var(--text-dim);">Based on your answers across all 5 career aptitude dimensions.</p>
+        </div>
+
+        <div style="background:rgba(0,240,255,0.06);border:1.5px solid var(--accent-cyan);border-radius:var(--radius-lg);padding:24px;text-align:center;">
+          <div style="font-size:38px;margin-bottom:8px;">🎯</div>
+          <span class="badge-pill badge-naac" style="font-size:12px;">Top Career Fit</span>
+          <h2 style="font-size:26px;color:var(--accent-cyan);margin:8px 0;">${topSector}</h2>
+          <p style="font-size:15px;color:var(--text-main);max-width:540px;margin:0 auto 16px;line-height:1.6;">
+            Your communication preferences align with <strong>${topSector}</strong>. You thrive on clear articulation, structured reasoning, and high-impact spoken English.
+          </p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="switchTab('careers')">Explore Careers in ${topSector} 🚀</button>
+            <button class="btn btn-secondary" onclick="switchTab('colleges')">View Colleges 🏛️</button>
+            <button class="btn btn-secondary" id="btn-retake-quiz">Retake Quiz 🔄</button>
+          </div>
+        </div>
+      `;
+
+      $('#btn-retake-quiz')?.addEventListener('click', () => {
+        currentQ = 0;
+        scores = { "Media & Journalism": 0, "Law & Corporate Advocacy": 0, "Technology & Software Architecture": 0, "Medicine & Healthcare": 0 };
+        showQuestion();
+      });
+      return;
+    }
+
+    const item = QUESTIONS[currentQ];
+    mount.innerHTML = `
+      <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h3 style="font-size:20px;">🧭 5-Question Career Curiosity Quiz</h3>
+          <span style="font-size:13px;color:var(--text-dim);">Question ${currentQ + 1} of ${QUESTIONS.length}</span>
+        </div>
+        <div style="display:flex;gap:4px;">
+          ${QUESTIONS.map((_, i) => `
+            <div style="width:24px;height:6px;border-radius:3px;background:${i <= currentQ ? 'var(--accent-cyan)' : 'var(--surface-hover)'}"></div>
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `;
-}
 
-function quizAnswer(sector) {
-  $('#quiz-question-card').innerHTML = `
-    <div style="background:rgba(0,240,255,0.1);border:1px solid var(--accent-brand);border-radius:var(--radius-md);padding:20px;text-align:center;">
-      <h3 style="font-size:22px;color:var(--accent-cyan);margin-bottom:8px;">🎯 Recommended Pathway: ${sector}</h3>
-      <p style="font-size:14px;color:var(--text-main);">Your answers reflect strong strengths for ${sector} professions. Explore our Career Intelligence archive for accredited college and entrance requirements!</p>
-      <button class="btn btn-primary" onclick="switchTab('careers')" style="margin-top:14px;">View ${sector} Careers</button>
-    </div>
-  `;
+      <div style="max-width:680px;margin:16px auto;">
+        <h4 style="font-size:17px;font-weight:700;margin-bottom:16px;line-height:1.4;">${item.q}</h4>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="quiz-options-container">
+          ${item.options.map((opt, i) => `
+            <button class="btn btn-secondary" data-sector="${opt.sector}" style="justify-content:flex-start;text-align:left;padding:14px 18px;font-size:14.5px;line-height:1.4;white-space:normal;cursor:pointer;">
+              ${opt.text}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    $$('#quiz-options-container button').forEach(btn => {
+      btn.onclick = () => {
+        const sector = btn.dataset.sector;
+        scores[sector] = (scores[sector] || 0) + 1;
+        currentQ++;
+        showQuestion();
+      };
+    });
+  }
+
+  showQuestion();
 }
 
 // TOOL 3: Future Business Card Generator with Dynamic QR Code
@@ -2317,24 +2529,46 @@ function renderParentChildMatch(mount) {
 }
 
 // ─── 11. LEADERBOARD & FEEDBACK WALL ──────────────────────────────────────────
-async function loadLeaderboard() {
+async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
   if (!tbody) return;
 
-  const data = await fetchApi('scores');
-  const scores = (data && Array.isArray(data)) ? data : [
-    { name: "Ananya Sharma", class_name: "Class 10", pack: "Journalism", level: 5, acc: 96, fluency: 94, wpm: 135, ts: Date.now() - 3600000 },
-    { name: "Kabir Mehta", class_name: "Class 10", pack: "Law", level: 4, acc: 92, fluency: 90, wpm: 128, ts: Date.now() - 7200000 },
-    { name: "Riya S.", class_name: "Class 9", pack: "Everyday", level: 4, acc: 88, fluency: 86, wpm: 120, ts: Date.now() - 10800000 },
-    { name: "Arjun Verma", class_name: "Class 10", pack: "Academic", level: 3, acc: 85, fluency: 82, wpm: 115, ts: Date.now() - 14400000 }
-  ];
+  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
+
+  let scores = [];
+  try {
+    const data = await fetchApi(`scores${filterPack && filterPack !== 'All' ? '?pack=' + encodeURIComponent(filterPack) : ''}`);
+    if (data && Array.isArray(data) && data.length > 0) {
+      scores = data;
+    }
+  } catch (e) {}
+
+  if (!scores.length) {
+    const BENCHMARK_SCORES = [
+      { name: "Ananya Sharma", class_name: "Class 10-A", pack: "Journalism", level: 5, acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
+      { name: "Kabir Mehta", class_name: "Class 10-B", pack: "Law", level: 5, acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
+      { name: "Riya S.", class_name: "Class 9-A", pack: "Everyday", level: 4, acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
+      { name: "Arjun Verma", class_name: "Class 10-C", pack: "Academic", level: 4, acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
+      { name: "Zoya Merchant", class_name: "Class 11-B", pack: "Journalism", level: 4, acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
+      { name: "Devansh Nair", class_name: "Class 10-A", pack: "Law", level: 3, acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
+    ];
+
+    scores = (filterPack && filterPack !== 'All')
+      ? BENCHMARK_SCORES.filter(s => s.pack.toLowerCase() === filterPack.toLowerCase())
+      : BENCHMARK_SCORES;
+  }
 
   tbody.innerHTML = '';
+  if (!scores.length) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
+    return;
+  }
+
   scores.forEach((sc, i) => {
     const tr = document.createElement('tr');
-    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+    const medal = i === 0 ? '🥇 1st' : i === 1 ? '🥈 2nd' : i === 2 ? '🥉 3rd' : `#${i + 1}`;
     tr.innerHTML = `
-      <td><strong>${medal}</strong></td>
+      <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
       <td><strong>${escapeHtml(sc.name)}</strong></td>
       <td>${escapeHtml(sc.class_name || 'Class 10')}</td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack)}</span></td>
@@ -2345,6 +2579,24 @@ async function loadLeaderboard() {
       <td style="font-size:12px;color:var(--text-dim);">${new Date(sc.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
     `;
     tbody.appendChild(tr);
+  });
+}
+
+function initLeaderboard() {
+  $$('#leaderboard-pack-filters .filter-chip').forEach(btn => {
+    btn.onclick = () => {
+      $$('#leaderboard-pack-filters .filter-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const pack = btn.dataset.boardPack || 'All';
+      loadLeaderboard(pack);
+    };
+  });
+
+  $('#btn-refresh-scores')?.addEventListener('click', () => {
+    const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+    const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+    loadLeaderboard(pack);
+    showToast('Leaderboard scores refreshed');
   });
 }
 
@@ -2510,6 +2762,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize navigation & core handlers
   initNavigation();
   initSpeakLadder();
+  initGamePicker();
+  initPlanTools();
+  initLeaderboard();
 
   // Password visibility toggle handler
   $('#btn-toggle-pwd-vis')?.addEventListener('click', () => {
