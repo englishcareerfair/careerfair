@@ -3863,40 +3863,185 @@ function initLeaderboard() {
 
 function loadFeedbackWall() {
   const list = $('#feedback-wall-list');
+  const countBadge = $('#feedback-count-badge');
+  const form = $('#feedback-form');
+  const starContainer = $('#star-selector-useful');
   if (!list) return;
 
-  const stored = [
-    { name: "Dr. Sunita Sharma (Parent)", role: "Parent", comment: "The breakdown of ICAO aviation English and moot court advocacy showed my son why language skills matter far beyond school exams.", useful: 5 },
-    { name: "Aarav P. (Grade 10)", role: "Student", comment: "Playing Jobtris and testing on the news anchor teleprompter made this the most exciting career fair we have had!", useful: 5 },
-    { name: "Faculty Coordinator", role: "Teacher", comment: "The accreditation badges for Maharashtra and Pan-India universities give parents authentic guidance.", useful: 5 }
-  ];
+  let selectedStars = 5;
 
-  list.innerHTML = stored.map(f => `
-    <div style="background:var(--bg-subtle);border-radius:var(--radius-md);padding:14px;border:1px solid var(--border);">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <strong>${escapeHtml(f.name)}</strong>
-        <span class="badge-pill badge-naac">⭐ ${f.useful} / 5</span>
-      </div>
-      <p style="font-size:13.5px;color:var(--text-main);margin-top:6px;">"${escapeHtml(f.comment)}"</p>
-    </div>
-  `).join('');
+  // Star selector handling
+  if (starContainer && !starContainer._boundStars) {
+    starContainer._boundStars = true;
+    starContainer.querySelectorAll('.star-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        starContainer.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedStars = parseInt(btn.dataset.val || '5', 10);
+      });
+    });
+  }
+
+  function getLocalFeedbacks() {
+    try {
+      const raw = localStorage.getItem('cf_user_feedbacks');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLocalFeedbacks(items) {
+    try {
+      localStorage.setItem('cf_user_feedbacks', JSON.stringify(items));
+    } catch {}
+  }
+
+  function formatFriendlyTime(ts) {
+    const diff = Date.now() - Number(ts);
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    const d = new Date(Number(ts));
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function renderFeedbacks(feedbacks) {
+    if (!feedbacks || feedbacks.length === 0) {
+      if (countBadge) countBadge.textContent = '0 Reviews';
+      list.innerHTML = `
+        <div class="feedback-empty-state">
+          <span class="feedback-empty-icon">💬</span>
+          <div class="feedback-empty-title">No feedback submitted yet</div>
+          <div class="feedback-empty-desc">Be the first to share your thoughts about the English Careers Forum exhibits!</div>
+        </div>
+      `;
+      return;
+    }
+
+    if (countBadge) {
+      countBadge.textContent = `${feedbacks.length} Review${feedbacks.length > 1 ? 's' : ''}`;
+    }
+
+    list.innerHTML = feedbacks.map(f => {
+      const starCount = Math.max(1, Math.min(5, f.useful || f.r_useful || 5));
+      const stars = '⭐'.repeat(starCount);
+      const timeStr = f.ts ? formatFriendlyTime(f.ts) : '';
+      const roleBadge = f.class_info && f.class_info !== f.role
+        ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
+        : escapeHtml(f.role || 'Visitor');
+
+      return `
+        <div class="feedback-item">
+          <div class="feedback-item-header">
+            <div class="feedback-item-author">
+              <strong style="font-size:14.5px;">${escapeHtml(f.name || 'Anonymous')}</strong>
+              <span class="feedback-item-badge">${roleBadge}</span>
+            </div>
+            <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
+          </div>
+          <p class="feedback-item-comment">"${escapeHtml(f.comment || '')}"</p>
+          ${timeStr ? `<div class="feedback-item-time">🕒 ${timeStr}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Load and render initial state from localStorage (guarantees no fake reviews)
+  let feedbacks = getLocalFeedbacks();
+  renderFeedbacks(feedbacks);
+
+  // Attempt to fetch public real reviews from server if available
+  fetchApi('feedback')
+    .then(res => {
+      const serverItems = res?.results || res?.feedback || [];
+      if (Array.isArray(serverItems) && serverItems.length > 0) {
+        // Merge without duplicating
+        const seenComments = new Set(feedbacks.map(f => (f.comment || '').trim()));
+        let changed = false;
+        for (const item of serverItems) {
+          const comment = (item.comment || '').trim();
+          if (comment && !seenComments.has(comment)) {
+            feedbacks.push({
+              id: item.id || 'srv_' + Math.random().toString(36).substr(2, 9),
+              name: item.name || 'Visitor',
+              role: item.role || 'Student',
+              class_info: item.class_info || '',
+              useful: item.r_useful || item.useful || 5,
+              comment: item.comment,
+              ts: item.ts || Date.now()
+            });
+            seenComments.add(comment);
+            changed = true;
+          }
+        }
+        if (changed) {
+          feedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+          saveLocalFeedbacks(feedbacks);
+          renderFeedbacks(feedbacks);
+        }
+      }
+    })
+    .catch(() => {});
 
   // Handle feedback form submission
-  $('#feedback-form')?.addEventListener('submit', async e => {
-    e.preventDefault();
-    const name = $('#fb-name').value;
-    const role = $('#fb-role').value;
-    const classInfo = $('#fb-class').value;
-    const comment = $('#fb-comment').value;
+  if (form && !form._boundFeedback) {
+    form._boundFeedback = true;
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const name = ($('#fb-name')?.value || '').trim();
+      const role = $('#fb-role')?.value || 'Student';
+      const classInfo = $('#fb-class')?.value || '';
+      const comment = ($('#fb-comment')?.value || '').trim();
 
-    await fetchApi('feedback', {
-      method: 'POST',
-      body: JSON.stringify({ name, role, class_info: classInfo, comment, r_useful: 5 })
+      if (!name) {
+        showToast('Please enter your name');
+        $('#fb-name')?.focus();
+        return;
+      }
+      if (!comment) {
+        showToast('Please enter your feedback comment');
+        $('#fb-comment')?.focus();
+        return;
+      }
+
+      const newFeedback = {
+        id: 'fb_' + Date.now(),
+        name,
+        role,
+        class_info: classInfo,
+        useful: selectedStars,
+        comment,
+        ts: Date.now()
+      };
+
+      // Prepend to list
+      feedbacks.unshift(newFeedback);
+      saveLocalFeedbacks(feedbacks);
+      renderFeedbacks(feedbacks);
+
+      // Submit to backend
+      fetchApi('feedback', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newFeedback.name,
+          role: newFeedback.role,
+          class_info: newFeedback.class_info,
+          comment: newFeedback.comment,
+          r_useful: newFeedback.useful
+        })
+      }).catch(() => {});
+
+      showToast('Thank you! Your feedback has been recorded.');
+      form.reset();
+      selectedStars = 5;
+      if (starContainer) {
+        starContainer.querySelectorAll('.star-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.val === '5');
+        });
+      }
     });
-
-    showToast('Thank you! Your feedback has been recorded.');
-    $('#feedback-form').reset();
-  });
+  }
 }
 
 // ─── 12. ADMIN CONTROL ROOM TAB CONTROLLER ─────────────────────────────────

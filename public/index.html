@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=4.2">
+  <link rel="stylesheet" href="styles.css?v=4.3">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=4.2" defer></script>
+  <script src="app.js?v=4.3" defer></script>
 </head>
 <body>
 
@@ -53,7 +53,7 @@
 
         <!-- Spoken Greeting Button -->
         <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
-          <span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>
+          <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-text-desktop">Listen AI Greeting</span><span class="greeting-text-mobile">Greeting</span></span>
         </button>
       </div>
       
@@ -784,28 +784,37 @@
         </p>
       </div>
 
-      <div class="cards-grid" style="grid-template-columns: 1fr 1fr;">
-        <!-- Submission Card -->
-        <div class="card">
-          <h3 style="font-size:18px;margin-bottom:14px;">Leave Your Feedback</h3>
-          <form id="feedback-form">
-            <div style="margin-bottom:12px;">
-              <label for="fb-name" style="font-size:13px;font-weight:700;">Name <span style="color:#ef4444;">*</span></label>
-              <input type="text" id="fb-name" required placeholder="Enter your name">
+      <div class="feedback-container">
+        <!-- 1. Leave Your Feedback (Entry Box on Top) -->
+        <div class="card feedback-form-card">
+          <div class="feedback-card-header">
+            <div class="feedback-header-icon" style="font-size:24px;">✍️</div>
+            <div>
+              <h3 style="font-size:19px;font-weight:800;margin:0 0 4px 0;">Leave Your Feedback</h3>
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">Share your experience and thoughts about the exhibits, games, and career guidance.</p>
+            </div>
+          </div>
+
+          <form id="feedback-form" style="margin-top:16px;">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label for="fb-name" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">
+                Your Name <span style="color:#ef4444;">*</span>
+              </label>
+              <input type="text" id="fb-name" required placeholder="Enter your name" autocomplete="name">
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-              <div>
-                <label style="font-size:13px;font-weight:600;">Role:</label>
+            <div class="feedback-controls-row">
+              <div class="form-group">
+                <label for="fb-role" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Your Role:</label>
                 <select id="fb-role">
                   <option value="Student">Student</option>
                   <option value="Parent">Parent</option>
                   <option value="Teacher">Teacher / Faculty</option>
-                  <option value="Guest">Fair Guest</option>
+                  <option value="Fair Guest">Fair Guest</option>
                 </select>
               </div>
-              <div>
-                <label style="font-size:13px;font-weight:600;">Class / Section:</label>
+              <div class="form-group">
+                <label for="fb-class" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Class / Section / Affiliation:</label>
                 <select id="fb-class">
                   <option value="Class 8 & below">Class 8 &amp; below</option>
                   <option value="Class 9">Class 9</option>
@@ -817,31 +826,42 @@
               </div>
             </div>
 
-            <div style="margin-bottom:12px;">
-              <label style="font-size:13px;font-weight:600;">How useful was the Career Fair for your aspirations? (1 to 5 Stars):</label>
-              <div style="display:flex;gap:12px;margin-top:6px;" id="star-selector-useful">
-                <button type="button" class="btn btn-secondary btn-sm active" data-val="5">⭐ 5</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-val="4">⭐ 4</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-val="3">⭐ 3</button>
-                <button type="button" class="btn btn-secondary btn-sm" data-val="2">⭐ 2</button>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">
+                How useful was the Career Fair for your aspirations? (1 to 5 Stars):
+              </label>
+              <div class="star-rating-group" id="star-selector-useful">
+                <button type="button" class="btn btn-secondary btn-sm star-btn active" data-val="5">⭐ 5</button>
+                <button type="button" class="btn btn-secondary btn-sm star-btn" data-val="4">⭐ 4</button>
+                <button type="button" class="btn btn-secondary btn-sm star-btn" data-val="3">⭐ 3</button>
+                <button type="button" class="btn btn-secondary btn-sm star-btn" data-val="2">⭐ 2</button>
+                <button type="button" class="btn btn-secondary btn-sm star-btn" data-val="1">⭐ 1</button>
               </div>
             </div>
 
-            <div style="margin-bottom:14px;">
-              <label style="font-size:13px;font-weight:600;">What was the most memorable insight or game today?</label>
-              <textarea id="fb-comment" placeholder="Write your feedback..."></textarea>
+            <div class="form-group" style="margin-bottom:16px;">
+              <label for="fb-comment" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">
+                What was the most memorable insight or game today? <span style="color:#ef4444;">*</span>
+              </label>
+              <textarea id="fb-comment" required placeholder="Write your feedback..." rows="3"></textarea>
             </div>
 
-            <button class="btn btn-primary" type="submit">
-              <span>🚀</span> <span>Submit Review</span>
+            <button class="btn btn-primary" type="submit" id="btn-submit-feedback">
+              <span>🚀</span> <span>Submit Feedback</span>
             </button>
           </form>
         </div>
 
-        <!-- Approved Public Testimonial Wall -->
-        <div class="card">
-          <h3 style="font-size:18px;margin-bottom:14px;">Recent Visitor Reflections</h3>
-          <div id="feedback-wall-list" style="display:flex;flex-direction:column;gap:12px;max-height:480px;overflow-y:auto;padding-right:6px;"></div>
+        <!-- 2. Recent Visitor Reflections (Shown BELOW the feedback entering box) -->
+        <div class="card feedback-reflections-card">
+          <div class="feedback-reflections-header">
+            <div>
+              <h3 style="font-size:18px;font-weight:800;margin:0 0 4px 0;">Recent Visitor Reflections</h3>
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">Reflections and thoughts submitted by students, parents, and guests.</p>
+            </div>
+            <span class="badge-pill" id="feedback-count-badge" style="background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;font-weight:700;">0 Reviews</span>
+          </div>
+          <div id="feedback-wall-list" style="margin-top:16px;display:flex;flex-direction:column;gap:12px;"></div>
         </div>
       </div>
     </section>

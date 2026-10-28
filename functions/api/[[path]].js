@@ -499,16 +499,15 @@ export async function onRequest(ctx) {
   }
 
   if (path === '/feedback' && method === 'GET') {
-    if (!authed(request, env)) return err('Unauthorized', 401);
     const page = parseInt(url.searchParams.get('page') || '1', 10);
-    const limit = 30;
+    const limit = 50;
     const offset = (page - 1) * limit;
 
     try {
       if (db) {
-        const { results } = await db.prepare('SELECT * FROM feedback ORDER BY ts DESC LIMIT ? OFFSET ?')
+        const { results } = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY ts DESC LIMIT ? OFFSET ?')
           .bind(limit, offset).all();
-        const countRow = await db.prepare('SELECT COUNT(*) as c FROM feedback').first();
+        const countRow = await db.prepare('SELECT COUNT(*) as c FROM feedback WHERE approved=1').first();
         return json({ results: results || [], total: countRow?.c || 0, page });
       }
     } catch {}
