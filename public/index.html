@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2.9">
+  <link rel="stylesheet" href="styles.css?v=3.0">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=2.9" defer></script>
+  <script src="app.js?v=3.0" defer></script>
 </head>
 <body>
 
@@ -88,7 +88,7 @@
       <button class="tab-btn" data-tab="careers" data-flag="careers"><span>🎯</span> Careers <span class="tab-badge">32+</span></button>
       <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges <span class="tab-badge">NAAC/NIRF</span></button>
       <button class="tab-btn" data-tab="exams" data-flag="exams"><span>📝</span> Exams <span class="tab-badge">CUET/CLAT</span></button>
-      <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Ladder</span></button>
+      <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Studio</span></button>
       <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
       <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
       <button class="tab-btn" data-tab="debate" data-flag="debate"><span>⚖️</span> Boardroom Debate &amp; Roleplay</button>
@@ -280,15 +280,15 @@
       <div class="cards-grid" id="exams-cards-container"></div>
     </section>
 
-    <!-- ── SECTION: SPEAK & PRONUNCIATION LADDER ── -->
+    <!-- ── SECTION: SPEAK & PRONUNCIATION STUDIO ── -->
     <section class="section-shell" id="sec-speak" hidden>
       <div class="section-head">
         <div>
-          <div class="section-label">VOICE ACCURACY &amp; PHONETICS</div>
-          <h2 class="section-title">Pronunciation Ladder &amp; Speech Rungs</h2>
+          <div class="section-label">VOICE ARTICULATION &amp; PHONETICS</div>
+          <h2 class="section-title">Pronunciation Studio &amp; Speech Practice</h2>
         </div>
         <p class="section-desc">
-          Climb through progressive spoken English levels. Listen to native reference pronunciations, record your voice, check phonetic syllables, and unlock consecutive rungs!
+          Practice articulate spoken English with dynamic AI-generated sentences. Listen to natural reference pronunciations, record your voice, check phonetic syllables, and test your speech accuracy!
         </p>
       </div>
 
@@ -302,48 +302,44 @@
         </div>
 
         <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">
-          Passing Requirement: <strong id="ladder-pass-label">70% Accuracy</strong>
+          Passing Target: <strong id="ladder-pass-label">70% Accuracy</strong>
         </div>
       </div>
 
-      <div class="speech-lab-layout">
-        <!-- Left: Progressive Ladder Rungs -->
-        <div class="ladder-box">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="font-size:18px;">Ladder Progression</h3>
-            <span class="badge-pill badge-nirf" id="ladder-level-badge">Level 1 of 10</span>
-          </div>
-          <div class="ladder-rungs" id="ladder-rungs-list"></div>
-        </div>
-
-        <!-- Right: Current Challenge Card & Audio Testing -->
-        <div class="card" style="box-shadow:var(--card-shadow);justify-content:space-between;">
+      <div class="speech-studio-layout">
+        <!-- Main Challenge Card & Audio Testing -->
+        <div class="card" style="box-shadow:var(--card-shadow);padding:26px;">
           <div>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
               <span class="badge-pill badge-reg" id="active-challenge-pack-tag">Everyday Fluency</span>
-              <span style="font-size:13px;color:var(--text-dim);" id="active-challenge-num">Rung 1</span>
+              <span class="badge-pill" id="active-challenge-ai-badge" style="font-size:11px;background:rgba(0,240,255,0.08);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.25);">
+                ⚡ Dynamic AI Sentence
+              </span>
             </div>
 
-            <h4 style="font-size:20px;line-height:1.4;margin-bottom:16px;color:var(--text-main);" id="speak-target-sentence">
+            <h4 style="font-size:22px;line-height:1.45;margin-bottom:18px;color:var(--text-main);font-weight:700;" id="speak-target-sentence">
               Loading challenge sentence...
             </h4>
 
-            <!-- Listen button & Phonetics tip -->
-            <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+            <!-- Listen button, Phonetics, and Change Sentence button -->
+            <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
               <button class="btn btn-secondary btn-sm" id="btn-listen-target" type="button">
                 <span>🔊</span> <span>Listen Reference Audio</span>
               </button>
               <button class="btn btn-secondary btn-sm" id="btn-show-phonetics" type="button">
                 <span>📖</span> <span>Phonetic Breakdown</span>
               </button>
+              <button class="btn btn-primary btn-sm" id="btn-change-sentence" type="button" style="background:var(--brand-gradient);border:none;color:#fff;">
+                <span>🎲</span> <span>Change Sentence</span>
+              </button>
             </div>
 
-            <div id="phonetic-breakdown-box" style="display:none;background:var(--bg-subtle);padding:12px;border-radius:var(--radius-md);margin-bottom:16px;font-size:13.5px;border:1px solid var(--border);"></div>
+            <div id="phonetic-breakdown-box" style="display:none;background:var(--bg-subtle);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;font-size:13.5px;border:1px solid var(--border);"></div>
 
             <!-- Student Name for Score Recording -->
-            <div style="margin-bottom:12px;">
+            <div style="margin-bottom:16px;">
               <label style="font-size:13px;color:var(--text-muted);font-weight:600;">Your Nickname / Roll No (for Leaderboard):</label>
-              <input type="text" id="speak-student-name" placeholder="Enter your name (e.g. Ananya Class 10)" style="margin-top:4px;">
+              <input type="text" id="speak-student-name" placeholder="Enter your name (e.g. Ananya Class 10)" style="margin-top:5px;">
             </div>
 
             <!-- Speech Recording Controls -->
@@ -355,7 +351,7 @@
             </div>
 
             <!-- Transcript Preview & Manual Fallback -->
-            <div style="margin-top:10px;">
+            <div style="margin-top:14px;">
               <label style="font-size:12px;color:var(--text-dim);font-weight:600;">Recognized Spoken Transcript:</label>
               <textarea id="speak-transcript-preview" placeholder="Your speech transcription will appear here in real-time..." style="height:70px;margin-top:4px;font-size:13.5px;"></textarea>
             </div>
@@ -695,7 +691,6 @@
               <th>Student Name</th>
               <th>Class</th>
               <th>Speaking Pack</th>
-              <th>Level</th>
               <th>Accuracy</th>
               <th>Fluency</th>
               <th>WPM</th>
@@ -703,7 +698,7 @@
             </tr>
           </thead>
           <tbody id="leaderboard-table-body">
-            <tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-dim);">Loading leaderboard rankings...</td></tr>
+            <tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-dim);">Loading leaderboard rankings...</td></tr>
           </tbody>
         </table>
       </div>

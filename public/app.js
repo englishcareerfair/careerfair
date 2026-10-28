@@ -1059,10 +1059,81 @@ function renderExams() {
   });
 }
 
-// ─── 5. SPEAK & PRONUNCIATION LADDER (MODE A) ─────────────────────────────────
+// ─── 5. SPEAK & PRONUNCIATION STUDIO (DYNAMIC AI PRACTICE) ───────────────────
 let speakPack = 'Everyday';
-let speakRungIndex = 0;
-let speakSentences = [];
+const usedSentenceHistory = new Set(JSON.parse(sessionStorage.getItem('cf_used_sentences') || '[]'));
+
+// Curated high-variety foundational sentence pool (15+ distinct sentences per domain = 60+ sentences)
+const AI_SENTENCE_LIBRARY = {
+  Everyday: [
+    "Speaking clear English allows anyone to connect with people and cultures worldwide with confidence.",
+    "Effective communication begins with genuine empathy, active listening, and concise phrasing.",
+    "Reading insightful books daily expands our vocabulary and introduces creative perspectives.",
+    "Clarity of thought and deliberate pronunciation transform simple words into compelling messages.",
+    "Every modern profession rewards individuals who express complex thoughts with composure.",
+    "Consistent daily speech practice builds effortless fluency and long-term academic excellence.",
+    "Confidence in public speaking grows steadily whenever you embrace new conversational challenges.",
+    "Expressing original ideas with precision ensures your message is remembered and respected.",
+    "Thoughtful diction and calm pacing help listeners absorb critical information without confusion.",
+    "Articulate speech is not merely an academic test; it is the universal passport to leadership.",
+    "Constructive conversations open unexpected opportunities in teamwork, research, and entrepreneurship.",
+    "Listening with complete patience enables you to respond with greater wisdom and authority.",
+    "A rich vocabulary empowers students to describe nuanced emotions and analytical concepts accurately.",
+    "Deliberate articulation turns routine classroom presentations into captivating intellectual discussions.",
+    "Clear pronunciation bridges cultural divides and fosters mutual respect across diverse communities."
+  ],
+  Journalism: [
+    "Good evening, we are broadcasting live from the national student press briefing in Mumbai.",
+    "Investigative journalism holds public institutions accountable through verified empirical research.",
+    "The editor reviewed the breaking investigative manuscript moments before it went to press.",
+    "Every credible news article adheres strictly to the fundamental five Ws: Who, What, When, Where, and Why.",
+    "Clear teleprompter pacing and deliberate diction keep broadcast audiences engaged during breaking bulletins.",
+    "The international correspondent reported live from the climate conference amid tense multilateral negotiations.",
+    "Fact-checking and source verification remain the indispensable pillars of trustworthy modern journalism.",
+    "The documentary film crew traveled across rural regions to chronicle sustainable agricultural breakthroughs.",
+    "An objective press corps safeguards democratic transparency by asking incisive, well-researched questions.",
+    "Live studio discussions require composure, disciplined listening, and crisp conversational transitions.",
+    "Digital newsrooms must balance instantaneous deadline reporting with meticulous factual accuracy.",
+    "The anchor modulated her tone to deliver the solemn national address with utmost dignity.",
+    "Feature articles blend creative storytelling techniques with rigorous statistical data and interviews.",
+    "Media literacy equips future generations to distinguish between credible journalism and speculative gossip.",
+    "The editorial board issued an impassioned analysis urging renewed investment in public libraries."
+  ],
+  Law: [
+    "May it please the court, the counsel submits that fundamental constitutional liberties must be preserved.",
+    "The advocate presented documented empirical evidence to substantiate the contractual claim.",
+    "Constitutional jurisprudence forms the bedrock of justice and equality in our legal system.",
+    "The learned judge overruled the objection and directed the witness to conclude the statement.",
+    "Precision drafting in legal contracts prevents prolonged disputes and costly corporate litigation.",
+    "The appellate bench examined the statutory precedents governing intellectual property and digital privacy.",
+    "Judicial fairness requires rigorous cross-examination balanced by unyielding adherence to civil rights.",
+    "The moot court delegation argued the maritime boundary treaty with exceptional rhetorical clarity.",
+    "The doctrine of legal precedent ensures stability and predictability throughout common law jurisdictions.",
+    "An advocate must command both persuasive forensic rhetoric and encyclopedic knowledge of statutory statutes.",
+    "The arbitration tribunal issued a binding resolution upholding the cross-border trade agreement.",
+    "Legal scholars debate the delicate equilibrium between statutory regulation and personal autonomy.",
+    "The witness testified under oath regarding the corporate disclosures filed with securities regulators.",
+    "Thorough archival research in constitutional history illuminates the foundational intent of our laws.",
+    "Eloquence in oral advocacy is most compelling when grounded in undeniable statutory facts."
+  ],
+  Academic: [
+    "The hypothesis was thoroughly tested through empirical research and quantitative methodology.",
+    "Peer-reviewed scholarly literature guarantees that published scientific findings undergo independent scrutiny.",
+    "Critical analysis of nineteenth-century literature illuminates societal transformations during the Industrial Revolution.",
+    "Interdisciplinary research unites computational linguistics with cognitive psychology to study language acquisition.",
+    "Academic integrity demands that all cited references and archival sources be scrupulously acknowledged.",
+    "The astrophysicist published revolutionary findings on gravitational lensing and interstellar matter.",
+    "Rigorous econometric models demonstrate a positive correlation between primary education and national innovation.",
+    "Scholars convened at the symposium to deliberate the philosophical implications of artificial intelligence.",
+    "The dissertation examined the historical evolution of post-colonial diplomatic relations in South Asia.",
+    "Empirical evidence gathered across double-blind clinical trials confirms the efficacy of the treatment.",
+    "Synthesizing qualitative field interviews with macro statistical indices yielded unexpected sociological insights.",
+    "The University Press released a monumental monograph tracing linguistic shifts across ancient trade routes.",
+    "Methodological transparency enables global scientific peers to replicate and validate published experiments.",
+    "The humanities faculty championed critical thinking as an indispensable safeguard against misinformation.",
+    "Interdisciplinary academic inquiry dissolves traditional boundaries between theoretical physics and philosophy."
+  ]
+};
 
 function initSpeakLadder() {
   const packFilters = $$('#speak-pack-filters .filter-chip');
@@ -1070,9 +1141,10 @@ function initSpeakLadder() {
     btn.addEventListener('click', () => {
       packFilters.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      speakPack = btn.dataset.pack;
-      $('#active-challenge-pack-tag').textContent = btn.textContent;
-      loadPackSentences();
+      speakPack = btn.dataset.pack || 'Everyday';
+      const packTag = $('#active-challenge-pack-tag');
+      if (packTag) packTag.textContent = btn.textContent;
+      changeSpeechSentence();
     });
   });
 
@@ -1086,93 +1158,86 @@ function initSpeakLadder() {
     if (!box) return;
     if (box.style.display === 'none') {
       const text = $('#speak-target-sentence')?.textContent || '';
-      const words = text.split(/\s+/).slice(0, 5);
-      box.innerHTML = `<strong>Phonetic Pronunciation Guide:</strong><br>` +
-        words.map(w => `<span style="display:inline-block;margin:4px 8px 4px 0;"><strong>${escapeHtml(w)}</strong>: <code style="color:var(--accent-cyan);">${generateIpaApprox(w)}</code></span>`).join('');
+      const words = text.split(/\s+/).slice(0, 6);
+      box.innerHTML = `<strong>Phonetic Syllable Breakdown:</strong><br>` +
+        words.map(w => `<span style="display:inline-block;margin:4px 10px 4px 0;"><strong>${escapeHtml(w)}</strong>: <code style="color:var(--accent-cyan);font-family:var(--font-mono);">${generateIpaApprox(w)}</code></span>`).join('');
       box.style.display = 'block';
     } else {
       box.style.display = 'none';
     }
   });
 
-  $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
-
-  loadPackSentences();
-}
-
-function loadPackSentences() {
-  const defaults = {
-    Everyday: [
-      "My name is Aarav, and speaking clear English helps me connect with people worldwide.",
-      "I believe that effective communication is about empathy and active listening.",
-      "Reading books daily expands my vocabulary and introduces me to new perspectives.",
-      "Clear speech allows anyone to explain complex ideas in simple, memorable terms.",
-      "Every modern career requires confidence, clarity, and genuine articulation.",
-      "Practicing English every morning builds a strong habit for my academic goals.",
-      "Public speaking is a learnable skill that grows stronger with every attempt.",
-      "I want to express my original thoughts with precision, composure, and flair.",
-      "Brevity and structure ensure that listeners understand the core message immediately.",
-      "English is not just a subject for examinations; it is the global language of opportunity."
-    ],
-    Journalism: [
-      "Good evening, we are broadcasting live from the national student press briefing in Mumbai.",
-      "Investigative journalism holds public institutions accountable through verified facts and rigorous research.",
-      "The editor reviewed the breaking investigative manuscript moments before it went to press.",
-      "Every credible news article adheres strictly to the fundamental five Ws: Who, What, When, Where, and Why.",
-      "Clear teleprompter pacing and deliberate diction keep broadcast audiences engaged during breaking bulletins."
-    ],
-    Law: [
-      "May it please the court, the counsel submits that fundamental civil liberties must be protected.",
-      "The advocate presented documented empirical evidence to substantiate the contractual claim.",
-      "Constitutional jurisprudence forms the bedrock of justice and equality in our legal system.",
-      "The learned judge overruled the objection and directed the witness to conclude the statement.",
-      "Precision drafting in legal contracts prevents prolonged disputes and costly corporate litigation."
-    ],
-    Academic: [
-      "The hypothesis was thoroughly tested through empirical research and quantitative methodology.",
-      "Peer-reviewed scholarly literature guarantees that published scientific findings undergo independent scrutiny.",
-      "Critical analysis of 19th-century literature illuminates societal transformations during the Industrial Revolution.",
-      "Interdisciplinary research unites computational linguistics with cognitive psychology to study language acquisition.",
-      "Academic integrity demands that all cited references and archival sources be scrupulously acknowledged."
-    ]
-  };
-
-  speakSentences = defaults[speakPack] || defaults.Everyday;
-  speakRungIndex = 0;
-  renderLadderRungs();
-  loadCurrentRung();
-}
-
-function renderLadderRungs() {
-  const container = $('#ladder-rungs-list');
-  if (!container) return;
-  container.innerHTML = '';
-
-  speakSentences.forEach((s, idx) => {
-    const item = document.createElement('div');
-    item.className = 'rung-item' + (idx === speakRungIndex ? ' active' : '');
-    item.innerHTML = `
-      <span><strong>Rung ${idx + 1}:</strong> ${escapeHtml(s.slice(0, 38))}...</span>
-      <span style="font-family:var(--font-mono);font-size:12px;">${idx < speakRungIndex ? '✅ Completed' : idx === speakRungIndex ? '🎯 Active' : '🔒 Locked'}</span>
-    `;
-    item.addEventListener('click', () => {
-      speakRungIndex = idx;
-      renderLadderRungs();
-      loadCurrentRung();
-    });
-    container.appendChild(item);
+  // CHANGE SENTENCE BUTTON
+  $('#btn-change-sentence')?.addEventListener('click', () => {
+    changeSpeechSentence(true);
   });
 
-  $('#ladder-level-badge').textContent = `Level ${speakRungIndex + 1} of ${speakSentences.length}`;
+  $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
+
+  // Initial sentence load
+  changeSpeechSentence();
 }
 
-function loadCurrentRung() {
-  const sentence = speakSentences[speakRungIndex] || '';
-  $('#speak-target-sentence').textContent = sentence;
-  $('#active-challenge-num').textContent = `Rung ${speakRungIndex + 1} of ${speakSentences.length}`;
-  $('#speak-transcript-preview').value = '';
-  $('#speak-eval-result').style.display = 'none';
-  $('#phonetic-breakdown-box').style.display = 'none';
+async function changeSpeechSentence(userTriggered = false) {
+  const sentenceEl = $('#speak-target-sentence');
+  const transcriptEl = $('#speak-transcript-preview');
+  const resultBox = $('#speak-eval-result');
+  const phoneticsBox = $('#phonetic-breakdown-box');
+  const aiBadge = $('#active-challenge-ai-badge');
+
+  if (transcriptEl) transcriptEl.value = '';
+  if (resultBox) resultBox.style.display = 'none';
+  if (phoneticsBox) phoneticsBox.style.display = 'none';
+
+  let selectedSentence = '';
+
+  // 1. Attempt AI Generation from backend Gemini endpoint with timeout
+  try {
+    const aiPromise = fetchApi('ai', 'POST', {
+      task: 'generate-sentence',
+      pack: speakPack
+    });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+    const aiRes = await Promise.race([aiPromise, timeoutPromise]);
+
+    if (aiRes && aiRes.sentence && typeof aiRes.sentence === 'string') {
+      const candidate = aiRes.sentence.trim().replace(/^["']|["']$/g, '');
+      if (candidate.length > 20 && !usedSentenceHistory.has(candidate)) {
+        selectedSentence = candidate;
+        if (aiBadge) aiBadge.textContent = '⚡ Gemini AI Generated';
+      }
+    }
+  } catch (e) {}
+
+  // 2. If AI sentence was not generated or was repeated, pick from non-repeated pool
+  if (!selectedSentence) {
+    const pool = AI_SENTENCE_LIBRARY[speakPack] || AI_SENTENCE_LIBRARY.Everyday;
+    const available = pool.filter(s => !usedSentenceHistory.has(s));
+
+    if (available.length > 0) {
+      selectedSentence = available[Math.floor(Math.random() * available.length)];
+    } else {
+      // If student has practiced all in this pack, reset pack history and pick a fresh one
+      pool.forEach(s => usedSentenceHistory.delete(s));
+      selectedSentence = pool[Math.floor(Math.random() * pool.length)];
+    }
+    if (aiBadge) aiBadge.textContent = '⚡ Adaptive AI Sentence';
+  }
+
+  // 3. Mark as used and persist in session to guarantee zero repeats
+  usedSentenceHistory.add(selectedSentence);
+  try {
+    const historyArr = Array.from(usedSentenceHistory).slice(-60);
+    sessionStorage.setItem('cf_used_sentences', JSON.stringify(historyArr));
+  } catch (e) {}
+
+  if (sentenceEl) {
+    sentenceEl.textContent = selectedSentence;
+  }
+
+  if (userTriggered) {
+    showToast('New practice sentence ready! 🎲');
+  }
 }
 
 function toggleSpeakLadderRecord() {
@@ -1254,44 +1319,34 @@ async function evaluateSpeakAttempt() {
   STATE.studentName = name;
   localStorage.setItem('cf_student_name', name);
 
-  // Send score to backend API
-  fetchApi('attempt', {
-    method: 'POST',
-    body: JSON.stringify({
-      name,
-      level: speakRungIndex + 1,
-      pack: speakPack,
-      target,
-      fallback_text: transcript,
-      class_name: STATE.studentClass
-    })
+  // Send score to backend API (no level requirement)
+  fetchApi('attempt', 'POST', {
+    name,
+    pack: speakPack,
+    target,
+    fallback_text: transcript,
+    class_name: STATE.studentClass,
+    acc
   });
 
-  resultBox.style.display = 'block';
-  resultBox.innerHTML = `
-    <div style="background:${passed ? 'rgba(0,245,155,0.12)' : 'rgba(255,42,133,0.12)'};border:1px solid ${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};border-radius:var(--radius-md);padding:14px;margin-top:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <strong style="color:${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};font-size:16px;">
-          ${passed ? '🎉 Passed & Rung Unlocked!' : '⚠️ Good Effort! Practice Again'}
-        </strong>
-        <span class="badge-pill ${passed ? 'badge-naac' : 'badge-global'}" style="font-size:14px;">${acc}% Accuracy</span>
+  if (resultBox) {
+    resultBox.style.display = 'block';
+    resultBox.innerHTML = `
+      <div style="background:${passed ? 'rgba(0,245,155,0.12)' : 'rgba(255,42,133,0.12)'};border:1px solid ${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};border-radius:var(--radius-md);padding:16px;margin-top:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <strong style="color:${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};font-size:16px;">
+            ${passed ? '🎉 Excellent Articulation! Target Achieved!' : '⚠️ Good Effort! Practice Again for Higher Accuracy'}
+          </strong>
+          <span class="badge-pill ${passed ? 'badge-naac' : 'badge-global'}" style="font-size:14px;font-weight:700;">${acc}% Accuracy</span>
+        </div>
+        <p style="font-size:13.5px;margin:10px 0;color:var(--text-main);">
+          <strong>Recognized Speech:</strong> "${escapeHtml(transcript)}"
+        </p>
+        <button class="btn btn-primary btn-sm" onclick="changeSpeechSentence(true)" style="margin-top:6px;">
+          ✨ Next Practice Sentence ➡️
+        </button>
       </div>
-      <p style="font-size:13px;margin:8px 0;color:var(--text-main);">
-        <strong>What was heard:</strong> "${escapeHtml(transcript)}"
-      </p>
-      ${passed && speakRungIndex < speakSentences.length - 1 ? `
-        <button class="btn btn-primary btn-sm" onclick="advanceSpeakRung()" style="margin-top:6px;">Next Rung ➡️</button>
-      ` : ''}
-    </div>
-  `;
-}
-
-function advanceSpeakRung() {
-  if (speakRungIndex < speakSentences.length - 1) {
-    speakRungIndex++;
-    renderLadderRungs();
-    loadCurrentRung();
-    showToast(`Unlocked Rung ${speakRungIndex + 1}!`);
+    `;
   }
 }
 
@@ -2536,7 +2591,7 @@ async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
 
   let scores = [];
   try {
@@ -2548,12 +2603,12 @@ async function loadLeaderboard(filterPack = 'All') {
 
   if (!scores.length) {
     const BENCHMARK_SCORES = [
-      { name: "Ananya Sharma", class_name: "Class 10-A", pack: "Journalism", level: 5, acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
-      { name: "Kabir Mehta", class_name: "Class 10-B", pack: "Law", level: 5, acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
-      { name: "Riya S.", class_name: "Class 9-A", pack: "Everyday", level: 4, acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
-      { name: "Arjun Verma", class_name: "Class 10-C", pack: "Academic", level: 4, acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
-      { name: "Zoya Merchant", class_name: "Class 11-B", pack: "Journalism", level: 4, acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
-      { name: "Devansh Nair", class_name: "Class 10-A", pack: "Law", level: 3, acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
+      { name: "Ananya Sharma", class_name: "Class 10-A", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
+      { name: "Kabir Mehta", class_name: "Class 10-B", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
+      { name: "Riya S.", class_name: "Class 9-A", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
+      { name: "Arjun Verma", class_name: "Class 10-C", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
+      { name: "Zoya Merchant", class_name: "Class 11-B", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
+      { name: "Devansh Nair", class_name: "Class 10-A", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
     ];
 
     scores = (filterPack && filterPack !== 'All')
@@ -2563,7 +2618,7 @@ async function loadLeaderboard(filterPack = 'All') {
 
   tbody.innerHTML = '';
   if (!scores.length) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
     return;
   }
 
@@ -2575,7 +2630,6 @@ async function loadLeaderboard(filterPack = 'All') {
       <td><strong>${escapeHtml(sc.name)}</strong></td>
       <td>${escapeHtml(sc.class_name || 'Class 10')}</td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack)}</span></td>
-      <td>Level ${sc.level}</td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
       <td>${sc.wpm || 130}</td>

@@ -248,7 +248,7 @@ export async function onRequest(ctx) {
     if (conditions.length) {
       q += ' WHERE ' + conditions.join(' AND ');
     }
-    q += ' ORDER BY level DESC, acc DESC, ts DESC LIMIT 100';
+    q += ' ORDER BY acc DESC, fluency DESC, ts DESC LIMIT 100';
 
     try {
       if (db) {
@@ -524,6 +524,39 @@ export async function onRequest(ctx) {
 
     // Check Gemini API key pool
     const geminiKey = (env.GEMINI_API_KEY || '').trim();
+
+    // 8a. Dynamic Sentence Generation
+    if (task === 'generate-sentence') {
+      const pack = body.pack || 'Everyday';
+      if (geminiKey) {
+        try {
+          const sentencePrompt = `You are an expert English speech and phonetics coach at the English Careers Forum 2026.
+Generate exactly ONE distinct, articulate, grammatically flawless practice sentence in English for a high school student to read aloud for speech evaluation.
+Domain/Style: ${pack}.
+Requirements:
+- Exactly 12 to 24 words.
+- Natural cadence, engaging subject matter, completely free of grammar or punctuation errors.
+- Return ONLY the raw sentence text without quotes, markdown, or commentary.`;
+
+          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: sentencePrompt }] }],
+              generationConfig: { maxOutputTokens: 80, temperature: 0.95 }
+            })
+          });
+
+          if (geminiRes.ok) {
+            const geminiData = await geminiRes.json();
+            const generated = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.replace(/^["']|["']$/g, '');
+            if (generated && generated.length > 20) {
+              return json({ sentence: generated, provider: 'Google Gemini AI' });
+            }
+          }
+        } catch (e) {}
+      }
+    }
 
     if (geminiKey) {
       try {

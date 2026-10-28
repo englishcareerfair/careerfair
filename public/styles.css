@@ -986,6 +986,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ─── 12. SPEECH LAB & PRONUNCIATION (SPEAK TAB) ──────────────────────────── */
+.speech-studio-layout {
+  max-width: 840px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 .speech-lab-layout {
   display: grid;
   grid-template-columns: 1fr 1fr;
