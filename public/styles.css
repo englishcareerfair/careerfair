@@ -39,6 +39,10 @@
   --brand-gradient: linear-gradient(135deg, #00f0ff 0%, #7928ca 50%, #ff2a85 100%);
   --hero-glow: radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.12) 0%, rgba(121, 40, 202, 0.08) 40%, transparent 70%);
   --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+
+  --scrollbar-thumb: #00f0ff;
+  --scrollbar-thumb-hover: #38bdf8;
+  --scrollbar-track: rgba(255, 255, 255, 0.05);
 }
 
 /* Theme 2: Vibrant Festival (Carnival of Careers) */
@@ -63,6 +67,10 @@
   --brand-gradient: linear-gradient(135deg, #7209b7 0%, #f72585 50%, #ffb703 100%);
   --hero-glow: radial-gradient(circle at 50% 30%, rgba(247, 37, 133, 0.12) 0%, rgba(255, 183, 3, 0.1) 40%, transparent 70%);
   --card-shadow: 0 10px 28px rgba(70, 40, 90, 0.08);
+
+  --scrollbar-thumb: #7209b7;
+  --scrollbar-thumb-hover: #f72585;
+  --scrollbar-track: rgba(114, 9, 183, 0.08);
 }
 
 /* Theme 3: Corporate Clean & Scholastic */
@@ -87,6 +95,10 @@
   --brand-gradient: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #0284c7 100%);
   --hero-glow: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.08) 0%, transparent 60%);
   --card-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+
+  --scrollbar-thumb: #2563eb;
+  --scrollbar-thumb-hover: #1d4ed8;
+  --scrollbar-track: rgba(37, 99, 235, 0.08);
 }
 
 /* Theme 4: English Forum Warm Enamel */
@@ -111,6 +123,10 @@
   --brand-gradient: linear-gradient(135deg, #0c2a2b 0%, #295354 50%, #c79a45 100%);
   --hero-glow: radial-gradient(circle at 50% 30%, rgba(199, 154, 69, 0.15) 0%, transparent 60%);
   --card-shadow: 0 12px 30px rgba(12, 42, 43, 0.09);
+
+  --scrollbar-thumb: #c79a45;
+  --scrollbar-thumb-hover: #0c2a2b;
+  --scrollbar-track: rgba(199, 154, 69, 0.12);
 }
 
 /* ─── 2. BASE RESET & ACCESSIBILITY ───────────────────────────────────────── */
@@ -412,24 +428,38 @@ button, input, select, textarea {
   z-index: 80;
   background: var(--bg-canvas);
   border-bottom: 1px solid var(--border);
-  overflow-x: auto;
-  scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  transition: background var(--transition);
 }
 
-.sub-navbar::-webkit-scrollbar {
-  height: 3px;
-}
-.sub-navbar::-webkit-scrollbar-thumb {
-  background: var(--accent-brand);
+.sub-navbar-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  position: relative;
+  width: 100%;
 }
 
 .nav-tabs-wrapper {
-  max-width: 1320px;
-  margin: 0 auto;
+  flex: 1;
   display: flex;
-  padding: 6px 16px;
   gap: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 6px 2px 8px 2px;
+  margin-bottom: 0 !important;
+  cursor: grab;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.nav-tabs-wrapper.grabbing {
+  cursor: grabbing;
+  user-select: none;
 }
 
 .tab-btn {
@@ -732,30 +762,53 @@ input:focus, select:focus, textarea:focus {
   border-color: rgba(121, 40, 202, 0.35);
 }
 
-/* Filter pills row */
-.filter-row {
+/* Filter pills row & Shelf scroll track */
+.filter-row,
+.shelf-scroll-track {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 12px;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding-bottom: 10px;
   margin-bottom: 20px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 240, 255, 0.35) rgba(255, 255, 255, 0.05);
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
+
+/* Custom themed scrollbars across navigation & game shelves */
+.sub-navbar::-webkit-scrollbar,
+.nav-tabs-wrapper::-webkit-scrollbar,
+.shelf-scroll-track::-webkit-scrollbar,
 .filter-row::-webkit-scrollbar {
   height: 6px;
   display: block;
 }
+
+.sub-navbar::-webkit-scrollbar-track,
+.nav-tabs-wrapper::-webkit-scrollbar-track,
+.shelf-scroll-track::-webkit-scrollbar-track,
 .filter-row::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--scrollbar-track);
   border-radius: var(--radius-full);
 }
+
+.sub-navbar::-webkit-scrollbar-thumb,
+.nav-tabs-wrapper::-webkit-scrollbar-thumb,
+.shelf-scroll-track::-webkit-scrollbar-thumb,
 .filter-row::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.3);
+  background: var(--scrollbar-thumb);
   border-radius: var(--radius-full);
+  box-shadow: 0 0 8px var(--border-strong, rgba(0, 240, 255, 0.4));
+  transition: background 0.22s ease, box-shadow 0.22s ease;
 }
+
+.sub-navbar::-webkit-scrollbar-thumb:hover,
+.nav-tabs-wrapper::-webkit-scrollbar-thumb:hover,
+.shelf-scroll-track::-webkit-scrollbar-thumb:hover,
 .filter-row::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
+  background: var(--scrollbar-thumb-hover);
+  filter: brightness(1.2);
 }
 
 /* Shelf Scroll Device (Arrow Buttons & Smooth Track) */
@@ -774,26 +827,26 @@ input:focus, select:focus, textarea:focus {
   height: 36px;
   border-radius: var(--radius-full);
   background: var(--surface-card);
-  border: 1.5px solid var(--accent-cyan);
-  color: var(--accent-cyan);
+  border: 1.5px solid var(--scrollbar-thumb);
+  color: var(--scrollbar-thumb);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-  transition: all var(--trans-fast);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 5;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .shelf-scroll-arrow:hover {
-  background: var(--accent-cyan);
-  color: #07090e;
+  background: var(--scrollbar-thumb);
+  color: #fff;
   transform: scale(1.08);
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+  box-shadow: 0 0 16px var(--border-strong);
 }
 
 .shelf-scroll-arrow:active {
@@ -801,8 +854,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .shelf-scroll-arrow.disabled {
-  opacity: 0.35;
+  opacity: 0.2;
   pointer-events: none;
+  border-color: var(--border);
+  color: var(--text-dim);
+  box-shadow: none;
+}
   border-color: var(--border);
   color: var(--text-dim);
 }

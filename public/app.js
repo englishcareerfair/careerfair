@@ -869,6 +869,94 @@ const FLASH_CARDS = [
 ];
 
 // ─── 3. TAB NAVIGATION CONTROLLER ─────────────────────────────────────────────
+function setupHorizontalScrollShelf(track, leftBtn, rightBtn, step = 280) {
+  if (!track) return null;
+
+  function updateArrows() {
+    if (!leftBtn || !rightBtn) return;
+    const canScroll = track.scrollWidth > track.clientWidth + 5;
+    if (!canScroll) {
+      leftBtn.style.display = 'none';
+      rightBtn.style.display = 'none';
+      return;
+    }
+    leftBtn.style.display = 'flex';
+    rightBtn.style.display = 'flex';
+    const atStart = track.scrollLeft <= 5;
+    const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 5;
+    leftBtn.classList.toggle('disabled', atStart);
+    rightBtn.classList.toggle('disabled', atEnd);
+  }
+
+  if (leftBtn && !leftBtn.dataset.bound) {
+    leftBtn.dataset.bound = 'true';
+    leftBtn.addEventListener('click', () => {
+      try { track.scrollBy({ left: -step, behavior: 'smooth' }); } catch { track.scrollLeft -= step; }
+      setTimeout(updateArrows, 320);
+    });
+  }
+
+  if (rightBtn && !rightBtn.dataset.bound) {
+    rightBtn.dataset.bound = 'true';
+    rightBtn.addEventListener('click', () => {
+      try { track.scrollBy({ left: step, behavior: 'smooth' }); } catch { track.scrollLeft += step; }
+      setTimeout(updateArrows, 320);
+    });
+  }
+
+  // Mouse wheel horizontal scroll translation
+  if (!track.dataset.wheelBound) {
+    track.dataset.wheelBound = 'true';
+    track.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        track.scrollLeft += e.deltaY * 1.25;
+        updateArrows();
+      }
+    }, { passive: false });
+  }
+
+  // Drag-to-scroll support
+  if (!track.dataset.dragBound) {
+    track.dataset.dragBound = 'true';
+    let isDown = false;
+    let startX = 0;
+    let scrollStart = 0;
+
+    track.addEventListener('mousedown', e => {
+      isDown = true;
+      track.classList.add('grabbing');
+      startX = e.pageX - track.offsetLeft;
+      scrollStart = track.scrollLeft;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDown) {
+        isDown = false;
+        track.classList.remove('grabbing');
+        updateArrows();
+      }
+    });
+
+    track.addEventListener('mousemove', e => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - track.offsetLeft;
+      const walk = (x - startX) * 1.4;
+      track.scrollLeft = scrollStart - walk;
+      updateArrows();
+    });
+  }
+
+  track.addEventListener('scroll', updateArrows, { passive: true });
+  window.addEventListener('resize', updateArrows, { passive: true });
+
+  setTimeout(updateArrows, 120);
+  setTimeout(updateArrows, 500);
+
+  return updateArrows;
+}
+
 function initNavigation() {
   const tabBtns = $$('.tab-btn');
   tabBtns.forEach(btn => {
@@ -892,6 +980,14 @@ function initNavigation() {
     speakGreeting();
   });
 
+  // Setup sub-navbar horizontal scroll device (Overview, Careers, Games, etc.)
+  setupHorizontalScrollShelf(
+    $('#nav-tabs-track'),
+    $('#btn-nav-scroll-left'),
+    $('#btn-nav-scroll-right'),
+    260
+  );
+
   // Initialize interactive sub-shelf pickers
   initGamePicker();
   initPlanTools();
@@ -908,6 +1004,12 @@ function switchTab(tabId) {
   $$('.tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabId);
   });
+
+  // Smoothly center the active tab in the horizontal scroll track
+  const activeTabBtn = $(`.tab-btn[data-tab="${tabId}"]`);
+  if (activeTabBtn) {
+    activeTabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }
 
   // Hide all sections, reveal active
   $$('.section-shell').forEach(sec => sec.hidden = true);
@@ -2238,85 +2340,8 @@ function initGamePicker() {
     };
   });
 
-  if (!tabsContainer) return;
-
-  // Update arrow states (dimmed when at boundaries)
-  function updateScrollArrows() {
-    if (!leftBtn || !rightBtn) return;
-    const atStart = tabsContainer.scrollLeft <= 5;
-    const atEnd = tabsContainer.scrollLeft + tabsContainer.clientWidth >= tabsContainer.scrollWidth - 5;
-    leftBtn.classList.toggle('disabled', atStart);
-    rightBtn.classList.toggle('disabled', atEnd);
-  }
-
-  // Arrow button click listeners
-  if (leftBtn && !leftBtn.dataset.bound) {
-    leftBtn.dataset.bound = 'true';
-    leftBtn.addEventListener('click', () => {
-      try {
-        tabsContainer.scrollBy({ left: -300, behavior: 'smooth' });
-      } catch (e) {
-        tabsContainer.scrollLeft -= 300;
-      }
-      setTimeout(updateScrollArrows, 320);
-    });
-  }
-
-  if (rightBtn && !rightBtn.dataset.bound) {
-    rightBtn.dataset.bound = 'true';
-    rightBtn.addEventListener('click', () => {
-      try {
-        tabsContainer.scrollBy({ left: 300, behavior: 'smooth' });
-      } catch (e) {
-        tabsContainer.scrollLeft += 300;
-      }
-      setTimeout(updateScrollArrows, 320);
-    });
-  }
-
-  // Mouse wheel horizontal scrolling support for desktop computers
-  if (!tabsContainer.dataset.wheelBound) {
-    tabsContainer.dataset.wheelBound = 'true';
-    tabsContainer.addEventListener('wheel', e => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        tabsContainer.scrollLeft += e.deltaY * 1.3;
-      }
-    }, { passive: false });
-  }
-
-  // Click & Drag-to-scroll support for desktop mouse users
-  if (!tabsContainer.dataset.dragBound) {
-    tabsContainer.dataset.dragBound = 'true';
-    let isDown = false;
-    let startX = 0;
-    let scrollLeft = 0;
-
-    tabsContainer.addEventListener('mousedown', e => {
-      isDown = true;
-      tabsContainer.classList.add('grabbing');
-      startX = e.pageX - tabsContainer.offsetLeft;
-      scrollLeft = tabsContainer.scrollLeft;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (isDown) {
-        isDown = false;
-        tabsContainer.classList.remove('grabbing');
-      }
-    });
-
-    tabsContainer.addEventListener('mousemove', e => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - tabsContainer.offsetLeft;
-      const walk = (x - startX) * 1.4;
-      tabsContainer.scrollLeft = scrollLeft - walk;
-    });
-  }
-
-  tabsContainer.addEventListener('scroll', updateScrollArrows, { passive: true });
-  setTimeout(updateScrollArrows, 100);
+  // Setup unified themed horizontal scroll shelf
+  setupHorizontalScrollShelf(tabsContainer, leftBtn, rightBtn, 300);
 }
 
 // GAME 1: Jobtris (Semantic Block Matching)

@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=3.5">
+  <link rel="stylesheet" href="styles.css?v=3.6">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.5" defer></script>
+  <script src="app.js?v=3.6" defer></script>
 </head>
 <body>
 
@@ -81,22 +81,32 @@
     </div>
   </header>
 
-  <!-- ── 3. STICKY SUB-NAVBAR TABS ── -->
+  <!-- ── 3. STICKY SUB-NAVBAR TABS WITH THEMED SCROLL DEVICE ── -->
   <nav class="sub-navbar" id="sub-nav" aria-label="Platform navigation">
-    <div class="nav-tabs-wrapper">
-      <button class="tab-btn active" data-tab="hero"><span>⚡</span> Overview</button>
-      <button class="tab-btn" data-tab="careers" data-flag="careers"><span>🎯</span> Careers <span class="tab-badge">32+</span></button>
-      <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges <span class="tab-badge">NAAC/NIRF</span></button>
-      <button class="tab-btn" data-tab="exams" data-flag="exams"><span>📝</span> Exams <span class="tab-badge">CUET/CLAT</span></button>
-      <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Studio</span></button>
-      <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
-      <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
-      <button class="tab-btn" data-tab="debate" data-flag="debate"><span>⚖️</span> Boardroom Debate &amp; Roleplay</button>
-      <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">Jobtris/Wordle</span></button>
-      <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
-      <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
-      <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback</button>
-      <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
+    <div class="sub-navbar-container">
+      <button type="button" class="shelf-scroll-arrow shelf-scroll-prev" id="btn-nav-scroll-left" aria-label="Scroll navigation left" title="Scroll navigation left">
+        <span>‹</span>
+      </button>
+
+      <div class="nav-tabs-wrapper shelf-scroll-track" id="nav-tabs-track">
+        <button class="tab-btn active" data-tab="hero"><span>⚡</span> Overview</button>
+        <button class="tab-btn" data-tab="careers" data-flag="careers"><span>🎯</span> Careers <span class="tab-badge">32+</span></button>
+        <button class="tab-btn" data-tab="colleges" data-flag="colleges"><span>🏛️</span> Colleges <span class="tab-badge">NAAC/NIRF</span></button>
+        <button class="tab-btn" data-tab="exams" data-flag="exams"><span>📝</span> Exams <span class="tab-badge">CUET/CLAT</span></button>
+        <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Studio</span></button>
+        <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
+        <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
+        <button class="tab-btn" data-tab="debate" data-flag="debate"><span>⚖️</span> Boardroom Debate &amp; Roleplay</button>
+        <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">Jobtris/Wordle</span></button>
+        <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
+        <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
+        <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback</button>
+        <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
+      </div>
+
+      <button type="button" class="shelf-scroll-arrow shelf-scroll-next" id="btn-nav-scroll-right" aria-label="Scroll navigation right" title="Scroll navigation right">
+        <span>›</span>
+      </button>
     </div>
   </nav>
 
