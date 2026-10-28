@@ -1839,7 +1839,11 @@ let speechLabTargetWords = [];
 let speechLabPassedIndices = new Set();
 let speechLabUsedSentences = new Set();
 let isSpeechLabPassed = false;
+let isPassingSentence = false;
+let speechLabSentencesPassedCount = 0;
 let currentCoachTipIndex = -1;
+let speechLabMediaStream = null;
+let activeSegmentRecorder = null;
 
 const SPEECH_COACH_TIPS = [
   {
@@ -1958,7 +1962,7 @@ async function changeSpeechLabSentence(userTriggered = false) {
   const aiBadge = $('#speech-lab-ai-badge');
   const liveHeard = $('#speech-lab-live-heard');
 
-  if (liveHeard) liveHeard.textContent = 'Speak into microphone to pass words...';
+  if (liveHeard) liveHeard.textContent = '🎙️ Speak sentence into mic to pass...';
 
   // Load from session storage to avoid repeats
   try {
@@ -2000,7 +2004,7 @@ async function changeSpeechLabSentence(userTriggered = false) {
       speechLabUsedSentences.clear();
       selectedSentence = pools[Math.floor(Math.random() * pools.length)];
     }
-    if (aiBadge) aiBadge.textContent = '⚡ Adaptive AI Sentence';
+    if (aiBadge) aiBadge.textContent = '⚡ Adaptive AI Prompter';
   }
 
   speechLabUsedSentences.add(selectedSentence);
@@ -2014,7 +2018,7 @@ async function changeSpeechLabSentence(userTriggered = false) {
 
   if (textContainer) {
     textContainer.innerHTML = speechLabTargetWords.map((w, idx) => {
-      const cls = idx === 0 ? 'speech-lab-word current-target' : 'speech-lab-word';
+      const cls = idx === 0 ? 'prompter-word target' : 'prompter-word';
       return `<span class="${cls}" id="sl-word-${idx}">${escapeHtml(w)}</span>`;
     }).join(' ');
   }
@@ -2026,28 +2030,86 @@ async function changeSpeechLabSentence(userTriggered = false) {
     counterBadge.style.background = '';
     counterBadge.style.color = '';
     counterBadge.style.borderColor = '';
-    counterBadge.textContent = `0 / ${speechLabTargetWords.length} Words Passed`;
+    counterBadge.textContent = `${speechLabSentencesPassedCount} ${speechLabSentencesPassedCount === 1 ? 'Sentence' : 'Sentences'} Passed`;
   }
-  if (percentLabel) percentLabel.textContent = '0%';
+  if (percentLabel) percentLabel.textContent = '0% Match';
 
   if (userTriggered) {
     showToast('New practice sentence ready! 🎲');
   }
 }
 
-function checkSpeechLabWordsProgress(spokenFullText) {
-  if (!speechLabTargetWords.length) return;
+async function passAwaySpeechLabSentence(manualSkip = false) {
+  if (isPassingSentence) return;
+  isPassingSentence = true;
 
-  STATE.speechLabTranscript = spokenFullText;
+  const textContainer = $('#speech-lab-sentence-text');
+  const screen = $('#speech-lab-ai-screen');
+  const counterBadge = $('#speech-lab-pass-badge');
+  const percentLabel = $('#speech-lab-pass-percent');
+
+  if (!manualSkip) {
+    speechLabSentencesPassedCount++;
+    if (counterBadge) {
+      counterBadge.className = 'badge-pill badge-global';
+      counterBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+      counterBadge.style.color = '#34d399';
+      counterBadge.style.borderColor = '#10b981';
+      counterBadge.textContent = `${speechLabSentencesPassedCount} ${speechLabSentencesPassedCount === 1 ? 'Sentence' : 'Sentences'} Passed 🎉`;
+    }
+    if (percentLabel) percentLabel.textContent = '100% Passed';
+    if (screen) screen.classList.add('speech-lab-screen-complete');
+    showToast('Sentence Passed! 🚀 Next cue rolling in...');
+  }
+
+  // 1. Trigger the upward 'pass away' animation
+  if (textContainer) {
+    textContainer.classList.add('passing-away');
+  }
+
+  // 2. Wait for pass-away animation duration (400ms)
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  // 3. Load next cue
+  await changeSpeechLabSentence(false);
+
+  // 4. Slide up smoothly from bottom into viewport
+  if (textContainer) {
+    textContainer.classList.remove('passing-away');
+    textContainer.classList.add('entering');
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        textContainer.classList.remove('entering');
+        isPassingSentence = false;
+      });
+    });
+  } else {
+    isPassingSentence = false;
+  }
+}
+
+function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
+  if (!speechLabTargetWords.length || isPassingSentence) return;
+
+  STATE.speechLabTranscript = ((STATE.speechLabTranscript || '') + ' ' + spokenFullText).trim();
   const spokenTokens = spokenFullText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
 
   let targetPointer = 0;
+  while (targetPointer < speechLabTargetWords.length && speechLabPassedIndices.has(targetPointer)) {
+    targetPointer++;
+  }
+
   for (const spoken of spokenTokens) {
     for (let i = targetPointer; i < speechLabTargetWords.length; i++) {
+      if (speechLabPassedIndices.has(i)) continue;
       const targetClean = cleanSpeechWord(speechLabTargetWords[i]);
       if (isWordMatch(spoken, targetClean)) {
         speechLabPassedIndices.add(i);
-        targetPointer = i + 1;
+        if (i === targetPointer) {
+          while (targetPointer < speechLabTargetWords.length && speechLabPassedIndices.has(targetPointer)) {
+            targetPointer++;
+          }
+        }
         break;
       }
     }
@@ -2058,12 +2120,12 @@ function checkSpeechLabWordsProgress(spokenFullText) {
     const wordEl = $(`#sl-word-${idx}`);
     if (wordEl) {
       if (speechLabPassedIndices.has(idx)) {
-        wordEl.classList.add('passed');
-        wordEl.classList.remove('current-target');
+        wordEl.classList.add('spoken', 'passed');
+        wordEl.classList.remove('target', 'current-target');
       } else if (idx === targetPointer) {
-        wordEl.classList.add('current-target');
+        wordEl.classList.add('target', 'current-target');
       } else {
-        wordEl.classList.remove('current-target');
+        wordEl.classList.remove('target', 'current-target');
       }
     }
   });
@@ -2076,43 +2138,61 @@ function checkSpeechLabWordsProgress(spokenFullText) {
   const percentLabel = $('#speech-lab-pass-percent');
   const heardLabel = $('#speech-lab-live-heard');
 
-  if (counterBadge) {
-    if (passed === total && total > 0) {
-      counterBadge.className = 'badge-pill badge-global';
-      counterBadge.style.background = 'rgba(16, 185, 129, 0.25)';
-      counterBadge.style.color = '#34d399';
-      counterBadge.style.borderColor = '#10b981';
-      counterBadge.textContent = '🎉 All Words Passed!';
-    } else {
-      counterBadge.className = 'badge-pill badge-nirf';
-      counterBadge.style.background = '';
-      counterBadge.style.color = '';
-      counterBadge.style.borderColor = '';
-      counterBadge.textContent = `${passed} / ${total} Words Passed`;
-    }
+  if (counterBadge && !isPassingSentence) {
+    counterBadge.textContent = `${speechLabSentencesPassedCount} ${speechLabSentencesPassedCount === 1 ? 'Sentence' : 'Sentences'} Passed`;
   }
 
   if (percentLabel) {
-    percentLabel.textContent = `${pct}%`;
+    percentLabel.textContent = `${pct}% Match`;
   }
 
   if (heardLabel && spokenTokens.length) {
     const recent = spokenTokens.slice(-4).join(' ');
-    heardLabel.textContent = `🎙️ Heard: "${recent}"`;
+    const tag = source === 'elevenlabs' ? '⚡ ElevenLabs' : '🎙️ Heard';
+    heardLabel.textContent = `${tag}: "${recent}"`;
   }
 
-  // When all words pass!
-  if (passed === total && total > 0 && !isSpeechLabPassed) {
+  // Passing threshold: 75% or full completion triggers passing away!
+  const passThreshold = Math.max(1, Math.ceil(total * 0.75));
+  if ((passed >= passThreshold || targetPointer >= total || passed === total) && total > 0 && !isPassingSentence && !isSpeechLabPassed) {
     isSpeechLabPassed = true;
-    const screen = $('#speech-lab-ai-screen');
-    if (screen) {
-      screen.classList.add('speech-lab-screen-complete');
+    passAwaySpeechLabSentence(false);
+  }
+}
+
+async function sendAudioToElevenLabsSTT(audioBlob) {
+  if (!audioBlob || audioBlob.size < 2000) return;
+  try {
+    const fd = new FormData();
+    fd.append('file', audioBlob, 'speech.webm');
+
+    const headers = {};
+    const elevenKey = localStorage.getItem('cf_eleven_key');
+    if (elevenKey) headers['xi-api-key'] = elevenKey;
+    if (STATE.adminKey) headers['Authorization'] = 'Bearer ' + STATE.adminKey;
+
+    const res = await fetch('/api/stt', {
+      method: 'POST',
+      body: fd,
+      headers
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.ok && data.text) {
+        const badge = $('#speech-lab-stt-engine-badge');
+        if (badge) {
+          badge.style.background = 'rgba(16, 185, 129, 0.15)';
+          badge.style.color = '#34d399';
+          badge.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+          badge.innerHTML = '🎙️ ElevenLabs Scribe STT Active';
+        }
+        checkSpeechLabWordsProgress(data.text, 'elevenlabs');
+        updateRealtimePaceAndFillers(data.text);
+      }
     }
-    showToast('Sentence Passed! 100% Articulation Complete 🎉');
-    setTimeout(() => {
-      stopSpeechLabAudio();
-      analyzeSpeechLabSample();
-    }, 600);
+  } catch (err) {
+    console.warn('ElevenLabs STT dispatch error:', err);
   }
 }
 
@@ -2150,7 +2230,7 @@ function initSpeechLab() {
   }
   if (newSentBtn && !newSentBtn.dataset.bound) {
     newSentBtn.dataset.bound = 'true';
-    newSentBtn.addEventListener('click', () => changeSpeechLabSentence(true));
+    newSentBtn.addEventListener('click', () => passAwaySpeechLabSentence(true));
   }
   if (listenSentBtn && !listenSentBtn.dataset.bound) {
     listenSentBtn.dataset.bound = 'true';
@@ -2172,6 +2252,7 @@ async function startSpeechLabAudio() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     STATE.audioStream = stream;
+    speechLabMediaStream = stream;
 
     // Web Audio API Waveform Visualizer
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -2188,7 +2269,47 @@ async function startSpeechLabAudio() {
 
     renderSpeechLabWaveform();
 
-    // Browser Speech Recognition for live word passing
+    // 1. ElevenLabs Scribe Continuous Segment STT Dispatcher
+    let mimeType = 'audio/webm';
+    if (window.MediaRecorder) {
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+        else if (MediaRecorder.isTypeSupported('audio/ogg')) mimeType = 'audio/ogg';
+        else mimeType = '';
+      }
+
+      function recordNextSegment() {
+        if (!speechLabMediaStream || !speechLabMediaStream.active) return;
+        try {
+          const segRec = new MediaRecorder(speechLabMediaStream, mimeType ? { mimeType } : undefined);
+          activeSegmentRecorder = segRec;
+          const chunks = [];
+          segRec.ondataavailable = e => {
+            if (e.data && e.data.size > 0) chunks.push(e.data);
+          };
+          segRec.onstop = async () => {
+            if (chunks.length > 0 && speechLabMediaStream && speechLabMediaStream.active) {
+              const blob = new Blob(chunks, { type: mimeType || 'audio/webm' });
+              await sendAudioToElevenLabsSTT(blob);
+            }
+            if (speechLabMediaStream && speechLabMediaStream.active) {
+              recordNextSegment();
+            }
+          };
+          segRec.start();
+          setTimeout(() => {
+            if (segRec.state === 'recording') {
+              try { segRec.stop(); } catch {}
+            }
+          }, 2400);
+        } catch (err) {
+          console.warn('ElevenLabs segment recorder error:', err);
+        }
+      }
+      recordNextSegment();
+    }
+
+    // 2. Real-time Browser Speech Recognition (Instant phoneme word-passing feedback)
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       speechLabRec = new SpeechRecognition();
@@ -2199,14 +2320,14 @@ async function startSpeechLabAudio() {
         let full = '';
         for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript + ' ';
         full = full.trim();
-        checkSpeechLabWordsProgress(full);
+        checkSpeechLabWordsProgress(full, 'local');
         updateRealtimePaceAndFillers(full);
       };
       speechLabRec.start();
     }
 
     speechLabStartTime = Date.now();
-    status.textContent = 'Listening (Live)';
+    status.textContent = 'Prompter Live';
     status.className = 'badge-pill badge-global';
     $('#btn-speech-lab-record').disabled = true;
     $('#btn-speech-lab-stop').disabled = false;
@@ -2216,13 +2337,23 @@ async function startSpeechLabAudio() {
 }
 
 function stopSpeechLabAudio() {
+  if (activeSegmentRecorder && activeSegmentRecorder.state !== 'inactive') {
+    try { activeSegmentRecorder.stop(); } catch {}
+    activeSegmentRecorder = null;
+  }
+  if (speechLabMediaStream) {
+    speechLabMediaStream.getTracks().forEach(t => t.stop());
+    speechLabMediaStream = null;
+  }
   if (STATE.audioStream) {
     STATE.audioStream.getTracks().forEach(t => t.stop());
+    STATE.audioStream = null;
   }
   if (speechLabRec) {
     try { speechLabRec.stop(); } catch {}
+    speechLabRec = null;
   }
-  $('#speech-session-state').textContent = 'Sample Ready';
+  $('#speech-session-state').textContent = 'Prompter Idle';
   $('#btn-speech-lab-record').disabled = false;
   $('#btn-speech-lab-stop').disabled = true;
 }

@@ -363,6 +363,55 @@ export async function onRequest(ctx) {
     });
   }
 
+  // ── 4b. POST /stt (ElevenLabs Scribe Speech-to-Text Word & Sentence Detection) ──
+  if (path === '/stt' && method === 'POST') {
+    const elevenKey = (request.headers.get('xi-api-key') || env.ELEVEN_KEY || '').trim();
+
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return err('Invalid form data with audio file');
+    }
+
+    const audioFile = formData.get('file') || formData.get('audio');
+    if (!audioFile) {
+      return err('No audio file provided');
+    }
+
+    if (elevenKey) {
+      try {
+        const sttForm = new FormData();
+        sttForm.append('file', audioFile, 'speech.webm');
+        sttForm.append('model_id', env.STT_MODEL || 'scribe_v1');
+        sttForm.append('tag_audio_events', 'false');
+
+        const sttRes = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+          method: 'POST',
+          headers: { 'xi-api-key': elevenKey },
+          body: sttForm
+        });
+
+        if (sttRes.ok) {
+          const sttData = await sttRes.json();
+          return json({
+            ok: true,
+            text: sttData.text || '',
+            words: sttData.words || [],
+            provider: 'ElevenLabs Scribe STT'
+          });
+        } else {
+          const errText = await sttRes.text().catch(() => '');
+          return json({ ok: false, error: `ElevenLabs STT error: ${errText.slice(0, 100)}` });
+        }
+      } catch (e) {
+        return json({ ok: false, error: e.message });
+      }
+    }
+
+    return json({ ok: false, error: 'ElevenLabs API key not configured' });
+  }
+
   // ── 5. GET /random-sentence ────────────────────────────────────────────────
   if (path === '/random-sentence' && method === 'GET') {
     const pack = url.searchParams.get('pack') || 'Everyday';

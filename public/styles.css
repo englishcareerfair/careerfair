@@ -2092,45 +2092,163 @@ tr:hover td { background: var(--surface-hover); }
   }
 }
 
-/* AI Speech Lab Word-Passing Screen & Dynamic Speech Controls */
-.ai-prompt-screen {
+/* ─── AI TELEPROMPTER SCREEN & PASS-AWAY SENTENCE STREAM ──────────── */
+.teleprompter-glass-screen, .ai-prompt-screen {
+  background: radial-gradient(circle at 50% 0%, #0d1527 0%, #060910 100%);
+  border: 2px solid var(--accent-cyan);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), 0 0 24px rgba(0, 240, 255, 0.15);
+  position: relative;
+  overflow: hidden;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.speech-lab-word {
-  display: inline-block;
-  padding: 4px 8px;
-  margin: 3px 3px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-weight: 500;
+
+.teleprompter-glass-screen::before, .ai-prompt-screen::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-cyan), var(--accent-magenta), transparent);
+}
+
+.teleprompter-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+}
+
+.teleprompter-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.prompter-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: pulseGreeting 1s infinite alternate;
+}
+
+.teleprompter-stage-viewport {
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 10px;
+  overflow: hidden;
+}
+
+.teleprompter-track {
+  width: 100%;
+  position: relative;
+}
+
+.teleprompter-sentence {
+  font-family: var(--font-display, var(--font-body));
+  font-size: clamp(20px, 3.2vw, 27px);
+  font-weight: 700;
+  line-height: 1.55;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+  text-align: center;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease, filter 0.45s ease;
   user-select: none;
 }
-.speech-lab-word.passed {
-  background: rgba(16, 185, 129, 0.22) !important;
-  color: #34d399 !important;
-  font-weight: 700 !important;
-  border-color: rgba(52, 211, 153, 0.6) !important;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
-  transform: translateY(-1px) scale(1.05);
+
+/* Passing away animation: Smooth upward glide with blur and fade */
+.teleprompter-sentence.passing-away {
+  transform: translateY(-60px) scale(0.96) !important;
+  opacity: 0 !important;
+  filter: blur(6px) !important;
 }
-.speech-lab-word.current-target {
-  border-color: var(--accent-cyan) !important;
-  background: rgba(0, 240, 255, 0.12) !important;
-  box-shadow: 0 0 10px rgba(0, 240, 255, 0.45);
-  color: #fff !important;
+
+/* Entering animation: Glide up smoothly into viewport */
+.teleprompter-sentence.entering {
+  transform: translateY(50px) scale(0.96);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+/* Fluid teleprompter word highlighting (no box chips) */
+.prompter-word, .speech-lab-word {
+  display: inline;
+  transition: color 0.18s ease, text-shadow 0.18s ease, background 0.18s ease;
+  padding: 1px 3px;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.prompter-word.spoken, .speech-lab-word.passed {
+  color: #34d399 !important;
+  text-shadow: 0 0 14px rgba(52, 211, 153, 0.7);
+  font-weight: 800 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.prompter-word.target, .speech-lab-word.current-target {
+  color: #ffffff !important;
+  text-shadow: 0 0 12px rgba(0, 240, 255, 0.8) !important;
+  background: rgba(0, 240, 255, 0.15) !important;
+  border-bottom: 2.5px solid var(--accent-cyan);
+  box-shadow: none !important;
   animation: pulseWordTarget 1.5s infinite;
 }
+
+.teleprompter-footer-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 13px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.teleprompter-live-heard {
+  color: var(--text-muted);
+  font-style: italic;
+  max-width: 380px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 @keyframes pulseWordTarget {
   0%, 100% { border-color: rgba(0, 240, 255, 0.5); }
   50% { border-color: rgba(0, 240, 255, 1); }
 }
+
 .speech-lab-screen-complete {
   border-color: var(--accent-emerald) !important;
   box-shadow: 0 0 30px rgba(16, 185, 129, 0.45) !important;
 }
+
 .speaking-active {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
   color: #fff !important;
