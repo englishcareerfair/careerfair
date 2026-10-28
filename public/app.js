@@ -74,34 +74,155 @@ async function fetchApi(endpoint, options = {}) {
   return null;
 }
 
-// Humanoid Studio Voice Engine & Natural Fallback
+// Humanoid Studio Voice Engine & Unified Global Speech Toggle
 let isGreetingPlaying = false;
 let currentGreetingAudio = null;
+let activeSpeechButton = null;
+let activeSpeechUtterance = null;
+
+function stopAllVoice() {
+  if (currentGreetingAudio) {
+    try {
+      currentGreetingAudio.pause();
+      currentGreetingAudio.currentTime = 0;
+    } catch {}
+    currentGreetingAudio = null;
+  }
+  isGreetingPlaying = false;
+
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+  }
+  activeSpeechUtterance = null;
+
+  if (activeSpeechButton) {
+    if (activeSpeechButton.dataset.origHtml) {
+      activeSpeechButton.innerHTML = activeSpeechButton.dataset.origHtml;
+    }
+    activeSpeechButton.classList.remove('speaking-active', 'playing');
+    activeSpeechButton = null;
+  }
+
+  // Check greeting button specifically
+  const greetingBtn = $('#btn-greeting');
+  if (greetingBtn && (greetingBtn.classList.contains('playing') || greetingBtn.classList.contains('speaking-active') || greetingBtn.textContent.includes('Stop'))) {
+    greetingBtn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+    greetingBtn.classList.remove('playing', 'speaking-active');
+  }
+}
+
+function speak(text, btn = null) {
+  if (!text) return;
+
+  // Resolve target button if not passed explicitly
+  let targetBtn = btn;
+  if (!targetBtn && typeof window !== 'undefined' && window.event) {
+    const ev = window.event;
+    if (ev.currentTarget && ev.currentTarget.tagName === 'BUTTON') {
+      targetBtn = ev.currentTarget;
+    } else if (ev.target) {
+      targetBtn = ev.target.closest('button');
+    }
+  }
+
+  // Check if voice is already speaking
+  const isSpeaking = (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) || currentGreetingAudio || activeSpeechButton;
+
+  if (isSpeaking) {
+    const wasSame = (targetBtn && (targetBtn === activeSpeechButton || (targetBtn.id && targetBtn.id === activeSpeechButton?.id)));
+    stopAllVoice();
+    // If the user clicked the same button that was speaking, stop and return!
+    if (wasSame) {
+      return;
+    }
+  } else if (activeSpeechButton) {
+    stopAllVoice();
+  }
+
+  if (!('speechSynthesis' in window)) {
+    showToast('Speech synthesis not supported in this browser.');
+    return;
+  }
+
+  // Cancel any lingering utterance to avoid repeating queue
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US';
+  utt.rate = 0.94; // Conversational human pace
+  utt.pitch = 1.02; // Warm humanoid inflection
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    const preferred = voices.find(v => v.name.includes('Natural') || v.name.includes('Neural2'))
+      || voices.find(v => v.name.includes('Google US English'))
+      || voices.find(v => v.name.includes('Jenny') || v.name.includes('Guy'))
+      || voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en'))
+      || voices.find(v => v.lang.startsWith('en'));
+    if (preferred) utt.voice = preferred;
+  }
+
+  if (targetBtn) {
+    if (!targetBtn.dataset.origHtml) {
+      targetBtn.dataset.origHtml = targetBtn.innerHTML;
+    }
+    const btnText = targetBtn.textContent.toLowerCase();
+    let stopLabel = 'Stop';
+    if (btnText.includes('greeting')) stopLabel = 'Stop Audio';
+    else if (btnText.includes('word')) stopLabel = 'Stop Word';
+    else if (btnText.includes('scenario')) stopLabel = 'Stop Scenario';
+    else if (btnText.includes('sample') || btnText.includes('sentence')) stopLabel = 'Stop Voice';
+
+    targetBtn.innerHTML = `<span>⏹️</span> <span>${stopLabel}</span>`;
+    targetBtn.classList.add('speaking-active', 'playing');
+    activeSpeechButton = targetBtn;
+  }
+
+  activeSpeechUtterance = utt;
+
+  const cleanup = () => {
+    if (targetBtn && targetBtn.dataset.origHtml) {
+      targetBtn.innerHTML = targetBtn.dataset.origHtml;
+      targetBtn.classList.remove('speaking-active', 'playing');
+    }
+    if (activeSpeechButton === targetBtn) {
+      activeSpeechButton = null;
+    }
+    activeSpeechUtterance = null;
+    try { window.speechSynthesis.cancel(); } catch {}
+  };
+
+  utt.onend = () => {
+    cleanup();
+  };
+
+  utt.onerror = () => {
+    cleanup();
+  };
+
+  setTimeout(() => window.speechSynthesis.speak(utt), 40);
+}
 
 async function speakGreeting() {
   const btn = $('#btn-greeting');
   const greetingText = "Welcome to the English Careers Forum 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
 
-  if (isGreetingPlaying) {
-    if (currentGreetingAudio) {
-      currentGreetingAudio.pause();
-      currentGreetingAudio = null;
-    }
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-    isGreetingPlaying = false;
-    if (btn) {
-      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
-      btn.classList.remove('playing');
-    }
+  if (isGreetingPlaying || (activeSpeechButton && activeSpeechButton === btn)) {
+    stopAllVoice();
     return;
   }
 
+  // Stop any other active voice first
+  stopAllVoice();
+
   isGreetingPlaying = true;
   if (btn) {
+    if (!btn.dataset.origHtml) btn.dataset.origHtml = btn.innerHTML;
     btn.innerHTML = '<span>⏳</span> <span class="greeting-btn-text">Generating Voice...</span>';
     btn.classList.add('playing');
+    activeSpeechButton = btn;
   }
 
   const savedElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
@@ -124,20 +245,16 @@ async function speakGreeting() {
       currentGreetingAudio = new Audio(audioUrl);
 
       if (btn) {
-        btn.innerHTML = '<span>⏹</span> <span class="greeting-btn-text">Stop Audio</span>';
+        btn.innerHTML = '<span>⏹️</span> <span class="greeting-btn-text">Stop Audio</span>';
+        btn.classList.add('speaking-active');
       }
 
       currentGreetingAudio.onended = () => {
-        isGreetingPlaying = false;
-        currentGreetingAudio = null;
-        if (btn) {
-          btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
-          btn.classList.remove('playing');
-        }
+        stopAllVoice();
       };
 
       currentGreetingAudio.onerror = () => {
-        fallbackNeuralSpeech(greetingText, btn);
+        speak(greetingText, btn);
       };
 
       await currentGreetingAudio.play();
@@ -148,61 +265,11 @@ async function speakGreeting() {
   }
 
   // 2. Fallback to High-Fidelity Humanoid Browser Neural Synthesis
-  fallbackNeuralSpeech(greetingText, btn);
+  speak(greetingText, btn);
 }
 
 function fallbackNeuralSpeech(text, btn) {
-  if (!('speechSynthesis' in window)) {
-    showToast('Speech synthesis not supported in this browser.');
-    if (btn) {
-      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
-      btn.classList.remove('playing');
-    }
-    isGreetingPlaying = false;
-    return;
-  }
-
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-US';
-  utt.rate = 0.94; // Conversational human pace
-  utt.pitch = 1.02; // Warm humanoid inflection
-
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length) {
-    const preferred = voices.find(v => v.name.includes('Natural') || v.name.includes('Neural2'))
-      || voices.find(v => v.name.includes('Google US English'))
-      || voices.find(v => v.name.includes('Jenny') || v.name.includes('Guy'))
-      || voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en'))
-      || voices.find(v => v.lang.startsWith('en'));
-    if (preferred) utt.voice = preferred;
-  }
-
-  if (btn) {
-    btn.innerHTML = '<span>⏹</span> <span class="greeting-btn-text">Stop Audio</span>';
-  }
-
-  utt.onend = () => {
-    isGreetingPlaying = false;
-    if (btn) {
-      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
-      btn.classList.remove('playing');
-    }
-  };
-
-  utt.onerror = () => {
-    isGreetingPlaying = false;
-    if (btn) {
-      btn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
-      btn.classList.remove('playing');
-    }
-  };
-
-  setTimeout(() => window.speechSynthesis.speak(utt), 50);
-}
-
-function speak(text) {
-  fallbackNeuralSpeech(text, null);
+  speak(text, btn);
 }
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
@@ -832,6 +899,9 @@ function initNavigation() {
 }
 
 function switchTab(tabId) {
+  // Stop all active voice playback when navigating
+  stopAllVoice();
+
   STATE.activeTab = tabId;
 
   // Update navbar button states
@@ -1148,9 +1218,9 @@ function initSpeakLadder() {
     });
   });
 
-  $('#btn-listen-target')?.addEventListener('click', () => {
+  $('#btn-listen-target')?.addEventListener('click', function() {
     const text = $('#speak-target-sentence')?.textContent;
-    if (text) speak(text);
+    if (text) speak(text, this);
   });
 
   $('#btn-show-phonetics')?.addEventListener('click', () => {
@@ -1416,29 +1486,349 @@ function generateIpaApprox(word) {
   return `/${clean}/`;
 }
 
-// ─── 6. AI SPEECH LAB (6D COACH & WAVEFORM) ──────────────────────────────────
+// ─── 6. AI SPEECH LAB (WORD-PASSING SCREEN & ROTATING COACH) ─────────────────
 let speechLabRec = null;
 let speechLabStartTime = 0;
+let currentSpeechLabSentence = "";
+let speechLabTargetWords = [];
+let speechLabPassedIndices = new Set();
+let speechLabUsedSentences = new Set();
+let isSpeechLabPassed = false;
+let currentCoachTipIndex = -1;
+
+const SPEECH_COACH_TIPS = [
+  {
+    title: "The 1-Second Strategic Pause",
+    tip: "When transitioning between complex thoughts, insert a silent 1-second breath pause instead of filler words like 'um' or 'like'. Deliberate silence projects executive authority and allows listeners to absorb your point."
+  },
+  {
+    title: "Downward Inflection for Executive Gravitas",
+    tip: "End declarative statements with a subtle downward tonal inflection. Ending sentences on an upward pitch makes confident claims sound like questions, subtly weakening audience trust."
+  },
+  {
+    title: "Optimal Conversational Cadence (130–145 WPM)",
+    tip: "Target a speaking rate of 130 to 145 words per minute. Speaking beyond 165 WPM causes listeners to miss critical consonants, while speaking below 100 WPM risks listener fatigue."
+  },
+  {
+    title: "Crisp Terminal Consonants",
+    tip: "Firmly articulate terminal consonants like /t/, /d/, and /k/ (e.g., 'impact', 'record', 'fact'). Crisp word boundaries immediately elevate broadcast and interview clarity."
+  },
+  {
+    title: "Diaphragmatic Breath Support",
+    tip: "Draw air from your lower diaphragm rather than shallow chest breathing. Steady airflow prevents voice crackling, stabilizes volume, and gives your speech rich acoustic resonance."
+  },
+  {
+    title: "The Rhetorical Rule of Three",
+    tip: "Organize persuasive arguments in triads ('clarity, brevity, impact'). The human brain naturally retains information grouped in three rhythmic beats far better than long unstructured lists."
+  },
+  {
+    title: "Replacing Verbal Crutches with Breath",
+    tip: "Hesitation fillers like 'basically', 'actually', or 'you know' often occur when the brain moves faster than the breath. Inhale silently through your nose when formulating your next sentence."
+  },
+  {
+    title: "Dynamic Pitch & Volume Modulation",
+    tip: "Avoid a monotone delivery by varying pitch slightly when introducing your key thesis. Leaning into a softer, intentional tone often commands more room attention than speaking loudly."
+  },
+  {
+    title: "Stress Content Words over Function Words",
+    tip: "Emphasize key nouns and active verbs while lightly passing over prepositions and conjunctions. This creates the natural, engaging rhythm of native English fluency."
+  },
+  {
+    title: "Articulating Technical Nomenclature",
+    tip: "When pronouncing domain-specific terms (e.g., 'jurisprudence', 'aerodynamics', 'multilateral'), decelerate slightly. Pristine clarity on technical words signals deep domain mastery."
+  },
+  {
+    title: "The Anchor & Pivot Technique",
+    tip: "When answering impromptu questions, begin with a clear opening thesis sentence before diving into supporting evidence. A crisp start anchors your thoughts and guides your audience."
+  },
+  {
+    title: "Open Jaw & Resonant Vowels",
+    tip: "Relax your jaw muscles to give long vowels full acoustic space. Unclenched diction instantly improves speech recognition and clarity across auditorium microphones."
+  }
+];
+
+function refreshSpeechCoachTip(userTriggered = false) {
+  const box = $('#ai-coaching-text');
+  if (!box) return;
+
+  let newIdx;
+  do {
+    newIdx = Math.floor(Math.random() * SPEECH_COACH_TIPS.length);
+  } while (SPEECH_COACH_TIPS.length > 1 && newIdx === currentCoachTipIndex);
+
+  currentCoachTipIndex = newIdx;
+  const item = SPEECH_COACH_TIPS[newIdx];
+
+  box.innerHTML = `
+    <div style="margin-bottom:6px;">
+      <span class="badge-pill badge-global" style="font-size:11.5px;font-weight:700;background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);margin-right:6px;">
+        💡 ${escapeHtml(item.title)}
+      </span>
+    </div>
+    <div style="color:var(--text-main);font-size:13.5px;line-height:1.6;">
+      ${escapeHtml(item.tip)}
+    </div>
+    <div style="font-size:11.5px;color:var(--text-dim);margin-top:8px;">
+      Suggestions rotate automatically on every visit or when you tap <strong>🔄 New Tip</strong>. Speak the sentence to receive instant 6-dimension evaluation.
+    </div>
+  `;
+
+  if (userTriggered) {
+    showToast('New speech coach suggestion loaded! 💡');
+  }
+}
+
+function cleanSpeechWord(w) {
+  return String(w || '').toLowerCase().replace(/[^\w]/g, '');
+}
+
+function isWordMatch(spoken, target) {
+  if (!spoken || !target) return false;
+  if (spoken === target) return true;
+  // Prefix match (e.g. communicate vs communicating, listen vs listening)
+  if (target.length >= 4 && (spoken.startsWith(target.slice(0, 4)) || target.startsWith(spoken.slice(0, 4)))) {
+    return true;
+  }
+  // Allow 1 character typo or phoneme variation for words of length >= 4
+  if (Math.abs(spoken.length - target.length) <= 1 && target.length >= 4) {
+    let diff = 0;
+    const minLen = Math.min(spoken.length, target.length);
+    for (let i = 0; i < minLen; i++) {
+      if (spoken[i] !== target[i]) diff++;
+    }
+    diff += Math.abs(spoken.length - target.length);
+    if (diff <= 1) return true;
+  }
+  return false;
+}
+
+async function changeSpeechLabSentence(userTriggered = false) {
+  stopAllVoice();
+  isSpeechLabPassed = false;
+
+  const screen = $('#speech-lab-ai-screen');
+  if (screen) screen.classList.remove('speech-lab-screen-complete');
+
+  const textContainer = $('#speech-lab-sentence-text');
+  const aiBadge = $('#speech-lab-ai-badge');
+  const liveHeard = $('#speech-lab-live-heard');
+
+  if (liveHeard) liveHeard.textContent = 'Speak into microphone to pass words...';
+
+  // Load from session storage to avoid repeats
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('cf_speechlab_used') || '[]');
+    saved.forEach(s => speechLabUsedSentences.add(s));
+  } catch {}
+
+  let selectedSentence = '';
+
+  // 1. Attempt Gemini AI API generation
+  try {
+    const aiPromise = fetchApi('ai', 'POST', {
+      task: 'generate-sentence',
+      pack: 'Executive'
+    });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
+    const res = await Promise.race([aiPromise, timeoutPromise]);
+    if (res && res.sentence && typeof res.sentence === 'string') {
+      const candidate = res.sentence.trim().replace(/^["']|["']$/g, '');
+      if (candidate.length > 20 && !speechLabUsedSentences.has(candidate)) {
+        selectedSentence = candidate;
+        if (aiBadge) aiBadge.textContent = '⚡ Gemini AI Generated';
+      }
+    }
+  } catch {}
+
+  // 2. Fallback to adaptive zero-repeat sentence pool
+  if (!selectedSentence) {
+    const pools = [
+      ...(AI_SENTENCE_LIBRARY.Everyday || []),
+      ...(AI_SENTENCE_LIBRARY.Journalism || []),
+      ...(AI_SENTENCE_LIBRARY.Law || []),
+      ...(AI_SENTENCE_LIBRARY.Academic || [])
+    ];
+    const available = pools.filter(s => !speechLabUsedSentences.has(s));
+    if (available.length > 0) {
+      selectedSentence = available[Math.floor(Math.random() * available.length)];
+    } else {
+      speechLabUsedSentences.clear();
+      selectedSentence = pools[Math.floor(Math.random() * pools.length)];
+    }
+    if (aiBadge) aiBadge.textContent = '⚡ Adaptive AI Sentence';
+  }
+
+  speechLabUsedSentences.add(selectedSentence);
+  try {
+    sessionStorage.setItem('cf_speechlab_used', JSON.stringify(Array.from(speechLabUsedSentences).slice(-50)));
+  } catch {}
+
+  currentSpeechLabSentence = selectedSentence;
+  speechLabTargetWords = selectedSentence.split(/\s+/).filter(Boolean);
+  speechLabPassedIndices = new Set();
+
+  if (textContainer) {
+    textContainer.innerHTML = speechLabTargetWords.map((w, idx) => {
+      const cls = idx === 0 ? 'speech-lab-word current-target' : 'speech-lab-word';
+      return `<span class="${cls}" id="sl-word-${idx}">${escapeHtml(w)}</span>`;
+    }).join(' ');
+  }
+
+  const counterBadge = $('#speech-lab-pass-badge');
+  const percentLabel = $('#speech-lab-pass-percent');
+  if (counterBadge) {
+    counterBadge.className = 'badge-pill badge-nirf';
+    counterBadge.style.background = '';
+    counterBadge.style.color = '';
+    counterBadge.style.borderColor = '';
+    counterBadge.textContent = `0 / ${speechLabTargetWords.length} Words Passed`;
+  }
+  if (percentLabel) percentLabel.textContent = '0%';
+
+  if (userTriggered) {
+    showToast('New practice sentence ready! 🎲');
+  }
+}
+
+function checkSpeechLabWordsProgress(spokenFullText) {
+  if (!speechLabTargetWords.length) return;
+
+  STATE.speechLabTranscript = spokenFullText;
+  const spokenTokens = spokenFullText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
+
+  let targetPointer = 0;
+  for (const spoken of spokenTokens) {
+    for (let i = targetPointer; i < speechLabTargetWords.length; i++) {
+      const targetClean = cleanSpeechWord(speechLabTargetWords[i]);
+      if (isWordMatch(spoken, targetClean)) {
+        speechLabPassedIndices.add(i);
+        targetPointer = i + 1;
+        break;
+      }
+    }
+  }
+
+  // Update DOM word spans
+  speechLabTargetWords.forEach((_, idx) => {
+    const wordEl = $(`#sl-word-${idx}`);
+    if (wordEl) {
+      if (speechLabPassedIndices.has(idx)) {
+        wordEl.classList.add('passed');
+        wordEl.classList.remove('current-target');
+      } else if (idx === targetPointer) {
+        wordEl.classList.add('current-target');
+      } else {
+        wordEl.classList.remove('current-target');
+      }
+    }
+  });
+
+  const total = speechLabTargetWords.length;
+  const passed = speechLabPassedIndices.size;
+  const pct = total > 0 ? Math.round((passed / total) * 100) : 0;
+
+  const counterBadge = $('#speech-lab-pass-badge');
+  const percentLabel = $('#speech-lab-pass-percent');
+  const heardLabel = $('#speech-lab-live-heard');
+
+  if (counterBadge) {
+    if (passed === total && total > 0) {
+      counterBadge.className = 'badge-pill badge-global';
+      counterBadge.style.background = 'rgba(16, 185, 129, 0.25)';
+      counterBadge.style.color = '#34d399';
+      counterBadge.style.borderColor = '#10b981';
+      counterBadge.textContent = '🎉 All Words Passed!';
+    } else {
+      counterBadge.className = 'badge-pill badge-nirf';
+      counterBadge.style.background = '';
+      counterBadge.style.color = '';
+      counterBadge.style.borderColor = '';
+      counterBadge.textContent = `${passed} / ${total} Words Passed`;
+    }
+  }
+
+  if (percentLabel) {
+    percentLabel.textContent = `${pct}%`;
+  }
+
+  if (heardLabel && spokenTokens.length) {
+    const recent = spokenTokens.slice(-4).join(' ');
+    heardLabel.textContent = `🎙️ Heard: "${recent}"`;
+  }
+
+  // When all words pass!
+  if (passed === total && total > 0 && !isSpeechLabPassed) {
+    isSpeechLabPassed = true;
+    const screen = $('#speech-lab-ai-screen');
+    if (screen) {
+      screen.classList.add('speech-lab-screen-complete');
+    }
+    showToast('Sentence Passed! 100% Articulation Complete 🎉');
+    setTimeout(() => {
+      stopSpeechLabAudio();
+      analyzeSpeechLabSample();
+    }, 600);
+  }
+}
 
 function initSpeechLab() {
+  // Always stop previous voices when entering
+  stopAllVoice();
+
+  // 1. Refresh Speech Coach Suggestion dynamically EVERY time it is opened!
+  refreshSpeechCoachTip(false);
+
+  // 2. Setup AI Sentence Teleprompter Screen
+  if (!currentSpeechLabSentence) {
+    changeSpeechLabSentence(false);
+  }
+
+  // 3. Bind interactive buttons (idempotent guards)
   const recBtn = $('#btn-speech-lab-record');
   const stopBtn = $('#btn-speech-lab-stop');
   const analyzeBtn = $('#btn-speech-lab-analyze');
+  const newSentBtn = $('#btn-speech-lab-new-sentence');
+  const listenSentBtn = $('#btn-speech-lab-listen');
+  const refreshTipBtn = $('#btn-refresh-speech-coach');
 
-  recBtn?.addEventListener('click', startSpeechLabAudio);
-  stopBtn?.addEventListener('click', stopSpeechLabAudio);
-  analyzeBtn?.addEventListener('click', analyzeSpeechLabSample);
+  if (recBtn && !recBtn.dataset.bound) {
+    recBtn.dataset.bound = 'true';
+    recBtn.addEventListener('click', startSpeechLabAudio);
+  }
+  if (stopBtn && !stopBtn.dataset.bound) {
+    stopBtn.dataset.bound = 'true';
+    stopBtn.addEventListener('click', stopSpeechLabAudio);
+  }
+  if (analyzeBtn && !analyzeBtn.dataset.bound) {
+    analyzeBtn.dataset.bound = 'true';
+    analyzeBtn.addEventListener('click', analyzeSpeechLabSample);
+  }
+  if (newSentBtn && !newSentBtn.dataset.bound) {
+    newSentBtn.dataset.bound = 'true';
+    newSentBtn.addEventListener('click', () => changeSpeechLabSentence(true));
+  }
+  if (listenSentBtn && !listenSentBtn.dataset.bound) {
+    listenSentBtn.dataset.bound = 'true';
+    listenSentBtn.addEventListener('click', function() {
+      if (currentSpeechLabSentence) {
+        speak(currentSpeechLabSentence, this);
+      }
+    });
+  }
+  if (refreshTipBtn && !refreshTipBtn.dataset.bound) {
+    refreshTipBtn.dataset.bound = 'true';
+    refreshTipBtn.addEventListener('click', () => refreshSpeechCoachTip(true));
+  }
 }
 
 async function startSpeechLabAudio() {
   const status = $('#speech-session-state');
-  const transcript = $('#speech-lab-transcript');
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     STATE.audioStream = stream;
 
-    // Web Audio API Waveform Visualizer (cross-platform mobile resume support)
+    // Web Audio API Waveform Visualizer
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!STATE.audioContext) {
       STATE.audioContext = new AudioCtx();
@@ -1453,7 +1843,7 @@ async function startSpeechLabAudio() {
 
     renderSpeechLabWaveform();
 
-    // Browser Speech Recognition for live text
+    // Browser Speech Recognition for live word passing
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       speechLabRec = new SpeechRecognition();
@@ -1462,7 +1852,8 @@ async function startSpeechLabAudio() {
       speechLabRec.onresult = e => {
         let full = '';
         for (let i = 0; i < e.results.length; i++) full += e.results[i][0].transcript + ' ';
-        transcript.value = full.trim();
+        full = full.trim();
+        checkSpeechLabWordsProgress(full);
         updateRealtimePaceAndFillers(full);
       };
       speechLabRec.start();
@@ -1474,7 +1865,7 @@ async function startSpeechLabAudio() {
     $('#btn-speech-lab-record').disabled = true;
     $('#btn-speech-lab-stop').disabled = false;
   } catch (err) {
-    showToast('Microphone access denied or not available. You can type in the box below.');
+    showToast('Microphone access denied or not available. Please allow microphone permissions.');
   }
 }
 
@@ -1548,9 +1939,9 @@ function updateRealtimePaceAndFillers(text) {
 }
 
 function analyzeSpeechLabSample() {
-  const text = $('#speech-lab-transcript')?.value.trim();
+  const text = (STATE.speechLabTranscript || currentSpeechLabSentence || '').trim();
   if (!text) {
-    showToast('Please record or type an English response to analyze.');
+    showToast('Please record speech first to evaluate.');
     return;
   }
 
@@ -1559,12 +1950,17 @@ function analyzeSpeechLabSample() {
   const fillers = (text.match(/\b(um+|uh+|erm+|like|you know|actually|basically|literally)\b/gi) || []).length;
   const uniqueWords = new Set(words.map(w => w.toLowerCase())).size;
 
+  // Passed ratio from word screen
+  const totalTargetWords = speechLabTargetWords.length || words.length;
+  const passedWords = speechLabPassedIndices.size || words.length;
+  const passRatio = Math.min(1, Math.max(0.4, passedWords / Math.max(1, totalTargetWords)));
+
   // 6-Dimension Score Synthesis
-  const fluency = Math.min(100, Math.max(40, 92 - fillers * 6 + Math.min(10, words.length / 5)));
-  const clarity = Math.min(100, Math.max(45, 80 + Math.min(15, sentences.length * 3) - fillers * 4));
-  const pronunciation = Math.min(100, Math.max(50, 85 - fillers * 2));
-  const vocab = Math.min(100, Math.max(40, Math.round((uniqueWords / Math.max(1, words.length)) * 100)));
-  const grammar = Math.min(100, Math.max(50, 75 + (text.length > 80 ? 15 : 5)));
+  const fluency = Math.min(100, Math.max(45, Math.round((94 - fillers * 5) * passRatio)));
+  const clarity = Math.min(100, Math.max(50, Math.round((88 + Math.min(10, sentences.length * 3) - fillers * 3) * passRatio)));
+  const pronunciation = Math.min(100, Math.max(50, Math.round((90 - fillers * 2) * passRatio)));
+  const vocab = Math.min(100, Math.max(40, Math.round(((uniqueWords / Math.max(1, words.length)) * 100))));
+  const grammar = Math.min(100, Math.max(50, 80 + (text.length > 50 ? 15 : 5)));
   const confidence = Math.min(100, Math.max(50, Math.round((fluency + clarity) / 2)));
 
   // Update UI Elements
@@ -1580,11 +1976,17 @@ function analyzeSpeechLabSample() {
 
   // AI Coaching Rewrite Suggestions
   $('#ai-coaching-text').innerHTML = `
+    <div style="margin-bottom:10px;">
+      <span class="badge-pill badge-global" style="font-size:11.5px;font-weight:700;background:rgba(16,185,129,0.2);color:#34d399;border:1px solid #10b981;">
+        ✨ Speech Assessment Generated
+      </span>
+    </div>
     <strong>Targeted Strengths &amp; Adjustments:</strong><br>
-    • Your vocabulary diversity was <strong>${vocab}%</strong> across ${words.length} spoken words.<br>
-    • ${fillers > 0 ? `Notice ${fillers} filler phrase(s). Practice taking a silent 1-second pause when searching for words.` : 'Zero hesitation fillers detected! Flawless rhythm.'}<br><br>
+    • Articulation completion: <strong>${passedWords} / ${totalTargetWords} words passed (${Math.round(passRatio * 100)}%)</strong>.<br>
+    • Vocabulary richness: <strong>${vocab}%</strong> across ${words.length} spoken tokens.<br>
+    • ${fillers > 0 ? `Notice ${fillers} filler phrase(s). Practice taking a silent 1-second pause when searching for words.` : 'Zero hesitation fillers detected! Flawless executive rhythm.'}<br><br>
     <strong>"Say It Better" Model Delivery:</strong><br>
-    <em>"${escapeHtml(text.replace(/\b(um+|uh+|like|you know)\b/gi, '').trim())}"</em>
+    <em style="color:var(--accent-cyan);">"${escapeHtml(currentSpeechLabSentence || text.replace(/\b(um+|uh+|like|you know)\b/gi, '').trim())}"</em>
   `;
 
   showToast('Speech Analysis Complete!');
@@ -1785,7 +2187,7 @@ function renderMaydayScenarios() {
         </div>
       </div>
       <p class="card-body">"${escapeHtml(s.prompt)}"</p>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(s.prompt)}')">🔊 Hear Scenario Briefing</button>
+      <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(s.prompt)}', this)">🔊 Hear Scenario Briefing</button>
     </article>
   `).join('');
 }
@@ -2101,7 +2503,7 @@ function renderFlashCards(mount) {
 
   $('#btn-fc-next')?.addEventListener('click', () => { idx = (idx + 1) % FLASH_CARDS.length; loadCard(); });
   $('#btn-fc-prev')?.addEventListener('click', () => { idx = (idx - 1 + FLASH_CARDS.length) % FLASH_CARDS.length; loadCard(); });
-  $('#btn-fc-speak')?.addEventListener('click', () => { speak(FLASH_CARDS[idx].word); });
+  $('#btn-fc-speak')?.addEventListener('click', function() { speak(FLASH_CARDS[idx].word, this); });
 
   loadCard();
 }
@@ -2142,7 +2544,7 @@ function renderDictionaryLookup(mount) {
       resultBox.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <h3 style="font-size:24px;color:var(--accent-cyan);text-transform:capitalize;">${escapeHtml(item.word)}</h3>
-          <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(item.word)}')">🔊 Listen</button>
+          <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(item.word)}', this)">🔊 Listen</button>
         </div>
         <div style="margin:6px 0;">
           <span class="badge-pill badge-nirf">${escapeHtml(meaning?.partOfSpeech || 'word')}</span>
@@ -2183,7 +2585,7 @@ function renderSpellingBee(mount) {
     </div>
   `;
 
-  $('#btn-bee-listen')?.addEventListener('click', () => speak(curWord));
+  $('#btn-bee-listen')?.addEventListener('click', function() { speak(curWord, this); });
 
   $('#btn-bee-submit')?.addEventListener('click', () => {
     const input = $('#bee-input');
