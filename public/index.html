@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=3.0">
+  <link rel="stylesheet" href="styles.css?v=3.1">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.0" defer></script>
+  <script src="app.js?v=3.1" defer></script>
 </head>
 <body>
 
@@ -336,10 +336,12 @@
 
             <div id="phonetic-breakdown-box" style="display:none;background:var(--bg-subtle);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;font-size:13.5px;border:1px solid var(--border);"></div>
 
-            <!-- Student Name for Score Recording -->
+            <!-- Student Name (Mandatory) -->
             <div style="margin-bottom:16px;">
-              <label style="font-size:13px;color:var(--text-muted);font-weight:600;">Your Nickname / Roll No (for Leaderboard):</label>
-              <input type="text" id="speak-student-name" placeholder="Enter your name (e.g. Ananya Class 10)" style="margin-top:5px;">
+              <label for="speak-student-name" style="font-size:13px;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+                Name <span style="color:#ef4444;" title="Mandatory">*</span>
+              </label>
+              <input type="text" id="speak-student-name" placeholder="Enter your name" required autocomplete="name" style="margin-top:2px;">
             </div>
 
             <!-- Speech Recording Controls -->
@@ -499,8 +501,8 @@
           <h3 style="font-size:18px;margin-bottom:12px;">Studio Controls</h3>
           
           <div style="margin-bottom:12px;">
-            <label style="font-size:13px;font-weight:600;">Your Reporter Name:</label>
-            <input type="text" id="anchor-name-input" value="Ananya Sharma" placeholder="Your name">
+            <label for="anchor-name-input" style="font-size:13px;font-weight:700;">Name <span style="color:#ef4444;">*</span></label>
+            <input type="text" id="anchor-name-input" value="" placeholder="Enter your name" required>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -722,8 +724,8 @@
           <h3 style="font-size:18px;margin-bottom:14px;">Leave Your Feedback</h3>
           <form id="feedback-form">
             <div style="margin-bottom:12px;">
-              <label style="font-size:13px;font-weight:600;">Your Name / Initial:</label>
-              <input type="text" id="fb-name" required placeholder="e.g. Riya S. or Parent of Grade 9">
+              <label for="fb-name" style="font-size:13px;font-weight:700;">Name <span style="color:#ef4444;">*</span></label>
+              <input type="text" id="fb-name" required placeholder="Enter your name">
             </div>
 
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">

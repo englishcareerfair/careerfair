@@ -1174,6 +1174,11 @@ function initSpeakLadder() {
 
   $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
 
+  const nameInput = $('#speak-student-name');
+  if (nameInput && STATE.studentName) {
+    nameInput.value = STATE.studentName;
+  }
+
   // Initial sentence load
   changeSpeechSentence();
 }
@@ -1260,6 +1265,22 @@ function toggleSpeakLadderRecord() {
   }
 
   // Start recording
+  const nameInput = $('#speak-student-name');
+  const nameVal = (nameInput ? nameInput.value : STATE.studentName || '').trim();
+  if (!nameVal) {
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.style.borderColor = '#ef4444';
+      nameInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.25)';
+      nameInput.addEventListener('input', () => {
+        nameInput.style.borderColor = '';
+        nameInput.style.boxShadow = '';
+      }, { once: true });
+    }
+    showToast('Please enter your name first — name is mandatory.');
+    return;
+  }
+
   if (!SpeechRecognition) {
     showToast('Browser Speech Recognition not supported. You can type or paste in the transcript.');
     return;
@@ -1302,8 +1323,23 @@ function toggleSpeakLadderRecord() {
 async function evaluateSpeakAttempt() {
   const target = $('#speak-target-sentence')?.textContent.trim() || '';
   const transcript = $('#speak-transcript-preview')?.value.trim() || '';
-  const name = $('#speak-student-name')?.value.trim() || STATE.studentName || 'Explorer';
+  const nameInput = $('#speak-student-name');
+  const name = (nameInput ? nameInput.value : STATE.studentName || '').trim();
   const resultBox = $('#speak-eval-result');
+
+  if (!name) {
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.style.borderColor = '#ef4444';
+      nameInput.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.25)';
+      nameInput.addEventListener('input', () => {
+        nameInput.style.borderColor = '';
+        nameInput.style.boxShadow = '';
+      }, { once: true });
+    }
+    showToast('Please enter your name — name is mandatory.');
+    return;
+  }
 
   if (!transcript) {
     showToast('No speech was detected. Please try recording again.');
@@ -2473,7 +2509,7 @@ function renderFutureBusinessCard(mount) {
       <div>
         <div style="margin-bottom:10px;">
           <label style="font-size:13px;font-weight:600;">Your Name:</label>
-          <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || 'Ananya Sharma')}">
+          <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your name">
         </div>
         <div style="margin-bottom:10px;">
           <label style="font-size:13px;font-weight:600;">Future Dream Title:</label>
@@ -2491,7 +2527,7 @@ function renderFutureBusinessCard(mount) {
         <div>
           <div style="display:flex;justify-content:space-between;align-items:flex-start;">
             <div>
-              <h3 style="font-size:22px;letter-spacing:-0.02em;" id="bc-name">Ananya Sharma</h3>
+              <h3 style="font-size:22px;letter-spacing:-0.02em;" id="bc-name">${escapeHtml(STATE.studentName || 'Your Name')}</h3>
               <div style="color:var(--accent-cyan);font-family:var(--font-sub);font-size:13.5px;font-weight:700;margin-top:2px;" id="bc-title">Captain · Commercial Airline Pilot</div>
             </div>
             <div id="bc-qr-mount" style="background:#fff;padding:4px;border-radius:6px;width:60px;height:60px;"></div>
