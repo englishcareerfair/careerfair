@@ -74,19 +74,19 @@ async function fetchApi(endpoint, options = {}) {
   return null;
 }
 
-// Humanoid Studio Voice Engine & Unified Global Speech Toggle
+// Humanoid Studio Voice Engine & Unified Global Speech Toggle (Indian Accent ElevenLabs & Neural en-IN)
 let isGreetingPlaying = false;
-let currentGreetingAudio = null;
+let currentTtsAudio = null;
 let activeSpeechButton = null;
 let activeSpeechUtterance = null;
 
 function stopAllVoice() {
-  if (currentGreetingAudio) {
+  if (currentTtsAudio) {
     try {
-      currentGreetingAudio.pause();
-      currentGreetingAudio.currentTime = 0;
+      currentTtsAudio.pause();
+      currentTtsAudio.currentTime = 0;
     } catch {}
-    currentGreetingAudio = null;
+    currentTtsAudio = null;
   }
   isGreetingPlaying = false;
 
@@ -113,7 +113,7 @@ function stopAllVoice() {
   }
 }
 
-function speak(text, btn = null) {
+async function speak(text, btn = null) {
   if (!text) return;
 
   // Resolve target button if not passed explicitly
@@ -128,7 +128,7 @@ function speak(text, btn = null) {
   }
 
   // Check if voice is already speaking
-  const isSpeaking = (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) || currentGreetingAudio || activeSpeechButton;
+  const isSpeaking = (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) || currentTtsAudio || activeSpeechButton;
 
   if (isSpeaking) {
     const wasSame = (targetBtn && (targetBtn === activeSpeechButton || (targetBtn.id && targetBtn.id === activeSpeechButton?.id)));
@@ -141,29 +141,7 @@ function speak(text, btn = null) {
     stopAllVoice();
   }
 
-  if (!('speechSynthesis' in window)) {
-    showToast('Speech synthesis not supported in this browser.');
-    return;
-  }
-
-  // Cancel any lingering utterance to avoid repeating queue
-  window.speechSynthesis.cancel();
-
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'en-US';
-  utt.rate = 0.94; // Conversational human pace
-  utt.pitch = 1.02; // Warm humanoid inflection
-
-  const voices = window.speechSynthesis.getVoices();
-  if (voices.length) {
-    const preferred = voices.find(v => v.name.includes('Natural') || v.name.includes('Neural2'))
-      || voices.find(v => v.name.includes('Google US English'))
-      || voices.find(v => v.name.includes('Jenny') || v.name.includes('Guy'))
-      || voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en'))
-      || voices.find(v => v.lang.startsWith('en'));
-    if (preferred) utt.voice = preferred;
-  }
-
+  // Set target button into active playing state
   if (targetBtn) {
     if (!targetBtn.dataset.origHtml) {
       targetBtn.dataset.origHtml = targetBtn.innerHTML;
@@ -178,6 +156,86 @@ function speak(text, btn = null) {
     targetBtn.innerHTML = `<span>⏹️</span> <span>${stopLabel}</span>`;
     targetBtn.classList.add('speaking-active', 'playing');
     activeSpeechButton = targetBtn;
+  }
+
+  const savedElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
+  const savedVoiceId = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+
+  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Indian Accent API
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text,
+        apiKey: savedElevenKey,
+        voiceId: savedVoiceId,
+        accent: 'indian'
+      })
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+    if (res.ok && contentType.includes('audio')) {
+      const audioBlob = await res.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      currentTtsAudio = new Audio(audioUrl);
+
+      currentTtsAudio.onended = () => {
+        stopAllVoice();
+      };
+
+      currentTtsAudio.onerror = () => {
+        fallbackIndianNeuralSpeech(text, targetBtn);
+      };
+
+      await currentTtsAudio.play();
+      return;
+    }
+  } catch (err) {
+    console.warn('ElevenLabs Indian TTS API unreachable, falling back to Indian neural voice:', err);
+  }
+
+  // 2. Fallback to High-Fidelity Indian English Browser Neural Speech (en-IN)
+  fallbackIndianNeuralSpeech(text, targetBtn);
+}
+
+function fallbackIndianNeuralSpeech(text, targetBtn) {
+  if (!('speechSynthesis' in window)) {
+    showToast('Speech synthesis not supported in this browser.');
+    if (targetBtn && targetBtn.dataset.origHtml) {
+      targetBtn.innerHTML = targetBtn.dataset.origHtml;
+      targetBtn.classList.remove('speaking-active', 'playing');
+    }
+    return;
+  }
+
+  // Cancel any lingering utterance to avoid repeating queue
+  window.speechSynthesis.cancel();
+
+  const utt = new SpeechSynthesisUtterance(text);
+  // STRICT INDIAN ACCENT: en-IN ensures accurate pronunciation of Indian names, vocabulary, and phrasing
+  utt.lang = 'en-IN';
+  utt.rate = 0.92; // Natural, articulate Indian English pacing
+  utt.pitch = 1.0;
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    // Select an authentic Indian English accent voice
+    const indianVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')))
+      || voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN')
+      || voices.find(v => v.lang.toLowerCase().includes('in') && v.lang.toLowerCase().startsWith('en'))
+      || voices.find(v => {
+        const n = v.name.toLowerCase();
+        return n.includes('india') || n.includes('heera') || n.includes('neerja') || n.includes('ravi') || n.includes('prabhat') || n.includes('veena') || n.includes('kavita');
+      })
+      || voices.find(v => v.lang.startsWith('en'));
+
+    if (indianVoice) {
+      utt.voice = indianVoice;
+      if (indianVoice.lang.startsWith('en')) {
+        utt.lang = indianVoice.lang;
+      }
+    }
   }
 
   activeSpeechUtterance = utt;
@@ -205,71 +263,21 @@ function speak(text, btn = null) {
   setTimeout(() => window.speechSynthesis.speak(utt), 40);
 }
 
+function fallbackNeuralSpeech(text, btn) {
+  fallbackIndianNeuralSpeech(text, btn);
+}
+
 async function speakGreeting() {
   const btn = $('#btn-greeting');
   const greetingText = "Welcome to the English Careers Forum 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
 
-  if (isGreetingPlaying || (activeSpeechButton && activeSpeechButton === btn)) {
+  if (activeSpeechButton && (activeSpeechButton === btn || activeSpeechButton.id === 'btn-greeting')) {
     stopAllVoice();
     return;
   }
 
-  // Stop any other active voice first
-  stopAllVoice();
-
   isGreetingPlaying = true;
-  if (btn) {
-    if (!btn.dataset.origHtml) btn.dataset.origHtml = btn.innerHTML;
-    btn.innerHTML = '<span>⏳</span> <span class="greeting-btn-text">Generating Voice...</span>';
-    btn.classList.add('playing');
-    activeSpeechButton = btn;
-  }
-
-  const savedElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
-
-  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs / Server API
-  try {
-    const res = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: greetingText,
-        apiKey: savedElevenKey
-      })
-    });
-
-    const contentType = res.headers.get('content-type') || '';
-    if (res.ok && contentType.includes('audio')) {
-      const audioBlob = await res.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      currentGreetingAudio = new Audio(audioUrl);
-
-      if (btn) {
-        btn.innerHTML = '<span>⏹️</span> <span class="greeting-btn-text">Stop Audio</span>';
-        btn.classList.add('speaking-active');
-      }
-
-      currentGreetingAudio.onended = () => {
-        stopAllVoice();
-      };
-
-      currentGreetingAudio.onerror = () => {
-        speak(greetingText, btn);
-      };
-
-      await currentGreetingAudio.play();
-      return;
-    }
-  } catch (err) {
-    console.warn('TTS API error, falling back to neural speech:', err);
-  }
-
-  // 2. Fallback to High-Fidelity Humanoid Browser Neural Synthesis
-  speak(greetingText, btn);
-}
-
-function fallbackNeuralSpeech(text, btn) {
-  speak(text, btn);
+  await speak(greetingText, btn);
 }
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
@@ -1460,7 +1468,7 @@ function toggleSpeakLadderRecord() {
 
   try {
     const recog = new SpeechRecognition();
-    recog.lang = 'en-US';
+    recog.lang = 'en-IN'; // Indian English acoustic & phonetic recognition
     recog.continuous = true;
     recog.interimResults = true;
 
@@ -1949,6 +1957,7 @@ async function startSpeechLabAudio() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       speechLabRec = new SpeechRecognition();
+      speechLabRec.lang = 'en-IN'; // Indian English acoustic & phonetic recognition
       speechLabRec.continuous = true;
       speechLabRec.interimResults = true;
       speechLabRec.onresult = e => {
@@ -3845,20 +3854,29 @@ function initAdminWorkspace() {
   if (elevenInput) {
     elevenInput.value = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
   }
+  const elevenVoiceInput = $('#admin-eleven-voice');
+  if (elevenVoiceInput) {
+    elevenVoiceInput.value = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+  }
 
   // Save AI Credentials
   $('#btn-save-ai')?.addEventListener('click', async () => {
     const geminiKey = ($('#admin-gemini-key')?.value || '').trim();
     const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
+    const elevenVoice = ($('#admin-eleven-voice')?.value || '').trim();
     if (elevenKey) {
       localStorage.setItem('cf_eleven_key', elevenKey);
       STATE.config.eleven_key = elevenKey;
     }
+    if (elevenVoice) {
+      localStorage.setItem('cf_eleven_voice', elevenVoice);
+      STATE.config.eleven_voice = elevenVoice;
+    }
     if (geminiKey) {
       STATE.config.gemini_key = geminiKey;
     }
-    await fetchApi('admin/config', 'PUT', { gemini_key: geminiKey, eleven_key: elevenKey });
-    showToast('AI & Voice Credentials saved successfully');
+    await fetchApi('admin/config', 'PUT', { gemini_key: geminiKey, eleven_key: elevenKey, eleven_voice: elevenVoice });
+    showToast('AI & Indian Voice Credentials saved successfully');
   });
 
   // Test Humanoid Voice button in Admin

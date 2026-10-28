@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=3.8">
+  <link rel="stylesheet" href="styles.css?v=3.9">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.8" defer></script>
+  <script src="app.js?v=3.9" defer></script>
 </head>
 <body>
 
@@ -1077,7 +1077,15 @@
             <label style="font-size:13px;font-weight:600;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
             <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key">
             <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
-              Powers studio-grade natural humanoid AI greeting voice (Rachel model). If not configured, platform gracefully runs high-fidelity on-device neural voice.
+              Powers authentic studio-grade Indian accent text-to-speech across the entire website (ElevenLabs Multilingual v2 with Indian accent). If not configured, platform gracefully runs high-fidelity on-device Indian English (en-IN) neural voice.
+            </div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:13px;font-weight:600;">ElevenLabs Indian Voice ID (Optional):</label>
+            <input type="text" id="admin-eleven-voice" placeholder="Default: EtEf6yOMlronn3UoIDrF (Ankit - Indian Accent)">
+            <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
+              Enter any preferred Indian voice ID from your ElevenLabs Voice Library (e.g. Ankit, Aditi, Akash), or leave blank for default Indian voice.
             </div>
           </div>
 

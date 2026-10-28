@@ -690,7 +690,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     });
   }
 
-  // ── 10. POST /tts (Humanoid Audio Synthesis) ──────────────────────────────
+  // ── 10. POST /tts (Humanoid Indian Accent Audio Synthesis) ──────────────────────────────
   if (path === '/tts' && method === 'POST') {
     let body;
     try { body = await request.json(); } catch { body = {}; }
@@ -699,8 +699,37 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
     if (elevenKey) {
       try {
-        const voiceId = body.voiceId || '21m00Tcm4TlvDq8ikWAM'; // Rachel - warm natural humanoid voice
-        const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        // Preferred Indian Accent Voice in ElevenLabs:
+        // 'EtEf6yOMlronn3UoIDrF' (Ankit - Professional Indian English / Hindi accent)
+        let voiceId = (body.voiceId || env.ELEVEN_VOICE_ID || '').trim();
+
+        if (!voiceId) {
+          // Attempt to find any Indian accent voice in the user's ElevenLabs account library
+          try {
+            const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+              headers: { 'xi-api-key': elevenKey }
+            });
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              const indianVoice = (vData.voices || []).find(v => {
+                const acc = (v.labels?.accent || '').toLowerCase();
+                const desc = (v.description || '').toLowerCase();
+                const name = (v.name || '').toLowerCase();
+                return acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || desc.includes('indian');
+              });
+              if (indianVoice) {
+                voiceId = indianVoice.voice_id;
+              }
+            }
+          } catch {}
+        }
+
+        // Default to Ankit - standard professional Indian accent voice on ElevenLabs
+        if (!voiceId) {
+          voiceId = 'EtEf6yOMlronn3UoIDrF';
+        }
+
+        let ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -708,12 +737,44 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
           },
           body: JSON.stringify({
             text: text,
-            model_id: 'eleven_multilingual_v2',
-            voice_settings: { stability: 0.65, similarity_boost: 0.8 }
+            model_id: 'eleven_multilingual_v2', // Multilingual v2 models native Indian English phonetics and cadence
+            voice_settings: {
+              stability: 0.70,
+              similarity_boost: 0.85,
+              style: 0.15,
+              use_speaker_boost: true
+            }
           })
         });
 
-        if (ttsRes.ok) {
+        // If custom voice was not added to account, retry with default account voice using multilingual v2
+        if (!ttsRes.ok) {
+          try {
+            const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+              headers: { 'xi-api-key': elevenKey }
+            });
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              if (vData.voices && vData.voices.length > 0) {
+                const fallbackId = vData.voices[0].voice_id;
+                ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${fallbackId}`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'xi-api-key': elevenKey
+                  },
+                  body: JSON.stringify({
+                    text: text,
+                    model_id: 'eleven_multilingual_v2',
+                    voice_settings: { stability: 0.70, similarity_boost: 0.85 }
+                  })
+                });
+              }
+            }
+          } catch {}
+        }
+
+        if (ttsRes && ttsRes.ok) {
           const audioBuffer = await ttsRes.arrayBuffer();
           return new Response(audioBuffer, {
             headers: {
@@ -725,7 +786,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       } catch (e) {}
     }
 
-    return json({ fallback: true, message: 'Neural client-side synthesis active' });
+    return json({ fallback: true, message: 'Neural client-side synthesis active (Indian English en-IN)' });
   }
 
   return err('Route not found', 404);
