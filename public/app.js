@@ -3285,73 +3285,652 @@ function initGamePicker() {
   setupHorizontalScrollShelf(tabsContainer, leftBtn, rightBtn, 300);
 }
 
-// GAME 1: Jobtris (Semantic Block Matching)
-function renderJobtris(mount) {
-  mount.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <div>
-        <h3 style="font-size:20px;">🎮 Jobtris · Semantic Skill Blocks</h3>
-        <span style="font-size:12.5px;color:var(--text-dim);">Type or speak words semantically related to the falling industry block to blast it!</span>
-      </div>
-      <div style="display:flex;gap:14px;font-family:var(--font-mono);">
-        <span>Score: <strong style="color:var(--accent-cyan);" id="jobtris-score">0</strong></span>
-        <span>Combo: <strong style="color:var(--accent-magenta);" id="jobtris-combo">1x</strong></span>
-      </div>
-    </div>
+// GAME 1: Jobtris (Google Semantris Arcade Edition for Career Words)
+const SEMANTRIS_CAREERS = [
+  // Aviation & Aerospace (cyan)
+  { id: "pilot", title: "Commercial Airline Pilot", icon: "👨‍✈️", sector: "Aviation", color: "cyan", match: ["pilot", "flight", "airplane", "plane", "cockpit", "altitude", "aviation", "runway", "airspace", "radar", "autopilot", "captain", "boeing", "airbus", "sky", "takeoff", "landing"] },
+  { id: "atc", title: "Air Traffic Controller", icon: "📡", sector: "Aviation", color: "cyan", match: ["radar", "tower", "airspace", "clearance", "landing", "runway", "vectors", "flight", "atc", "transponder", "departure", "headset", "approach", "separation"] },
+  { id: "aero_eng", title: "Aerospace Systems Engineer", icon: "🚀", sector: "Aerospace", color: "cyan", match: ["rocket", "propulsion", "spacecraft", "orbit", "satellite", "aerodynamics", "trajectory", "nasa", "isro", "telemetry", "fairing", "reentry", "thrust"] },
+  { id: "flight_disp", title: "Flight Operations Dispatcher", icon: "🗺️", sector: "Aviation", color: "cyan", match: ["flightplan", "fuel", "weather", "diversion", "payload", "notam", "dispatch", "routing", "waypoints", "cruise"] },
+  { id: "drone_pilot", title: "Autonomous Drone Fleet Lead", icon: "🛸", sector: "Aerospace", color: "cyan", match: ["drone", "uav", "quadcopter", "telemetry", "waypoint", "payload", "lidar", "photogrammetry", "flight"] },
+  { id: "space_ops", title: "Mission Flight Director", icon: "🛰️", sector: "Aerospace", color: "cyan", match: ["countdown", "launchpad", "capsule", "booster", "mission", "orbit", "iss", "telemetry", "houston", "isro"] },
+  { id: "avionics_tech", title: "Avionics Systems Specialist", icon: "🎛️", sector: "Aviation", color: "cyan", match: ["instruments", "altimeter", "transponder", "gyros", "flybywire", "blackbox", "navigation", "circuits", "cockpit"] },
+  { id: "heli_pilot", title: "Emergency Rescue Helicopter Pilot", icon: "🚁", sector: "Aviation", color: "cyan", match: ["helicopter", "rotor", "evacuation", "airlift", "medevac", "hoist", "landing", "mountain", "blades"] },
 
-    <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;">
-      <div style="background:#07090e;border:2px solid var(--border);border-radius:var(--radius-md);height:320px;position:relative;overflow:hidden;" id="jobtris-well">
-        <div id="jobtris-falling-block" style="position:absolute;top:20px;left:40px;background:var(--brand-gradient);color:#fff;padding:8px 16px;border-radius:8px;font-family:var(--font-sub);font-weight:700;box-shadow:0 0 16px rgba(0,240,255,0.4);transition:top 0.4s ease;">
-          🧑‍✈️ Commercial Pilot
+  // Medicine & Life Sciences (emerald)
+  { id: "trauma_surgeon", title: "Chief Trauma Surgeon", icon: "🩺", sector: "Medicine", color: "emerald", match: ["scalpel", "surgery", "operation", "hospital", "incision", "emergency", "patient", "sutures", "operating", "surgeon", "scrubs", "anesthesia"] },
+  { id: "pediatrician", title: "Pediatric Specialist", icon: "👶", sector: "Medicine", color: "emerald", match: ["children", "baby", "toddler", "infant", "vaccination", "pediatric", "stethoscope", "fever", "growth", "clinic", "pediatrics"] },
+  { id: "cardiologist", title: "Interventional Cardiologist", icon: "❤️", sector: "Medicine", color: "emerald", match: ["heart", "cardiac", "artery", "pulse", "stent", "bypass", "ecg", "ekg", "blood", "coronary", "circulation"] },
+  { id: "neurologist", title: "Clinical Neurologist", icon: "🧠", sector: "Medicine", color: "emerald", match: ["brain", "neuron", "synapse", "stroke", "epilepsy", "mri", "nervous", "cognitive", "concussion", "cerebral"] },
+  { id: "radiologist", title: "Diagnostic Radiologist", icon: "🩻", sector: "Medicine", color: "emerald", match: ["xray", "scan", "imaging", "mri", "ct", "ultrasound", "contrast", "radiation", "radiograph", "fracture"] },
+  { id: "pharmacist", title: "Hospital Pharmacist", icon: "💊", sector: "Medicine", color: "emerald", match: ["medicine", "drugs", "prescription", "dosage", "pharmacy", "pills", "dispensary", "antibiotic", "tablet"] },
+  { id: "geneticist", title: "Genomics & CRISPR Scientist", icon: "🧬", sector: "Healthcare", color: "emerald", match: ["dna", "crispr", "genome", "mutation", "sequencing", "gene", "rna", "cloning", "hereditary", "helix"] },
+  { id: "anesthesiologist", title: "Chief Anesthesiologist", icon: "💉", sector: "Medicine", color: "emerald", match: ["anesthesia", "sedation", "dosage", "intubation", "oxygen", "vitals", "operating", "numb", "preop"] },
+  { id: "pathologist", title: "Forensic Medical Examiner", icon: "🔬", sector: "Medicine", color: "emerald", match: ["autopsy", "microscope", "tissue", "toxicology", "postmortem", "forensic", "biopsy", "lab", "coroner"] },
+  { id: "paramedic", title: "Emergency Flight Paramedic", icon: "🚑", sector: "Healthcare", color: "emerald", match: ["ambulance", "defibrillator", "firstaid", "triage", "cpr", "stretcher", "emergency", "oxygen", "siren"] },
+  { id: "psychiatrist", title: "Clinical Neuropsychiatrist", icon: "🛋️", sector: "Healthcare", color: "emerald", match: ["mental", "therapy", "counseling", "anxiety", "depression", "psychiatry", "clinical", "wellness", "mind"] },
+  { id: "oncologist", title: "Clinical Oncologist", icon: "🔬", sector: "Medicine", color: "emerald", match: ["cancer", "chemotherapy", "tumor", "radiation", "biopsy", "malignancy", "remission", "oncology"] },
+  { id: "orthopedic", title: "Orthopedic Surgeon", icon: "🦴", sector: "Medicine", color: "emerald", match: ["bones", "fracture", "joint", "implant", "spine", "arthroscopy", "cast", "ligament", "skeletal"] },
+
+  // Technology & AI (cyan)
+  { id: "soft_arch", title: "Principal Software Architect", icon: "💻", sector: "Tech", color: "cyan", match: ["code", "software", "architecture", "microservices", "cloud", "database", "backend", "latency", "api", "compiler"] },
+  { id: "ml_eng", title: "Machine Learning Engineer", icon: "🤖", sector: "AI & Data", color: "cyan", match: ["neural", "model", "deeplearning", "training", "dataset", "inference", "transformer", "llm", "algorithm", "tensor"] },
+  { id: "cyber_analyst", title: "SOC Cybersecurity Analyst", icon: "🛡️", sector: "Security", color: "cyan", match: ["firewall", "hacker", "malware", "security", "breach", "encryption", "soc", "phishing", "pentest", "incident"] },
+  { id: "cloud_eng", title: "Cloud Infrastructure Lead", icon: "☁️", sector: "Tech", color: "cyan", match: ["aws", "azure", "kubernetes", "docker", "devops", "serverless", "cluster", "cloud", "containers", "compute"] },
+  { id: "blockchain_dev", title: "Blockchain Systems Engineer", icon: "⛓️", sector: "Tech", color: "cyan", match: ["crypto", "ethereum", "bitcoin", "ledger", "smartcontract", "solidity", "consensus", "web3", "hash"] },
+  { id: "robotics_eng", title: "Autonomous Robotics Dev", icon: "🦾", sector: "Tech", color: "cyan", match: ["robot", "servos", "actuators", "kinematics", "lidar", "sensors", "automation", "manipulator", "firmware"] },
+  { id: "game_dev", title: "Game Engine & Physics Dev", icon: "🎮", sector: "Tech", color: "cyan", match: ["graphics", "unity", "unreal", "shader", "rendering", "gameplay", "collision", "framerate", "textures"] },
+  { id: "quantum_sci", title: "Quantum Computing Scientist", icon: "⚛️", sector: "Tech", color: "cyan", match: ["qubit", "superposition", "entanglement", "quantum", "cryogenic", "gates", "coherence", "decoherence"] },
+  { id: "database_lead", title: "Database Reliability Engineer", icon: "🗄️", sector: "Tech", color: "cyan", match: ["sql", "nosql", "postgres", "queries", "replication", "indexing", "sharding", "backup", "cache"] },
+  { id: "pen_tester", title: "Ethical Hacker & Red Teamer", icon: "🕵️", sector: "Security", color: "cyan", match: ["exploit", "payload", "vulnerability", "injection", "bypass", "redteam", "kali", "zeroday", "security"] },
+
+  // Law & Diplomacy (purple)
+  { id: "corp_counsel", title: "Senior Corporate Counsel", icon: "⚖️", sector: "Law", color: "purple", match: ["contract", "agreement", "merger", "acquisition", "clause", "compliance", "corporate", "liability", "legal"] },
+  { id: "const_advocate", title: "Constitutional Advocate", icon: "🏛️", sector: "Law", color: "purple", match: ["constitution", "court", "judge", "supremecourt", "hearing", "verdict", "ruling", "advocate", "jurisprudence"] },
+  { id: "prosecutor", title: "Special Public Prosecutor", icon: "⚖️", sector: "Law", color: "purple", match: ["indictment", "trial", "evidence", "jury", "charge", "prosecution", "witness", "crime", "conviction"] },
+  { id: "diplomat", title: "United Nations Diplomat", icon: "🌐", sector: "Diplomacy", color: "purple", match: ["embassy", "treaty", "ambassador", "diplomat", "negotiations", "bilateral", "consulate", "envoy", "summit"] },
+  { id: "arbitrator", title: "International Trade Arbitrator", icon: "📜", sector: "Law", color: "purple", match: ["dispute", "arbitration", "tribunal", "settlement", "mediation", "commercial", "neutral", "award"] },
+  { id: "patent_atty", title: "Patent & IP Attorney", icon: "💡", sector: "Law", color: "purple", match: ["patent", "trademark", "copyright", "invention", "infringement", "intellectual", "priorart", "license"] },
+  { id: "human_rights", title: "Human Rights Defender", icon: "🕊️", sector: "Diplomacy", color: "purple", match: ["refugee", "asylum", "rights", "charter", "amnesty", "advocacy", "justice", "equality", "dignity"] },
+  { id: "cyber_jurist", title: "Cyber Law & Privacy Jurist", icon: "🔐", sector: "Law", color: "purple", match: ["gdpr", "privacy", "surveillance", "digital", "compliance", "dataprotection", "regulations"] },
+
+  // Finance & Business (amber)
+  { id: "inv_banker", title: "Wall Street Investment Banker", icon: "📈", sector: "Finance", color: "amber", match: ["stocks", "ipo", "valuation", "capital", "merger", "shares", "bonds", "pitchbook", "underwriting", "banker"] },
+  { id: "quant_trader", title: "High-Frequency Quant Trader", icon: "💹", sector: "Finance", color: "amber", match: ["algorithm", "arbitrage", "volatility", "derivatives", "hedge", "options", "spread", "liquidity", "market"] },
+  { id: "cfo", title: "Chief Financial Officer", icon: "💼", sector: "Finance", color: "amber", match: ["budget", "revenue", "fiscal", "profit", "ebitda", "treasury", "dividend", "quarterly", "audit"] },
+  { id: "forensic_auditor", title: "Forensic Financial Auditor", icon: "🔍", sector: "Finance", color: "amber", match: ["embezzlement", "audit", "fraud", "ledger", "tax", "compliance", "accounting", "scrutiny"] },
+  { id: "actuary", title: "Actuarial Catastrophe Lead", icon: "📊", sector: "Finance", color: "amber", match: ["risk", "probability", "mortality", "insurance", "actuary", "statistics", "premium", "underwriting"] },
+  { id: "venture_cap", title: "Venture Capital Partner", icon: "🦄", sector: "Business", color: "amber", match: ["startup", "equity", "seed", "series", "valuation", "term", "runway", "founder", "unicorn"] },
+  { id: "macro_econ", title: "Global Macro Economist", icon: "🌐", sector: "Economics", color: "amber", match: ["inflation", "gdp", "interestrates", "centralbank", "recession", "fiscal", "currency", "trade"] },
+  { id: "private_equity", title: "Private Equity Dealmaker", icon: "🏢", sector: "Finance", color: "amber", match: ["buyout", "leveraged", "portfolio", "synergy", "restructuring", "turnaround", "capital"] },
+
+  // Media, Creative & Journalism (pink)
+  { id: "news_anchor", title: "Prime-Time News Anchor", icon: "🎙️", sector: "Media", color: "pink", match: ["broadcast", "anchor", "teleprompter", "breaking", "studio", "headlines", "microphone", "telecast"] },
+  { id: "war_corr", title: "Foreign War Correspondent", icon: "📹", sector: "Media", color: "pink", match: ["conflict", "frontline", "dispatch", "international", "reporter", "overseas", "footage", "press"] },
+  { id: "investigative_journo", title: "Investigative Reporter", icon: "📰", sector: "Media", color: "pink", match: ["expose", "whistleblower", "corruption", "scandal", "investigation", "scoop", "deadline", "press"] },
+  { id: "film_director", title: "Documentary Film Director", icon: "🎬", sector: "Creative", color: "pink", match: ["cinema", "camera", "film", "documentary", "script", "lens", "editing", "screenplay", "producer"] },
+  { id: "creative_dir", title: "Advertising Creative Director", icon: "🎨", sector: "Creative", color: "pink", match: ["advertising", "campaign", "branding", "billboard", "copywriting", "storyboard", "pitch", "design"] },
+  { id: "lexicographer", title: "Chief Lexicographer & Editor", icon: "📚", sector: "Literature", color: "pink", match: ["dictionary", "words", "vocabulary", "definition", "etymology", "grammar", "synonyms", "manuscript"] },
+  { id: "pr_spokesperson", title: "Crisis PR Spokesperson", icon: "📣", sector: "Media", color: "pink", match: ["pressrelease", "crisis", "statement", "spokesperson", "reputation", "briefing", "media", "interview"] },
+  { id: "sound_engineer", title: "Mastering Sound Engineer", icon: "🎧", sector: "Creative", color: "pink", match: ["audio", "mixing", "acoustics", "frequency", "equalizer", "decibel", "vocal", "compression", "studio"] },
+  { id: "author", title: "Literary Novelist & Author", icon: "✍️", sector: "Literature", color: "pink", match: ["book", "novel", "fiction", "prose", "chapter", "dialogue", "publisher", "narrative", "author"] },
+
+  // Earth, Ocean & Deep Sciences (orange)
+  { id: "marine_geo", title: "Deep-Sea Marine Geologist", icon: "🌊", sector: "Exploration", color: "orange", match: ["ocean", "submersible", "hadal", "trench", "hydrothermal", "magma", "seabed", "tectonic", "sonar"] },
+  { id: "volcanologist", title: "Active Field Volcanologist", icon: "🌋", sector: "Earth Science", color: "orange", match: ["magma", "lava", "eruption", "crater", "ash", "caldera", "seismic", "basalt", "pyroclastic"] },
+  { id: "wildlife_bio", title: "Wildlife Conservation Lead", icon: "🦁", sector: "Environment", color: "orange", match: ["safari", "predator", "species", "poaching", "habitat", "endangered", "tracking", "biodiversity"] },
+  { id: "climate_sci", title: "Climate Modeling Scientist", icon: "🌡️", sector: "Environment", color: "orange", match: ["warming", "greenhouse", "carbon", "emissions", "glaciers", "ipcc", "atmosphere", "drought"] },
+  { id: "renew_eng", title: "Renewable Energy Architect", icon: "⚡", sector: "Engineering", color: "orange", match: ["solar", "wind", "photovoltaic", "turbine", "battery", "grid", "clean", "megawatts", "inverter"] },
+  { id: "struct_eng", title: "Skyscraper Structural Lead", icon: "🏗️", sector: "Engineering", color: "orange", match: ["concrete", "steel", "foundation", "truss", "load", "seismic", "beam", "skyscraper", "blueprint"] },
+  { id: "urban_plan", title: "Smart City Urban Planner", icon: "🏙️", sector: "Planning", color: "orange", match: ["transit", "zoning", "infrastructure", "metropolitan", "parks", "density", "pedestrian", "mobility"] },
+  { id: "astro_bio", title: "NASA Astrobiologist", icon: "🪐", sector: "Science", color: "orange", match: ["exoplanet", "mars", "europa", "extremophile", "biosignature", "habitable", "alien", "microbe"] },
+  { id: "f1_strategist", title: "Formula 1 Race Strategist", icon: "🏎️", sector: "Engineering", color: "orange", match: ["pitstop", "tires", "telemetry", "paddock", "undercut", "laptime", "downforce", "aerodynamic", "grid"] },
+  { id: "exec_chef", title: "Michelin Executive Chef", icon: "🍳", sector: "Culinary", color: "orange", match: ["culinary", "recipe", "kitchen", "gastronomy", "flavor", "cuisine", "michelin", "plating", "chef"] },
+  { id: "sommelier", title: "Sommelier & Flavor Chemist", icon: "🍷", sector: "Culinary", color: "orange", match: ["vintage", "palate", "fermentation", "aroma", "vineyard", "tasting", "cellar", "sommelier"] },
+  { id: "fashion_curator", title: "Haute Couture Creative Lead", icon: "👗", sector: "Design", color: "pink", match: ["fashion", "runway", "textiles", "collection", "couture", "apparel", "designer", "fabric"] }
+];
+
+// Web Audio synthesizer for crisp arcade sound effects
+const semantrisAudio = (() => {
+  let ctx = null;
+  const getCtx = () => {
+    if (!ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) ctx = new AudioCtx();
+    }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  };
+
+  return {
+    playPop(combo = 1) {
+      try {
+        const c = getCtx();
+        if (!c) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        const baseFreq = 420 + Math.min(combo * 90, 800);
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.8, now + 0.12);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + 0.16);
+      } catch (e) {}
+    },
+    playDrop() {
+      try {
+        const c = getCtx();
+        if (!c) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } catch (e) {}
+    },
+    playMiss() {
+      try {
+        const c = getCtx();
+        if (!c) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.14);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      } catch (e) {}
+    },
+    playDanger() {
+      try {
+        const c = getCtx();
+        if (!c) return;
+        const now = c.currentTime;
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(880, now);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } catch (e) {}
+    },
+    playGameOver() {
+      try {
+        const c = getCtx();
+        if (!c) return;
+        const notes = [380, 320, 260, 190];
+        notes.forEach((freq, i) => {
+          const now = c.currentTime + i * 0.12;
+          const osc = c.createOscillator();
+          const gain = c.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(c.destination);
+          osc.start(now);
+          osc.stop(now + 0.2);
+        });
+      } catch (e) {}
+    }
+  };
+})();
+
+// Active instance of Jobtris Semantris Game
+let jobtrisInstance = null;
+
+function renderJobtris(mount) {
+  if (jobtrisInstance) {
+    jobtrisInstance.destroy();
+    jobtrisInstance = null;
+  }
+
+  mount.innerHTML = `
+    <div class="semantris-container">
+      <div class="semantris-header">
+        <div class="semantris-header-title">
+          <h3><span>🎮</span> Jobtris · Semantic Word Arcade</h3>
+          <span>Type any clue or tool related to a job in the stack to blast it and trigger color combos!</span>
+        </div>
+        <div class="semantris-stats-row">
+          <div class="semantris-stat-badge">
+            <span style="color:var(--text-dim);">Score:</span>
+            <strong style="color:var(--accent-cyan);" id="semantris-score-display">0</strong>
+          </div>
+          <div class="semantris-stat-badge">
+            <span style="color:var(--text-dim);">Cleared:</span>
+            <strong style="color:var(--text-main);" id="semantris-cleared-display">0</strong>
+          </div>
+          <div class="semantris-combo-pill" id="semantris-combo-pill">Combo 1x</div>
         </div>
       </div>
 
-      <div>
-        <h4 style="font-size:15px;margin-bottom:8px;">Target Clue:</h4>
-        <input type="text" id="jobtris-input" placeholder="Type related skill or term..." autofocus>
-        <button class="btn btn-primary btn-sm" id="btn-jobtris-submit" style="width:100%;margin-top:8px;">Blast Block 💥</button>
+      <div class="semantris-stage-grid">
+        <!-- Semantris Falling Well Tower -->
+        <div class="semantris-well-wrapper">
+          <div class="semantris-danger-line" id="semantris-danger-line" title="Danger line: Keep blocks below this threshold!"></div>
+          <div class="semantris-danger-badge" id="semantris-danger-badge">⚠️ DANGER: HIGH STACK</div>
 
-        <div style="margin-top:16px;background:var(--bg-subtle);padding:12px;border-radius:var(--radius-md);font-size:13px;">
-          <strong style="color:var(--accent-cyan);display:block;margin-bottom:4px;">💡 Pro-tip:</strong>
-          Multipliers scale with domain-specific professional terms.
+          <div class="semantris-well" id="semantris-well"></div>
+
+          <!-- Game Over Modal Overlay -->
+          <div class="semantris-gameover-overlay" id="semantris-gameover" style="display:none;">
+            <div style="font-size:42px;margin-bottom:8px;">💥</div>
+            <h2 style="font-size:24px;margin-bottom:6px;color:#fff;">STACK OVERFLOW!</h2>
+            <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">The career stack reached the danger line.</p>
+            <div style="display:flex;gap:16px;margin-bottom:20px;font-family:var(--font-mono);">
+              <div class="semantris-stat-badge">Score: <strong style="color:var(--accent-cyan);margin-left:4px;" id="gameover-final-score">0</strong></div>
+              <div class="semantris-stat-badge">Top Combo: <strong style="color:#ff2a85;margin-left:4px;" id="gameover-max-combo">1x</strong></div>
+            </div>
+            <button class="btn btn-primary" id="btn-semantris-restart" style="padding:12px 28px;font-size:15px;font-weight:800;">
+              <span>🔄</span> <span>Play Again</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Clue Entry Console & Quick Hints -->
+        <div class="semantris-console">
+          <div class="semantris-input-box-wrapper" id="semantris-input-box-wrap">
+            <label for="semantris-input" style="font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
+              <span>Type Related Clue or Tool:</span>
+              <span style="font-size:11.5px;color:var(--text-dim);font-weight:500;">Press Enter ↵</span>
+            </label>
+            <input type="text" id="semantris-input" placeholder="e.g. flight, surgery, courtroom, code..." autocomplete="off" autocapitalize="none" spellcheck="false" autofocus>
+            
+            <button class="semantris-submit-btn" id="btn-semantris-submit" type="button">
+              <span>Blast Matching Block</span> <span>💥</span>
+            </button>
+          </div>
+
+          <!-- Quick Clue Suggestions -->
+          <div class="card" style="padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">Quick Clue Ideas:</span>
+              <button class="btn btn-secondary btn-sm" id="btn-semantris-pause" type="button" style="padding:2px 8px;font-size:11.5px;">⏸️ Pause</button>
+            </div>
+            <div class="semantris-clues-shelf" id="semantris-chips">
+              <span class="semantris-clue-chip">flight</span>
+              <span class="semantris-clue-chip">scalpel</span>
+              <span class="semantris-clue-chip">cloud</span>
+              <span class="semantris-clue-chip">contract</span>
+              <span class="semantris-clue-chip">stocks</span>
+              <span class="semantris-clue-chip">broadcast</span>
+              <span class="semantris-clue-chip">submersible</span>
+              <span class="semantris-clue-chip">heart</span>
+              <span class="semantris-clue-chip">radar</span>
+              <span class="semantris-clue-chip">firewall</span>
+              <span class="semantris-clue-chip">treaty</span>
+              <span class="semantris-clue-chip">magma</span>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:var(--text-dim);line-height:1.4;">
+              💡 <strong>Semantris Pro-tip:</strong> Connected same-color blocks chain-pop together for massive combo multipliers!
+            </div>
+          </div>
         </div>
       </div>
     </div>
   `;
 
-  let score = 0;
-  let blockTop = 20;
-  const well = $('#jobtris-well');
-  const block = $('#jobtris-falling-block');
-  const input = $('#jobtris-input');
+  // Start the Game Controller
+  class JobtrisGame {
+    constructor() {
+      this.score = 0;
+      this.combo = 1;
+      this.maxCombo = 1;
+      this.clearedCount = 0;
+      this.isGameOver = false;
+      this.isPaused = false;
+      this.stack = []; // Active visible blocks
+      this.deck = []; // Shuffled draw deck
+      this.dropTimer = null;
+      this.dropInterval = 6200; // ms between block drops
+      this.maxStack = 8; // Danger at 6, game over if >= 8
+      this.dangerThreshold = 6;
+      this.well = $('#semantris-well');
+      this.input = $('#semantris-input');
+      this.inputWrap = $('#semantris-input-box-wrap');
+      this.scoreDisplay = $('#semantris-score-display');
+      this.clearedDisplay = $('#semantris-cleared-display');
+      this.comboPill = $('#semantris-combo-pill');
+      this.dangerLine = $('#semantris-danger-line');
+      this.dangerBadge = $('#semantris-danger-badge');
+      this.gameOverScreen = $('#semantris-gameover');
 
-  const BLOCKS = [
-    { title: "🧑‍✈️ Commercial Pilot", match: ["cockpit", "altitude", "navigation", "flight", "plane", "avionics", "airspace", "radar"] },
-    { title: "🩺 Chief Surgeon", match: ["scalpel", "incision", "diagnosis", "hospital", "patient", "operation", "suture", "anesthesia"] },
-    { title: "⚖️ Corporate Lawyer", match: ["contract", "court", "arbitration", "statute", "clause", "litigation", "advocacy", "brief"] },
-    { title: "💻 Software Architect", match: ["microservices", "database", "latency", "code", "cloud", "api", "backend", "algorithm"] }
-  ];
-  let curBlock = BLOCKS[0];
-
-  const submit = () => {
-    const val = input.value.trim().toLowerCase();
-    if (curBlock.match.some(m => val.includes(m))) {
-      score += 150;
-      $('#jobtris-score').textContent = score;
-      showToast(`Block Blasted! +150 Points`);
-      curBlock = BLOCKS[Math.floor(Math.random() * BLOCKS.length)];
-      block.textContent = curBlock.title;
-      blockTop = 20;
-      block.style.top = `${blockTop}px`;
-      input.value = '';
-    } else {
-      showToast('Word not recognized as a match! Try again.');
+      this.initDeck();
+      this.initEvents();
+      this.start();
     }
-  };
 
-  $('#btn-jobtris-submit')?.addEventListener('click', submit);
-  input?.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    initDeck() {
+      // Fisher-Yates shuffle of career library
+      this.deck = [...SEMANTRIS_CAREERS].sort(() => Math.random() - 0.5);
+    }
+
+    drawUniqueCareer() {
+      const activeIds = new Set(this.stack.map(b => b.id));
+      let available = this.deck.filter(c => !activeIds.has(c.id));
+      if (available.length === 0) {
+        this.initDeck();
+        available = this.deck.filter(c => !activeIds.has(c.id));
+      }
+      const chosen = available[0] || SEMANTRIS_CAREERS[0];
+      this.deck = this.deck.filter(c => c.id !== chosen.id);
+      return chosen;
+    }
+
+    start() {
+      this.stack = [];
+      this.score = 0;
+      this.combo = 1;
+      this.maxCombo = 1;
+      this.clearedCount = 0;
+      this.isGameOver = false;
+      this.isPaused = false;
+      this.dropInterval = 6200;
+      this.gameOverScreen.style.display = 'none';
+
+      // Seed initial stack with 5 diverse, non-repeating blocks
+      for (let i = 0; i < 5; i++) {
+        this.stack.push(this.drawUniqueCareer());
+      }
+
+      this.renderStack();
+      this.updateHUD();
+      this.startDropTimer();
+      this.input.focus();
+    }
+
+    startDropTimer() {
+      if (this.dropTimer) clearInterval(this.dropTimer);
+      this.dropTimer = setInterval(() => {
+        if (!this.isPaused && !this.isGameOver) {
+          this.dropNewBlock();
+        }
+      }, this.dropInterval);
+    }
+
+    dropNewBlock() {
+      if (this.isGameOver || this.isPaused) return;
+
+      if (this.stack.length >= this.maxStack) {
+        this.triggerGameOver();
+        return;
+      }
+
+      const newCareer = this.drawUniqueCareer();
+      this.stack.push(newCareer);
+      semantrisAudio.playDrop();
+
+      this.renderStack(newCareer.id);
+      this.updateHUD();
+
+      if (this.stack.length >= this.dangerThreshold) {
+        this.dangerLine.classList.add('active');
+        this.dangerBadge.classList.add('active');
+        semantrisAudio.playDanger();
+      }
+
+      if (this.stack.length >= this.maxStack) {
+        setTimeout(() => {
+          if (this.stack.length >= this.maxStack) {
+            this.triggerGameOver();
+          }
+        }, 1200);
+      }
+    }
+
+    renderStack(droppingId = null) {
+      if (!this.well) return;
+      this.well.innerHTML = '';
+
+      this.stack.forEach((career, index) => {
+        const blockEl = document.createElement('div');
+        blockEl.className = `semantris-block semantris-color-${career.color}`;
+        blockEl.dataset.id = career.id;
+        blockEl.dataset.index = index;
+
+        if (career.id === droppingId) {
+          blockEl.classList.add('dropping');
+        }
+
+        blockEl.innerHTML = `
+          <div class="semantris-block-left">
+            <span style="font-size:18px;">${career.icon}</span>
+            <span class="semantris-block-title">${escapeHtml(career.title)}</span>
+          </div>
+          <span class="semantris-badge">${escapeHtml(career.sector)}</span>
+        `;
+
+        // Click block to pre-fill input with a sample clue
+        blockEl.addEventListener('click', () => {
+          if (this.input) {
+            this.input.value = career.match[0] || 'skill';
+            this.input.focus();
+          }
+        });
+
+        this.well.appendChild(blockEl);
+      });
+    }
+
+    submitClue() {
+      if (this.isGameOver || this.isPaused) return;
+      const raw = this.input.value.trim().toLowerCase();
+      if (!raw) return;
+
+      const scored = this.stack.map((block, index) => ({
+        block,
+        index,
+        score: this.calculateMatchScore(block, raw)
+      }));
+
+      scored.sort((a, b) => b.score - a.score);
+      const topMatch = scored[0];
+
+      if (topMatch && topMatch.score >= 60) {
+        this.handleHit(topMatch.block, topMatch.index);
+      } else {
+        this.handleMiss();
+      }
+
+      this.input.value = '';
+    }
+
+    calculateMatchScore(block, clue) {
+      const c = clue.trim().toLowerCase();
+      let maxScore = 0;
+
+      // 1. Keyword direct match
+      for (const kw of block.match) {
+        const k = kw.toLowerCase();
+        if (k === c) maxScore = Math.max(maxScore, 100);
+        else if (k.startsWith(c) || c.startsWith(k)) maxScore = Math.max(maxScore, 85);
+        else if (k.includes(c) || c.includes(k)) maxScore = Math.max(maxScore, 75);
+      }
+
+      // 2. Title word match
+      const titleClean = block.title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/);
+      for (const tw of titleClean) {
+        if (tw.length >= 3) {
+          if (tw === c) maxScore = Math.max(maxScore, 95);
+          else if (tw.startsWith(c) || c.startsWith(tw)) maxScore = Math.max(maxScore, 80);
+          else if (tw.includes(c) || c.includes(tw)) maxScore = Math.max(maxScore, 70);
+        }
+      }
+
+      // 3. Sector match
+      if (block.sector && block.sector.toLowerCase().includes(c)) {
+        maxScore = Math.max(maxScore, 65);
+      }
+
+      return maxScore;
+    }
+
+    handleHit(targetBlock, targetIndex) {
+      // Semantris Arcade contiguous color chain popping
+      const targetColor = targetBlock.color;
+      const poppingIndices = new Set([targetIndex]);
+
+      // Expand contiguous neighbors upwards
+      for (let i = targetIndex - 1; i >= 0; i--) {
+        if (this.stack[i] && this.stack[i].color === targetColor) {
+          poppingIndices.add(i);
+        } else {
+          break;
+        }
+      }
+      // Expand contiguous neighbors downwards
+      for (let i = targetIndex + 1; i < this.stack.length; i++) {
+        if (this.stack[i] && this.stack[i].color === targetColor) {
+          poppingIndices.add(i);
+        } else {
+          break;
+        }
+      }
+
+      const poppedCount = poppingIndices.size;
+      const pointsEarned = 150 * this.combo * poppedCount;
+      this.score += pointsEarned;
+      this.clearedCount += poppedCount;
+      this.combo = Math.min(this.combo + 1, 8);
+      if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+      semantrisAudio.playPop(this.combo);
+
+      // Add popping animation to DOM elements
+      const blockEls = this.well.querySelectorAll('.semantris-block');
+      poppingIndices.forEach(idx => {
+        const el = blockEls[idx];
+        if (el) {
+          el.classList.add('popping');
+          this.spawnFloatingScore(el, `+${pointsEarned / poppedCount}`);
+        }
+      });
+
+      // Accelerate drop speed slightly every 5 cleared words
+      if (this.clearedCount % 5 === 0) {
+        this.dropInterval = Math.max(3400, this.dropInterval - 300);
+        this.startDropTimer();
+      }
+
+      setTimeout(() => {
+        // Filter out popped blocks from stack
+        this.stack = this.stack.filter((_, idx) => !poppingIndices.has(idx));
+
+        // If stack is critically low (< 3), immediately drop 1 new block to keep game active
+        if (this.stack.length < 3) {
+          this.stack.push(this.drawUniqueCareer());
+        }
+
+        if (this.stack.length < this.dangerThreshold) {
+          this.dangerLine.classList.remove('active');
+          this.dangerBadge.classList.remove('active');
+        }
+
+        this.renderStack();
+        this.updateHUD();
+      }, 350);
+    }
+
+    spawnFloatingScore(anchorEl, text) {
+      if (!anchorEl || !this.well) return;
+      const rect = anchorEl.getBoundingClientRect();
+      const wellRect = this.well.getBoundingClientRect();
+      const floatEl = document.createElement('div');
+      floatEl.className = 'semantris-floating-score';
+      floatEl.textContent = text;
+      floatEl.style.top = `${rect.top - wellRect.top + 6}px`;
+      floatEl.style.left = `${rect.left - wellRect.left + rect.width / 2 - 30}px`;
+      this.well.appendChild(floatEl);
+      setTimeout(() => floatEl.remove(), 850);
+    }
+
+    handleMiss() {
+      this.combo = 1;
+      this.updateHUD();
+      semantrisAudio.playMiss();
+
+      if (this.inputWrap) {
+        this.inputWrap.classList.add('shake');
+        setTimeout(() => this.inputWrap.classList.remove('shake'), 400);
+      }
+
+      const randomTarget = this.stack[Math.floor(Math.random() * this.stack.length)];
+      if (randomTarget) {
+        showToast(`No match! Try a clue related to ${randomTarget.title} (e.g. "${randomTarget.match[0]}")`);
+      }
+    }
+
+    updateHUD() {
+      if (this.scoreDisplay) this.scoreDisplay.textContent = this.score.toLocaleString();
+      if (this.clearedDisplay) this.clearedDisplay.textContent = this.clearedCount;
+      if (this.comboPill) {
+        this.comboPill.textContent = `Combo ${this.combo}x`;
+        this.comboPill.style.color = this.combo > 1 ? '#00f0ff' : '#ff2a85';
+      }
+    }
+
+    triggerGameOver() {
+      this.isGameOver = true;
+      if (this.dropTimer) clearInterval(this.dropTimer);
+      semantrisAudio.playGameOver();
+
+      $('#gameover-final-score').textContent = this.score.toLocaleString();
+      $('#gameover-max-combo').textContent = `${this.maxCombo}x`;
+      this.gameOverScreen.style.display = 'flex';
+
+      const prevHigh = parseInt(localStorage.getItem('cf_jobtris_highscore') || '0', 10);
+      if (this.score > prevHigh) {
+        localStorage.setItem('cf_jobtris_highscore', String(this.score));
+        showToast(`🏆 NEW HIGH SCORE: ${this.score.toLocaleString()} points!`);
+      }
+    }
+
+    togglePause() {
+      this.isPaused = !this.isPaused;
+      const btn = $('#btn-semantris-pause');
+      if (btn) btn.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
+      if (this.isPaused) {
+        showToast('Jobtris paused ⏸️');
+      } else {
+        showToast('Resumed ▶️');
+        this.input.focus();
+      }
+    }
+
+    initEvents() {
+      $('#btn-semantris-submit')?.addEventListener('click', () => this.submitClue());
+      this.input?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.submitClue();
+        }
+      });
+
+      $('#btn-semantris-pause')?.addEventListener('click', () => this.togglePause());
+      $('#btn-semantris-restart')?.addEventListener('click', () => this.start());
+
+      // Quick chip clicks
+      $$('.semantris-clue-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          if (this.input) {
+            this.input.value = chip.textContent.trim();
+            this.submitClue();
+          }
+        });
+      });
+    }
+
+    destroy() {
+      if (this.dropTimer) clearInterval(this.dropTimer);
+    }
+  }
+
+  jobtrisInstance = new JobtrisGame();
 }
+
 
 // GAME 2: Wordle / Wordless (6-Guess Vocabulary)
 function renderWordle(mount) {
