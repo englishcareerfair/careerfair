@@ -174,7 +174,7 @@ export async function onRequest(ctx) {
     const pass = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
     const banner = await kvGet(db, 'banner', 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!');
     const timer = parseInt(await kvGet(db, 'timer', '0'), 10) || 0;
-    const theme = await kvGet(db, 'theme', 'cinematic');
+    const theme = await kvGet(db, 'theme', 'light');
     const school_branding = await kvGet(db, 'school_branding', '1') === '1';
     const school_name = await kvGet(db, 'school_name', 'Kanakia International School Mira Road');
 

@@ -17,64 +17,8 @@
   --transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Theme 1: Cinematic Space Dark (igloo.inc Awwwards 2024 style) */
-[data-theme="cinematic"], :root {
-  --bg-canvas: #07090e;
-  --bg-subtle: #0d111a;
-  --surface-card: rgba(18, 24, 38, 0.78);
-  --surface-hover: rgba(26, 34, 52, 0.9);
-  --surface-raised: #141c2b;
-  --border: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(0, 240, 255, 0.4);
-  --border-glow: 0 0 24px rgba(0, 240, 255, 0.25);
-  --text-main: #f3f6ff;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
-  
-  --accent-cyan: #00f0ff;
-  --accent-magenta: #ff2a85;
-  --accent-gold: #ffb703;
-  --accent-emerald: #00f59b;
-  --accent-brand: #00f0ff;
-  --brand-gradient: linear-gradient(135deg, #00f0ff 0%, #7928ca 50%, #ff2a85 100%);
-  --hero-glow: radial-gradient(circle at 50% 30%, rgba(0, 240, 255, 0.12) 0%, rgba(121, 40, 202, 0.08) 40%, transparent 70%);
-  --card-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
-
-  --scrollbar-thumb: #00f0ff;
-  --scrollbar-thumb-hover: #38bdf8;
-  --scrollbar-track: rgba(255, 255, 255, 0.05);
-}
-
-/* Theme 2: Vibrant Festival (Carnival of Careers) */
-[data-theme="festival"] {
-  --bg-canvas: #faf6f0;
-  --bg-subtle: #f0eae1;
-  --surface-card: #ffffff;
-  --surface-hover: #fdfaf6;
-  --surface-raised: #ffffff;
-  --border: rgba(30, 20, 50, 0.12);
-  --border-strong: #7209b7;
-  --border-glow: 0 0 18px rgba(114, 9, 183, 0.2);
-  --text-main: #191424;
-  --text-muted: #5e546f;
-  --text-dim: #8b809d;
-  
-  --accent-cyan: #0284c7;
-  --accent-magenta: #f72585;
-  --accent-gold: #f59e0b;
-  --accent-emerald: #10b981;
-  --accent-brand: #7209b7;
-  --brand-gradient: linear-gradient(135deg, #7209b7 0%, #f72585 50%, #ffb703 100%);
-  --hero-glow: radial-gradient(circle at 50% 30%, rgba(247, 37, 133, 0.12) 0%, rgba(255, 183, 3, 0.1) 40%, transparent 70%);
-  --card-shadow: 0 10px 28px rgba(70, 40, 90, 0.08);
-
-  --scrollbar-thumb: #7209b7;
-  --scrollbar-thumb-hover: #f72585;
-  --scrollbar-track: rgba(114, 9, 183, 0.08);
-}
-
-/* Theme 3: Corporate Clean & Scholastic */
-[data-theme="corporate"] {
+/* ─── LIGHT MODE (Corporate Clean & Scholastic — Primary Light Palette) ─── */
+[data-theme="light"], [data-theme="corporate"], :root {
   --bg-canvas: #f8fafc;
   --bg-subtle: #edf2f7;
   --surface-card: #ffffff;
@@ -101,32 +45,32 @@
   --scrollbar-track: rgba(37, 99, 235, 0.08);
 }
 
-/* Theme 4: English Forum Warm Enamel */
-[data-theme="enamel"] {
-  --bg-canvas: #f5f2ea;
-  --bg-subtle: #eae5d7;
-  --surface-card: #ffffff;
-  --surface-hover: #faf8f2;
-  --surface-raised: #ffffff;
-  --border: rgba(12, 42, 43, 0.14);
-  --border-strong: #0c2a2b;
-  --border-glow: 0 0 20px rgba(199, 154, 69, 0.22);
-  --text-main: #0c2a2b;
-  --text-muted: #496364;
-  --text-dim: #708687;
+/* ─── DARK MODE (Corporate Slate Dark — Matching Corporate Surroundings) ─── */
+[data-theme="dark"], [data-theme="cinematic"] {
+  --bg-canvas: #0b0f19;
+  --bg-subtle: #111827;
+  --surface-card: #151d30;
+  --surface-hover: #1c263e;
+  --surface-raised: #182238;
+  --border: rgba(255, 255, 255, 0.12);
+  --border-strong: #3b82f6;
+  --border-glow: 0 0 18px rgba(59, 130, 246, 0.25);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
   
-  --accent-cyan: #0c2a2b;
-  --accent-magenta: #9d3131;
-  --accent-gold: #c79a45;
-  --accent-emerald: #2a7e58;
-  --accent-brand: #0c2a2b;
-  --brand-gradient: linear-gradient(135deg, #0c2a2b 0%, #295354 50%, #c79a45 100%);
-  --hero-glow: radial-gradient(circle at 50% 30%, rgba(199, 154, 69, 0.15) 0%, transparent 60%);
-  --card-shadow: 0 12px 30px rgba(12, 42, 43, 0.09);
+  --accent-cyan: #38bdf8;
+  --accent-magenta: #f43f5e;
+  --accent-gold: #fbbf24;
+  --accent-emerald: #10b981;
+  --accent-brand: #3b82f6;
+  --brand-gradient: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #60a5fa 100%);
+  --hero-glow: radial-gradient(circle at 50% 30%, rgba(59, 130, 246, 0.14) 0%, transparent 65%);
+  --card-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 
-  --scrollbar-thumb: #c79a45;
-  --scrollbar-thumb-hover: #0c2a2b;
-  --scrollbar-track: rgba(199, 154, 69, 0.12);
+  --scrollbar-thumb: #3b82f6;
+  --scrollbar-thumb-hover: #60a5fa;
+  --scrollbar-track: rgba(59, 130, 246, 0.08);
 }
 
 /* ─── 2. BASE RESET & ACCESSIBILITY ───────────────────────────────────────── */
@@ -275,9 +219,15 @@ button, input, select, textarea {
   border-bottom: 1px solid var(--border);
 }
 
-[data-theme="festival"] .site-header { background: rgba(250, 246, 240, 0.88); }
-[data-theme="corporate"] .site-header { background: rgba(248, 250, 252, 0.9); }
-[data-theme="enamel"] .site-header { background: rgba(245, 242, 234, 0.9); }
+[data-theme="light"] .site-header,
+[data-theme="corporate"] .site-header {
+  background: rgba(248, 250, 252, 0.92);
+}
+
+[data-theme="dark"] .site-header,
+[data-theme="cinematic"] .site-header {
+  background: rgba(11, 15, 25, 0.92);
+}
 
 .header-container {
   max-width: 1320px;
@@ -662,11 +612,16 @@ select option {
   color: #f8fafc;
   padding: 8px 12px;
 }
-[data-theme="festival"] select option,
-[data-theme="corporate"] select option,
-[data-theme="enamel"] select option {
+[data-theme="light"] select option,
+[data-theme="corporate"] select option {
   background-color: #ffffff;
   color: #0f172a;
+}
+
+[data-theme="dark"] select option,
+[data-theme="cinematic"] select option {
+  background-color: #151d30;
+  color: #f8fafc;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -1788,11 +1743,17 @@ tr:hover td { background: var(--surface-hover); }
   transition: var(--transition);
 }
 
-[data-theme="festival"] #admin-pwd-input,
-[data-theme="corporate"] #admin-pwd-input,
-[data-theme="enamel"] #admin-pwd-input {
+[data-theme="light"] #admin-pwd-input,
+[data-theme="corporate"] #admin-pwd-input {
   background: #ffffff;
   color: #0f172a;
+}
+
+[data-theme="dark"] #admin-pwd-input,
+[data-theme="cinematic"] #admin-pwd-input {
+  background: #151d30;
+  color: #f8fafc;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 #admin-pwd-input:focus {
@@ -2003,7 +1964,7 @@ tr:hover td { background: var(--surface-hover); }
   .theme-switcher {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     padding: 3px;
     gap: 2px;
     background: var(--surface-raised);

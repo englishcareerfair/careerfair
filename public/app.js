@@ -5,8 +5,11 @@
  */
 
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
+const savedInitialTheme = localStorage.getItem('cf_theme');
+const initialResolvedTheme = (savedInitialTheme === 'dark' || savedInitialTheme === 'cinematic') ? 'dark' : 'light';
+
 const STATE = {
-  theme: localStorage.getItem('cf_theme') || 'cinematic',
+  theme: initialResolvedTheme,
   activeTab: 'hero',
   studentName: localStorage.getItem('cf_student_name') || '',
   studentClass: localStorage.getItem('cf_student_class') || 'Class 10',
@@ -1309,14 +1312,20 @@ function switchTab(tabId) {
 }
 
 function setTheme(themeName) {
-  STATE.theme = themeName;
-  document.documentElement.setAttribute('data-theme', themeName);
-  localStorage.setItem('cf_theme', themeName);
+  const mode = (themeName === 'dark' || themeName === 'cinematic') ? 'dark' : 'light';
+  STATE.theme = mode;
+  document.documentElement.setAttribute('data-theme', mode);
+  localStorage.setItem('cf_theme', mode);
+
+  const metaTheme = $('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', mode === 'dark' ? '#0b0f19' : '#f8fafc');
+  }
 
   $$('.theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.themeVal === themeName);
+    btn.classList.toggle('active', btn.dataset.themeVal === mode);
   });
-  showToast(`Switched to ${themeName.charAt(0).toUpperCase() + themeName.slice(1)} theme`);
+  showToast(`Switched to ${mode === 'dark' ? 'Dark' : 'Light'} mode`);
 }
 
 // ─── 4. SECTION RENDERERS ─────────────────────────────────────────────────────
@@ -5748,8 +5757,8 @@ function renderHeroStream() {
 
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Apply saved theme
-  document.documentElement.setAttribute('data-theme', STATE.theme);
+  // Apply saved theme (Light or Dark)
+  setTheme(STATE.theme);
 
   // Initialize navigation & core handlers
   initNavigation();
