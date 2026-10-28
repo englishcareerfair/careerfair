@@ -10,7 +10,7 @@ const STATE = {
   activeTab: 'hero',
   studentName: localStorage.getItem('cf_student_name') || '',
   studentClass: localStorage.getItem('cf_student_class') || 'Class 10',
-  adminKey: sessionStorage.getItem('cf_admin_key') || '',
+  adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '',
   config: {
     pass: 70,
     banner: 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!',
@@ -21,6 +21,10 @@ const STATE = {
     stream_title: localStorage.getItem('cf_stream_title') || 'English Careers Forum 2026 — Live Stage Broadcast',
     stream_active: localStorage.getItem('cf_stream_active') !== 'false',
     stream_autoplay: localStorage.getItem('cf_stream_autoplay') !== 'false',
+    gemini_keys: localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || '',
+    gemini_key: localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || '',
+    eleven_key: localStorage.getItem('cf_eleven_key') || '',
+    eleven_voice: localStorage.getItem('cf_eleven_voice') || '',
     flags: {
       speechLab: true, mockInterview: true, anchorMode: true, roleplay: true,
       debate: true, careers: true, colleges: true, exams: true,
@@ -60,17 +64,34 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
-// Universal API Client with graceful offline fallback
-async function fetchApi(endpoint, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (STATE.adminKey) headers['Authorization'] = 'Bearer ' + STATE.adminKey;
-  const clientGeminiKeys = localStorage.getItem('cf_gemini_keys');
+// Universal API Client with graceful offline fallback and dual-signature support
+async function fetchApi(endpoint, options = {}, maybeBody = null) {
+  let opts = {};
+  if (typeof options === 'string') {
+    opts = {
+      method: options.toUpperCase(),
+      body: maybeBody !== null && maybeBody !== undefined
+        ? (typeof maybeBody === 'string' ? maybeBody : JSON.stringify(maybeBody))
+        : undefined
+    };
+  } else if (options && typeof options === 'object') {
+    opts = Object.assign({}, options);
+  }
+
+  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
+  const adminKey = STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '';
+  if (adminKey && !headers['Authorization']) {
+    headers['Authorization'] = 'Bearer ' + adminKey;
+  }
+
+  const clientGeminiKeys = localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || STATE.config?.gemini_keys || '';
   if (clientGeminiKeys && !headers['x-gemini-keys']) {
     headers['x-gemini-keys'] = clientGeminiKeys;
   }
+  opts.headers = headers;
 
   try {
-    const res = await fetch('/api/' + endpoint, { ...options, headers });
+    const res = await fetch('/api/' + endpoint, opts);
     if (res.ok) return await res.json();
   } catch (err) {
     // Graceful offline fallback
@@ -162,14 +183,17 @@ async function speak(text, btn = null) {
     activeSpeechButton = targetBtn;
   }
 
-  const savedElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
-  const savedVoiceId = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+  const savedElevenKey = ($('#admin-eleven-key')?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
+  const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Indian Accent API
   try {
     const res = await fetch('/api/tts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(savedElevenKey ? { 'xi-api-key': savedElevenKey } : {})
+      },
       body: JSON.stringify({
         text: text,
         apiKey: savedElevenKey,
@@ -194,6 +218,13 @@ async function speak(text, btn = null) {
 
       await currentTtsAudio.play();
       return;
+    } else {
+      let errInfo = '';
+      try {
+        const errJson = await res.json();
+        errInfo = errJson.error || errJson.details || errJson.message || '';
+      } catch (e) {}
+      if (errInfo) console.warn('TTS response non-audio:', res.status, errInfo);
     }
   } catch (err) {
     console.warn('ElevenLabs Indian TTS API unreachable, falling back to Indian neural voice:', err);
@@ -5319,16 +5350,66 @@ function initAdminWorkspace() {
 
   // Load existing AI Keys Pool
   const geminiInput = $('#admin-gemini-key');
-  if (geminiInput) {
-    geminiInput.value = localStorage.getItem('cf_gemini_keys') || STATE.config.gemini_keys || STATE.config.gemini_key || '';
-  }
+  const geminiStatus = $('#admin-gemini-key-status');
   const elevenInput = $('#admin-eleven-key');
-  if (elevenInput) {
-    elevenInput.value = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
-  }
   const elevenVoiceInput = $('#admin-eleven-voice');
+
+  const updateGeminiKeyStatus = (keysStr) => {
+    if (!geminiStatus) return;
+    const count = (keysStr || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean).length;
+    if (count > 0) {
+      geminiStatus.innerHTML = `✅ <strong>${count} Gemini API Key${count > 1 ? 's' : ''}</strong> active &amp; persistent across reloads. Failover pool ready.`;
+    } else {
+      geminiStatus.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
+    }
+  };
+
+  if (geminiInput) {
+    const savedGemini = localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || STATE.config.gemini_keys || STATE.config.gemini_key || '';
+    geminiInput.value = savedGemini;
+    updateGeminiKeyStatus(savedGemini);
+
+    const persistGemini = () => {
+      const v = geminiInput.value.trim();
+      if (v) {
+        localStorage.setItem('cf_gemini_keys', v);
+        localStorage.setItem('cf_gemini_key', v.split(/[\r\n,]+/)[0].trim());
+        sessionStorage.setItem('cf_gemini_keys', v);
+        STATE.config.gemini_keys = v;
+        STATE.config.gemini_key = v;
+      }
+      updateGeminiKeyStatus(v);
+    };
+    geminiInput.addEventListener('input', persistGemini);
+    geminiInput.addEventListener('change', persistGemini);
+  }
+
+  if (elevenInput) {
+    const savedEleven = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
+    elevenInput.value = savedEleven;
+    const persistEleven = () => {
+      const v = elevenInput.value.trim();
+      if (v) {
+        localStorage.setItem('cf_eleven_key', v);
+        STATE.config.eleven_key = v;
+      }
+    };
+    elevenInput.addEventListener('input', persistEleven);
+    elevenInput.addEventListener('change', persistEleven);
+  }
+
   if (elevenVoiceInput) {
-    elevenVoiceInput.value = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+    const savedVoice = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+    elevenVoiceInput.value = savedVoice;
+    const persistVoice = () => {
+      const v = elevenVoiceInput.value.trim();
+      if (v) {
+        localStorage.setItem('cf_eleven_voice', v);
+        STATE.config.eleven_voice = v;
+      }
+    };
+    elevenVoiceInput.addEventListener('input', persistVoice);
+    elevenVoiceInput.addEventListener('change', persistVoice);
   }
 
   // Save AI Credentials & Backup Keys Pool
@@ -5346,15 +5427,28 @@ function initAdminWorkspace() {
     }
     if (geminiKeys) {
       STATE.config.gemini_keys = geminiKeys;
+      STATE.config.gemini_key = geminiKeys;
       localStorage.setItem('cf_gemini_keys', geminiKeys);
+      localStorage.setItem('cf_gemini_key', geminiKeys.split(/[\r\n,]+/)[0].trim());
+      sessionStorage.setItem('cf_gemini_keys', geminiKeys);
+      updateGeminiKeyStatus(geminiKeys);
     }
-    await fetchApi('admin/config', 'PUT', { gemini_keys: geminiKeys, gemini_key: geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '', eleven_key: elevenKey, eleven_voice: elevenVoice });
+    await fetchApi('admin/config', 'PUT', {
+      gemini_keys: geminiKeys,
+      gemini_key: geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '',
+      eleven_key: elevenKey,
+      eleven_voice: elevenVoice
+    });
     showToast('AI & Indian Voice Credentials saved successfully');
   });
 
-  // Test Humanoid Voice button in Admin
-  $('#btn-test-tts-voice')?.addEventListener('click', () => {
-    speakGreeting();
+  // Test Humanoid Voice button in Admin - tests the EXACT configured Voice ID directly
+  $('#btn-test-tts-voice')?.addEventListener('click', async function() {
+    const customVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
+    const testText = customVoiceId
+      ? `Hello! This is a live voice test using your configured voice ID: ${customVoiceId}. Every career pathway speaks with clarity and confidence.`
+      : "Welcome to the English Careers Forum 2026. This voice test demonstrates authentic Indian English pronunciation for all thirty-two careers.";
+    await speak(testText, this);
   });
 
   // Broadcast settings save
@@ -5678,7 +5772,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Fetch initial config from backend
   const cfg = await fetchApi('config');
   if (cfg) {
+    const localGemini = localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || STATE.config.gemini_keys || '';
+    const localElevenKey = localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '';
+    const localElevenVoice = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
+
     STATE.config = Object.assign({}, STATE.config, cfg);
+
+    // Ensure empty backend config never wipes client-side stored Gemini keys
+    if (cfg.gemini_keys || cfg.gemini_key) {
+      const gKeys = cfg.gemini_keys || cfg.gemini_key;
+      STATE.config.gemini_keys = gKeys;
+      STATE.config.gemini_key = gKeys;
+      localStorage.setItem('cf_gemini_keys', gKeys);
+      localStorage.setItem('cf_gemini_key', gKeys.split(/[\r\n,]+/)[0].trim());
+      sessionStorage.setItem('cf_gemini_keys', gKeys);
+    } else if (localGemini) {
+      STATE.config.gemini_keys = localGemini;
+      STATE.config.gemini_key = localGemini;
+      localStorage.setItem('cf_gemini_keys', localGemini);
+      sessionStorage.setItem('cf_gemini_keys', localGemini);
+      fetchApi('admin/config', 'PUT', { gemini_keys: localGemini, gemini_key: localGemini.split(/[\r\n,]+/)[0].trim() });
+    }
+
+    if (cfg.eleven_key) {
+      STATE.config.eleven_key = cfg.eleven_key;
+      localStorage.setItem('cf_eleven_key', cfg.eleven_key);
+    } else if (localElevenKey) {
+      STATE.config.eleven_key = localElevenKey;
+    }
+
+    if (cfg.eleven_voice) {
+      STATE.config.eleven_voice = cfg.eleven_voice;
+      localStorage.setItem('cf_eleven_voice', cfg.eleven_voice);
+    } else if (localElevenVoice) {
+      STATE.config.eleven_voice = localElevenVoice;
+    }
+
     if (cfg.banner) $('#broadcast-text').textContent = cfg.banner;
     if (cfg.school_name) $('#school-branding-name').textContent = `${cfg.school_name} ©`;
     if (cfg.stream_url !== undefined && cfg.stream_url !== '') STATE.config.stream_url = cfg.stream_url;
