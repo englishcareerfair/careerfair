@@ -3144,7 +3144,7 @@ async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
 
   let scores = [];
   try {
@@ -3156,12 +3156,12 @@ async function loadLeaderboard(filterPack = 'All') {
 
   if (!scores.length) {
     const BENCHMARK_SCORES = [
-      { name: "Ananya Sharma", class_name: "Class 10-A", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
-      { name: "Kabir Mehta", class_name: "Class 10-B", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
-      { name: "Riya S.", class_name: "Class 9-A", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
-      { name: "Arjun Verma", class_name: "Class 10-C", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
-      { name: "Zoya Merchant", class_name: "Class 11-B", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
-      { name: "Devansh Nair", class_name: "Class 10-A", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
+      { name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
+      { name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
+      { name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
+      { name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
+      { name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
+      { name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
     ];
 
     scores = (filterPack && filterPack !== 'All')
@@ -3171,7 +3171,7 @@ async function loadLeaderboard(filterPack = 'All') {
 
   tbody.innerHTML = '';
   if (!scores.length) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
     return;
   }
 
@@ -3181,7 +3181,6 @@ async function loadLeaderboard(filterPack = 'All') {
     tr.innerHTML = `
       <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
       <td><strong>${escapeHtml(sc.name)}</strong></td>
-      <td>${escapeHtml(sc.class_name || 'Class 10')}</td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack)}</span></td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
