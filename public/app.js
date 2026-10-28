@@ -5,8 +5,9 @@
  */
 
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
+// Light Mode is default on start
 const savedInitialTheme = localStorage.getItem('cf_theme');
-const initialResolvedTheme = (savedInitialTheme === 'dark' || savedInitialTheme === 'cinematic') ? 'dark' : 'light';
+const initialResolvedTheme = savedInitialTheme === 'dark' ? 'dark' : 'light';
 
 const STATE = {
   theme: initialResolvedTheme,
@@ -1319,7 +1320,7 @@ function setTheme(themeName) {
 
   const metaTheme = $('meta[name="theme-color"]');
   if (metaTheme) {
-    metaTheme.setAttribute('content', mode === 'dark' ? '#0b0f19' : '#f8fafc');
+    metaTheme.setAttribute('content', mode === 'dark' ? '#0c0d10' : '#f8fafc');
   }
 
   $$('.theme-btn').forEach(btn => {
