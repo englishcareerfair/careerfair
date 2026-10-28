@@ -1348,8 +1348,6 @@ async function evaluateSpeakAttempt() {
 
   // Calculate Levenshtein accuracy
   const acc = calculateLevenshteinAccuracy(target, transcript);
-  const passThreshold = STATE.config.pass || 70;
-  const passed = acc >= passThreshold;
 
   // Persist student name
   STATE.studentName = name;
@@ -1368,19 +1366,24 @@ async function evaluateSpeakAttempt() {
   if (resultBox) {
     resultBox.style.display = 'block';
     resultBox.innerHTML = `
-      <div style="background:${passed ? 'rgba(0,245,155,0.12)' : 'rgba(255,42,133,0.12)'};border:1px solid ${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};border-radius:var(--radius-md);padding:16px;margin-top:12px;">
+      <div style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.3);border-radius:var(--radius-md);padding:16px;margin-top:12px;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <strong style="color:${passed ? 'var(--accent-emerald)' : 'var(--accent-magenta)'};font-size:16px;">
-            ${passed ? '🎉 Excellent Articulation! Target Achieved!' : '⚠️ Good Effort! Practice Again for Higher Accuracy'}
+          <strong style="color:var(--accent-cyan);font-size:16px;">
+            🎯 Speech Accuracy Evaluated!
           </strong>
-          <span class="badge-pill ${passed ? 'badge-naac' : 'badge-global'}" style="font-size:14px;font-weight:700;">${acc}% Accuracy</span>
+          <span class="badge-pill badge-naac" style="font-size:14px;font-weight:700;">${acc}% Accuracy</span>
         </div>
         <p style="font-size:13.5px;margin:10px 0;color:var(--text-main);">
           <strong>Recognized Speech:</strong> "${escapeHtml(transcript)}"
         </p>
-        <button class="btn btn-primary btn-sm" onclick="changeSpeechSentence(true)" style="margin-top:6px;">
-          ✨ Next Practice Sentence ➡️
-        </button>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;">
+          <span style="font-size:12px;color:var(--accent-emerald);font-weight:600;">
+            ✓ Score saved to Exhibition Leaderboard
+          </span>
+          <button class="btn btn-primary btn-sm" onclick="changeSpeechSentence(true)">
+            ✨ Next Practice Sentence ➡️
+          </button>
+        </div>
       </div>
     `;
   }

@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=3.1">
+  <link rel="stylesheet" href="styles.css?v=3.2">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.1" defer></script>
+  <script src="app.js?v=3.2" defer></script>
 </head>
 <body>
 
@@ -292,18 +292,12 @@
         </p>
       </div>
 
-      <!-- Pack Selector -->
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-        <div class="filter-row" id="speak-pack-filters" style="margin-bottom:0;">
-          <button class="filter-chip active" data-pack="Everyday">Everyday Fluency</button>
-          <button class="filter-chip" data-pack="Journalism">Broadcast Journalism</button>
-          <button class="filter-chip" data-pack="Law">Courtroom Advocacy</button>
-          <button class="filter-chip" data-pack="Academic">Scholarly Academic</button>
-        </div>
-
-        <div style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">
-          Passing Target: <strong id="ladder-pass-label">70% Accuracy</strong>
-        </div>
+      <!-- Domain Pack Selector -->
+      <div class="filter-row" id="speak-pack-filters" style="margin-bottom:20px;">
+        <button class="filter-chip active" data-pack="Everyday">Everyday Fluency</button>
+        <button class="filter-chip" data-pack="Journalism">Broadcast Journalism</button>
+        <button class="filter-chip" data-pack="Law">Courtroom Advocacy</button>
+        <button class="filter-chip" data-pack="Academic">Scholarly Academic</button>
       </div>
 
       <div class="speech-studio-layout">
