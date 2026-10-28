@@ -713,10 +713,6 @@ function initNavigation() {
   $('#btn-greeting')?.addEventListener('click', () => {
     speak("Welcome to the SUPW Career Fair. Good English is not just an examination subject; it is the universal language that opens doors to every modern profession.");
   });
-
-  // Admin open & close handlers
-  $('#btn-open-admin')?.addEventListener('click', openAdminModal);
-  $('#btn-close-admin')?.addEventListener('click', closeAdminModal);
 }
 
 function switchTab(tabId) {
@@ -747,6 +743,7 @@ function switchTab(tabId) {
   if (tabId === 'roadmap') renderPlanTool('myplan');
   if (tabId === 'leaderboard') loadLeaderboard();
   if (tabId === 'feedback') loadFeedbackWall();
+  if (tabId === 'admin') renderAdminView();
 }
 
 function setTheme(themeName) {
@@ -2270,9 +2267,8 @@ function loadFeedbackWall() {
   });
 }
 
-// ─── 12. ADMIN CONTROL ROOM MODAL CONTROLLER ─────────────────────────────────
-function openAdminModal() {
-  $('#admin-modal').hidden = false;
+// ─── 12. ADMIN CONTROL ROOM TAB CONTROLLER ─────────────────────────────────
+function renderAdminView() {
   if (STATE.adminKey) {
     $('#admin-gate-screen').hidden = true;
     $('#admin-workspace-screen').hidden = false;
@@ -2281,10 +2277,6 @@ function openAdminModal() {
     $('#admin-gate-screen').hidden = false;
     $('#admin-workspace-screen').hidden = true;
   }
-}
-
-function closeAdminModal() {
-  $('#admin-modal').hidden = true;
 }
 
 function initAdminWorkspace() {

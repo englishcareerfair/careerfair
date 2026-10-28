@@ -61,11 +61,6 @@
         <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to introductory audio">
           <span>🔊</span> <span>Listen Greeting</span>
         </button>
-
-        <!-- Admin Control Room Button -->
-        <button class="btn btn-secondary btn-sm" id="btn-open-admin" type="button" aria-label="Open Admin Control Room">
-          <span>⚙️</span> <span>Admin</span>
-        </button>
       </div>
     </div>
   </header>
@@ -85,6 +80,7 @@
       <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
       <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
       <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback</button>
+      <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
     </div>
   </nav>
 
@@ -731,31 +727,35 @@
           <div id="feedback-wall-list" style="display:flex;flex-direction:column;gap:12px;max-height:480px;overflow-y:auto;padding-right:6px;"></div>
         </div>
       </div>
-    </section>
+    <!-- ── SECTION: ADMIN CONTROL ROOM ── -->
+    <section class="section-shell" id="sec-admin" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">PROJECT MANAGEMENT &amp; OPERATIONAL CONTROLS</div>
+          <h2 class="section-title">Admin Control Room</h2>
+        </div>
+        <p class="section-desc">
+          Operational console for feature toggles, visual styles, live broadcast announcements, and data exports.
+        </p>
+      </div>
 
-  </main>
-
-  <!-- ── 5. ADMIN CONTROL ROOM MODAL ── -->
-  <div class="modal-backdrop" id="admin-modal" hidden>
-    <div class="modal-card">
-      <button class="modal-close-btn" id="btn-close-admin" type="button" aria-label="Close admin modal">&times;</button>
-      
       <!-- Screen 1: Password Gate -->
-      <div id="admin-gate-screen">
-        <h3 style="font-size:22px;margin-bottom:6px;">Project Control Room</h3>
+      <div id="admin-gate-screen" class="card" style="max-width:520px;margin:30px auto;text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">🔒</div>
+        <h3 style="font-size:22px;margin-bottom:6px;">Restricted Access</h3>
         <p style="font-size:14px;color:var(--text-muted);margin-bottom:18px;">
-          Operational management console for feature toggles, visual styles, live banners, and AI routing.
+          Enter the project administrator password to access operational controls.
         </p>
 
-        <form id="admin-login-form">
+        <form id="admin-login-form" style="text-align:left;">
           <label style="font-size:13px;font-weight:600;">Admin Password:</label>
-          <input type="password" id="admin-pwd-input" placeholder="Enter password (default: careers2026)" required style="margin:6px 0 16px;">
-          <button class="btn btn-primary" type="submit">Unlock Control Room 🔓</button>
+          <input type="password" id="admin-pwd-input" placeholder="Enter admin password" required style="margin:6px 0 16px;">
+          <button class="btn btn-primary" type="submit" style="width:100%;">Unlock Control Room 🔓</button>
         </form>
       </div>
 
       <!-- Screen 2: Admin Dashboard Workspace -->
-      <div id="admin-workspace-screen" hidden>
+      <div id="admin-workspace-screen" class="card" hidden>
         <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:18px;">
           <div>
             <h3 style="font-size:20px;">Admin Console Active</h3>
@@ -843,8 +843,9 @@
           <button class="btn btn-accent btn-sm" id="btn-reset-scores" type="button">⚠️ Reset All Leaderboard Scores</button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+  </main>
 
   <!-- ── 6. SITE FOOTER ── -->
   <footer style="background:var(--surface-raised);border-top:1px solid var(--border);padding:30px 20px;text-align:center;font-size:13.5px;color:var(--text-dim);position:relative;z-index:20;">
