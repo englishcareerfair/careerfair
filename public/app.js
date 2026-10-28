@@ -3286,6 +3286,8 @@ function renderGameArena(gameKey) {
 
   if (gameKey === 'jobtris') {
     renderJobtris(mount);
+  } else if (gameKey === 'gaming-hall') {
+    renderGamingHall(mount);
   } else if (gameKey === 'wordle') {
     renderWordle(mount);
   } else if (gameKey === 'flashcards') {
@@ -3317,6 +3319,571 @@ function initGamePicker() {
 
   // Setup unified themed horizontal scroll shelf
   setupHorizontalScrollShelf(tabsContainer, leftBtn, rightBtn, 300);
+}
+
+// =========================================================================
+// AI-POWERED GAMING HALL (5 Immersive Gemini Quests with 3D Arc Carousel)
+// =========================================================================
+
+let gamingHallArcIndex = 0;
+const GAMING_HALL_QUESTS = [
+  {
+    id: 'scribe',
+    num: 'I',
+    title: 'The Scribe',
+    tag: 'Branching Gothic Quest',
+    desc: 'An interactive dark-fantasy narrative. You choose the path; Gemini weaves the prose and branching consequences.',
+    icon: '📜'
+  },
+  {
+    id: 'etym',
+    num: 'II',
+    title: 'The Etymologist',
+    tag: 'Root-Word Detective',
+    desc: 'Unearth ancient Latin & Greek root lineages, discover how words were forged, and solve origin riddles.',
+    icon: '🏛️'
+  },
+  {
+    id: 'bard',
+    num: 'III',
+    title: "The Bard's Mirror",
+    tag: 'Poetic Mirror & Critic',
+    desc: 'Commission Shakespearean sonnets, Gothic ballads, or submit your own writing for an AI literary critique.',
+    icon: '🪞'
+  },
+  {
+    id: 'oracle',
+    num: 'IV',
+    title: 'The Career Oracle',
+    tag: 'Literary Divination',
+    desc: 'Answer three personality divination questions to uncover your destiny in an unexpected English career in India.',
+    icon: '🔮'
+  },
+  {
+    id: 'cipher',
+    num: 'V',
+    title: 'The Ink Cipher',
+    tag: 'University Archive Mystery',
+    desc: 'Investigate a historic Indian university archive with an illuminated lens cursor, questioning suspects to solve the case.',
+    icon: '🔍'
+  }
+];
+
+async function callAiQuest(prompt, isJson = false) {
+  // 1. First attempt backend /api/ai with failover across key pool
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: 'quest', prompt, json: isJson })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.reply) return data.reply;
+      if (data && data.text) return isJson ? JSON.parse(data.text.replace(/```json|```/g, '').trim()) : data.text;
+    }
+  } catch (e) {}
+
+  // 2. Direct client-side Gemini fallback
+  const geminiKeys = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').trim();
+  const primaryKey = geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '';
+  if (primaryKey) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${primaryKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: isJson ? { responseMimeType: 'application/json' } : {}
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const t = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+        return isJson ? JSON.parse(t.replace(/```json|```/g, '').trim()) : t;
+      }
+    } catch (e) {}
+  }
+
+  throw new Error('AI quest generation unavailable. Ensure a Gemini API key is configured.');
+}
+
+async function typeInto(el, text) {
+  el.textContent = '';
+  for (const char of text) {
+    el.textContent += char;
+    await new Promise(r => setTimeout(r, 12));
+  }
+}
+
+function renderGamingHall(mount) {
+  mount.innerHTML = `
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h3 style="font-size:22px;display:flex;align-items:center;gap:8px;">
+            <span>🔮</span> <span>The Gaming Hall: Five Gemini-Powered Quests</span>
+          </h3>
+          <span style="font-size:13px;color:var(--text-dim);">
+            Immersive generative literary adventures. Click any side card to bring it forward, or the center card to embark!
+          </span>
+        </div>
+        <span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">
+          ✨ Powered by Gemini AI
+        </span>
+      </div>
+    </div>
+
+    <!-- 3D Arc Carousel -->
+    <div class="arc-stage">
+      <div class="arc-carousel" id="gaming-arc-carousel"></div>
+      <div class="arc-nav-row">
+        <button class="btn btn-secondary btn-sm" id="btn-arc-prev" type="button">‹ Rotate Left</button>
+        <button class="btn btn-primary btn-sm" id="btn-arc-play" type="button">▶️ Launch Quest</button>
+        <button class="btn btn-secondary btn-sm" id="btn-arc-next" type="button">Rotate Right ›</button>
+      </div>
+    </div>
+
+    <!-- Quest Stage Arena -->
+    <div id="quest-arena-container" class="quest-arena" style="min-height:300px;">
+      <div id="quest-stage-mount"></div>
+    </div>
+  `;
+
+  const carousel = $('#gaming-arc-carousel');
+  const total = GAMING_HALL_QUESTS.length;
+
+  const drawArc = () => {
+    if (!carousel) return;
+    carousel.innerHTML = '';
+    const step = Math.min(220, window.innerWidth * 0.28);
+
+    GAMING_HALL_QUESTS.forEach((q, i) => {
+      const card = document.createElement('div');
+      card.className = 'arc-card' + (i === gamingHallArcIndex ? ' active' : '');
+      
+      let offset = i - gamingHallArcIndex;
+      if (offset > total / 2) offset -= total;
+      if (offset < -total / 2) offset += total;
+      const absOffset = Math.abs(offset);
+
+      card.style.transform = `translateX(${offset * step}px) translateY(${absOffset * absOffset * 18}px) rotate(${offset * 7}deg) scale(${1 - absOffset * 0.12})`;
+      card.style.opacity = absOffset > 2 ? '0' : String(1 - absOffset * 0.25);
+      card.style.zIndex = String(10 - absOffset);
+      card.style.pointerEvents = absOffset > 2 ? 'none' : 'auto';
+
+      card.innerHTML = `
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div class="rn">${q.num}</div>
+            <span style="font-size:24px;">${q.icon}</span>
+          </div>
+          <div class="quest-badge">${q.tag}</div>
+          <h3>${q.title}</h3>
+        </div>
+        <p>${q.desc}</p>
+      `;
+
+      card.onclick = () => {
+        if (i === gamingHallArcIndex) {
+          launchQuest(q.id);
+        } else {
+          gamingHallArcIndex = i;
+          drawArc();
+        }
+      };
+
+      carousel.appendChild(card);
+    });
+  };
+
+  const arcGo = (dir) => {
+    gamingHallArcIndex = (gamingHallArcIndex + dir + total) % total;
+    drawArc();
+  };
+
+  $('#btn-arc-prev')?.addEventListener('click', () => arcGo(-1));
+  $('#btn-arc-next')?.addEventListener('click', () => arcGo(1));
+  $('#btn-arc-play')?.addEventListener('click', () => {
+    launchQuest(GAMING_HALL_QUESTS[gamingHallArcIndex].id);
+  });
+
+  drawArc();
+  launchQuest(GAMING_HALL_QUESTS[gamingHallArcIndex].id);
+}
+
+function launchQuest(questId) {
+  const mount = $('#quest-stage-mount');
+  if (!mount) return;
+
+  if (questId === 'scribe') {
+    launchQuestScribe(mount);
+  } else if (questId === 'etym') {
+    launchQuestEtym(mount);
+  } else if (questId === 'bard') {
+    launchQuestBard(mount);
+  } else if (questId === 'oracle') {
+    launchQuestOracle(mount);
+  } else if (questId === 'cipher') {
+    launchQuestCipher(mount);
+  }
+}
+
+// QUEST 1: The Scribe
+function launchQuestScribe(mount) {
+  let turn = 0;
+
+  mount.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="font-size:20px;margin:0;">📜 Quest I: The Scribe (Victorian Gothic Tale)</h3>
+      <span class="badge-pill badge-reg" id="scribe-turn-badge">Chapter 1 of 6</span>
+    </div>
+    <div id="scribe-story-box" class="quest-output-box">The ink is still wet on the parchment...</div>
+    <div id="scribe-choices-box" class="quest-options-grid"></div>
+    <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-secondary btn-sm" id="btn-scribe-listen" type="button">🔊 Listen to Chapter</button>
+      <button class="btn btn-ghost btn-sm" id="btn-scribe-reset" type="button">🔄 Start New Tale</button>
+    </div>
+  `;
+
+  const storyBox = $('#scribe-story-box');
+  const choicesBox = $('#scribe-choices-box');
+  const turnBadge = $('#scribe-turn-badge');
+
+  const step = async (choice = null) => {
+    choicesBox.innerHTML = '<div style="color:var(--text-muted);"><span class="spinner-sm"></span> The quill moves across the page...</div>';
+    turn++;
+    if (turnBadge) turnBadge.textContent = `Chapter ${turn} of 6`;
+
+    let userMsg = '';
+    if (!choice) {
+      userMsg = 'You write a dark-fantasy Gothic quest in Victorian prose that any high-school student can read. Return JSON {"story":"80-100 words opening the mystery","choices":["choice 1","choice 2","choice 3"]}. Begin the tale.';
+    } else {
+      userMsg = `The reader chooses: "${choice}". ${turn >= 6 ? 'Bring the tale to a dramatic final conclusion now with choices [].' : 'Continue the tale with 80 words and return JSON {"story":"...","choices":["choice 1","choice 2","choice 3"]}.'}`;
+    }
+
+    try {
+      const data = await callAiQuest(userMsg, true);
+      const storyText = data.story || 'The tale continues into the shadows...';
+      await typeInto(storyBox, storyText);
+
+      choicesBox.innerHTML = '';
+      const choices = Array.isArray(data.choices) ? data.choices : [];
+      if (choices.length > 0) {
+        choices.forEach(ch => {
+          const btn = document.createElement('button');
+          btn.className = 'quest-choice-btn';
+          btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
+          btn.onclick = () => step(ch);
+          choicesBox.appendChild(btn);
+        });
+      } else {
+        choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
+      }
+    } catch (err) {
+      storyBox.textContent = 'A dark shadow interrupted the quill. Please ensure your Gemini API key is configured or click "Start New Tale".';
+      choicesBox.innerHTML = '';
+    }
+  };
+
+  $('#btn-scribe-reset')?.addEventListener('click', () => { turn = 0; step(); });
+  $('#btn-scribe-listen')?.addEventListener('click', function() {
+    const text = storyBox.textContent;
+    if (text) speak(text, this);
+  });
+
+  step();
+}
+
+// QUEST 2: The Etymologist
+function launchQuestEtym(mount) {
+  mount.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:20px;margin:0 0 4px 0;">🏛️ Quest II: The Etymologist (Root-Word Detective)</h3>
+      <span style="font-size:13px;color:var(--text-dim);">Uncover the ancient Latin &amp; Greek lineages behind modern English career words.</span>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:16px;">
+      <input type="text" id="etym-word-input" placeholder="Type an English word (e.g. serendipity, articulate, rhetoric) or leave empty for mystery word..." style="flex:1;">
+      <button class="btn btn-primary" id="btn-etym-go">🔍 Unearth Lineage</button>
+    </div>
+    <div id="etym-result-box" style="min-height:140px;">
+      <div style="color:var(--text-muted);padding:14px;background:var(--bg-subtle);border-radius:var(--radius-md);">
+        Enter a word or click "Unearth Lineage" to let the detective pick an intriguing mystery root.
+      </div>
+    </div>
+  `;
+
+  const goBtn = $('#btn-etym-go');
+  const resultBox = $('#etym-result-box');
+
+  const unearth = async () => {
+    const wordInput = $('#etym-word-input')?.value.trim();
+    resultBox.innerHTML = '<div style="padding:20px;color:var(--accent-cyan);"><span class="spinner-sm"></span> Excavating historical archives and classical lexicons...</div>';
+
+    const prompt = `${wordInput ? `Word: "${wordInput}".` : 'Pick an interesting, resonant English root word used in leadership or scholarship.'} Return JSON {"word":"the word","origin":"2-4 plain sentences detailing origin history","roots":["root → meaning"],"riddle":"an engaging quiz question about this word\'s origin","options":["option A","option B","option C","option D"],"answer":0}`;
+
+    try {
+      const j = await callAiQuest(prompt, true);
+      const rootsHtml = (j.roots || []).map(r => `<li style="font-family:var(--font-mono);font-size:13px;color:var(--accent-cyan);">${escapeHtml(r)}</li>`).join('');
+
+      resultBox.innerHTML = `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h3 style="font-size:24px;color:var(--accent-cyan);margin:0;text-transform:capitalize;">${escapeHtml(j.word)}</h3>
+            <button class="btn btn-secondary btn-sm" id="btn-etym-listen">🔊 Listen</button>
+          </div>
+          <p style="font-size:14.5px;color:var(--text-main);margin:12px 0;line-height:1.55;">${escapeHtml(j.origin)}</p>
+          <div style="margin-top:10px;">
+            <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Root Genealogy:</strong>
+            <ul style="margin:6px 0 0 18px;padding:0;">${rootsHtml}</ul>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;">
+          <div style="font-weight:700;color:var(--accent-magenta);margin-bottom:8px;">🎯 Etymology Riddle Challenge:</div>
+          <p style="font-size:14.5px;color:var(--text-main);margin:0 0 12px 0;">${escapeHtml(j.riddle)}</p>
+          <div id="etym-options-container" class="quest-options-grid"></div>
+        </div>
+      `;
+
+      $('#btn-etym-listen')?.addEventListener('click', function() {
+        speak(`${j.word}. ${j.origin}`, this);
+      });
+
+      const optBox = $('#etym-options-container');
+      (j.options || []).forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'quest-choice-btn';
+        btn.textContent = opt;
+        btn.onclick = () => {
+          if (idx === j.answer) {
+            btn.style.borderColor = 'var(--accent-green, #10b981)';
+            btn.style.background = 'rgba(16, 185, 129, 0.15)';
+            btn.innerHTML = `<span>✔ Correct!</span> <span>${escapeHtml(opt)}</span>`;
+          } else {
+            btn.style.borderColor = 'var(--accent-magenta)';
+            btn.style.background = 'rgba(255, 42, 133, 0.12)';
+            btn.innerHTML = `<span>✘ Not quite:</span> <span>${escapeHtml(opt)}</span>`;
+          }
+        };
+        optBox.appendChild(btn);
+      });
+
+    } catch (e) {
+      resultBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ Could not unearth word origin. Check Gemini API key in Admin Settings.</div>`;
+    }
+  };
+
+  goBtn?.addEventListener('click', unearth);
+}
+
+// QUEST 3: The Bard's Mirror
+function launchQuestBard(mount) {
+  mount.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:20px;margin:0 0 4px 0;">🪞 Quest III: The Bard's Mirror</h3>
+      <span style="font-size:13px;color:var(--text-dim);">Consult Shakespeare and the Romantic poets for verse composition or a rigorous stylistic critique.</span>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Select Inscription Mode:</label>
+      <select id="bard-mode-select" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13.5px;">
+        <option value="Write a Shakespearean sonnet">Shakespearean Sonnet (14 lines iambic pentameter)</option>
+        <option value="Write a Gothic Romantic poem">Gothic Romantic Ballad (Atmospheric &amp; haunting)</option>
+        <option value="Critique my writing style">Literary Style Critique (Actionable rhetoric insights)</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <textarea id="bard-input-text" rows="4" placeholder="Enter a theme (e.g. ambition in modern technology, twilight over Mumbai), or paste your own draft writing..." style="width:100%;box-sizing:border-box;font-family:var(--font-sans);font-size:13.5px;"></textarea>
+    </div>
+    <button class="btn btn-primary" id="btn-bard-go">🪞 Consult the Mirror</button>
+    <div id="bard-result-mount" style="margin-top:16px;"></div>
+  `;
+
+  $('#btn-bard-go')?.addEventListener('click', async () => {
+    const text = $('#bard-input-text')?.value.trim();
+    const mode = $('#bard-mode-select')?.value;
+    const resBox = $('#bard-result-mount');
+    if (!text) {
+      showToast('Please enter a theme or writing snippet.');
+      return;
+    }
+
+    resBox.innerHTML = '<div style="color:var(--accent-cyan);padding:14px;"><span class="spinner-sm"></span> The silvered glass reflects your words...</div>';
+    try {
+      const prompt = `${mode} based on: "${text}". Keep under 200 words. Craft with eloquence and memorable cadence.`;
+      const reply = await callAiQuest(prompt, false);
+
+      resBox.innerHTML = `
+        <div class="quest-output-box" style="font-family:Georgia, serif;font-size:15px;line-height:1.75;background:var(--surface);">${escapeHtml(reply)}</div>
+        <button class="btn btn-secondary btn-sm" id="btn-bard-listen" type="button">🔊 Recite in Indian Accent</button>
+      `;
+
+      $('#btn-bard-listen')?.addEventListener('click', function() {
+        speak(reply, this);
+      });
+    } catch (e) {
+      resBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ The mirror clouded over. Verify Gemini API key.</div>`;
+    }
+  });
+}
+
+// QUEST 4: The Career Oracle
+function launchQuestOracle(mount) {
+  mount.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:20px;margin:0 0 4px 0;">🔮 Quest IV: The Career Oracle</h3>
+      <span style="font-size:13px;color:var(--text-dim);">Three personality divination prompts to uncover an unexpected high-impact career pathway in India.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;margin-bottom:14px;">
+      <div>
+        <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">1. A cherished place?</label>
+        <select id="oracle-q1" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option>Ancient university library</option>
+          <option>Stormy coastal sea cliff</option>
+          <option>Bustling international city</option>
+          <option>Quiet botanical sanctuary</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">2. Your strongest gift?</label>
+        <select id="oracle-q2" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option>Telling unforgettable stories</option>
+          <option>Spotting hidden inconsistencies</option>
+          <option>Persuading and inspiring listeners</option>
+          <option>Imagining complex worlds and systems</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">3. A perfect evening?</label>
+        <select id="oracle-q3" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option>Reading deeply without interruption</option>
+          <option>Engaging in passionate friendly debate</option>
+          <option>Crafting or writing something original</option>
+          <option>Exploring an unfamiliar neighborhood</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <input type="text" id="oracle-bio" placeholder="Optional: What excites your curiosity? (e.g. AI ethics, sports law, diplomacy)" style="width:100%;">
+    </div>
+    <button class="btn btn-primary" id="btn-oracle-go">🔮 Divinate My Career Destiny</button>
+    <div id="oracle-result-mount" style="margin-top:16px;"></div>
+  `;
+
+  $('#btn-oracle-go')?.addEventListener('click', async () => {
+    const q1 = $('#oracle-q1')?.value;
+    const q2 = $('#oracle-q2')?.value;
+    const q3 = $('#oracle-q3')?.value;
+    const bio = $('#oracle-bio')?.value.trim();
+    const resBox = $('#oracle-result-mount');
+
+    resBox.innerHTML = '<div style="color:var(--accent-cyan);padding:14px;"><span class="spinner-sm"></span> The astrological astrolabe aligns with your answers...</div>';
+
+    const prompt = `Student Divination: Place="${q1}", Gift="${q2}", Evening="${q3}", Interests="${bio || 'General inquiry'}". Match this student to one unexpected, high-growth career for an English graduate in India. Return JSON {"title":"Career Title","why":"2 concise sentences why it matches their inner gifts","path":["Step 1 in school/college","Step 2 degree/skills","Step 3 career breakthrough"]}`;
+
+    try {
+      const data = await callAiQuest(prompt, true);
+      const stepsHtml = (data.path || []).map((s, i) => `<li><strong>Stage ${i+1}:</strong> ${escapeHtml(s)}</li>`).join('');
+
+      resBox.innerHTML = `
+        <div class="holo-divination-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+            <div>
+              <span class="badge-pill" style="background:rgba(0,240,255,0.2);color:var(--accent-cyan);font-weight:700;">✨ Destiny Matched</span>
+              <h3 style="font-size:24px;color:var(--accent-cyan);margin:8px 0 4px 0;">${escapeHtml(data.title)}</h3>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-oracle-listen">🔊 Listen</button>
+          </div>
+          <p style="font-size:14.5px;color:var(--text-main);margin:10px 0 16px 0;line-height:1.55;">${escapeHtml(data.why)}</p>
+          <div style="border-top:1px solid rgba(0,240,255,0.2);padding-top:12px;">
+            <strong style="font-size:12px;text-transform:uppercase;color:var(--text-dim);letter-spacing:0.5px;">Your Concrete 3-Stage Roadmap:</strong>
+            <ol style="margin:8px 0 0 18px;padding:0;font-size:13.5px;line-height:1.6;color:var(--text-main);">${stepsHtml}</ol>
+          </div>
+        </div>
+      `;
+
+      $('#btn-oracle-listen')?.addEventListener('click', function() {
+        speak(`${data.title}. ${data.why}`, this);
+      });
+    } catch (e) {
+      resBox.innerHTML = `<div style="color:var(--accent-magenta);">⚠️ The oracle was silent. Verify Gemini API key.</div>`;
+    }
+  });
+}
+
+// QUEST 5: The Ink Cipher
+function launchQuestCipher(mount) {
+  mount.innerHTML = `
+    <div style="margin-bottom:12px;">
+      <h3 style="font-size:20px;margin:0 0 4px 0;">🔍 Quest V: The Ink Cipher (Archive Mystery)</h3>
+      <span style="font-size:13px;color:var(--text-dim);">Move your mouse across the archive document to illuminate clues with the forensic flashlight.</span>
+    </div>
+    <div id="cipher-case-lens" class="archive-case-lens">
+      <div style="font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">ARCHIVAL INCIDENT REPORT #1894 · RESTRICTED VAULT</div>
+      <div id="cipher-text-content">Opening the sealed university archives...</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <input type="text" id="cipher-question-input" placeholder="Ask a question or interrogate a suspect (e.g. Where was the librarian at midnight?)..." style="flex:1;">
+      <button class="btn btn-primary" id="btn-cipher-ask">Interrogate 🔍</button>
+    </div>
+    <div id="cipher-reply-box" style="margin-top:14px;"></div>
+  `;
+
+  const lens = $('#cipher-case-lens');
+  const textContent = $('#cipher-text-content');
+  const askBtn = $('#btn-cipher-ask');
+  const replyBox = $('#cipher-reply-box');
+
+  if (lens) {
+    lens.onmousemove = e => {
+      const rect = lens.getBoundingClientRect();
+      lens.style.setProperty('--cx', `${e.clientX - rect.left}px`);
+      lens.style.setProperty('--cy', `${e.clientY - rect.top}px`);
+    };
+    lens.onmouseleave = () => {
+      lens.style.setProperty('--cx', '-200px');
+      lens.style.setProperty('--cy', '-200px');
+    };
+  }
+
+  let currentCase = null;
+
+  const initCase = async () => {
+    try {
+      const prompt = `Create a short literary mystery set in a historic university archive in India (stolen illuminated manuscript). Return JSON {"caseTitle":"...","intro":"60 words describing the theft and scene","suspects":["Prof. Sharma: Manuscript curator","Mr. Das: Night archivist","Aarav: Research scholar"],"clue":"one subtle clue found near the empty glass case"}`;
+      currentCase = await callAiQuest(prompt, true);
+
+      textContent.innerHTML = `
+        <div style="margin-bottom:10px;font-size:14px;color:#fff;"><strong>Case: ${escapeHtml(currentCase.caseTitle || 'The Missing Folio')}</strong></div>
+        <p style="margin:0 0 10px 0;">${escapeHtml(currentCase.intro)}</p>
+        <div style="margin-bottom:8px;"><strong>Suspects:</strong> ${(currentCase.suspects || []).join(' · ')}</div>
+        <div style="color:var(--accent-cyan);"><strong>Initial Clue:</strong> ${escapeHtml(currentCase.clue)}</div>
+      `;
+    } catch (e) {
+      textContent.innerHTML = 'The archive vault is sealed. Ensure your Gemini API key is configured.';
+    }
+  };
+
+  askBtn?.addEventListener('click', async () => {
+    const q = $('#cipher-question-input')?.value.trim();
+    if (!q || !currentCase) return;
+
+    replyBox.innerHTML = '<div style="color:var(--accent-cyan);padding:8px;"><span class="spinner-sm"></span> Consulting the interrogation log...</div>';
+    try {
+      const prompt = `In this mystery case: "${currentCase.intro}", with suspects: ${JSON.stringify(currentCase.suspects)} and clue: "${currentCase.clue}". The student asks the inspector: "${q}". Provide a realistic 40-word detective response that offers a clue without spoiling the mystery immediately.`;
+      const ans = await callAiQuest(prompt, false);
+
+      replyBox.innerHTML = `
+        <div class="quest-output-box" style="border-left:3px solid var(--accent-magenta);margin:8px 0;">
+          <strong>Inspector\'s Note:</strong> ${escapeHtml(ans)}
+        </div>
+      `;
+    } catch (e) {
+      replyBox.innerHTML = `<div style="color:var(--accent-magenta);">Could not query archive log.</div>`;
+    }
+  });
+
+  initCase();
 }
 
 // GAME 1: Jobtris (Google Semantris Arcade Edition for Career Words)
@@ -4310,21 +4877,31 @@ function renderFlashCards(mount) {
   }
 }
 
-// GAME 4: Live Dictionary & Word Check
+// GAME 4: Live Dictionary & Word Check (Free Dictionary API + Gemini AI Backup)
 function renderDictionaryLookup(mount) {
   mount.innerHTML = `
     <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">📖 Instant Live Dictionary &amp; Lexicon Check</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Verify definitions, grammatical parts of speech, and pronunciations instantly.</span>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <h3 style="font-size:20px;display:flex;align-items:center;gap:8px;">
+            <span>📖</span> <span>Instant Live Dictionary &amp; Lexicon Check</span>
+          </h3>
+          <span style="font-size:13px;color:var(--text-dim);">Live Free Dictionary API with intelligent Gemini lexical backup &amp; authentic Indian pronunciation.</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <span class="badge-pill" style="font-size:11px;color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.3);">🟢 Free Dictionary API</span>
+          <span class="badge-pill" style="font-size:11px;color:var(--accent-cyan);border:1px solid var(--accent-cyan);">✨ Gemini AI Backup</span>
+        </div>
+      </div>
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <input type="text" id="dict-search-input" placeholder="Enter English word to search...">
-      <button class="btn btn-primary" id="btn-dict-search">Lookup Word</button>
+      <input type="text" id="dict-search-input" placeholder="Enter any English word (e.g. articulate, juxtapose, prompt)..." style="flex:1;">
+      <button class="btn btn-primary" id="btn-dict-search">Lookup Word 🔍</button>
     </div>
 
-    <div id="dict-result-mount" style="background:var(--bg-subtle);border-radius:var(--radius-md);padding:18px;border:1px solid var(--border);min-height:160px;">
-      <p style="color:var(--text-dim);">Enter an English word above to explore its formal dictionary definition and phonetic pronunciation.</p>
+    <div id="dict-result-mount" style="background:var(--bg-subtle);border-radius:var(--radius-md);padding:20px;border:1px solid var(--border);min-height:160px;">
+      <p style="color:var(--text-dim);">Enter an English word above to explore its formal dictionary definition, grammatical parts of speech, and authentic audio pronunciation.</p>
     </div>
   `;
 
@@ -4334,29 +4911,77 @@ function renderDictionaryLookup(mount) {
     const resultBox = $('#dict-result-mount');
     if (!word) return;
 
-    resultBox.innerHTML = 'Searching verified lexicon...';
-    const data = await fetchApi(`dict/${encodeURIComponent(word)}`);
+    resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><span class="spinner-sm"></span> Consulting Free Dictionary API & Lexicon...</div>';
+    
+    let data = null;
+    let source = 'Free Dictionary API';
+
+    // 1. First attempt backend endpoint (queries KV cache & Free Dictionary API)
+    try {
+      data = await fetchApi(`dict/${encodeURIComponent(word)}`);
+    } catch (e) {}
+
+    // 2. Direct browser Free Dictionary API query fallback if backend is unreachable
+    if (!data || data.not_found || !Array.isArray(data) || !data.length) {
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+        if (res.ok) {
+          const direct = await res.json();
+          if (Array.isArray(direct) && direct.length) {
+            data = direct;
+            source = 'Free Dictionary API';
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 3. Intelligent Gemini Backup if word is not found in Free Dictionary API
+    if (!data || data.not_found || !Array.isArray(data) || !data.length) {
+      resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--accent-cyan);"><span class="spinner-sm"></span> Word not found in standard dictionary. Synthesizing lexical entry with Gemini AI Backup...</div>';
+      try {
+        const aiPrompt = `Define the English word or term "${word}". Return ONLY JSON in this structure:
+[{"word":"${word}","phonetic":"/ipa/","meanings":[{"partOfSpeech":"noun/verb/adjective","definitions":[{"definition":"clear concise definition","example":"a realistic example sentence"}]}]}]`;
+
+        const geminiReply = await callAiQuest(aiPrompt, true);
+        if (geminiReply && Array.isArray(geminiReply) && geminiReply.length) {
+          data = geminiReply;
+          source = 'Gemini AI Backup';
+        }
+      } catch (e) {}
+    }
 
     if (data && Array.isArray(data) && data.length) {
       const item = data[0];
       const meaning = item.meanings?.[0];
       const def = meaning?.definitions?.[0]?.definition || 'Definition available.';
       const ex = meaning?.definitions?.[0]?.example || '';
+      const isGemini = source.includes('Gemini') || item.source === 'gemini';
+      const sourceBadge = isGemini 
+        ? '<span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);">✨ Gemini AI Lexicon Backup</span>'
+        : '<span class="badge-pill badge-reg" style="color:var(--accent-green, #10b981);border-color:rgba(16,185,129,0.3);">🟢 Free Dictionary API Verified</span>';
 
       resultBox.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="font-size:24px;color:var(--accent-cyan);text-transform:capitalize;">${escapeHtml(item.word)}</h3>
-          <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(item.word)}', this)">🔊 Listen</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <h3 style="font-size:26px;color:var(--accent-cyan);text-transform:capitalize;margin:0;">${escapeHtml(item.word)}</h3>
+            <div style="margin-top:4px;">
+              <span class="badge-pill badge-nirf">${escapeHtml(meaning?.partOfSpeech || 'word')}</span>
+              <span style="font-family:var(--font-mono);color:var(--text-dim);font-size:13.5px;margin-left:8px;">${escapeHtml(item.phonetic || '')}</span>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${sourceBadge}
+            <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(item.word)}', this)">🔊 Listen</button>
+          </div>
         </div>
-        <div style="margin:6px 0;">
-          <span class="badge-pill badge-nirf">${escapeHtml(meaning?.partOfSpeech || 'word')}</span>
-          <span style="font-family:var(--font-mono);color:var(--text-dim);font-size:13px;margin-left:8px;">${escapeHtml(item.phonetic || '')}</span>
-        </div>
-        <p style="font-size:15px;color:var(--text-main);margin-top:10px;">${escapeHtml(def)}</p>
-        ${ex ? `<div style="font-size:13px;color:var(--text-muted);font-style:italic;margin-top:6px;">"${escapeHtml(ex)}"</div>` : ''}
+        <p style="font-size:15px;color:var(--text-main);margin-top:14px;line-height:1.55;">${escapeHtml(def)}</p>
+        ${ex ? `<div style="font-size:13.5px;color:var(--text-muted);font-style:italic;margin-top:8px;padding-left:10px;border-left:2px solid var(--accent-cyan);">"${escapeHtml(ex)}"</div>` : ''}
       `;
     } else {
-      resultBox.innerHTML = `Word not found in the instant cache. Try a standard English root word.`;
+      resultBox.innerHTML = `
+        <div style="color:var(--accent-magenta);font-weight:600;margin-bottom:6px;">⚠️ Word not recognized in Free Dictionary API or Gemini Lexicon.</div>
+        <div style="font-size:13px;color:var(--text-muted);">Please check the spelling or search a standard English root word (e.g. <em>articulate</em>, <em>benevolent</em>, <em>resilient</em>).</div>
+      `;
     }
   };
 

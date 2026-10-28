@@ -538,6 +538,38 @@ export async function onRequest(ctx) {
       }
     } catch {}
 
+    // Fallback 3: Intelligent Gemini AI Lexical Synthesis
+    try {
+      const geminiKey = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', '')) || env.GEMINI_API_KEY || '';
+      if (geminiKey) {
+        const primaryKey = geminiKey.split(/[\r\n,]+/)[0].trim();
+        const aiPrompt = `Provide a verified English dictionary definition and phonetic IPA for "${word}". Return ONLY JSON in this structure:
+[{"word":"${word}","phonetic":"/ipa/","meanings":[{"partOfSpeech":"noun/verb/adjective","definitions":[{"definition":"clear concise definition","example":"a realistic example sentence"}]}]}]`;
+
+        const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${primaryKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: aiPrompt }] }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        });
+
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            const parsed = JSON.parse(text.replace(/```json|```/g, '').trim());
+            if (Array.isArray(parsed) && parsed.length) {
+              parsed[0].source = 'gemini';
+              await kvSet(db, cacheKey, JSON.stringify(parsed));
+              return json(parsed);
+            }
+          }
+        }
+      }
+    } catch {}
+
     return json({ not_found: true, word });
   }
 
@@ -866,6 +898,35 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
 
       responseText = `**Speech Coach Insights:**\n\n${suggestions.join('\n\n')}\n\n**"Say It Better" Model Delivery:**\n"${text ? text.replace(/\b(um+|uh+|like|you know)\b/gi, '').trim() : 'Effective communication connects our ideas directly with the hearts and minds of listeners.'}"`;
+    } else if (task === 'quest' || task === 'prompt') {
+      const promptText = String(body.prompt || prompt || '').slice(0, 4000);
+      const isJson = Boolean(body.json);
+      if (keysPool.length > 0) {
+        for (const k of keysPool) {
+          try {
+            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${k}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }],
+                generationConfig: isJson ? { responseMimeType: 'application/json' } : {}
+              })
+            });
+            if (aiRes.ok) {
+              const data = await aiRes.json();
+              const reply = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+              if (reply) {
+                let parsed = reply;
+                if (isJson) {
+                  try { parsed = JSON.parse(reply.replace(/```json|```/g, '').trim()); } catch {}
+                }
+                return json({ ok: true, text: reply, reply: parsed, provider: 'Gemini AI' });
+              }
+            }
+          } catch (e) {}
+        }
+      }
+      return json({ ok: false, error: 'AI quest synthesis unavailable' }, 500);
     } else if (task === 'email-fix') {
       responseText = `**Professional Polish:**\n\nSubject: Update Regarding Project Deliverables and Schedule\n\nDear Team,\n\nI hope this email finds you well. I am writing to share our progress on this week's milestones and confirm our upcoming review meeting. Please let me know if you require any additional details.\n\nBest regards,\nClass X Representative`;
     } else {
