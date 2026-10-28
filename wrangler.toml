@@ -2,13 +2,6 @@ name = "careerfair"
 compatibility_date = "2024-09-01"
 pages_build_output_dir = "public"
 
-# Cloudflare D1 Database binding
-# Execute `npx wrangler d1 create careerfair-db` and update the database_id below
-[[d1_databases]]
-binding = "DB"
-database_name = "careerfair-db"
-database_id = "your-d1-database-id"
-
 [vars]
 ADMIN_PASSWORD = "careers2026"
 STT_MODEL = "scribe_v1"
