@@ -2869,10 +2869,6 @@ function renderGameArena(gameKey) {
     renderDictionaryLookup(mount);
   } else if (gameKey === 'spelling') {
     renderSpellingBee(mount);
-  } else if (gameKey === 'email') {
-    renderFixTheEmail(mount);
-  } else if (gameKey === 'package') {
-    renderGuessPackage(mount);
   } else if (gameKey === 'hangman') {
     renderHangman(mount);
   } else {
@@ -3185,63 +3181,7 @@ function renderSpellingBee(mount) {
   });
 }
 
-// GAME 6: Fix the Email
-function renderFixTheEmail(mount) {
-  mount.innerHTML = `
-    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">✉️ Fix the Email · Corporate Polish</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Identify tone and etiquette blunders in this student internship inquiry.</span>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div style="background:var(--bg-subtle);padding:14px;border-radius:var(--radius-md);border:1px solid var(--border);">
-        <strong style="color:var(--accent-magenta);display:block;margin-bottom:8px;">❌ Poor Draft:</strong>
-        <p style="font-size:13.5px;color:var(--text-muted);font-family:var(--font-mono);line-height:1.5;">
-          "hey sir give me internship. i need certificate for school. call me back asap thx."
-        </p>
-      </div>
-
-      <div style="background:rgba(0,245,155,0.08);padding:14px;border-radius:var(--radius-md);border:1px solid rgba(0,245,155,0.3);">
-        <strong style="color:var(--accent-emerald);display:block;margin-bottom:8px;">✅ Polished Professional Rewrite:</strong>
-        <p style="font-size:13.5px;color:var(--text-main);line-height:1.5;">
-          "Dear Hiring Manager,<br><br>I am writing to express my enthusiastic interest in the summer student internship at your organization. Attached please find my academic credentials and portfolio for your kind consideration.<br><br>Sincerely,<br>Class 10 Student"
-        </p>
-      </div>
-    </div>
-  `;
-}
-
-// GAME 7: Guess the Package
-function renderGuessPackage(mount) {
-  const PACKAGES = [
-    { career: "Commercial Airline Pilot", start: "₹18L/yr", peak: "₹50L+/yr Captain" },
-    { career: "Corporate M&A Lawyer", start: "₹14L/yr", peak: "₹60L+/yr Partner" },
-    { career: "Chief Pediatric Surgeon", start: "₹15L/yr", peak: "₹70L+/yr Specialist" },
-    { career: "Principal Cloud Architect", start: "₹16L/yr", peak: "₹80L+/yr Director" }
-  ];
-
-  mount.innerHTML = `
-    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">💰 Guess the Package · Real-World Compensation</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Flip the cards to reveal starting and peak compensation bands.</span>
-    </div>
-
-    <div class="cards-grid">
-      ${PACKAGES.map(p => `
-        <div class="card" onclick="this.querySelector('.pkg-details').hidden = !this.querySelector('.pkg-details').hidden" style="cursor:pointer;">
-          <h4 style="font-size:18px;margin-bottom:6px;">${escapeHtml(p.career)}</h4>
-          <span style="font-size:12px;color:var(--accent-cyan);">Click to Reveal Salary 👆</span>
-          <div class="pkg-details" hidden style="margin-top:12px;border-top:1px dashed var(--border);padding-top:10px;">
-            <div>Starting: <strong style="color:var(--accent-emerald);">${p.start}</strong></div>
-            <div>Peak Career: <strong style="color:var(--accent-gold);">${p.peak}</strong></div>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-// GAME 8: Career Word Hangman / Letter Guess
+// GAME 6: Career Word Hangman / Letter Guess
 function renderHangman(mount) {
   const WORDS = [
     { word: "ASTRONAUT", clue: "Space exploration & orbital research" },
@@ -3338,8 +3278,6 @@ function renderPlanTool(toolKey) {
     renderCareerQuiz(mount);
   } else if (toolKey === 'bizcard') {
     renderFutureBusinessCard(mount);
-  } else if (toolKey === 'dreammatch') {
-    renderParentChildMatch(mount);
   }
 }
 
@@ -3634,63 +3572,6 @@ function renderFutureBusinessCard(mount) {
 
   $('#btn-render-biz')?.addEventListener('click', updateQr);
   setTimeout(updateQr, 50);
-}
-
-// TOOL 4: Parent vs. Child Dream Match
-function renderParentChildMatch(mount) {
-  mount.innerHTML = `
-    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🤝 Parent vs. Child Career Alignment Match</h3>
-      <p style="font-size:13.5px;color:var(--text-dim);">Secretly select your aspirations to reveal common ground and constructive talking points.</p>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div>
-        <label style="font-size:13px;font-weight:600;">Student's Secret Choice:</label>
-        <select id="match-student-choice">
-          <option value="Pilot">Commercial Pilot</option>
-          <option value="Surgeon">Chief Surgeon</option>
-          <option value="Tech">Software Architect</option>
-          <option value="Law">Corporate Lawyer</option>
-          <option value="Journalism">Broadcast Journalist</option>
-          <option value="Founder">Startup Entrepreneur</option>
-        </select>
-      </div>
-
-      <div>
-        <label style="font-size:13px;font-weight:600;">Parent's Secret Choice:</label>
-        <select id="match-parent-choice">
-          <option value="Surgeon">Chief Surgeon</option>
-          <option value="Tech">Software Architect</option>
-          <option value="Law">Corporate Lawyer</option>
-          <option value="Pilot">Commercial Pilot</option>
-          <option value="CivilService">Civil Servant (IAS/IFS)</option>
-        </select>
-      </div>
-    </div>
-
-    <button class="btn btn-primary" id="btn-reveal-match" style="margin-top:16px;">Reveal Alignment Report 🔓</button>
-    <div id="match-results-box" style="margin-top:16px;"></div>
-  `;
-
-  $('#btn-reveal-match')?.addEventListener('click', () => {
-    const s = $('#match-student-choice').value;
-    const p = $('#match-parent-choice').value;
-    const box = $('#match-results-box');
-
-    const match = s === p;
-    box.innerHTML = `
-      <div style="background:${match ? 'rgba(0,245,155,0.1)' : 'rgba(255,183,3,0.1)'};border:1px solid ${match ? 'var(--accent-emerald)' : 'var(--accent-gold)'};border-radius:var(--radius-md);padding:18px;">
-        <h4 style="font-size:18px;color:${match ? 'var(--accent-emerald)' : 'var(--accent-gold)'};">
-          ${match ? '🎉 100% Mutual Alignment!' : '💡 Diverse Perspectives (75% Alignment)'}
-        </h4>
-        <p style="font-size:13.5px;margin-top:6px;color:var(--text-main);">
-          ${match ? 'Both parent and student envision the exact same career horizon! Explore the accredited colleges directory together.'
-                  : `Student selected <strong>${s}</strong> while parent preferred <strong>${p}</strong>. Notice the shared foundational skill: both tracks require high English articulation and critical thinking!`}
-        </p>
-      </div>
-    `;
-  });
 }
 
 // ─── 11. LEADERBOARD & FEEDBACK WALL ──────────────────────────────────────────
