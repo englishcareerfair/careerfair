@@ -1823,11 +1823,98 @@ function renderGameArena(gameKey) {
 }
 
 function initGamePicker() {
+  const tabsContainer = $('#game-picker-tabs');
+  const leftBtn = $('#btn-game-scroll-left');
+  const rightBtn = $('#btn-game-scroll-right');
+
+  // Wire game selection chips
   $$('#game-picker-tabs .filter-chip').forEach(btn => {
     btn.onclick = () => {
       renderGameArena(btn.dataset.game);
+      // Auto-center the clicked game chip in the visible viewport
+      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     };
   });
+
+  if (!tabsContainer) return;
+
+  // Update arrow states (dimmed when at boundaries)
+  function updateScrollArrows() {
+    if (!leftBtn || !rightBtn) return;
+    const atStart = tabsContainer.scrollLeft <= 5;
+    const atEnd = tabsContainer.scrollLeft + tabsContainer.clientWidth >= tabsContainer.scrollWidth - 5;
+    leftBtn.classList.toggle('disabled', atStart);
+    rightBtn.classList.toggle('disabled', atEnd);
+  }
+
+  // Arrow button click listeners
+  if (leftBtn && !leftBtn.dataset.bound) {
+    leftBtn.dataset.bound = 'true';
+    leftBtn.addEventListener('click', () => {
+      try {
+        tabsContainer.scrollBy({ left: -300, behavior: 'smooth' });
+      } catch (e) {
+        tabsContainer.scrollLeft -= 300;
+      }
+      setTimeout(updateScrollArrows, 320);
+    });
+  }
+
+  if (rightBtn && !rightBtn.dataset.bound) {
+    rightBtn.dataset.bound = 'true';
+    rightBtn.addEventListener('click', () => {
+      try {
+        tabsContainer.scrollBy({ left: 300, behavior: 'smooth' });
+      } catch (e) {
+        tabsContainer.scrollLeft += 300;
+      }
+      setTimeout(updateScrollArrows, 320);
+    });
+  }
+
+  // Mouse wheel horizontal scrolling support for desktop computers
+  if (!tabsContainer.dataset.wheelBound) {
+    tabsContainer.dataset.wheelBound = 'true';
+    tabsContainer.addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        tabsContainer.scrollLeft += e.deltaY * 1.3;
+      }
+    }, { passive: false });
+  }
+
+  // Click & Drag-to-scroll support for desktop mouse users
+  if (!tabsContainer.dataset.dragBound) {
+    tabsContainer.dataset.dragBound = 'true';
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    tabsContainer.addEventListener('mousedown', e => {
+      isDown = true;
+      tabsContainer.classList.add('grabbing');
+      startX = e.pageX - tabsContainer.offsetLeft;
+      scrollLeft = tabsContainer.scrollLeft;
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (isDown) {
+        isDown = false;
+        tabsContainer.classList.remove('grabbing');
+      }
+    });
+
+    tabsContainer.addEventListener('mousemove', e => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - tabsContainer.offsetLeft;
+      const walk = (x - startX) * 1.4;
+      tabsContainer.scrollLeft = scrollLeft - walk;
+    });
+  }
+
+  tabsContainer.addEventListener('scroll', updateScrollArrows, { passive: true });
+  setTimeout(updateScrollArrows, 100);
 }
 
 // GAME 1: Jobtris (Semantic Block Matching)

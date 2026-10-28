@@ -739,9 +739,90 @@ input:focus, select:focus, textarea:focus {
   overflow-x: auto;
   padding-bottom: 12px;
   margin-bottom: 20px;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 240, 255, 0.35) rgba(255, 255, 255, 0.05);
 }
-.filter-row::-webkit-scrollbar { display: none; }
+.filter-row::-webkit-scrollbar {
+  height: 6px;
+  display: block;
+}
+.filter-row::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-full);
+}
+.filter-row::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.3);
+  border-radius: var(--radius-full);
+}
+.filter-row::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Shelf Scroll Device (Arrow Buttons & Smooth Track) */
+.shelf-scroll-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.shelf-scroll-arrow {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: var(--surface-card);
+  border: 1.5px solid var(--accent-cyan);
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  transition: all var(--trans-fast);
+  z-index: 5;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.shelf-scroll-arrow:hover {
+  background: var(--accent-cyan);
+  color: #07090e;
+  transform: scale(1.08);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+}
+
+.shelf-scroll-arrow:active {
+  transform: scale(0.95);
+}
+
+.shelf-scroll-arrow.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  border-color: var(--border);
+  color: var(--text-dim);
+}
+
+.shelf-scroll-track {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  padding: 6px 2px 10px 2px;
+  margin-bottom: 0 !important;
+  cursor: grab;
+}
+
+.shelf-scroll-track.grabbing {
+  cursor: grabbing;
+  user-select: none;
+}
 
 .filter-chip {
   background: var(--surface-card);
