@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2.6">
+  <link rel="stylesheet" href="styles.css?v=2.7">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=2.6" defer></script>
+  <script src="app.js?v=2.7" defer></script>
 </head>
 <body>
 
@@ -136,10 +136,16 @@
               <span style="font-family:var(--font-sub);font-size:12px;font-weight:700;letter-spacing:0.08em;color:var(--accent-cyan);text-transform:uppercase;">
                 VOICE INTELLIGENCE RADAR
               </span>
-              <span class="badge-pill badge-naac" id="mic-status-pill">Ready to Listen</span>
+              <span class="badge-pill badge-naac" id="mic-status-pill">Active Resonance</span>
             </div>
             
-            <canvas class="hero-canvas" id="hero-wave-canvas"></canvas>
+            <div style="position:relative;">
+              <canvas class="hero-canvas" id="hero-wave-canvas"></canvas>
+              <div style="position:absolute;bottom:8px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:rgba(255,255,255,0.7);pointer-events:none;">
+                <span>Acoustic Frequency: <strong style="color:var(--accent-cyan);">44.1 kHz</strong></span>
+                <span>Articulation Sense: <strong style="color:var(--accent-emerald);">Live</strong></span>
+              </div>
+            </div>
             
             <div class="hero-metrics-grid">
               <div class="hero-stat-box">

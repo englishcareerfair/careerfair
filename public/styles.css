@@ -853,7 +853,9 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   height: 160px;
   border-radius: var(--radius-md);
-  background: #000000;
+  background: radial-gradient(circle at 50% 50%, #0d1527 0%, #050811 100%);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  box-shadow: inset 0 0 24px rgba(0, 240, 255, 0.08);
   display: block;
 }
 

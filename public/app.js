@@ -2748,6 +2748,72 @@ function toggleFeatureFlag(flagName, enabled) {
   showToast(`Feature "${flagName}" set to ${enabled ? 'ON' : 'OFF'}`);
 }
 
+// ─── AMBIENT HERO VOICE RADAR VISUALIZER ─────────────────────────────────────
+function initHeroWaveVisualizer() {
+  const canvas = $('#hero-wave-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let phase = 0;
+
+  function resize() {
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio || 400;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio || 160;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function draw() {
+    const w = canvas.width;
+    const h = canvas.height;
+    if (!w || !h) {
+      requestAnimationFrame(draw);
+      return;
+    }
+    ctx.clearRect(0, 0, w, h);
+    const midY = h / 2;
+
+    // Radar grid
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 36) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(w, midY);
+    ctx.stroke();
+
+    // Harmonic Audio Sine Waves
+    const ampBoost = isGreetingPlaying ? 2.2 : 1.0;
+    const waves = [
+      { color: 'rgba(0, 240, 255, 0.8)', freq: 0.016, amp: 26 * ampBoost, speed: 0.04 },
+      { color: 'rgba(255, 42, 133, 0.7)', freq: 0.024, amp: 18 * ampBoost, speed: -0.035 },
+      { color: 'rgba(114, 9, 183, 0.55)', freq: 0.009, amp: 14 * ampBoost, speed: 0.02 }
+    ];
+
+    waves.forEach(wave => {
+      ctx.beginPath();
+      ctx.strokeStyle = wave.color;
+      ctx.lineWidth = 2.2;
+      for (let x = 0; x < w; x++) {
+        const envelope = Math.sin((x / w) * Math.PI);
+        const y = midY + Math.sin(x * wave.freq + phase * wave.speed) * wave.amp * envelope;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+
+    phase += 1;
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+}
+
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   // Apply saved theme
@@ -2759,6 +2825,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initGamePicker();
   initPlanTools();
   initLeaderboard();
+  initHeroWaveVisualizer();
 
   // Password visibility toggle handler
   $('#btn-toggle-pwd-vis')?.addEventListener('click', () => {
