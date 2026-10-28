@@ -2534,7 +2534,8 @@ let teleprompterState = {
   initialized: false,
   isRecording: false,
   isCameraOn: false,
-  isPrompterPaused: false,
+  isPrompterPaused: true,
+  prompterStarted: false,
   currentSpeed: 2.4, // px per frame
   tickerOffset: 0,
   prompterAnimId: null,
@@ -2649,6 +2650,22 @@ function initTeleprompter() {
     }
   };
 
+  // Helper to sync prompter button UI state (Start <-> Pause <-> Resume)
+  const updatePrompterButtonUI = () => {
+    const iconSpan = scrollBtn?.querySelector('span:first-child');
+    const txtSpan = $('#prompter-scroll-btn-text');
+    if (!teleprompterState.prompterStarted) {
+      if (iconSpan) iconSpan.textContent = '▶️';
+      if (txtSpan) txtSpan.textContent = 'Start Teleprompter Scroll';
+    } else if (teleprompterState.isPrompterPaused) {
+      if (iconSpan) iconSpan.textContent = '▶️';
+      if (txtSpan) txtSpan.textContent = 'Resume Teleprompter Scroll';
+    } else {
+      if (iconSpan) iconSpan.textContent = '⏸️';
+      if (txtSpan) txtSpan.textContent = 'Pause Teleprompter Scroll';
+    }
+  };
+
   // Helper to update displayed script and lower-third copy
   const applyScript = key => {
     const data = SCRIPTS[key] || SCRIPTS.breaking;
@@ -2659,6 +2676,9 @@ function initTeleprompter() {
     if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · ${data.role.toUpperCase()} · KANAKIA INTERNATIONAL SCHOOL`;
     teleprompterState.tickerOffset = 0;
     if (track) track.style.transform = 'translateX(0px)';
+    teleprompterState.isPrompterPaused = true;
+    teleprompterState.prompterStarted = false;
+    updatePrompterButtonUI();
   };
 
   // 1. Moving Sentence Teleprompter Engine
@@ -2895,8 +2915,11 @@ function initTeleprompter() {
     teleprompterState.idleAnimId = requestAnimationFrame(drawFrame);
   };
 
-  // Start prompter & studio canvas immediately
+  // Prepare initial script & keep prompter stationary until started by user
   applyScript(scriptSelect?.value || 'breaking');
+  teleprompterState.isPrompterPaused = true;
+  teleprompterState.prompterStarted = false;
+  updatePrompterButtonUI();
   runMovingPrompter();
   if (!teleprompterState.isCameraOn) {
     runStudioCanvasAnimation();
@@ -2926,18 +2949,21 @@ function initTeleprompter() {
   speedNormal?.addEventListener('click', () => setSpeed('normal', speedNormal));
   speedFast?.addEventListener('click', () => setSpeed('fast', speedFast));
 
-  // 4. Pause / Resume Scroll Button
+  // 4. Start / Pause / Resume Teleprompter Scroll Button
   scrollBtn?.addEventListener('click', () => {
-    teleprompterState.isPrompterPaused = !teleprompterState.isPrompterPaused;
-    const txt = $('#prompter-scroll-btn-text');
-    if (teleprompterState.isPrompterPaused) {
-      if (txt) txt.textContent = 'Resume Teleprompter Scroll';
-      scrollBtn.querySelector('span:first-child').textContent = '▶️';
-      showToast('Teleprompter paused');
+    if (!teleprompterState.prompterStarted) {
+      teleprompterState.prompterStarted = true;
+      teleprompterState.isPrompterPaused = false;
+      updatePrompterButtonUI();
+      showToast('Teleprompter started! 📜');
+    } else if (!teleprompterState.isPrompterPaused) {
+      teleprompterState.isPrompterPaused = true;
+      updatePrompterButtonUI();
+      showToast('Teleprompter paused ⏸️');
     } else {
-      if (txt) txt.textContent = 'Pause Teleprompter Scroll';
-      scrollBtn.querySelector('span:first-child').textContent = '⏸️';
-      showToast('Teleprompter scrolling resumed');
+      teleprompterState.isPrompterPaused = false;
+      updatePrompterButtonUI();
+      showToast('Teleprompter scrolling resumed ▶️');
     }
   });
 
@@ -3017,6 +3043,13 @@ function initTeleprompter() {
       recordBtn.classList.remove('btn-recording');
       if (recText) recText.textContent = 'Record Broadcast Clip';
       recordBtn.querySelector('span:first-child').textContent = '⏺️';
+
+      // As soon as recording is over, reset prompter to start button again
+      teleprompterState.isPrompterPaused = true;
+      teleprompterState.prompterStarted = false;
+      teleprompterState.tickerOffset = 0;
+      if (track) track.style.transform = 'translateX(0px)';
+      updatePrompterButtonUI();
 
       if (teleprompterState.mediaRecorder && teleprompterState.mediaRecorder.state !== 'inactive') {
         teleprompterState.mediaRecorder.stop();
@@ -3122,6 +3155,11 @@ function initTeleprompter() {
       teleprompterState.mediaRecorder = recorder;
       teleprompterState.isRecording = true;
       teleprompterState.recordSeconds = 0;
+
+      // Start teleprompter when recording begins
+      teleprompterState.prompterStarted = true;
+      teleprompterState.isPrompterPaused = false;
+      updatePrompterButtonUI();
 
       recordBtn.classList.add('btn-recording');
       if (recText) recText.textContent = 'Stop Recording (00:00)';
