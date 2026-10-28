@@ -446,6 +446,8 @@ button, input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  user-select: none;
+  -webkit-user-select: none;
   transition: var(--transition);
 }
 
@@ -752,6 +754,8 @@ input:focus, select:focus, textarea:focus {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  user-select: none;
+  -webkit-user-select: none;
   transition: var(--transition);
 }
 .filter-chip.active, .filter-chip:hover {

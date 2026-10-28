@@ -2179,12 +2179,6 @@ function initPlanTools() {
     };
   });
 }
-  } else if (toolKey === 'bizcard') {
-    renderFutureBusinessCard(mount);
-  } else if (toolKey === 'dreammatch') {
-    renderParentChildMatch(mount);
-  }
-}
 
 // TOOL 1: My Plan Roadmap Generator
 function renderMyPlan(mount) {
