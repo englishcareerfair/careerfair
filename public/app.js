@@ -2599,7 +2599,7 @@ function initTeleprompter() {
   const nameInput = $('#anchor-name-input');
   const video = $('#anchor-video');
   const canvas = $('#anchor-idle-canvas');
-  const track = $('#teleprompter-track');
+  const track = $('#anchor-teleprompter-track') || $('#teleprompter-track');
   const s1 = $('#teleprompter-sentence-1');
   const s2 = $('#teleprompter-sentence-2');
   const speedSlow = $('#speed-slow');
@@ -2695,28 +2695,40 @@ function initTeleprompter() {
   const updatePrompterButtonUI = () => {
     const iconSpan = scrollBtn?.querySelector('span:first-child');
     const txtSpan = $('#prompter-scroll-btn-text');
+    const hudStatus = $('#prompter-hud-status');
+
     if (!teleprompterState.prompterStarted) {
       if (iconSpan) iconSpan.textContent = '▶️';
-      if (txtSpan) txtSpan.textContent = 'Start Teleprompter Scroll';
+      if (txtSpan) txtSpan.textContent = 'Start Teleprompter';
+      if (hudStatus) hudStatus.textContent = 'START PROMPTER';
+      scrollBtn?.classList.remove('btn-prompter-scrolling');
     } else if (teleprompterState.isPrompterPaused) {
       if (iconSpan) iconSpan.textContent = '▶️';
-      if (txtSpan) txtSpan.textContent = 'Resume Teleprompter Scroll';
+      if (txtSpan) txtSpan.textContent = 'Resume Teleprompter';
+      if (hudStatus) hudStatus.textContent = 'RESUME PROMPTER';
+      scrollBtn?.classList.remove('btn-prompter-scrolling');
     } else {
       if (iconSpan) iconSpan.textContent = '⏸️';
-      if (txtSpan) txtSpan.textContent = 'Pause Teleprompter Scroll';
+      if (txtSpan) txtSpan.textContent = 'Pause Teleprompter';
+      if (hudStatus) hudStatus.textContent = 'PAUSE PROMPTER';
+      scrollBtn?.classList.add('btn-prompter-scrolling');
     }
   };
 
   // Helper to update displayed script and lower-third copy
   const applyScript = key => {
     const data = SCRIPTS[key] || SCRIPTS.breaking;
-    if (s1) s1.textContent = `"${data.text}"`;
-    if (s2) s2.textContent = `"${data.text}"`;
+    const activeS1 = $('#teleprompter-sentence-1') || s1;
+    const activeS2 = $('#teleprompter-sentence-2') || s2;
+    const activeTrack = $('#anchor-teleprompter-track') || track;
+
+    if (activeS1) activeS1.textContent = `"${data.text}"`;
+    if (activeS2) activeS2.textContent = `"${data.text}"`;
     if (lowerTag) lowerTag.textContent = data.tag;
     const nameVal = nameInput?.value.trim() || 'STUDENT';
     if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · ${data.role.toUpperCase()} · KANAKIA INTERNATIONAL SCHOOL`;
     teleprompterState.tickerOffset = 0;
-    if (track) track.style.transform = 'translateX(0px)';
+    if (activeTrack) activeTrack.style.transform = 'translateX(0px)';
     teleprompterState.isPrompterPaused = true;
     teleprompterState.prompterStarted = false;
     updatePrompterButtonUI();
@@ -2727,15 +2739,18 @@ function initTeleprompter() {
     if (teleprompterState.prompterAnimId) cancelAnimationFrame(teleprompterState.prompterAnimId);
 
     const step = () => {
-      if (!teleprompterState.isPrompterPaused && track && s1) {
+      const activeTrack = $('#anchor-teleprompter-track') || track;
+      const activeS1 = $('#teleprompter-sentence-1') || s1;
+
+      if (!teleprompterState.isPrompterPaused && activeTrack && activeS1) {
         teleprompterState.tickerOffset -= teleprompterState.currentSpeed;
-        const s1Width = s1.offsetWidth;
+        const s1Width = activeS1.offsetWidth || 1200;
         const sepWidth = 64; // approximate margin + separator width
         const resetThreshold = s1Width + sepWidth;
         if (Math.abs(teleprompterState.tickerOffset) >= resetThreshold) {
           teleprompterState.tickerOffset += resetThreshold;
         }
-        track.style.transform = `translateX(${teleprompterState.tickerOffset}px)`;
+        activeTrack.style.transform = `translateX(${teleprompterState.tickerOffset}px)`;
       }
       teleprompterState.prompterAnimId = requestAnimationFrame(step);
     };
@@ -2991,7 +3006,7 @@ function initTeleprompter() {
   speedFast?.addEventListener('click', () => setSpeed('fast', speedFast));
 
   // 4. Start / Pause / Resume Teleprompter Scroll Button
-  scrollBtn?.addEventListener('click', () => {
+  const togglePrompter = () => {
     if (!teleprompterState.prompterStarted) {
       teleprompterState.prompterStarted = true;
       teleprompterState.isPrompterPaused = false;
@@ -3006,7 +3021,10 @@ function initTeleprompter() {
       updatePrompterButtonUI();
       showToast('Teleprompter scrolling resumed ▶️');
     }
-  });
+  };
+
+  scrollBtn?.addEventListener('click', togglePrompter);
+  $('#teleprompter-box')?.addEventListener('click', togglePrompter);
 
   // 5. Script / Roleplay Dropdown Selection
   scriptSelect?.addEventListener('change', e => {
@@ -3089,7 +3107,8 @@ function initTeleprompter() {
       teleprompterState.isPrompterPaused = true;
       teleprompterState.prompterStarted = false;
       teleprompterState.tickerOffset = 0;
-      if (track) track.style.transform = 'translateX(0px)';
+      const activeTrack = $('#anchor-teleprompter-track') || track;
+      if (activeTrack) activeTrack.style.transform = 'translateX(0px)';
       updatePrompterButtonUI();
 
       if (teleprompterState.mediaRecorder && teleprompterState.mediaRecorder.state !== 'inactive') {
