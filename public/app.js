@@ -4303,74 +4303,685 @@ function renderCareerQuiz(mount) {
   showQuestion();
 }
 
-// TOOL 3: Future Business Card Generator with Dynamic QR Code
+// TOOL 3: Future Business Card Generator with Dynamic QR Verification
+const CAREER_CREDENTIALS_MAP = {
+  "Chief Surgeon & Medical Resident": [
+    "MBBS (Gold Medalist) · MS General Surgery · AIIMS",
+    "MD Clinical Medicine · MRCS (London) · Trauma Fellowship",
+    "Super Specialist MCh · Fellow American College of Surgeons (FACS)",
+    "Chief Resident · Global Medical Board Certified"
+  ],
+  "Commercial Airline Pilot": [
+    "B.Sc Aviation · ICAO Level 6 · IGRUA Graduate",
+    "ATPL Commander · Boeing 787 Dreamliner Type-Rated · DGCA Gold",
+    "CPL Multi-Engine Instrument · Chief Flight Instructor (CFI)",
+    "Senior Captain · International Long-Haul Fleet Lead"
+  ],
+  "Principal Software Architect": [
+    "B.Tech CSE (IIT) · M.S. Distributed Systems (Stanford)",
+    "AWS Solutions Architect Pro · Kubernetes CKA · Tech Fellow",
+    "Staff Architect · Distributed Cloud Lead · Core Contributor",
+    "Distinguished Engineer · AI Infrastructure & Scalability Lead"
+  ],
+  "Corporate Mergers & Acquisitions Lawyer": [
+    "B.A. LL.B (Hons) NLSIU · LL.M Corporate Law (Cambridge)",
+    "Senior Partner · Bar Council of India · Chambers Band 1",
+    "Advocate Supreme Court · Cross-Border M&A Lead · Legal 500",
+    "Solicitor England & Wales · Dual-Qualified Arbitrator"
+  ],
+  "Diplomatic Civil Servant (IFS / IAS)": [
+    "M.A. International Relations (JNU) · UPSC CSE Rank Top 20",
+    "Indian Foreign Service (IFS) · Diplomatic Attaché · UN Delegation",
+    "District Magistrate / IAS Special Secretary · Public Policy Lead",
+    "Ambassador Extraordinary & Plenipotentiary · Peace Fellow"
+  ],
+  "Commissioned Defence Officer (NDA)": [
+    "B.Sc Military Science · NDA Khadakwasla · IMA Sword of Honour",
+    "Wing Commander · Fighter Pilot · Flying Badge Gold",
+    "Lieutenant Colonel · Staff College Camberley Qualified · Sena Medal",
+    "Captain Indian Navy · Warship Navigation & Operations Specialist"
+  ],
+  "Broadcast Journalist & News Anchor": [
+    "B.A. Journalism (ACJ) · Prime Time Anchor · Press Club Lead",
+    "Ramnath Goenka Awardee · Senior Investigative Editor",
+    "Foreign News Desk Head · Emmy Nominated Broadcast Producer",
+    "Chief Anchor · International Media Forum Fellow"
+  ],
+  "Luxury Hospitality & General Manager": [
+    "B.Sc Hospitality (IHM Pusa) · Ecole Hôtelière de Lausanne Executive",
+    "General Manager · Forbes 5-Star Luxury Resort Director",
+    "Certified Hotel Administrator (CHA) · Master Sommelier Level 3",
+    "Managing Director · Global Luxury Hotelier of the Year"
+  ],
+  "Venture Entrepreneur & Startup Founder": [
+    "B.Tech (IIT) + MBA (Stanford GSB) · Y-Combinator Alum",
+    "Founder & CEO · Forbes 30 Under 30 · Series-B Unicorn Lead",
+    "Tech Entrepreneur · TiE Charter Member · Global Innovator Fellow",
+    "Angel Investor · 50+ Startup Portfolio · World Economic Forum YGL"
+  ],
+  "Chartered Accountant & Investment Banker": [
+    "CA Rank 1 (ICAI) · CFA Charterholder (USA) · IIM Ahmedabad",
+    "Managing Director M&A · Goldman Sachs Wall Street Alum",
+    "Chief Financial Officer (CFO) · Capital Markets Lead",
+    "FRM Certified · Private Equity Partner · SEBI Registered Manager"
+  ],
+  "University Professor & Academic Scholar": [
+    "Ph.D. English Literature (Oxford) · Rhodes Scholar Alum",
+    "Tenured Chair Professor · Cambridge University Press Author",
+    "Fulbright Fellow · Dean of Humanities & Research Council Chair",
+    "Visiting Scholar Harvard · National Endowment Grantee"
+  ],
+  "OTT Screenwriter & Narrative Game Designer": [
+    "MFA Screenwriting (FTII) · Writer's Guild of America Member",
+    "Showrunner · Netflix Global Original Series · Filmfare Awardee",
+    "Narrative Director · BAFTA Games Nominee · IGN Story of the Year",
+    "Lead Worldbuilder · Prime Video Writers Room Alum"
+  ],
+  "Voice-Over Artist & Audio Narrator": [
+    "Audie Award Winner · Certified Voice Master (London Drama)",
+    "Official Voice of National Geographic & BBC Earth Documentaries",
+    "Audiobook Narrator of 100+ Best-sellers · Audible Hall of Fame",
+    "International Commercial VO Talent · SOVAS Voice Arts Awardee"
+  ],
+  "Technical Writer & Documentation Specialist": [
+    "B.S. Computer Science + Technical Comm (STC Fellow)",
+    "Staff Documentation Architect · Google Cloud / OpenAI Ecosystem",
+    "Lead API Writer · Write the Docs Keynote Speaker",
+    "Open Source Docs Guild Lead · IEEE Professional Comm Member"
+  ],
+  "Advertising Creative Director & Copywriter": [
+    "Cannes Lions Grand Prix Winner · D&AD Black Pencil Awardee",
+    "Executive Creative Director · Ogilvy Global Creative Council",
+    "Clio Award Winner · One Show Hall of Fame Nominee",
+    "Chief Creative Officer · Super Bowl & IPL Campaign Architect"
+  ],
+  "International Public Relations Strategist": [
+    "M.S. Strategic Communications (Columbia) · PRSA Silver Anvil",
+    "Global Head of Communications · Fortune 100 Enterprise",
+    "Crisis Counsel Lead · World Economic Forum Media Advisor",
+    "SABRE Award Winner · International PR Association President"
+  ],
+  "Novelist & Literary Fiction Author": [
+    "Booker Prize Nominee · MFA Creative Writing (Iowa Writers' Workshop)",
+    "New York Times #1 Best-Selling Author · Sahitya Akademi Award",
+    "PEN/Hemingway Finalist · Royal Society of Literature Fellow",
+    "International Bestseller · Translated into 28 Global Languages"
+  ],
+  "Narrative Game Writer & Worldbuilder": [
+    "Lead Narrative Designer · The Game Awards Best Narrative Winner",
+    "Lead Writer · AAA Open-World Franchise · BAFTA Games Member",
+    "Interactive Fiction Pioneer · GDC Narrative Summit Speaker",
+    "Senior Quest Designer · 10M+ Global Player Community"
+  ],
+  "Science Communicator & Research Journalist": [
+    "Ph.D. Astrophysics / Biology · AAAS Kavli Journalism Award",
+    "Senior Editor Scientific American & Nature Science Columnist",
+    "Pulitzer Prize Finalist for Explanatory Reporting · TED Speaker",
+    "Lead Producer BBC Science & Discovery Science Fellow"
+  ],
+  "UX Writer & Product Content Designer": [
+    "Lead Content Designer · Apple / Airbnb Product Design Guild",
+    "Design System Voice & Tone Lead · Fast Company Innovation Award",
+    "Author of Leading UX Writing Handbook · Figma Community Creator",
+    "Head of Content Strategy · 100M+ Daily Active Users UX Ecosystem"
+  ],
+  "Publishing Editor & Literary Agent": [
+    "Editor-in-Chief · Penguin Random House / HarperCollins",
+    "Agent to 12 Pulitzer & National Book Award Winners · AALA Member",
+    "Editorial Director · Frankfurt & London Book Fair Delegate",
+    "Distinguished Publishing Fellow · Global Rights Negotiator"
+  ],
+  "Product Manager & Agile Lead": [
+    "B.Tech (IIT) + MBA · Certified Scrum Product Owner (CSPO)",
+    "VP of Product · Enterprise SaaS Platform (10M+ Enterprise Seats)",
+    "Product School Featured Speaker · Mind the Product Fellow",
+    "Chief Product Officer · Product-Led Growth (PLG) Trailblazer"
+  ],
+  "Commercial Flight Cabin Crew Lead": [
+    "Inflight Service Director · Emirates / Singapore Airlines First Class",
+    "IATA Airline Cabin Safety Certified · Crew Resource Management Lead",
+    "VIP State Flight Lead · Aviation Hospitality Excellence Award",
+    "Chief Purser · 15,000+ Transoceanic Flight Hours"
+  ],
+  "Foreign Correspondent & War Reporter": [
+    "Pulitzer Prize Winner for International Reporting · Overseas Press Club",
+    "Chief Bureau Chief Middle East & South Asia · BBC World / CNN",
+    "Rory Peck Awardee · Committee to Protect Journalists (CPJ) Fellow",
+    "Foreign Affairs Columnist · International War Correspondence Medal"
+  ],
+  "Speechwriter & Political Strategist": [
+    "Chief Speechwriter to Prime Minister / Head of State",
+    "Director of Presidential Speechwriting · Cicero Grand Award",
+    "Political Communications Director · Oxford Union Lifetime Member",
+    "Senior Fellow Harvard Kennedy School · Global Summit Rhetoric Lead"
+  ],
+  "Sports Commentator & Live Broadcaster": [
+    "Lead Commentator ICC Cricket World Cup / Premier League / Wimbledon",
+    "Sports Emmy Award Winner · Star Sports / Sky Sports Lead Voice",
+    "Broadcast Journalism Hall of Fame · 25+ Years Live Commentary",
+    "Official Olympic Games Host Broadcaster Anchor"
+  ],
+  "Computational Linguist & AI Prompt Engineer": [
+    "Ph.D. Natural Language Processing (Stanford) · ACL Lifetime Member",
+    "Principal AI Prompt Architect · Frontier Foundation Models Lead",
+    "OpenAI / Google DeepMind Research Collaborator · NeurIPS Best Paper",
+    "Head of LLM Human Alignment & Linguistic Benchmarking"
+  ],
+  "Podcast Producer & Audio Showrunner": [
+    "Peabody Award Winner · Apple Podcasts #1 Global Showrunner",
+    "Executive Producer · 50M+ Downloads Spotify Original Network",
+    "Ambies Award for Best Narrative Podcast · Webby Award Winner",
+    "Audio Doc Pioneer · Third Coast International Audio Festival Winner"
+  ],
+  "Stand-up Comedian & Satirical Writer": [
+    "Netflix Global Comedy Special · Edinburgh Comedy Award Nominee",
+    "Head Writer · Prime Time Satirical News Show · Emmy Nominated",
+    "Sold-Out Radio City Music Hall & Royal Albert Hall Tour Headliner",
+    "Writers Guild Award Winner for Variety / Sketch Comedy"
+  ],
+  "Lyricist & Musical Theatre Writer": [
+    "Tony Award Winner for Best Original Score · Oscar Shortlisted Lyricist",
+    "West End & Broadway Resident Composer-Lyricist · Olivier Awardee",
+    "Grammy Award Winner for Best Musical Theater Album",
+    "Dramatists Guild of America Fellow · ASCAP Musical Theatre Award"
+  ],
+  "Environmental Policy Analyst & Sustainability Advocate": [
+    "Master of Public Policy (Oxford) · IPCC Climate Assessment Co-Author",
+    "Senior Sustainability Director · United Nations Environment Programme",
+    "COP Climate Summit Delegate · Forbes 30 Under 30 Climate Champion",
+    "Chief ESG Officer · Global Renewable Energy & Net-Zero Transition Lead"
+  ],
+  "Non-Profit Director & Social Impact Entrepreneur": [
+    "Master of International Development (Harvard Kennedy) · Skoll Awardee",
+    "Executive Director · Global Education NGO (1M+ Students Empowered)",
+    "Schwab Foundation Social Entrepreneur of the Year · World Bank Fellow",
+    "Ashoka Global Fellow · United Nations SDG Impact Champion"
+  ]
+};
+
+function renderQrCode(containerEl, url, size = 68) {
+  if (!containerEl) return;
+  let rendered = false;
+  if (typeof qrcode !== 'undefined') {
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(url);
+      qr.make();
+      const svgStr = qr.createSvgTag({ cellSize: 3, margin: 3 });
+      containerEl.innerHTML = svgStr;
+      const svg = containerEl.querySelector('svg');
+      if (svg) {
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        svg.style.display = 'block';
+        svg.style.borderRadius = '4px';
+        rendered = true;
+      }
+    } catch (err) {
+      console.warn('QR code SVG render failed:', err);
+    }
+  }
+
+  if (!rendered) {
+    const enc = encodeURIComponent(url);
+    containerEl.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=${size * 2}x${size * 2}&margin=3&data=${enc}" alt="Verification QR Code" style="width:100%;height:100%;object-fit:contain;display:block;border-radius:4px;" />`;
+  }
+}
+
+function showEnlargedQrModal(name, title, creds, verifyUrl) {
+  let modal = $('#modal-qr-enlarged');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-qr-enlarged';
+    modal.className = 'modal-backdrop';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:440px;text-align:center;position:relative;">
+      <button type="button" class="modal-close-btn" id="btn-close-qr-modal" aria-label="Close modal">×</button>
+      <div class="badge-pill badge-global" style="margin-bottom:12px;font-size:11px;">
+        📱 SCAN TO VERIFY CREDENTIAL
+      </div>
+      <h3 style="font-size:20px;margin:0 0 4px 0;">${escapeHtml(name)}</h3>
+      <div style="color:var(--accent-cyan);font-size:13.5px;font-weight:700;margin-bottom:16px;">
+        ${escapeHtml(title)}
+      </div>
+
+      <div id="modal-qr-code-target" style="background:#ffffff;padding:16px;border-radius:12px;width:220px;height:220px;margin:0 auto 16px auto;box-shadow:0 10px 30px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;"></div>
+
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:16px;">
+        Point any smartphone camera at this code to verify your credentials on the live Fair network.
+      </p>
+
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <a href="${verifyUrl}" target="_blank" class="btn btn-primary btn-sm">
+          <span>🔗</span> <span>Open Verification Page</span>
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-qr-modal-copy">
+          <span>📋</span> <span>Copy Link</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+
+  const qrTarget = modal.querySelector('#modal-qr-code-target');
+  renderQrCode(qrTarget, verifyUrl, 190);
+
+  const closeFn = () => { modal.style.display = 'none'; };
+  modal.querySelector('#btn-close-qr-modal')?.addEventListener('click', closeFn);
+  modal.addEventListener('click', e => { if (e.target === modal) closeFn(); });
+  modal.querySelector('#btn-qr-modal-copy')?.addEventListener('click', () => {
+    navigator.clipboard?.writeText(verifyUrl);
+    showToast('Verification link copied! 📋');
+  });
+}
+
+function showVerifiedCredentialModal(student, title, creds) {
+  let modalBackdrop = $('#modal-verified-credential');
+  if (!modalBackdrop) {
+    modalBackdrop = document.createElement('div');
+    modalBackdrop.id = 'modal-verified-credential';
+    modalBackdrop.className = 'modal-backdrop';
+    document.body.appendChild(modalBackdrop);
+  }
+
+  modalBackdrop.innerHTML = `
+    <div class="modal-card" style="max-width:540px;text-align:center;position:relative;">
+      <button type="button" class="modal-close-btn" id="btn-close-verify-modal" aria-label="Close modal">×</button>
+      <div style="font-size:48px;margin-bottom:8px;">🛡️</div>
+      <div class="badge-pill badge-global" style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid #10b981;font-weight:700;margin-bottom:12px;">
+        OFFICIAL 2040 EXECUTIVE CREDENTIAL · VERIFIED
+      </div>
+      <h2 style="font-size:26px;font-weight:800;color:#fff;margin:0 0 6px 0;">${escapeHtml(student)}</h2>
+      <div style="color:var(--accent-cyan);font-size:16px;font-weight:700;margin-bottom:16px;">
+        ${escapeHtml(title)}
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-md);padding:14px;margin-bottom:18px;text-align:left;">
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Verified Honors &amp; Degree Track</div>
+        <div style="font-family:var(--font-mono);font-size:13.5px;color:var(--text-main);font-weight:600;margin-bottom:10px;">
+          ${escapeHtml(creds)}
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Issuing Academy</div>
+        <div style="font-size:12.5px;color:var(--text-muted);">
+          🏛️ Kanakia International School Mira Road · English Careers Forum
+        </div>
+        <div style="font-size:11px;color:#34d399;margin-top:8px;display:flex;align-items:center;gap:4px;">
+          <span>✓</span> <span>Cryptographically Signed Dynamic QR Verification Active</span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button type="button" class="btn btn-primary" id="btn-verify-to-roadmap">
+          <span>🗺️</span> <span>Explore Career Roadmap</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-verify-dismiss">
+          <span>Done</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  modalBackdrop.style.display = 'flex';
+
+  const closeFn = () => {
+    modalBackdrop.style.display = 'none';
+  };
+
+  modalBackdrop.querySelector('#btn-close-verify-modal')?.addEventListener('click', closeFn);
+  modalBackdrop.querySelector('#btn-verify-dismiss')?.addEventListener('click', closeFn);
+  modalBackdrop.addEventListener('click', e => {
+    if (e.target === modalBackdrop) closeFn();
+  });
+
+  modalBackdrop.querySelector('#btn-verify-to-roadmap')?.addEventListener('click', () => {
+    closeFn();
+    switchTab('plan');
+    renderPlanTool('myplan');
+  });
+}
+
+function checkIncomingCardVerification() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verify') === '2040' || (params.has('student') && params.has('title'))) {
+      const student = params.get('student') || 'Executive Explorer';
+      const title = params.get('title') || 'Future Career Leader';
+      const creds = params.get('creds') || 'Class of 2040 · Executive Honors';
+      showVerifiedCredentialModal(student, title, creds);
+    }
+  } catch (e) {}
+}
+
 function renderFutureBusinessCard(mount) {
+  // Determine initial selected career: either existing student targetCareer or Commercial Airline Pilot
+  const initialCareer = (STATE.targetCareer && CAREER_CREDENTIALS_MAP[STATE.targetCareer]) 
+    ? STATE.targetCareer 
+    : 'Commercial Airline Pilot';
+
+  // Group careers by category
+  const categories = {};
+  CAREERS_DATA.forEach(c => {
+    const cat = c.cat || 'General';
+    if (!categories[cat]) categories[cat] = [];
+    categories[cat].push(c);
+  });
+
+  // Build career options HTML grouped by category
+  let careerOptionsHtml = '';
+  for (const [catName, list] of Object.entries(categories)) {
+    careerOptionsHtml += `<optgroup label="── ${escapeHtml(catName)} ──">`;
+    list.forEach(c => {
+      const isSel = c.title === initialCareer ? 'selected' : '';
+      careerOptionsHtml += `<option value="${escapeHtml(c.title)}" ${isSel}>${c.icon} ${escapeHtml(c.title)}</option>`;
+    });
+    careerOptionsHtml += `</optgroup>`;
+  }
+
   mount.innerHTML = `
     <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
       <h3 style="font-size:20px;">🪪 Future Business Card Generator</h3>
       <p style="font-size:13.5px;color:var(--text-dim);">Design your executive credentials for the year 2040 complete with dynamic QR verification.</p>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+    <div class="bizcard-grid">
+      <!-- Left Column: Controls & Dynamic Dropdowns -->
       <div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;">Your Name:</label>
+        <div style="margin-bottom:12px;">
+          <label for="biz-name" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Your Name:</label>
           <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your name">
         </div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;">Future Dream Title:</label>
-          <input type="text" id="biz-title" value="Captain · Commercial Airline Pilot">
+
+        <div style="margin-bottom:12px;">
+          <label for="biz-career-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">
+            Future Dream Career (32 Career Paths):
+          </label>
+          <select id="biz-career-select" class="form-select" style="width:100%;font-weight:600;">
+            ${careerOptionsHtml}
+          </select>
         </div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:13px;font-weight:600;">Credentials / Honors:</label>
-          <input type="text" id="biz-creds" value="B.Sc Aviation · ICAO Level 6 · IGRUA Graduate">
+
+        <div style="margin-bottom:12px;">
+          <label for="biz-creds-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">
+            Credentials / Honors (Specialized by Career):
+          </label>
+          <select id="biz-creds-select" class="form-select" style="width:100%;">
+            <!-- Populated dynamically based on career choice -->
+          </select>
+          <input type="text" id="biz-creds-custom" placeholder="Type your custom degrees, licenses or honors..." style="display:none;margin-top:8px;">
         </div>
-        <button class="btn btn-primary" id="btn-render-biz">Update Business Card ✨</button>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+          <button class="btn btn-primary" id="btn-render-biz" type="button">
+            <span>✨</span> <span>Update Business Card</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-download-biz" type="button" title="Download card image as PNG">
+            <span>📥</span> <span>Download Card</span>
+          </button>
+          <button class="btn btn-secondary" id="btn-share-biz" type="button" title="Copy verification link to clipboard">
+            <span>🔗</span> <span>Copy Link</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Generated Business Card Render -->
-      <div id="biz-card-render" style="background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);border:2px solid var(--accent-cyan);border-radius:var(--radius-lg);padding:24px;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.6);display:flex;flex-direction:column;justify-content:space-between;min-height:200px;">
-        <div>
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
-              <h3 style="font-size:22px;letter-spacing:-0.02em;" id="bc-name">${escapeHtml(STATE.studentName || 'Your Name')}</h3>
-              <div style="color:var(--accent-cyan);font-family:var(--font-sub);font-size:13.5px;font-weight:700;margin-top:2px;" id="bc-title">Captain · Commercial Airline Pilot</div>
+      <!-- Right Column: Live Interactive Business Card Render -->
+      <div>
+        <div id="biz-card-render" class="biz-card-render">
+          <div class="biz-card-top">
+            <div style="flex:1;min-width:0;">
+              <div class="biz-card-badge">CLASS OF 2040 · EXECUTIVE CREDENTIAL</div>
+              <h3 class="biz-card-name" id="bc-name">${escapeHtml(STATE.studentName || 'Explorer')}</h3>
+              <div class="biz-card-title" id="bc-title">${escapeHtml(initialCareer)}</div>
             </div>
-            <div id="bc-qr-mount" style="background:#fff;padding:4px;border-radius:6px;width:60px;height:60px;"></div>
+            <div id="bc-qr-mount" class="biz-card-qr-box" title="Click to view & scan full-size verification badge">
+              <!-- Crisp vector QR code rendered here -->
+            </div>
+          </div>
+          <div class="biz-card-bottom">
+            <div class="biz-card-creds" id="bc-creds">Loading honors...</div>
+            <div class="biz-card-school">
+              <span>🏛️</span>
+              <span>Kanakia International School Mira Road &copy;</span>
+            </div>
           </div>
         </div>
-        <div>
-          <div style="font-size:12px;color:#94a3b8;font-family:var(--font-mono);" id="bc-creds">B.Sc Aviation · ICAO Level 6 · IGRUA Graduate</div>
-          <div style="font-size:11px;color:#64748b;margin-top:4px;">Kanakia International School Mira Road &copy;</div>
+        <div style="font-size:11.5px;color:var(--text-dim);margin-top:10px;text-align:center;">
+          💡 Tap QR code or scan with any smartphone camera to verify this 2040 credential.
         </div>
       </div>
     </div>
   `;
 
-  const updateQr = () => {
-    const name = $('#biz-name')?.value || 'Explorer';
-    const title = $('#biz-title')?.value || 'Career Lead';
-    const creds = $('#biz-creds')?.value || 'Class 10';
+  const nameInput = $('#biz-name');
+  const careerSelect = $('#biz-career-select');
+  const credsSelect = $('#biz-creds-select');
+  const credsCustomInput = $('#biz-creds-custom');
+  const cardEl = $('#biz-card-render');
 
-    $('#bc-name').textContent = name;
-    $('#bc-title').textContent = title;
-    $('#bc-creds').textContent = creds;
+  // Helper to populate credentials select based on chosen career
+  const populateCredentialsForCareer = (careerName) => {
+    if (!credsSelect) return;
+    const credsList = CAREER_CREDENTIALS_MAP[careerName] || [
+      "B.A. / B.Sc Honors · Distinguished Scholar Alum",
+      "Executive Masters · Leadership Board Certified",
+      "Senior Specialist · Global Industry Fellow",
+      "Class of 2040 · International Honors Graduate"
+    ];
 
-    const qrMount = $('#bc-qr-mount');
-    if (qrMount && window.qrcode) {
-      try {
-        const qr = qrcode(0, 'M');
-        qr.addData(`https://careerfair.pages.dev?student=${encodeURIComponent(name)}&title=${encodeURIComponent(title)}`);
-        qr.make();
-        qrMount.innerHTML = qr.createImgTag(2, 0);
-      } catch {}
+    let opts = '';
+    credsList.forEach((c, idx) => {
+      opts += `<option value="${escapeHtml(c)}" ${idx === 0 ? 'selected' : ''}>🎖️ ${escapeHtml(c)}</option>`;
+    });
+    opts += `<option value="__custom__">✍️ Custom / Type My Own Honors...</option>`;
+
+    credsSelect.innerHTML = opts;
+    if (credsCustomInput) {
+      credsCustomInput.style.display = 'none';
+      credsCustomInput.value = '';
     }
   };
 
-  $('#btn-render-biz')?.addEventListener('click', updateQr);
-  setTimeout(updateQr, 50);
+  // Helper to update the card preview live
+  const updateCard = (animatePulse = false) => {
+    const rawName = (nameInput?.value || '').trim();
+    const name = rawName || 'Explorer';
+    const career = careerSelect?.value || 'Commercial Airline Pilot';
+
+    let creds = credsSelect?.value || '';
+    if (creds === '__custom__') {
+      creds = (credsCustomInput?.value || '').trim() || 'Class of 2040 · Executive Honors';
+    }
+
+    // Update DOM on the card preview
+    const bcName = $('#bc-name');
+    const bcTitle = $('#bc-title');
+    const bcCreds = $('#bc-creds');
+
+    if (bcName) bcName.textContent = name;
+    if (bcTitle) bcTitle.textContent = career;
+    if (bcCreds) bcCreds.textContent = creds;
+
+    // Generate dynamic verification URL
+    const baseOrigin = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
+      ? window.location.origin
+      : 'https://careerfair.pages.dev';
+    const pathname = window.location.pathname || '/';
+    const verifyUrl = `${baseOrigin}${pathname}?verify=2040&student=${encodeURIComponent(name)}&title=${encodeURIComponent(career)}&creds=${encodeURIComponent(creds)}`;
+
+    // Render crisp scan-ready vector QR code
+    const qrMount = $('#bc-qr-mount');
+    if (qrMount) {
+      renderQrCode(qrMount, verifyUrl, 74);
+      qrMount.onclick = () => {
+        showEnlargedQrModal(name, career, creds, verifyUrl);
+      };
+    }
+
+    if (animatePulse && cardEl) {
+      cardEl.classList.remove('biz-card-pulse');
+      // trigger reflow
+      void cardEl.offsetWidth;
+      cardEl.classList.add('biz-card-pulse');
+      showToast('Business Card Updated! 🪪✨');
+    }
+
+    return { name, career, creds, verifyUrl };
+  };
+
+  // 1. Initial population of credentials for default career
+  populateCredentialsForCareer(initialCareer);
+  updateCard(false);
+
+  // 2. Wire career selection change -> updates credentials dropdown & updates card immediately
+  careerSelect?.addEventListener('change', () => {
+    const selectedCareer = careerSelect.value;
+    populateCredentialsForCareer(selectedCareer);
+    updateCard(false);
+  });
+
+  // 3. Wire credentials dropdown change -> shows custom input if chosen & updates card immediately
+  credsSelect?.addEventListener('change', () => {
+    if (credsSelect.value === '__custom__') {
+      if (credsCustomInput) {
+        credsCustomInput.style.display = 'block';
+        credsCustomInput.focus();
+      }
+    } else {
+      if (credsCustomInput) credsCustomInput.style.display = 'none';
+    }
+    updateCard(false);
+  });
+
+  // 4. Wire real-time keystroke input listeners for instant live updating
+  nameInput?.addEventListener('input', () => updateCard(false));
+  nameInput?.addEventListener('change', () => updateCard(false));
+  credsCustomInput?.addEventListener('input', () => updateCard(false));
+
+  // 5. Wire Update button click -> updates with celebratory pulse glow & toast
+  $('#btn-render-biz')?.addEventListener('click', () => {
+    updateCard(true);
+  });
+
+  // 6. Wire Copy Share Link button
+  $('#btn-share-biz')?.addEventListener('click', () => {
+    const { verifyUrl } = updateCard(false);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(verifyUrl);
+    }
+    showToast('Verification Link copied! 📋');
+  });
+
+  // 7. Wire Download Card PNG button
+  $('#btn-download-biz')?.addEventListener('click', () => {
+    const { name, career, creds } = updateCard(false);
+    downloadBusinessCardImage(name, career, creds);
+  });
 }
 
+function downloadBusinessCardImage(name, title, creds) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 460;
+  const ctx = canvas.getContext('2d');
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, 800, 460);
+  grad.addColorStop(0, '#090e1a');
+  grad.addColorStop(0.5, '#151e36');
+  grad.addColorStop(1, '#0a0f1d');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 800, 460);
+
+  // Border & Accent line
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(8, 8, 784, 444);
+
+  const lineGrad = ctx.createLinearGradient(0, 0, 800, 0);
+  lineGrad.addColorStop(0, 'rgba(0,240,255,0)');
+  lineGrad.addColorStop(0.3, '#00f0ff');
+  lineGrad.addColorStop(0.7, '#ff2a85');
+  lineGrad.addColorStop(1, 'rgba(255,42,133,0)');
+  ctx.fillStyle = lineGrad;
+  ctx.fillRect(8, 8, 784, 6);
+
+  // Badge
+  ctx.fillStyle = 'rgba(0, 240, 255, 0.15)';
+  ctx.fillRect(40, 36, 310, 26);
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(40, 36, 310, 26);
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = 'bold 12px "JetBrains Mono", monospace';
+  ctx.fillText('CLASS OF 2040 · EXECUTIVE CREDENTIAL', 50, 54);
+
+  // Name
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 32px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(name, 40, 110);
+
+  // Title
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = 'bold 19px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(title, 40, 146);
+
+  // Credentials
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = '600 15px "JetBrains Mono", monospace';
+  ctx.fillText(creds, 40, 375);
+
+  // School
+  ctx.fillStyle = '#64748b';
+  ctx.font = '14px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('🏛️ Kanakia International School Mira Road ©', 40, 412);
+
+  // QR box
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(630, 36, 130, 130);
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.strokeRect(630, 36, 130, 130);
+
+  const qrSvg = $('#bc-qr-mount svg');
+  const qrImg = $('#bc-qr-mount img');
+
+  const finish = () => {
+    const link = document.createElement('a');
+    link.download = `${name.replace(/\s+/g, '_')}_Business_Card_2040.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Business Card Downloaded! 📥');
+  };
+
+  if (qrSvg) {
+    const svgData = new XMLSerializer().serializeToString(qrSvg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const DOMURL = window.URL || window.webkitURL || window;
+    const url = DOMURL.createObjectURL(svgBlob);
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 638, 44, 114, 114);
+      DOMURL.revokeObjectURL(url);
+      finish();
+    };
+    img.src = url;
+  } else if (qrImg) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      ctx.drawImage(img, 638, 44, 114, 114);
+      finish();
+    };
+    img.onerror = finish;
+    img.src = qrImg.src;
+  } else {
+    finish();
+  }
+}
 // ─── 11. LEADERBOARD & FEEDBACK WALL ──────────────────────────────────────────
 async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
@@ -5041,6 +5652,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Pre-render home heroes & stats
   renderCareers();
   renderColleges();
+  checkIncomingCardVerification();
 
   // Admin login submission
   $('#admin-login-form')?.addEventListener('submit', async e => {
