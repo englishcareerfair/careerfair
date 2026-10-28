@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=4.3">
+  <link rel="stylesheet" href="styles.css?v=4.4">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=4.3" defer></script>
+  <script src="app.js?v=4.4" defer></script>
 </head>
 <body>
 
@@ -1074,8 +1074,14 @@
           </p>
 
           <div style="margin-bottom:14px;">
-            <label style="font-size:13px;font-weight:600;">Google Gemini API Key (or comma-separated pool):</label>
-            <input type="password" id="admin-gemini-key" placeholder="Enter Google Gemini API key">
+            <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px;">
+              Google Gemini API Keys Pool (Active &amp; Backup Keys):
+            </label>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 6px 0;">
+              Enter 1 or more Gemini API keys (one per line or comma-separated). When a key's quota is exhausted (429/403/ResourceExhausted), the system automatically fails over to the next backup key and discards the used one.
+            </p>
+            <textarea id="admin-gemini-key" rows="3" placeholder="AIzaSy... (Primary Key)&#10;AIzaSy... (Backup Key 1)&#10;AIzaSy... (Backup Key 2)" style="font-family:var(--font-mono);font-size:12px;width:100%;box-sizing:border-box;"></textarea>
+            <div id="admin-gemini-key-status" style="font-size:11.5px;color:var(--accent-cyan);margin-top:4px;"></div>
           </div>
 
           <div style="margin-bottom:14px;">

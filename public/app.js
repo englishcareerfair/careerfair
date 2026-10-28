@@ -64,6 +64,10 @@ function escapeHtml(str) {
 async function fetchApi(endpoint, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (STATE.adminKey) headers['Authorization'] = 'Bearer ' + STATE.adminKey;
+  const clientGeminiKeys = localStorage.getItem('cf_gemini_keys');
+  if (clientGeminiKeys && !headers['x-gemini-keys']) {
+    headers['x-gemini-keys'] = clientGeminiKeys;
+  }
 
   try {
     const res = await fetch('/api/' + endpoint, { ...options, headers });
@@ -459,6 +463,182 @@ const CAREERS_DATA = [
     degrees: "BA / MA Public Relations / Corporate Communications",
     exams: "University Entrance Exams",
     englishSuperpower: "Crafting bulletproof press releases and guiding executives through live media questioning during corporate crises."
+  },
+  {
+    title: "Novelist & Literary Fiction Author",
+    icon: "📖",
+    cat: "Creative",
+    desc: "Craft bestselling novels, build immersive fictional universes, and publish literary works with global publishing houses.",
+    skills: "Narrative Arc, Pacing, Evocative Prose, Subtext & Characterization",
+    salary: "₹6L – ₹30L+/yr + Royalties",
+    degrees: "BA / MA English Literature / Creative Writing MFA",
+    exams: "University Literary Portfolios, CUET-UG / PG",
+    englishSuperpower: "Nuanced prose cadence, vocabulary mastery, and emotional resonance that moves readers and secures international literary representation."
+  },
+  {
+    title: "Narrative Game Writer & Worldbuilder",
+    icon: "🎮",
+    cat: "Creative",
+    desc: "Design branching quests, author cinematic dialogue, and construct rich narrative lore for AAA and indie video games.",
+    skills: "Branching Dialogue, Lore Bibles, Environmental Storytelling, Character Voices",
+    salary: "₹8L – ₹32L+/yr",
+    degrees: "BA English / Interactive Narrative / Game Design",
+    exams: "Writing portfolio & Twine / Ren'Py interactive narrative sample",
+    englishSuperpower: "Crafting distinct character vernaculars and interactive conversational subtext that adapts to player choice across global titles."
+  },
+  {
+    title: "Science Communicator & Research Journalist",
+    icon: "🔬",
+    cat: "Media",
+    desc: "Translate cutting-edge quantum physics, CRISPR biotechnology, and aerospace discoveries into thrilling mainstream articles and documentaries.",
+    skills: "Scientific Literacy, Metaphor Crafting, Fact-Checking, Visual Storytelling",
+    salary: "₹7L – ₹28L/yr",
+    degrees: "B.Sc / BS + PG Diploma in Science Communication / English",
+    exams: "CUET-PG, Media School Entrance",
+    englishSuperpower: "Turning dense peer-reviewed equations into lucid, awe-inspiring prose that makes scientific breakthroughs accessible to humanity."
+  },
+  {
+    title: "UX Writer & Product Content Designer",
+    icon: "📱",
+    cat: "Tech",
+    desc: "Craft intuitive in-app microcopy, user onboarding journeys, and conversational AI interface flows for global mobile apps.",
+    skills: "Microcopy, User Research, Accessibility, Information Hierarchy",
+    salary: "₹10L – ₹35L+/yr",
+    degrees: "BA English / Cognitive Science / Human-Computer Interaction",
+    exams: "Design & UX Writing portfolio review",
+    englishSuperpower: "Radical brevity and psychological precision: guiding millions of users effortlessly through complex fintech and healthcare interfaces."
+  },
+  {
+    title: "Publishing Editor & Literary Agent",
+    icon: "📚",
+    cat: "Creative",
+    desc: "Acquire manuscript rights, edit acclaimed fiction and non-fiction, and negotiate global distribution with international publishing houses.",
+    skills: "Structural Editing, Line Editing, Contract Negotiation, Market Curation",
+    salary: "₹6L – ₹24L/yr",
+    degrees: "BA / MA English Literature / Publishing Studies",
+    exams: "Publishing House Editorial Assessments",
+    englishSuperpower: "Flawless syntactical judgment and structural critique that refines raw drafts into timeless, award-winning literature."
+  },
+  {
+    title: "Product Manager & Agile Lead",
+    icon: "🧭",
+    cat: "Tech",
+    desc: "Define product roadmaps, bridge engineering with marketing, and present product strategy to cross-functional global teams.",
+    skills: "Roadmap Prioritization, PRD Documentation, Stakeholder Alignment, Metrics",
+    salary: "₹16L – ₹55L+/yr",
+    degrees: "B.Tech / Any Graduate + MBA / Product Management Certification",
+    exams: "CAT / GMAT / Executive Assessments",
+    englishSuperpower: "Clear, persuasive asynchronous written memos (Amazon 6-pagers) and inspiring keynote presentations that align hundreds of engineers."
+  },
+  {
+    title: "Commercial Flight Cabin Crew Lead",
+    icon: "✈️",
+    cat: "Aviation",
+    desc: "Lead in-flight passenger safety, manage high-altitude medical crises, and represent prestigious international airlines.",
+    skills: "Emergency Evacuation, Crisis De-escalation, Cultural Etiquette, First-Aid",
+    salary: "₹7L – ₹22L+/yr + International Per Diem",
+    degrees: "Class 12 / Any Graduate + Aviation Hospitality Diploma",
+    exams: "Airline In-Person Interviews & Fluency Assessments",
+    englishSuperpower: "Crystal-clear emergency evacuation commands and diplomatic interpersonal grace that reassures 300+ passengers during airborne turbulence."
+  },
+  {
+    title: "Foreign Correspondent & War Reporter",
+    icon: "🌍",
+    cat: "Media",
+    desc: "Report from international geopolitical conflict zones, break diplomatic summits, and broadcast live field dispatches.",
+    skills: "Field Reporting, Hostile Environment Awareness, Rapid Dispatch, Ethics",
+    salary: "₹9L – ₹35L+/yr",
+    degrees: "BA / MA Journalism / International Relations",
+    exams: "Media Entrance Exams & Investigative Portfolios",
+    englishSuperpower: "Composed, vivid live broadcast reporting under extreme pressure, conveying historic global events to millions around the world."
+  },
+  {
+    title: "Speechwriter & Political Strategist",
+    icon: "🎙️",
+    cat: "Public Policy",
+    desc: "Write magnetic keynote addresses, parliamentary speeches, and diplomatic remarks for heads of state and global CEOs.",
+    skills: "Rhetoric, Cadence, Thematic Storytelling, Political Psychology",
+    salary: "₹10L – ₹40L+/yr",
+    degrees: "BA English / Political Science / History",
+    exams: "Portfolio of Speeches & Policy Briefs",
+    englishSuperpower: "Classical rhetorical devices (anaphora, chiasmus, tricolon) that inspire nations, sway parliaments, and define historic movements."
+  },
+  {
+    title: "Sports Commentator & Live Broadcaster",
+    icon: "🏆",
+    cat: "Media",
+    desc: "Deliver energetic ball-by-ball commentary, player interviews, and post-match analytical breakdowns for international sporting tournaments.",
+    skills: "Live Improvisation, Match Analytics, Vocal Cadence, Rapid Reaction",
+    salary: "₹8L – ₹45L+/yr",
+    degrees: "BA Mass Media / Sports Journalism / Any Graduate",
+    exams: "Broadcaster Audition Reels & Knowledge Tests",
+    englishSuperpower: "High-octane unscripted eloquence that matches the tempo of live sports and immortalizes historic championship moments."
+  },
+  {
+    title: "Computational Linguist & AI Prompt Engineer",
+    icon: "🤖",
+    cat: "Tech",
+    desc: "Train large language models, architect system prompts, and evaluate AI conversational semantics for frontier artificial intelligence labs.",
+    skills: "Syntactic Parsing, Semantic Evaluation, LLM Prompting, Python",
+    salary: "₹14L – ₹48L+/yr",
+    degrees: "B.Tech CS / BA Linguistics + Computer Science Minor",
+    exams: "GATE / Technical Coding & NLP Assessments",
+    englishSuperpower: "Deep structural mastery of syntax, semantics, and pragmatics to steer frontier AI models toward precise, unbiased reasoning."
+  },
+  {
+    title: "Podcast Producer & Audio Showrunner",
+    icon: "🎧",
+    cat: "Media",
+    desc: "Develop narrative audio documentaries, direct voice talent, and produce chart-topping narrative audio series for Spotify and Apple Podcasts.",
+    skills: "Audio Narrative Arc, Interview Technique, Sound Design Scripting, Pacing",
+    salary: "₹6L – ₹26L/yr",
+    degrees: "BA Media / English Literature / Audio Production",
+    exams: "Audio Pilot Portfolio & Script Sample",
+    englishSuperpower: "Intimate audio storytelling that hooks listeners through rich descriptions, conversational warmth, and thoughtful interviews."
+  },
+  {
+    title: "Stand-up Comedian & Satirical Writer",
+    icon: "🎭",
+    cat: "Creative",
+    desc: "Write incisive social satire, headline international comedy tours, and author scripts for late-night television shows.",
+    skills: "Comic Timing, Punchline Structure, Observational Wit, Crowd Work",
+    salary: "₹6L – ₹35L+/yr + Ticket Revenues",
+    degrees: "Any Graduate / Creative Writing",
+    exams: "Live Open Mic Performances & Standup Specials",
+    englishSuperpower: "Mastery of misdirection, irony, and conversational cadence that unites diverse audiences through the universal language of humor."
+  },
+  {
+    title: "Lyricist & Musical Theatre Writer",
+    icon: "🎵",
+    cat: "Creative",
+    desc: "Pen song lyrics, write musical book narratives, and collaborate with composers for films, theatrical stages, and global streaming albums.",
+    skills: "Meter & Rhyme, Melodic Prosody, Thematic Resonance, Metaphor",
+    salary: "₹5L – ₹30L+/yr + Song Royalties",
+    degrees: "BA English / Music / Creative Writing",
+    exams: "Lyricist Song Portfolios & Demo Reels",
+    englishSuperpower: "Marrying linguistic rhythm and vowel harmony with musical melody to create anthems that define generations."
+  },
+  {
+    title: "Environmental Policy Analyst & Sustainability Advocate",
+    icon: "🌱",
+    cat: "Public Policy",
+    desc: "Draft climate adaptation treaties, brief governmental ministers, and represent environmental NGOs at UN COP summits.",
+    skills: "Environmental Law, Climate Science Synthesis, Policy Briefing, Advocacy",
+    salary: "₹8L – ₹28L/yr",
+    degrees: "B.Sc / BA Public Policy / Environmental Studies",
+    exams: "UPSC / GRE / University Entrance",
+    englishSuperpower: "Translating intricate climate data into morally compelling policy briefs that persuade corporate boards and governments to act."
+  },
+  {
+    title: "Non-Profit Director & Social Impact Entrepreneur",
+    icon: "🤝",
+    cat: "Business",
+    desc: "Lead international humanitarian missions, secure philanthropic grants from global foundations, and drive grassroots community change.",
+    skills: "Grant Writing, Public Advocacy, Program Management, Stakeholder Trust",
+    salary: "₹8L – ₹25L/yr",
+    degrees: "BA / MSW Social Work / Public Administration",
+    exams: "TISS NET / University Entrance",
+    englishSuperpower: "Persuasive grant proposals and grassroots storytelling that unlock crores in philanthropic funding for underserved communities."
   }
 ];
 
@@ -3507,17 +3687,129 @@ function initPlanTools() {
 }
 
 // TOOL 1: My Plan Roadmap Generator
+// ── Offline High-Fidelity Roadmap Blueprint Generator ─────────────────────
+function generateOfflineRoadmap(careerObj, cls, dailyMins) {
+  const cat = careerObj.cat || 'Professional';
+  const exams = careerObj.exams || 'National Entrance Examinations';
+  const degrees = careerObj.degrees || 'Bachelor / Master Professional Degree';
+  const title = careerObj.title || 'Career Path';
+  const superpower = careerObj.englishSuperpower || 'English is the universal operational language for global leadership.';
+
+  // Class-specific academic milestones
+  let m1Detail = '';
+  if (cls === 'Class 8 & below') {
+    m1Detail = `Build robust English reading endurance (fiction & science journals), master spoken diction through morning assembly elocution, and cultivate a foundational curiosity for ${cat.toLowerCase()} principles.`;
+  } else if (cls === 'Class 9') {
+    m1Detail = `Begin aligning your school stream roadmap (Science vs Commerce vs Humanities). Join school debating, Model United Nations (MUN), and start building a specialized vocabulary notebook tailored to ${title.toLowerCase()}.`;
+  } else if (cls === 'Class 10' || cls.includes('Class 10')) {
+    m1Detail = `Target 90%+ in ICSE/CBSE English & Core Board exams. Formalize your Class 11 stream selection directly aligned with ${degrees}, and lead student editorial or debate societies.`;
+  } else if (cls === 'Class 11') {
+    m1Detail = `Commence dedicated coaching and timed mock tests for ${exams}. Participate in state/national public speaking symposiums and read international peer-reviewed literature in ${cat}.`;
+  } else if (cls === 'Class 12') {
+    m1Detail = `Peak competitive exam readiness for ${exams} alongside Board Exam excellence. Draft preliminary Statements of Purpose (SOP) and build interview confidence through impromptu speaking drills.`;
+  } else {
+    m1Detail = `Pursue specialized undergraduate internships, participate in collegiate moot courts/hackathons, network with industry alumni, and prepare for licensing/post-graduate assessments.`;
+  }
+
+  // Accredited college recommendations based on category
+  let colleges = '';
+  if (cat === 'Aviation') {
+    colleges = `Indira Gandhi Rashtriya Uran Akademi (IGRUA, NAAC A+), Bombay Flying Club (DGCA Approved), and National Flying Training Institute (NFTI Gondia) for ${degrees}.`;
+  } else if (cat === 'Health') {
+    colleges = `All India Institute of Medical Sciences (AIIMS New Delhi, NIRF #1), Christian Medical College (CMC Vellore, NAAC A++), and King Edward Memorial (KEM Mumbai) for ${degrees}.`;
+  } else if (cat === 'Law') {
+    colleges = `National Law School of India University (NLSIU Bangalore, NIRF Law #1), NALSAR Hyderabad (NAAC A++), and Government Law College (GLC Mumbai) for ${degrees}.`;
+  } else if (cat === 'Tech') {
+    colleges = `Indian Institute of Technology (IIT Bombay / IIT Delhi, NIRF Top 3), BITS Pilani (NAAC A), and International Institute of Information Technology (IIIT Hyderabad) for ${degrees}.`;
+  } else if (cat === 'Media') {
+    colleges = `Indian Institute of Mass Communication (IIMC New Delhi), St. Xavier's College Autonomous Mumbai (NAAC A+), and Symbiosis Institute of Media & Communication (SIMC Pune) for ${degrees}.`;
+  } else if (cat === 'Public Policy') {
+    colleges = `St. Stephen's College (Delhi University, NAAC A++), Jawaharlal Nehru University (JNU New Delhi, NAAC A++), and National Defence Academy (NDA Khadakwasla) for ${degrees}.`;
+  } else if (cat === 'Business') {
+    colleges = `Shri Ram College of Commerce (SRCC Delhi, NAAC A++), Indian Institute of Management (IIM Indore IPM, NIRF Top 10), and Narsee Monjee Institute of Management Studies (NMIMS Mumbai, NAAC A+).`;
+  } else {
+    colleges = `Film and Television Institute of India (FTII Pune), National Institute of Design (NID Ahmedabad, NAAC A+), and Delhi University Faculty of Arts (NAAC A++).`;
+  }
+
+  // Calculate time-boxed daily habit breakdown
+  const listenMins = Math.max(3, Math.round(dailyMins * 0.25));
+  const speakMins = Math.max(4, Math.round(dailyMins * 0.35));
+  const writeMins = Math.max(3, Math.round(dailyMins * 0.25));
+  const reflectMins = Math.max(2, dailyMins - listenMins - speakMins - writeMins);
+
+  return {
+    career: title,
+    class_grade: cls,
+    daily_minutes: dailyMins,
+    headline: `${title} Strategic Blueprint (${cls})`,
+    why_english: superpower,
+    milestones: [
+      {
+        step: 1,
+        title: `Current Milestone (${cls})`,
+        detail: m1Detail
+      },
+      {
+        step: 2,
+        title: "Target Entrance Examinations",
+        detail: `Prepare competitive entrance tests early: ${exams}. Focus on reading speed, reasoning accuracy, and domain terminology.`
+      },
+      {
+        step: 3,
+        title: "Premier Accredited Colleges (NAAC / NIRF)",
+        detail: `Target premier institutes with NAAC Grade 'A+' / 'A++' and top NIRF rankings: ${colleges}`
+      }
+    ],
+    daily_routine: [
+      {
+        phase: "Listen & Absorb",
+        mins: listenMins,
+        action: `Listen to a curated 10-minute masterclass podcast, technical case study, or speech in ${cat} to absorb native phrasing and professional diction.`
+      },
+      {
+        phase: "Speak & Articulate",
+        mins: speakMins,
+        action: `Practice speaking aloud for ${speakMins} minutes explaining a key concept in ${title.toLowerCase()} without filler words, focusing on crisp cadence and vocal projection.`
+      },
+      {
+        phase: "Write & Synthesize",
+        mins: writeMins,
+        action: `Write a concise 50-word synthesis of an insight, case study, or news article relevant to ${title.toLowerCase()} using three advanced vocabulary words.`
+      },
+      {
+        phase: "Reflect & Track",
+        mins: reflectMins,
+        action: `Log your daily streak, note one hesitation to eliminate tomorrow, and review your vocabulary flashcard deck.`
+      }
+    ]
+  };
+}
+
 function renderMyPlan(mount) {
+  if (!mount) return;
+
+  // Build options for all 32+ careers
+  const careerOptions = CAREERS_DATA.map(c => 
+    `<option value="${escapeHtml(c.title)}">${c.icon || '🎯'} ${escapeHtml(c.title)} (${escapeHtml(c.cat)})</option>`
+  ).join('');
+
   mount.innerHTML = `
     <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🗺️ "My Plan" Personalized Career Roadmap</h3>
-      <p style="font-size:13.5px;color:var(--text-dim);">Select your current class and target career to generate a customized chronological milestone roadmap.</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h3 style="font-size:20px;font-weight:800;margin:0 0 4px 0;">🗺️ "My Plan" Personalized AI Career Roadmap</h3>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">Select your class, target career, and daily time to generate a bespoke chronological milestone blueprint powered by Google Gemini AI.</p>
+        </div>
+        <span class="badge-pill" style="background:rgba(0,240,255,0.08);border:1px solid var(--border-strong);color:var(--accent-cyan);font-weight:700;">
+          ⚡ 32 Pathways Available
+        </span>
+      </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:16px;">
-      <div>
-        <label style="font-size:13px;font-weight:600;">Your Current Class:</label>
-        <select id="plan-class-select">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:18px;">
+      <div class="form-group">
+        <label for="plan-class-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Your Current Class / Grade:</label>
+        <select id="plan-class-select" style="width:100%;">
           <option value="Class 8 & below">Class 8 &amp; below</option>
           <option value="Class 9">Class 9</option>
           <option value="Class 10" selected>Class 10 (ICSE / CBSE)</option>
@@ -3527,73 +3819,230 @@ function renderMyPlan(mount) {
         </select>
       </div>
 
-      <div>
-        <label style="font-size:13px;font-weight:600;">Target Career Track:</label>
-        <select id="plan-career-select">
-          <option value="Commercial Airline Pilot">Commercial Airline Pilot</option>
-          <option value="Chief Pediatric Surgeon">Chief Pediatric Surgeon</option>
-          <option value="Corporate M&A Lawyer">Corporate M&A Lawyer</option>
-          <option value="Principal Software Architect">Principal Software Architect</option>
-          <option value="Broadcast Journalist">Broadcast Journalist</option>
-          <option value="Venture Entrepreneur">Venture Entrepreneur</option>
+      <div class="form-group">
+        <label for="plan-career-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Target Career Track (32 Careers):</label>
+        <select id="plan-career-select" style="width:100%;">
+          ${careerOptions}
         </select>
       </div>
 
-      <div>
-        <label style="font-size:13px;font-weight:600;">Daily Practice Time:</label>
-        <select id="plan-time-select">
-          <option value="15">15 mins / day</option>
-          <option value="30" selected>30 mins / day</option>
-          <option value="45">45 mins / day</option>
+      <div class="form-group">
+        <label for="plan-time-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Daily Practice Commitment:</label>
+        <select id="plan-time-select" style="width:100%;">
+          <option value="15">15 mins / day (Focused Sprint)</option>
+          <option value="30" selected>30 mins / day (Balanced Habit)</option>
+          <option value="45">45 mins / day (Accelerated Mastery)</option>
+          <option value="60">60 mins / day (Deep Immersion)</option>
         </select>
       </div>
     </div>
 
-    <button class="btn btn-primary" id="btn-generate-plan" style="margin-bottom:20px;">Generate Roadmap Blueprint 🚀</button>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
+      <button class="btn btn-primary" id="btn-generate-plan" style="padding:12px 22px;font-size:15px;font-weight:700;">
+        <span>🚀</span> <span>Generate Roadmap Blueprint</span>
+      </button>
+    </div>
+
     <div id="plan-output-container"></div>
   `;
 
-  $('#btn-generate-plan')?.addEventListener('click', () => {
-    const cls = $('#plan-class-select')?.value;
-    const car = $('#plan-career-select')?.value;
-    const time = $('#plan-time-select')?.value;
+  // Function to render blueprint into container
+  function displayBlueprint(blueprint, provider = 'Google Gemini AI') {
     const out = $('#plan-output-container');
+    if (!out) return;
+
+    const careerObj = CAREERS_DATA.find(c => c.title === blueprint.career) || CAREERS_DATA[0];
+    const steps = blueprint.milestones || [];
+    const routine = blueprint.daily_routine || [];
+
+    const routineHtml = routine.map((r, idx) => `
+      <div style="background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(r.phase)}</strong>
+          <span class="badge-pill" style="background:rgba(0,240,255,0.1);color:var(--accent-cyan);font-weight:700;font-size:11.5px;">
+            ⏱️ ${r.mins} Mins
+          </span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin:0;line-height:1.45;">${escapeHtml(r.action)}</p>
+      </div>
+    `).join('');
+
+    const milestonesHtml = steps.map((m, idx) => {
+      const colors = ['var(--accent-brand)', 'var(--accent-magenta)', 'var(--accent-emerald)', 'var(--accent-cyan)'];
+      const bg = colors[idx % colors.length];
+      return `
+        <div style="display:flex;gap:14px;align-items:flex-start;">
+          <div style="width:32px;height:32px;border-radius:50%;background:${bg};color:#000;display:grid;place-items:center;font-weight:800;font-size:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.25);">
+            ${idx + 1}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:800;font-size:15px;color:var(--text-main);margin-bottom:4px;">
+              ${escapeHtml(m.title)}
+            </div>
+            <div style="font-size:13.5px;color:var(--text-muted);line-height:1.55;">
+              ${escapeHtml(m.detail)}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
 
     out.innerHTML = `
-      <div style="background:var(--bg-subtle);border:1px solid var(--border-strong);border-radius:var(--radius-lg);padding:22px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:14px;">
+      <div class="card" style="padding:24px;border:1.5px solid var(--border-strong);box-shadow:0 8px 30px rgba(0,0,0,0.35);">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:18px;">
           <div>
-            <span class="badge-pill badge-nirf">${escapeHtml(cls)} Roadmap</span>
-            <h3 style="font-size:22px;color:var(--accent-cyan);margin-top:4px;">${escapeHtml(car)} Pathway</h3>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+              <span class="badge-pill badge-nirf">${escapeHtml(blueprint.class_grade)} Roadmap</span>
+              <span class="badge-pill" style="background:var(--surface-raised);border:1px solid var(--border);color:var(--text-muted);font-weight:600;">
+                ⭐ ${escapeHtml(careerObj.cat || 'Career Path')}
+              </span>
+              <span class="badge-pill" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.4);color:var(--accent-emerald);font-weight:700;">
+                ⏱️ ${blueprint.daily_minutes} Mins Daily Habit
+              </span>
+            </div>
+            <h3 style="font-size:24px;font-weight:800;color:var(--accent-cyan);margin:0;">
+              ${careerObj.icon || '🎯'} ${escapeHtml(blueprint.career)} Pathway
+            </h3>
           </div>
-          <span style="font-family:var(--font-mono);font-size:13px;color:var(--accent-emerald);">⏱️ ${time} Mins Daily Habit</span>
+          <span class="badge-pill" style="background:rgba(0,240,255,0.1);border:1px solid var(--accent-cyan);color:var(--accent-cyan);font-weight:700;font-size:11.5px;">
+            ${provider.includes('Gemini') ? '🤖 Gemini AI Generated' : '⚡ Precision Engine'}
+          </span>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-brand);color:#000;display:grid;place-items:center;font-weight:800;flex-shrink:0;">1</div>
-            <div>
-              <strong>Current Milestone (${cls}):</strong> Focus on board exam reading comprehension and public speaking clubs (MUN / Debate).
-            </div>
+        <!-- Why English Superpower -->
+        <div style="background:rgba(0,240,255,0.06);border-left:3.5px solid var(--accent-brand);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:20px;">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--accent-brand);margin-bottom:4px;">
+            ⚡ Why English is Your Decisive Superpower in this Field:
           </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-magenta);color:#fff;display:grid;place-items:center;font-weight:800;flex-shrink:0;">2</div>
-            <div>
-              <strong>Target Entrance Exams:</strong> Prepare competitive tests early (CUET, CLAT, NEET, or DGCA ICAO).
-            </div>
+          <p style="font-size:13.5px;color:var(--text-main);margin:0;line-height:1.5;">
+            ${escapeHtml(blueprint.why_english || careerObj.englishSuperpower || '')}
+          </p>
+        </div>
+
+        <!-- Chronological Milestones -->
+        <div style="margin-bottom:22px;">
+          <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin:0 0 14px 0;display:flex;align-items:center;gap:6px;">
+            <span>📍</span> <span>Chronological Roadmap Milestones</span>
+          </h4>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            ${milestonesHtml}
           </div>
-          <div style="display:flex;gap:12px;align-items:flex-start;">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-emerald);color:#000;display:grid;place-items:center;font-weight:800;flex-shrink:0;">3</div>
-            <div>
-              <strong>Accredited College Selection:</strong> Target institutes with NAAC Grade 'A+' / 'A++' and high NIRF placement rankings.
-            </div>
+        </div>
+
+        <!-- Daily Habit Breakdown -->
+        <div style="border-top:1px solid var(--border);padding-top:18px;margin-bottom:20px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin:0;display:flex;align-items:center;gap:6px;">
+              <span>⏱️</span> <span>Personalized Daily Practice Habit (${blueprint.daily_minutes} Mins)</span>
+            </h4>
+            <span style="font-size:12px;color:var(--text-muted);">Calculated for steady compounding fluency</span>
           </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
+            ${routineHtml}
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);">
+          <button class="btn btn-secondary btn-sm" id="btn-copy-blueprint" type="button">
+            <span>📋</span> <span>Copy Roadmap Blueprint</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" id="btn-print-blueprint" type="button" onclick="window.print()">
+            <span>🖨️</span> <span>Print / Save as PDF</span>
+          </button>
         </div>
       </div>
     `;
+
+    // Hook up copy blueprint
+    $('#btn-copy-blueprint')?.addEventListener('click', () => {
+      let copyText = `# ${blueprint.career} Pathway Blueprint (${blueprint.class_grade})
+`;
+      copyText += `Daily Commitment: ${blueprint.daily_minutes} Mins/day
+`;
+      copyText += `Why English Matters: ${blueprint.why_english}
+
+`;
+      copyText += `## Milestones:
+`;
+      steps.forEach((s, idx) => {
+        copyText += `${idx + 1}. ${s.title}: ${s.detail}
+`;
+      });
+      copyText += `
+## Daily Practice Routine (${blueprint.daily_minutes} Mins):
+`;
+      routine.forEach(r => {
+        copyText += `- ${r.phase} (${r.mins} mins): ${r.action}
+`;
+      });
+      navigator.clipboard.writeText(copyText).then(() => {
+        showToast('Roadmap blueprint copied to clipboard!');
+      }).catch(() => {
+        showToast('Copied roadmap blueprint text!');
+      });
+    });
+
+    out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Handle Generate Roadmap Button Click
+  $('#btn-generate-plan')?.addEventListener('click', async () => {
+    const cls = $('#plan-class-select')?.value || 'Class 10';
+    const car = $('#plan-career-select')?.value || 'Commercial Airline Pilot';
+    const time = parseInt($('#plan-time-select')?.value || '30', 10);
+    const out = $('#plan-output-container');
+    if (!out) return;
+
+    const careerObj = CAREERS_DATA.find(c => c.title === car) || CAREERS_DATA[0];
+
+    // Show dynamic AI Loading state
+    out.innerHTML = `
+      <div class="card" style="padding:32px 20px;text-align:center;background:var(--bg-subtle);border:1.5px dashed var(--accent-cyan);border-radius:var(--radius-lg);">
+        <div style="font-size:38px;animation:pulseGreeting 1.4s infinite alternate;display:inline-block;margin-bottom:8px;">⚡</div>
+        <h4 style="font-size:18px;font-weight:800;color:var(--text-main);margin:0 0 6px 0;">Synthesizing AI Roadmap Blueprint...</h4>
+        <p style="font-size:13.5px;color:var(--text-muted);margin:0 auto;max-width:460px;line-height:1.5;">
+          Personalizing milestones for <strong>${escapeHtml(car)}</strong> (${escapeHtml(cls)}, ${time}m daily commitment) using Google Gemini AI...
+        </p>
+      </div>
+    `;
+
+    let blueprint = null;
+    let provider = 'Google Gemini AI';
+
+    try {
+      const res = await fetchApi('ai', {
+        method: 'POST',
+        body: JSON.stringify({
+          task: 'generate-roadmap',
+          career: car,
+          class_grade: cls,
+          daily_minutes: time,
+          career_data: {
+            cat: careerObj.cat,
+            degrees: careerObj.degrees,
+            exams: careerObj.exams,
+            englishSuperpower: careerObj.englishSuperpower
+          }
+        })
+      });
+
+      if (res?.ok && res?.blueprint) {
+        blueprint = res.blueprint;
+        provider = res.provider || 'Google Gemini AI';
+      }
+    } catch (e) {}
+
+    // Fallback if AI is offline or key missing
+    if (!blueprint) {
+      blueprint = generateOfflineRoadmap(careerObj, cls, time);
+      provider = 'On-Device Heuristic Engine';
+    }
+
+    displayBlueprint(blueprint, provider);
   });
 }
-
 // TOOL 2: 5-Question Career Curiosity Quiz
 function renderCareerQuiz(mount) {
   const QUESTIONS = [
@@ -4088,10 +4537,10 @@ function initAdminWorkspace() {
     `).join('');
   }
 
-  // Load existing AI Keys
+  // Load existing AI Keys Pool
   const geminiInput = $('#admin-gemini-key');
-  if (geminiInput && STATE.config.gemini_key) {
-    geminiInput.value = STATE.config.gemini_key;
+  if (geminiInput) {
+    geminiInput.value = localStorage.getItem('cf_gemini_keys') || STATE.config.gemini_keys || STATE.config.gemini_key || '';
   }
   const elevenInput = $('#admin-eleven-key');
   if (elevenInput) {
@@ -4102,9 +4551,9 @@ function initAdminWorkspace() {
     elevenVoiceInput.value = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
   }
 
-  // Save AI Credentials
+  // Save AI Credentials & Backup Keys Pool
   $('#btn-save-ai')?.addEventListener('click', async () => {
-    const geminiKey = ($('#admin-gemini-key')?.value || '').trim();
+    const geminiKeys = ($('#admin-gemini-key')?.value || '').trim();
     const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
     const elevenVoice = ($('#admin-eleven-voice')?.value || '').trim();
     if (elevenKey) {
@@ -4115,10 +4564,11 @@ function initAdminWorkspace() {
       localStorage.setItem('cf_eleven_voice', elevenVoice);
       STATE.config.eleven_voice = elevenVoice;
     }
-    if (geminiKey) {
-      STATE.config.gemini_key = geminiKey;
+    if (geminiKeys) {
+      STATE.config.gemini_keys = geminiKeys;
+      localStorage.setItem('cf_gemini_keys', geminiKeys);
     }
-    await fetchApi('admin/config', 'PUT', { gemini_key: geminiKey, eleven_key: elevenKey, eleven_voice: elevenVoice });
+    await fetchApi('admin/config', 'PUT', { gemini_keys: geminiKeys, gemini_key: geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '', eleven_key: elevenKey, eleven_voice: elevenVoice });
     showToast('AI & Indian Voice Credentials saved successfully');
   });
 

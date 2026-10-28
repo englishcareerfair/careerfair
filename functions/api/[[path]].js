@@ -198,7 +198,8 @@ export async function onRequest(ctx) {
     const stream_title = await kvGet(db, 'stream_title', 'English Careers Forum 2026 — Live Stage Broadcast');
     const stream_active = (await kvGet(db, 'stream_active', '1')) === '1';
 
-    return json({ pass, banner, timer, theme, school_branding, school_name, flags, packs, stream_url, stream_title, stream_active });
+    const gemini_keys = await kvGet(db, 'gemini_keys', '');
+    return json({ pass, banner, timer, theme, school_branding, school_name, flags, packs, stream_url, stream_title, stream_active, gemini_keys });
   }
 
   // ── 2. PUT /admin/config ───────────────────────────────────────────────────
@@ -217,6 +218,7 @@ export async function onRequest(ctx) {
     if (body.stream_url !== undefined) await kvSet(db, 'stream_url', body.stream_url);
     if (body.stream_title !== undefined) await kvSet(db, 'stream_title', body.stream_title);
     if (body.stream_active !== undefined) await kvSet(db, 'stream_active', body.stream_active ? '1' : '0');
+    if (body.gemini_keys !== undefined) await kvSet(db, 'gemini_keys', String(body.gemini_keys));
 
     for (const p of ['Everyday', 'Journalism', 'Law', 'Academic']) {
       if (body[`pack_${p}`] !== undefined) {
@@ -515,19 +517,188 @@ export async function onRequest(ctx) {
     return json({ results: [], total: 0, page: 1 });
   }
 
-  // ── 8. POST /ai (Multi-Provider AI Router) ──────────────────────────────────
+  // ── 8. POST /ai (Multi-Provider AI Router with Backup Key Failover Pool) ──────
+  // Set to track keys that have hit 429 quota exhaustion or 403 invalid.
+  // Keys in this set are discarded and bypassed for backup keys.
+  const EXHAUSTED_GEMINI_KEYS = new Set();
+
+  async function getGeminiKeyPool(env, body = {}, request = null, db = null) {
+    const rawSources = [];
+
+    // 1. Client header or body (passed from frontend Admin settings)
+    const headerKeys = request?.headers?.get('x-gemini-keys') || request?.headers?.get('x-gemini-key');
+    if (headerKeys) rawSources.push(headerKeys);
+    if (body.keys && Array.isArray(body.keys)) rawSources.push(body.keys.join(','));
+    if (body.geminiKeys) rawSources.push(Array.isArray(body.geminiKeys) ? body.geminiKeys.join(',') : String(body.geminiKeys));
+    if (body.geminiKey) rawSources.push(String(body.geminiKey));
+
+    // 2. D1 Database stored config if available
+    if (db) {
+      try {
+        const stored = await kvGet(db, 'gemini_keys', '');
+        if (stored) rawSources.push(stored);
+      } catch {}
+    }
+
+    // 3. Cloudflare environment variables
+    if (env?.GEMINI_API_KEYS) rawSources.push(env.GEMINI_API_KEYS);
+    if (env?.GEMINI_API_KEY) rawSources.push(env.GEMINI_API_KEY);
+
+    const pool = [];
+    for (const src of rawSources) {
+      const parts = String(src).split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean);
+      for (const p of parts) {
+        if (p.length > 10 && !pool.includes(p)) {
+          pool.push(p);
+        }
+      }
+    }
+
+    // Filter out discarded/exhausted keys, but if all are exhausted, allow retry
+    const active = pool.filter(k => !EXHAUSTED_GEMINI_KEYS.has(k));
+    return active.length > 0 ? active : pool;
+  }
+
+  async function callGeminiWithFailover(keysPool, contents, generationConfig = {}) {
+    if (!keysPool || keysPool.length === 0) {
+      return { ok: false, error: 'No Gemini keys configured.' };
+    }
+
+    const errors = [];
+    for (let i = 0; i < keysPool.length; i++) {
+      const key = keysPool[i];
+      try {
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents,
+            generationConfig: Object.assign({ maxOutputTokens: 600, temperature: 0.7 }, generationConfig)
+          })
+        });
+
+        if (geminiRes.ok) {
+          const geminiData = await geminiRes.json();
+          const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            return {
+              ok: true,
+              text,
+              usedKeyIndex: i + 1,
+              totalKeys: keysPool.length,
+              provider: keysPool.length > 1 ? `Google Gemini AI (Key ${i + 1}/${keysPool.length})` : 'Google Gemini AI'
+            };
+          }
+        }
+
+        const errText = await geminiRes.text().catch(() => '');
+        // Check if quota exhausted or rate limited
+        if (geminiRes.status === 429 || geminiRes.status === 403 || errText.includes('RESOURCE_EXHAUSTED') || errText.includes('quota') || errText.includes('API_KEY_INVALID')) {
+          EXHAUSTED_GEMINI_KEYS.add(key);
+          errors.push(`Key #${i + 1} exhausted (${geminiRes.status}). Discarded.`);
+          continue; // Switch to next backup key!
+        } else {
+          errors.push(`Key #${i + 1} error (${geminiRes.status}): ${errText.slice(0, 100)}`);
+          continue;
+        }
+      } catch (e) {
+        errors.push(`Key #${i + 1} network exception: ${e.message}`);
+        continue;
+      }
+    }
+
+    return { ok: false, error: errors.join('; ') };
+  }
+
   if (path === '/ai' && method === 'POST') {
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
     const { task = 'speech-coaching', prompt = '', text = '', metrics = {} } = body;
 
-    // Check Gemini API key pool
-    const geminiKey = (env.GEMINI_API_KEY || '').trim();
+    // Retrieve active keys pool with automatic failover support
+    const keysPool = await getGeminiKeyPool(env, body, request, db);
 
-    // 8a. Dynamic Sentence Generation
+    // 8a. Dynamic Roadmap Blueprint Generation
+    if (task === 'generate-roadmap') {
+      const career = String(body.career || 'Commercial Airline Pilot').slice(0, 80);
+      const classGrade = String(body.class_grade || 'Class 10').slice(0, 40);
+      const dailyMinutes = parseInt(body.daily_minutes || '30', 10);
+      const careerData = body.career_data || {};
+
+      if (keysPool.length > 0) {
+        try {
+          const roadmapPrompt = `You are the Lead Career Strategist and Academic Counselor at the English Careers Forum 2026.
+Generate a comprehensive, deeply personalized, chronological career roadmap blueprint for an ambitious school student.
+
+Student Profile:
+- Target Career: ${career}
+- Current Class: ${classGrade}
+- Daily English Practice Commitment: ${dailyMinutes} minutes/day
+${careerData.degrees ? `- Typical Degrees: ${careerData.degrees}` : ''}
+${careerData.exams ? `- Typical Exams: ${careerData.exams}` : ''}
+${careerData.englishSuperpower ? `- English in this field: ${careerData.englishSuperpower}` : ''}
+
+Requirements:
+1. Milestone 1 - Current Academic Strategy (${classGrade}): Specific school subjects, board exam (CBSE/ICSE) preparation focus, school societies/clubs (e.g. MUN, Debating, Science club), and practical communication skills needed right now for this grade.
+2. Milestone 2 - Target Entrance Exams: Name the exact national and international competitive entrance exams required for ${career} (e.g. CLAT, NEET, JEE, DGCA CPL exams, UPSC, NID, CUET). Explain when and how to prepare.
+3. Milestone 3 - Top Accredited Colleges: Mention 3 premier Indian universities or global institutes with NAAC 'A+' / 'A++' grade and NIRF ranking reputation for this pathway. Include the specific degree (e.g. B.A. LL.B., B.Sc Aviation, MBBS, B.Tech).
+4. Milestone 4 - Customized ${dailyMinutes}-Minute Daily Routine: Break down their daily ${dailyMinutes} minutes into 4 time-boxed steps:
+   - Listen & Absorb (minutes allocated & what to listen to for this career)
+   - Speak & Articulate (minutes allocated & specific speaking drill)
+   - Write & Synthesize (minutes allocated & writing exercise)
+   - Reflect & Review (minutes allocated & tracking habit)
+
+Return a strict JSON object with this exact structure:
+{
+  "career": "${career}",
+  "class_grade": "${classGrade}",
+  "daily_minutes": ${dailyMinutes},
+  "headline": "Inspiring 1-line blueprint title",
+  "why_english": "2 sentences explaining why English fluency is the decisive competitive edge in this specific career.",
+  "milestones": [
+    {
+      "step": 1,
+      "title": "Current Academic Strategy (${classGrade})",
+      "detail": "Actionable, specific advice for this grade."
+    },
+    {
+      "step": 2,
+      "title": "Target Entrance Examinations",
+      "detail": "Specific entrance exams (CLAT, DGCA, NEET, etc.) with timeline."
+    },
+    {
+      "step": 3,
+      "title": "Premier Accredited Colleges (NAAC / NIRF)",
+      "detail": "Exact top institutions and degrees."
+    }
+  ],
+  "daily_routine": [
+    { "phase": "Listen & Absorb", "mins": ${Math.round(dailyMinutes * 0.25)}, "action": "Specific listening practice related to ${career}" },
+    { "phase": "Speak & Articulate", "mins": ${Math.round(dailyMinutes * 0.35)}, "action": "Specific speaking drill related to ${career}" },
+    { "phase": "Write & Synthesize", "mins": ${Math.round(dailyMinutes * 0.25)}, "action": "Specific writing exercise related to ${career}" },
+    { "phase": "Reflect & Track", "mins": ${Math.max(2, dailyMinutes - Math.round(dailyMinutes * 0.25) - Math.round(dailyMinutes * 0.35) - Math.round(dailyMinutes * 0.25))}, "action": "Progress check and goal tracking" }
+  ]
+}
+Return ONLY valid JSON without markdown code fences or extra text.`;
+
+          const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: roadmapPrompt }] }], { maxOutputTokens: 1100, temperature: 0.7 });
+          if (aiRes.ok && aiRes.text) {
+            const jsonMatch = aiRes.text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              const blueprint = JSON.parse(jsonMatch[0]);
+              if (blueprint && blueprint.milestones && blueprint.milestones.length >= 3) {
+                return json({ ok: true, blueprint, provider: aiRes.provider });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 8b. Dynamic Sentence Generation
     if (task === 'generate-sentence') {
       const pack = body.pack || 'Everyday';
-      if (geminiKey) {
+      if (keysPool.length > 0) {
         try {
           const sentencePrompt = `You are an expert English speech and phonetics coach at the English Careers Forum 2026.
 Generate exactly ONE distinct, articulate, grammatically flawless practice sentence in English for a high school student to read aloud for speech evaluation.
@@ -537,30 +708,21 @@ Requirements:
 - Natural cadence, engaging subject matter, completely free of grammar or punctuation errors.
 - Return ONLY the raw sentence text without quotes, markdown, or commentary.`;
 
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: sentencePrompt }] }],
-              generationConfig: { maxOutputTokens: 80, temperature: 0.95 }
-            })
-          });
-
-          if (geminiRes.ok) {
-            const geminiData = await geminiRes.json();
-            const generated = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim()?.replace(/^["']|["']$/g, '');
+          const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: sentencePrompt }] }], { maxOutputTokens: 80, temperature: 0.95 });
+          if (aiRes.ok && aiRes.text) {
+            const generated = aiRes.text.trim().replace(/^[\"\']|[\"\']$/g, '');
             if (generated && generated.length > 20) {
-              return json({ sentence: generated, provider: 'Google Gemini AI' });
+              return json({ sentence: generated, provider: aiRes.provider });
             }
           }
         } catch (e) {}
       }
     }
 
-    // 8b. Dynamic Flashcard Word Generation
+    // 8c. Dynamic Flashcard Word Generation
     if (task === 'generate-flashcard') {
       const avoidWords = Array.isArray(body.avoid) ? body.avoid.slice(-30).join(', ') : '';
-      if (geminiKey) {
+      if (keysPool.length > 0) {
         try {
           const vocabPrompt = `You are an expert English vocabulary & lexicography coach at the English Careers Forum 2026.
 Generate exactly ONE distinct, sophisticated English vocabulary word (such as found in GRE/SAT, professional law, journalism, medicine, or aviation).
@@ -576,23 +738,13 @@ Return a strict JSON object with this exact structure:
 }
 Return ONLY valid raw JSON without markdown code fences or extra text.`;
 
-          const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: vocabPrompt }] }],
-              generationConfig: { maxOutputTokens: 160, temperature: 0.95 }
-            })
-          });
-
-          if (geminiRes.ok) {
-            const geminiData = await geminiRes.json();
-            const textRaw = geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-            const jsonMatch = textRaw.match(/\{[\s\S]*\}/);
+          const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: vocabPrompt }] }], { maxOutputTokens: 180, temperature: 0.95 });
+          if (aiRes.ok && aiRes.text) {
+            const jsonMatch = aiRes.text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
               const cardData = JSON.parse(jsonMatch[0]);
               if (cardData.word && cardData.meaning) {
-                return json({ card: cardData, provider: 'Google Gemini AI' });
+                return json({ card: cardData, provider: aiRes.provider });
               }
             }
           }
@@ -600,32 +752,19 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
       }
     }
 
-    if (geminiKey) {
+    // 8d. General & Speech Coaching with Failover
+    if (keysPool.length > 0) {
       try {
         const fullPrompt = `You are the lead AI Career & English Communication Coach at the English Careers Forum 2026 for Kanakia International School students.
 Task: ${task}
 Input text/metrics: ${text} | ${JSON.stringify(metrics)}
 Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance. Highlight strengths, offer one "Say It Better" rewrite, and give 2 clear action points.'}`;
 
-        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: fullPrompt }] }],
-            generationConfig: { maxOutputTokens: 500, temperature: 0.7 }
-          })
-        });
-
-        if (geminiRes.ok) {
-          const geminiData = await geminiRes.json();
-          const generated = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (generated) {
-            return json({ text: generated, provider: 'Google Gemini AI' });
-          }
+        const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: fullPrompt }] }], { maxOutputTokens: 500, temperature: 0.7 });
+        if (aiRes.ok && aiRes.text) {
+          return json({ text: aiRes.text, provider: aiRes.provider });
         }
-      } catch (e) {
-        // Fall back to rule-based heuristic
-      }
+      } catch (e) {}
     }
 
     // High-quality deterministic fallback response
