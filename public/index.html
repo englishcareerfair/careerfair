@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=5.2">
+  <link rel="stylesheet" href="styles.css?v=5.3">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=5.2" defer></script>
+  <script src="app.js?v=5.3" defer></script>
 </head>
 <body>
 
@@ -82,7 +82,6 @@
         <button class="tab-btn" data-tab="speak" data-flag="speechLab"><span>🗣️</span> Speak &amp; Pronunciation <span class="tab-badge">Studio</span></button>
         <button class="tab-btn" data-tab="speechLab" data-flag="speechLab"><span>🎙️</span> AI Speech Lab <span class="tab-badge">6D Coach</span></button>
         <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
-        <button class="tab-btn" data-tab="debate" data-flag="debate"><span>⚖️</span> Boardroom Debate &amp; Roleplay</button>
         <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">Jobtris/Wordle</span></button>
         <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
         <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
@@ -605,72 +604,6 @@
       </div>
     </section>
 
-    <!-- ── SECTION: BOARDROOM DEBATE & MAYDAY ROLEPLAY ── -->
-    <section class="section-shell" id="sec-debate" hidden>
-      <div class="section-head">
-        <div>
-          <div class="section-label">TURN-BASED STAGE &amp; HIGH-STRESS DIALOGUE</div>
-          <h2 class="section-title">Boardroom Debate &amp; Mayday Roleplay</h2>
-        </div>
-        <p class="section-desc">
-          Two speakers, one device. Debate compelling motions with a live 60-second countdown and comparative scorecards, or tackle high-pressure Mayday emergency roleplays.
-        </p>
-      </div>
-
-      <!-- Debate Motion Selector -->
-      <div class="card" style="margin-bottom:20px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-          <div>
-            <span class="badge-pill badge-reg">CURRENT DEBATE MOTION</span>
-            <h3 style="font-size:18px;margin-top:6px;" id="debate-motion-title">
-              "AI will enhance, rather than replace, human journalists and authors."
-            </h3>
-          </div>
-          <button class="btn btn-secondary btn-sm" id="btn-next-motion" type="button">
-            <span>🔄</span> <span>Next Motion</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Two Speakers Stage -->
-      <div class="debate-stage">
-        <!-- Speaker 1: Proposition -->
-        <div class="debate-speaker-pod pod-active" id="pod-speaker-1">
-          <span class="debate-turn-badge badge-prop">SPEAKER 1 · PROPOSITION</span>
-          <h4 style="font-size:18px;margin-bottom:6px;">In Favor of the Motion</h4>
-          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Deliver 3 distinct arguments highlighting innovation, ethics, and human creativity.</p>
-          
-          <div style="font-family:var(--font-mono);font-size:24px;color:var(--accent-cyan);margin-bottom:12px;" id="speaker-1-timer">60s</div>
-          
-          <button class="btn btn-primary btn-sm" id="btn-record-spk1" type="button">
-            <span>🎙️</span> <span>Speak Turn (60s)</span>
-          </button>
-          
-          <div id="spk1-feedback" style="margin-top:12px;font-size:13px;display:none;"></div>
-        </div>
-
-        <!-- Speaker 2: Opposition -->
-        <div class="debate-speaker-pod" id="pod-speaker-2">
-          <span class="debate-turn-badge badge-opp">SPEAKER 2 · OPPOSITION</span>
-          <h4 style="font-size:18px;margin-bottom:6px;">Against the Motion</h4>
-          <p style="font-size:13.5px;color:var(--text-muted);margin-bottom:14px;">Rebut Proposition claims with empirical counterexamples and cautionary evidence.</p>
-          
-          <div style="font-family:var(--font-mono);font-size:24px;color:var(--accent-magenta);margin-bottom:12px;" id="speaker-2-timer">60s</div>
-          
-          <button class="btn btn-secondary btn-sm" id="btn-record-spk2" type="button">
-            <span>🎙️</span> <span>Speak Turn (60s)</span>
-          </button>
-          
-          <div id="spk2-feedback" style="margin-top:12px;font-size:13px;display:none;"></div>
-        </div>
-      </div>
-
-      <!-- Mayday High-Stress Scenarios Selector -->
-      <div style="margin-top:36px;">
-        <h3 style="font-size:20px;margin-bottom:12px;">Mayday Scenarios · High-Stress Workplace Roleplay</h3>
-        <div class="cards-grid" id="mayday-scenarios-container"></div>
-      </div>
-    </section>
 
     <!-- ── SECTION: ARCADE GAMES SUITE ── -->
     <section class="section-shell" id="sec-games" hidden>

@@ -1304,7 +1304,6 @@ function switchTab(tabId) {
   if (tabId === 'speak') initSpeakLadder();
   if (tabId === 'speechLab') initSpeechLab();
   if (tabId === 'teleprompter') initTeleprompter();
-  if (tabId === 'debate') initDebate();
   if (tabId === 'games') renderGameArena('jobtris');
   if (tabId === 'roadmap') renderPlanTool('myplan');
   if (tabId === 'leaderboard') loadLeaderboard();
@@ -3238,78 +3237,6 @@ function initTeleprompter() {
       showToast('Recording error: Device permissions or codec unsupported.');
     }
   });
-}
-
-// ─── 8. BOARDROOM DEBATE & MAYDAY ROLEPLAY ────────────────────────────────────
-function initDebate() {
-  const MOTIONS = [
-    '"AI will enhance, rather than replace, human journalists and authors."',
-    '"Spoken English fluency matters more than written exam credentials in the modern workplace."',
-    '"Commercial space travel will generate more career pathways than traditional civil aviation by 2040."',
-    '"Classroom debate should be mandatory for every secondary school curriculum."'
-  ];
-  let motionIdx = 0;
-
-  $('#btn-next-motion')?.addEventListener('click', () => {
-    motionIdx = (motionIdx + 1) % MOTIONS.length;
-    $('#debate-motion-title').textContent = MOTIONS[motionIdx];
-  });
-
-  // Turn recording triggers
-  $('#btn-record-spk1')?.addEventListener('click', () => {
-    runDebateTurn(1);
-  });
-  $('#btn-record-spk2')?.addEventListener('click', () => {
-    runDebateTurn(2);
-  });
-
-  renderMaydayScenarios();
-}
-
-function runDebateTurn(speakerNum) {
-  const timerElem = $(`#speaker-${speakerNum}-timer`);
-  const feedback = $(`#spk${speakerNum}-feedback`);
-  let seconds = 60;
-
-  const interval = setInterval(() => {
-    seconds--;
-    timerElem.textContent = `${seconds}s`;
-    if (seconds <= 0) {
-      clearInterval(interval);
-      timerElem.textContent = 'Turn Complete';
-      feedback.style.display = 'block';
-      feedback.innerHTML = `<span style="color:var(--accent-emerald);">Argument delivered! Fluency: 88/100 · Rhetoric: 92/100.</span>`;
-      // Toggle active pod
-      $('#pod-speaker-1').classList.toggle('pod-active', speakerNum === 2);
-      $('#pod-speaker-2').classList.toggle('pod-active', speakerNum === 1);
-    }
-  }, 1000);
-}
-
-function renderMaydayScenarios() {
-  const container = $('#mayday-scenarios-container');
-  if (!container) return;
-
-  const SCENARIOS = [
-    { title: "Airline ATC Emergency Call", role: "Commercial Pilot", prompt: "Mayday call: Engine number two flameout over the Arabian Sea. Request immediate diversion vectors." },
-    { title: "ER Trauma Triage Consultation", role: "Chief Surgeon", prompt: "Explain a high-risk immediate surgical intervention calmly to anxious parents under 45 seconds." },
-    { title: "Production Database Outage", role: "Software Architect", prompt: "Brief the executive board on a critical customer data pipeline failure without using technical obfuscation." },
-    { title: "Diplomatic Trade Disagreement", role: "Civil Servant / IFS", prompt: "De-escalate a contentious tariff bilateral negotiation with dignified diplomatic composure." }
-  ];
-
-  container.innerHTML = SCENARIOS.map(s => `
-    <article class="card">
-      <div class="card-header">
-        <div class="card-icon">🚨</div>
-        <div>
-          <h4 class="card-title">${escapeHtml(s.title)}</h4>
-          <span class="badge-pill badge-global">${escapeHtml(s.role)}</span>
-        </div>
-      </div>
-      <p class="card-body">"${escapeHtml(s.prompt)}"</p>
-      <button class="btn btn-secondary btn-sm" onclick="speak('${escapeHtml(s.prompt)}', this)">🔊 Hear Scenario Briefing</button>
-    </article>
-  `).join('');
 }
 
 // ─── 9. ARCADE GAMES SUITE (JOBTRIS, WORDLE, FLASHCARDS, ETC.) ────────────────
