@@ -1305,7 +1305,7 @@ function switchTab(tabId) {
   if (tabId === 'speechLab') initSpeechLab();
   if (tabId === 'teleprompter') initTeleprompter();
   if (tabId === 'games') renderGameArena('jobtris');
-  if (tabId === 'roadmap') renderPlanTool('myplan');
+  if (tabId === 'roadmap') renderPlanTool('bizcard');
   if (tabId === 'leaderboard') loadLeaderboard();
   if (tabId === 'feedback') loadFeedbackWall();
   if (tabId === 'admin') renderAdminView();
@@ -3815,7 +3815,7 @@ function renderHangman(mount) {
 }
 
 // ─── 10. ROADMAP & EXPLORATION TOOLS (MY PLAN & QUIZ) ─────────────────────────
-function renderPlanTool(toolKey) {
+function renderPlanTool(toolKey = 'bizcard') {
   const mount = $('#plan-tool-arena');
   if (!mount) return;
 
