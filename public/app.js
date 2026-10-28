@@ -372,7 +372,7 @@ const CAREERS_DATA = [
     salary: "₹8L – ₹40L+/yr",
     degrees: "BA Mass Media / Advertising & Communication",
     exams: "MICAT, Creative Portfolio",
-    englishSuperpower: "Compressing a transformative commercial idea into three memorable words (e.g. 'Just Do It', 'Think Different')."
+    englishSuperpower: "Compressing a transformative commercial idea into concise, memorable phrasing that defines culture and markets."
   },
   {
     title: "International Public Relations Strategist",
@@ -1940,12 +1940,12 @@ function renderJobtris(mount) {
 
       <div>
         <h4 style="font-size:15px;margin-bottom:8px;">Target Clue:</h4>
-        <input type="text" id="jobtris-input" placeholder="Type related skill (e.g. cockpit, altitude, navigation)..." autofocus>
+        <input type="text" id="jobtris-input" placeholder="Type related skill or term..." autofocus>
         <button class="btn btn-primary btn-sm" id="btn-jobtris-submit" style="width:100%;margin-top:8px;">Blast Block 💥</button>
 
         <div style="margin-top:16px;background:var(--bg-subtle);padding:12px;border-radius:var(--radius-md);font-size:13px;">
           <strong style="color:var(--accent-cyan);display:block;margin-bottom:4px;">💡 Pro-tip:</strong>
-          Multipliers scale with domain-specific terms (e.g. "avionics", "aerodynamics", "ICAO").
+          Multipliers scale with domain-specific professional terms.
         </div>
       </div>
     </div>
@@ -2115,7 +2115,7 @@ function renderDictionaryLookup(mount) {
     </div>
 
     <div style="display:flex;gap:10px;margin-bottom:16px;">
-      <input type="text" id="dict-search-input" placeholder="Enter any English word (e.g. eloquence, jurisdiction, resilient)...">
+      <input type="text" id="dict-search-input" placeholder="Enter English word to search...">
       <button class="btn btn-primary" id="btn-dict-search">Lookup Word</button>
     </div>
 

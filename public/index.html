@@ -16,7 +16,7 @@
   
   <link rel="stylesheet" href="styles.css?v=3.3">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=3.3" defer></script>
+  <script src="app.js?v=3.4" defer></script>
 </head>
 <body>
 
@@ -212,7 +212,7 @@
 
       <!-- Filters & Search -->
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-        <input type="search" id="career-search-input" placeholder="Search by career, skill, or keyword (e.g. Pilot, Surgeon, Law, AI)..." style="max-width:400px;">
+        <input type="search" id="career-search-input" placeholder="Search by career, skill, or keyword..." style="max-width:400px;">
         <div class="filter-row" id="career-category-filters" style="margin-bottom:0;">
           <button class="filter-chip active" data-cat="All">All Categories</button>
           <button class="filter-chip" data-cat="Health">Healthcare &amp; Medicine</button>
@@ -767,7 +767,7 @@
 
             <div style="margin-bottom:14px;">
               <label style="font-size:13px;font-weight:600;">What was the most memorable insight or game today?</label>
-              <textarea id="fb-comment" placeholder="Tell us about the career path or speech challenge you enjoyed most..."></textarea>
+              <textarea id="fb-comment" placeholder="Write your feedback..."></textarea>
             </div>
 
             <button class="btn btn-primary" type="submit">
@@ -809,15 +809,12 @@
             Administrator Password
           </label>
           <div class="admin-pwd-wrapper">
-            <input type="password" id="admin-pwd-input" placeholder="Enter password (e.g. careers2026)" required autocomplete="current-password">
+            <input type="password" id="admin-pwd-input" placeholder="Enter password" required autocomplete="current-password">
             <button type="button" class="btn-toggle-pwd" id="btn-toggle-pwd-vis" title="Toggle password visibility" aria-label="Toggle password visibility">👁️</button>
           </div>
           <button class="btn btn-primary" type="submit" style="width:100%;padding:12px;font-size:15px;font-weight:700;justify-content:center;">
             Unlock Control Room 🔓
           </button>
-          <div style="margin-top:12px;text-align:center;font-size:12px;color:var(--text-dim);">
-            Default access passcode: <strong style="color:var(--accent-cyan);font-family:var(--font-mono);">careers2026</strong>
-          </div>
         </form>
       </div>
 
@@ -875,7 +872,7 @@
                 <input
                   type="text"
                   id="admin-stream-url-input"
-                  placeholder="Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)"
+                  placeholder="Paste YouTube stream link or video ID"
                   style="flex:1;min-width:260px;font-family:var(--font-mono);font-size:13px;"
                 >
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-admin-preview-stream">
@@ -895,7 +892,7 @@
               <input
                 type="text"
                 id="admin-stream-title-input"
-                placeholder="e.g. English Careers Forum 2026 — Keynote &amp; Live Stage Broadcast"
+                placeholder="Enter broadcast title or headline"
                 value="English Careers Forum 2026 — Live Stage Broadcast"
               >
             </div>
@@ -959,12 +956,12 @@
         <div id="admin-view-broadcast" class="admin-view-panel" hidden>
           <div style="margin-bottom:16px;">
             <label style="font-size:13px;font-weight:600;">Live Banner Announcement:</label>
-            <input type="text" id="admin-banner-input" placeholder="e.g. Round 2 of Speech Ladder starting in Room 302!">
+            <input type="text" id="admin-banner-input" placeholder="Enter live announcement text">
           </div>
 
           <div style="margin-bottom:16px;">
             <label style="font-size:13px;font-weight:600;">Set Synchronized Exam/Practice Timer (Minutes):</label>
-            <input type="number" id="admin-timer-input" min="0" max="180" placeholder="0 to disable">
+            <input type="number" id="admin-timer-input" min="0" max="180" placeholder="Minutes (0 to disable)">
           </div>
 
           <button class="btn btn-primary btn-sm" id="btn-save-broadcast" type="button">Save Broadcast Changes</button>
@@ -996,12 +993,12 @@
 
           <div style="margin-bottom:14px;">
             <label style="font-size:13px;font-weight:600;">Google Gemini API Key (or comma-separated pool):</label>
-            <input type="password" id="admin-gemini-key" placeholder="AIzaSy...">
+            <input type="password" id="admin-gemini-key" placeholder="Enter Google Gemini API key">
           </div>
 
           <div style="margin-bottom:14px;">
             <label style="font-size:13px;font-weight:600;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
-            <input type="password" id="admin-eleven-key" placeholder="sk_... or xi_...">
+            <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key">
             <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
               Powers studio-grade natural humanoid AI greeting voice (Rachel model). If not configured, platform gracefully runs high-fidelity on-device neural voice.
             </div>
