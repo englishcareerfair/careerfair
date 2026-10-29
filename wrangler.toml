@@ -5,3 +5,9 @@ pages_build_output_dir = "public"
 [vars]
 ADMIN_PASSWORD = "careers2026"
 STT_MODEL = "scribe_v1"
+STREAM_URL = "https://www.youtube.com/watch?v=jfKfPfyJRdk"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "careerfair"
+database_id = "careerfair"

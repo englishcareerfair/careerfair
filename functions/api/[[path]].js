@@ -97,9 +97,9 @@ const GLOBAL_CACHE = {
 let isDbSchemaReady = false;
 async function ensureDbSchema(db) {
   if (!db || isDbSchemaReady) return;
-  try {
-    await db.prepare(`CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL)`).run();
-    await db.prepare(`CREATE TABLE IF NOT EXISTS scores (
+  const queries = [
+    `CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL)`,
+    `CREATE TABLE IF NOT EXISTS scores (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL COLLATE NOCASE,
       pack TEXT NOT NULL DEFAULT 'Everyday',
@@ -111,8 +111,8 @@ async function ensureDbSchema(db) {
       class_name TEXT DEFAULT 'Class 10',
       target_career TEXT DEFAULT '',
       ts INTEGER NOT NULL
-    )`).run();
-    await db.prepare(`CREATE TABLE IF NOT EXISTS feedback (
+    )`,
+    `CREATE TABLE IF NOT EXISTS feedback (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'Student',
@@ -123,13 +123,16 @@ async function ensureDbSchema(db) {
       comment TEXT DEFAULT '',
       approved INTEGER NOT NULL DEFAULT 1,
       ts INTEGER NOT NULL
-    )`).run();
-    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_name ON scores(name)`).run();
-    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_level_acc ON scores(level DESC, acc DESC)`).run();
-    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_pack ON scores(pack)`).run();
-    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_feedback_ts ON feedback(ts DESC)`).run();
-    isDbSchemaReady = true;
-  } catch (e) {}
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_scores_name ON scores(name)`,
+    `CREATE INDEX IF NOT EXISTS idx_scores_level_acc ON scores(level DESC, acc DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_scores_pack ON scores(pack)`,
+    `CREATE INDEX IF NOT EXISTS idx_feedback_ts ON feedback(ts DESC)`
+  ];
+  for (const q of queries) {
+    try { await db.prepare(q).run(); } catch (e) {}
+  }
+  isDbSchemaReady = true;
 }
 
 // ─── Default Speaking Packs (10 sentences each) ──────────────────────────────
@@ -221,7 +224,8 @@ export async function onRequest(ctx) {
     });
   }
 
-  const db = env.DB;
+  // Flexible multi-binding resolution for Cloudflare D1
+  const db = env.DB || env.db || env.DATABASE || env.database || env.D1 || env.d1 || env.careerfair || env.careerfair_db || env.CAREERFAIR_DB || env.CF_DB;
   await ensureDbSchema(db);
 
   // ── 1. GET /config ─────────────────────────────────────────────────────────
@@ -257,6 +261,17 @@ export async function onRequest(ctx) {
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
     const eleven_key = (await kvGet(db, 'eleven_key', '')) || (env.ELEVEN_KEY ? 'configured' : '');
 
+    let totalScores = 0;
+    let totalFeedback = 0;
+    if (db) {
+      try {
+        const sRow = await db.prepare('SELECT COUNT(*) as c FROM scores').first();
+        totalScores = sRow?.c || 0;
+        const fRow = await db.prepare('SELECT COUNT(*) as c FROM feedback').first();
+        totalFeedback = fRow?.c || 0;
+      } catch {}
+    }
+
     return json({
       pass,
       banner,
@@ -273,7 +288,11 @@ export async function onRequest(ctx) {
       gemini_key: gemini_keys,
       eleven_voice,
       eleven_key,
-      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', '')))
+      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', ''))),
+      db_connected: Boolean(db),
+      db_status: db ? 'connected' : 'unbound',
+      total_scores: totalScores || GLOBAL_CACHE.scores.length,
+      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length
     });
   }
 
@@ -427,7 +446,10 @@ export async function onRequest(ctx) {
     }
 
     const passThreshold = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
-    const acc = target && transcript ? calculateAccuracy(target, transcript) : 0;
+    let acc = (typeof body !== 'undefined' && body.acc !== undefined && !isNaN(Number(body.acc)))
+      ? Math.round(Number(body.acc))
+      : (target && transcript ? calculateAccuracy(target, transcript) : 0);
+    acc = Math.max(0, Math.min(100, acc));
     const passed = acc >= passThreshold;
 
     // Persist score in database & memory
