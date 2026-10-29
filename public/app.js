@@ -1366,21 +1366,45 @@ function switchTab(tabId) {
   if (tabId === 'admin') renderAdminView();
 }
 
-function setTheme(themeName) {
+function setTheme(themeName, silent = false) {
   const mode = (themeName === 'dark' || themeName === 'cinematic') ? 'dark' : 'light';
   STATE.theme = mode;
-  document.documentElement.setAttribute('data-theme', mode);
-  localStorage.setItem('cf_theme', mode);
 
-  const metaTheme = $('meta[name="theme-color"]');
-  if (metaTheme) {
-    metaTheme.setAttribute('content', mode === 'dark' ? '#0c0d10' : '#f8fafc');
+  // Trigger slider animation and elastic stretch on switcher container
+  const switcher = $('.theme-switcher');
+  if (switcher) {
+    switcher.setAttribute('data-active-theme', mode);
+    switcher.classList.remove('theme-switching');
+    // Force DOM reflow to re-trigger CSS keyframe animation smoothly
+    void switcher.offsetWidth;
+    switcher.classList.add('theme-switching');
+    setTimeout(() => switcher.classList.remove('theme-switching'), 420);
   }
 
-  $$('.theme-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.themeVal === mode);
-  });
-  showToast(`Switched to ${mode === 'dark' ? 'Dark' : 'Light'} mode`);
+  const applyDomTheme = () => {
+    document.documentElement.setAttribute('data-theme', mode);
+    localStorage.setItem('cf_theme', mode);
+
+    const metaTheme = $('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', mode === 'dark' ? '#0c0d10' : '#f8fafc');
+    }
+
+    $$('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.themeVal === mode);
+    });
+  };
+
+  // Modern View Transition API for smooth screen cross-fade if supported
+  if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.startViewTransition(applyDomTheme);
+  } else {
+    applyDomTheme();
+  }
+
+  if (!silent) {
+    showToast(`Switched to ${mode === 'dark' ? 'Dark' : 'Light'} mode`);
+  }
 }
 
 // ─── 4. SECTION RENDERERS ─────────────────────────────────────────────────────
@@ -3947,41 +3971,56 @@ function launchQuestScribe(mount) {
     turn++;
     if (turnBadge) turnBadge.textContent = `Chapter ${turn} of 6`;
 
-    let userMsg = '';
-    if (!choice) {
-      userMsg = 'You write a dark-fantasy Gothic quest in Victorian prose that any high-school student can read. Return JSON {"story":"80-100 words opening the mystery","choices":["choice 1","choice 2","choice 3"]}. Begin the tale.';
-    } else {
-      userMsg = `The reader chooses: "${choice}". ${turn >= 6 ? 'Bring the tale to a dramatic final conclusion now with choices [].' : 'Continue the tale with 80 words and return JSON {"story":"...","choices":["choice 1","choice 2","choice 3"]}.'}`;
-    }
-
-    let data = null;
     try {
-      data = await callAiQuest(userMsg, true);
-    } catch (e) {
-      data = null;
-    }
+      let userMsg = '';
+      if (!choice) {
+        userMsg = 'You write a dark-fantasy Gothic quest in Victorian prose that any high-school student can read. Return JSON {"story":"80-100 words opening the mystery","choices":["choice 1","choice 2","choice 3"]}. Begin the tale.';
+      } else {
+        userMsg = `The reader chooses: "${choice}". ${turn >= 6 ? 'Bring the tale to a dramatic final conclusion now with choices [].' : 'Continue the tale with 80 words and return JSON {"story":"...","choices":["choice 1","choice 2","choice 3"]}.'}`;
+      }
 
-    // Seamless offline dual-engine fallback if AI is unavailable
-    if (!data || !data.story) {
+      let data = null;
+      try {
+        data = await callAiQuest(userMsg, true);
+      } catch (e) {
+        data = null;
+      }
+
+      // Seamless offline dual-engine fallback if AI is unavailable
+      if (!data || !data.story) {
+        const offlineIndex = Math.min(Math.max(0, turn - 1), SCRIBE_OFFLINE_TALES.length - 1);
+        data = SCRIBE_OFFLINE_TALES[offlineIndex];
+      }
+
+      const storyText = data.story || 'The tale continues into the shadows...';
+      await typeInto(storyBox, storyText);
+
+      choicesBox.innerHTML = '';
+      const choices = (turn >= 6) ? [] : (Array.isArray(data.choices) ? data.choices : []);
+      if (choices.length > 0) {
+        choices.forEach(ch => {
+          const btn = document.createElement('button');
+          btn.className = 'quest-choice-btn';
+          btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
+          btn.onclick = () => step(ch);
+          choicesBox.appendChild(btn);
+        });
+      } else {
+        choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
+      }
+    } catch (err) {
+      console.warn('Scribe quest step safe recovery:', err);
       const offlineIndex = Math.min(Math.max(0, turn - 1), SCRIBE_OFFLINE_TALES.length - 1);
-      data = SCRIBE_OFFLINE_TALES[offlineIndex];
-    }
-
-    const storyText = data.story || 'The tale continues into the shadows...';
-    await typeInto(storyBox, storyText);
-
-    choicesBox.innerHTML = '';
-    const choices = (turn >= 6) ? [] : (Array.isArray(data.choices) ? data.choices : []);
-    if (choices.length > 0) {
-      choices.forEach(ch => {
+      const fallbackData = SCRIBE_OFFLINE_TALES[offlineIndex];
+      storyBox.textContent = fallbackData.story;
+      choicesBox.innerHTML = '';
+      (fallbackData.choices || []).forEach(ch => {
         const btn = document.createElement('button');
         btn.className = 'quest-choice-btn';
         btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
         btn.onclick = () => step(ch);
         choicesBox.appendChild(btn);
       });
-    } else {
-      choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
     }
   };
 
@@ -7927,8 +7966,8 @@ function renderHeroStream() {
 
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  // Apply saved theme (Light or Dark)
-  setTheme(STATE.theme);
+  // Apply saved theme (Light or Dark) silently on boot
+  setTheme(STATE.theme, true);
 
   // Initialize navigation & core handlers
   initNavigation();

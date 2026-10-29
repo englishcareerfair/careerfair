@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=6.5">
+  <link rel="stylesheet" href="styles.css?v=6.7">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=6.5" defer></script>
+  <script src="app.js?v=6.7" defer></script>
 </head>
 <body>
 
@@ -58,10 +58,15 @@
       </div>
       
       <div class="header-actions-row">
-        <!-- Interactive Theme Switcher (Light / Dark) -->
-        <div class="theme-switcher" role="radiogroup" aria-label="Select visual theme">
-          <button class="theme-btn active" data-theme-val="light" title="Light Corporate Mode">☀️ Light</button>
-          <button class="theme-btn" data-theme-val="dark" title="Dark Corporate Mode">🌙 Dark</button>
+        <!-- Interactive Animated Theme Switcher (Light / Dark) -->
+        <div class="theme-switcher" role="radiogroup" aria-label="Select visual theme" data-active-theme="light">
+          <div class="theme-switcher-slider" aria-hidden="true"></div>
+          <button class="theme-btn active" data-theme-val="light" title="Light Corporate Mode" type="button">
+            <span class="theme-btn-icon">☀️</span> <span class="theme-btn-text">Light</span>
+          </button>
+          <button class="theme-btn" data-theme-val="dark" title="Dark Corporate Mode" type="button">
+            <span class="theme-btn-icon">🌙</span> <span class="theme-btn-text">Dark</span>
+          </button>
         </div>
       </div>
     </div>
