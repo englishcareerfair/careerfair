@@ -225,7 +225,7 @@ export async function onRequest(ctx) {
   }
 
   // Flexible multi-binding resolution for Cloudflare D1
-  const db = env.DB || env.db || env.DATABASE || env.database || env.D1 || env.d1 || env.careerfair || env.careerfair_db || env.CAREERFAIR_DB || env.CF_DB;
+  const db = env.DB || env.db || env.DATABASE || env.database || env.D1 || env.d1 || env["careerfair-db"] || env.careerfair || env.careerfair_db || env.CAREERFAIR_DB || env.CF_DB;
   await ensureDbSchema(db);
 
   // ── 1. GET /config ─────────────────────────────────────────────────────────
@@ -1034,10 +1034,12 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
       }
     }
 
-    // 8d. Interactive AI Quest & Literary Tasks
+    // 8d. Interactive AI Quest & Literary Tasks (Multi-Key Gemini + Cloudflare Workers AI Backup)
     if (task === 'quest' || task === 'prompt') {
       const promptText = String(body.prompt || prompt || '').slice(0, 4000);
       const isJson = Boolean(body.json);
+
+      // Primary: Google Gemini with Multi-Key Failover Pool
       if (keysPool.length > 0) {
         const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: promptText }] }], {
           maxOutputTokens: 1000,
@@ -1055,6 +1057,33 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
           return json({ ok: true, text: aiRes.text, reply: parsed, provider: aiRes.provider });
         }
       }
+
+      // Secondary: Cloudflare Workers AI (Llama 3.1)
+      if (env.AI && typeof env.AI.run === 'function') {
+        try {
+          const sysPrompt = isJson
+            ? `${promptText}\n\nIMPORTANT: Return ONLY valid parseable JSON matching the requested schema. No code fences, no extra text.`
+            : promptText;
+          const cfRes = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+            prompt: sysPrompt,
+            max_tokens: 800,
+            temperature: 0.75
+          });
+          if (cfRes && cfRes.response) {
+            let parsed = cfRes.response;
+            if (isJson) {
+              const jsonMatch = cfRes.response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+              if (jsonMatch) {
+                try { parsed = JSON.parse(jsonMatch[0]); } catch {}
+              }
+            }
+            return json({ ok: true, text: cfRes.response, reply: parsed, provider: 'Cloudflare Workers AI (Llama 3.1)' });
+          }
+        } catch (e) {
+          console.warn('Workers AI quest error:', e);
+        }
+      }
+
       return json({ ok: false, error: 'AI quest synthesis unavailable' }, 200);
     }
 
@@ -1199,7 +1228,16 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     });
   }
 
-  // ── 10a. GET & POST /tts/voices (Fetch available ElevenLabs voices & quota status) ───────
+    // ── 10a. GET & POST /tts/voices (Fetch ElevenLabs voices, free-tier compatibility, & quota) ───────
+  const UNIVERSAL_PREMADE_VOICES = [
+    { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George', accent: 'British' },
+    { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie', accent: 'Australian' },
+    { id: 'Xb7hH8MSUJpSbSDYk0k2', name: 'Alice', accent: 'British' },
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', accent: 'American' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', accent: 'American' },
+    { id: 'onwK4e9ZLuTAKqWW03F9', name: 'Daniel', accent: 'British' }
+  ];
+
   if ((path === '/tts/voices' || path === '/tts-voices') && (method === 'GET' || method === 'POST')) {
     let body = {};
     if (method === 'POST') {
@@ -1233,7 +1271,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       const vData = await vRes.json();
       const rawVoices = vData.voices || [];
 
-      // Check subscription quota
+      // Check subscription quota & tier
       let subscription = null;
       try {
         const subRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
@@ -1244,29 +1282,47 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
       } catch {}
 
+      const tier = (subscription?.tier || 'free').toLowerCase();
+      const isFreeTier = tier === 'free';
+
       const voices = rawVoices.map(v => {
         const acc = (v.labels?.accent || '').toLowerCase();
         const desc = (v.description || '').toLowerCase();
         const name = (v.name || '').toLowerCase();
+        const cat = (v.category || 'premade').toLowerCase();
+        const isPremade = cat === 'premade';
         const isIndian = acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || name.includes('deepika') || name.includes('priya') || name.includes('ravi') || name.includes('kabir') || desc.includes('indian');
+        
+        // Free tier restriction indicator:
+        const freeTierReady = isPremade;
+        const requiresPaidPlan = !isPremade;
+
         return {
           id: v.voice_id,
           name: v.name,
           category: v.category || 'premade',
-          isPremade: (v.category === 'premade' || !v.category),
+          isPremade,
+          freeTierReady,
+          requiresPaidPlan,
           accent: v.labels?.accent || (isIndian ? 'Indian' : ''),
-          isIndian: isIndian,
+          isIndian,
           preview_url: v.preview_url || ''
         };
       });
 
       const indianVoice = voices.find(v => v.isIndian) || null;
+      const bestFreeVoice = voices.find(v => v.freeTierReady && (v.name.includes('George') || v.name.includes('Charlie') || v.name.includes('Alice') || v.name.includes('Rachel')))
+        || voices.find(v => v.freeTierReady)
+        || UNIVERSAL_PREMADE_VOICES[0];
 
       return json({
         ok: true,
         total: voices.length,
+        isFreeTier,
+        tier,
         hasIndianVoice: Boolean(indianVoice),
         recommendedIndianVoice: indianVoice,
+        recommendedFreeVoice: bestFreeVoice,
         subscription: subscription ? {
           tier: subscription.tier || 'free',
           character_count: subscription.character_count || 0,
@@ -1284,7 +1340,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     }
   }
 
-  // ── 10. POST /tts (Humanoid Indian Accent Audio Synthesis) ──────────────────────────────
+  // ── 10. POST /tts (Humanoid Indian Accent Audio Synthesis with 402 Auto-Heal) ────────────
   if (path === '/tts' && method === 'POST') {
     let body;
     try { body = await request.json(); } catch { body = {}; }
@@ -1303,9 +1359,11 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     }
 
     try {
-      // 1. Fetch available voices in user\'s account to validate or pick best Indian voice
+      // 1. Fetch available voices in user account
       let accountVoices = [];
       let accountIndianVoice = null;
+      let isFreeUser = true;
+
       try {
         const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
           headers: { 'xi-api-key': elevenKey }
@@ -1328,95 +1386,55 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
       } catch (e) {}
 
-      // 2. Resolve Voice ID:
-      // Priority 1: If requestedVoiceId is in their account, use it.
-      // Priority 2: If user account has an Indian voice, use that!
-      // Priority 3: If requestedVoiceId was provided, test it.
-      // Priority 4: Fall back to first available account voice (Rachel, Adam, etc.) so TTS DOES NOT FAIL.
-      let voiceId = '';
-      let resolvedVoiceName = 'Default';
+      // Check subscription tier
+      try {
+        const subRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
+          headers: { 'xi-api-key': elevenKey }
+        });
+        if (subRes.ok) {
+          const s = await subRes.json();
+          if (s && s.tier && s.tier.toLowerCase() !== 'free') isFreeUser = false;
+        }
+      } catch (e) {}
 
-      if (requestedVoiceId && accountVoices.some(v => v.voice_id === requestedVoiceId)) {
-        voiceId = requestedVoiceId;
-        resolvedVoiceName = accountVoices.find(v => v.voice_id === requestedVoiceId)?.name || 'Custom';
-      } else if (accountIndianVoice) {
-        voiceId = accountIndianVoice.voice_id;
-        resolvedVoiceName = accountIndianVoice.name;
-      } else if (requestedVoiceId) {
-        voiceId = requestedVoiceId;
-        resolvedVoiceName = 'Custom ID';
-      } else if (accountVoices.length > 0) {
-        voiceId = accountVoices[0].voice_id;
-        resolvedVoiceName = accountVoices[0].name;
-      } else {
-        voiceId = 'EtEf6yOMlronn3UoIDrF'; // Ankit
-        resolvedVoiceName = 'Ankit';
+      // 2. Resolve Voice Candidate Pool:
+      // If user is Free Tier and requested a known Library voice (e.g. Aditi / XyEeR27UzfaUps3yGyxO),
+      // we immediately include premade candidates so there is ZERO delay or hard error.
+      const candidateVoiceIds = [];
+      if (requestedVoiceId) candidateVoiceIds.push(requestedVoiceId);
+      if (accountIndianVoice) candidateVoiceIds.push(accountIndianVoice.voice_id);
+      
+      // Add account's premade voices
+      for (const v of accountVoices) {
+        if ((v.category === 'premade' || !v.category) && !candidateVoiceIds.includes(v.voice_id)) {
+          candidateVoiceIds.push(v.voice_id);
+        }
+      }
+      // Add universal guaranteed premade voices
+      for (const uv of UNIVERSAL_PREMADE_VOICES) {
+        if (!candidateVoiceIds.includes(uv.id)) {
+          candidateVoiceIds.push(uv.id);
+        }
       }
 
-      // 3. Multi-tier model attempts
-      const modelAttempts = [
-        {
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-        },
-        {
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-        },
-        {
-          model_id: 'eleven_flash_v2_5',
-          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-        },
-        {
-          voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-        }
-      ];
-
-      let ttsRes = null;
+      // Try synthesis across candidates with failover for 402/400
+      let audioBuffer = null;
+      let activeVoiceName = 'Studio Voice';
+      let activeVoiceId = '';
+      let isHealed = false;
       let lastErrMsg = '';
       let lastStatus = 0;
 
-      for (const config of modelAttempts) {
-        try {
-          ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'xi-api-key': elevenKey
-            },
-            body: JSON.stringify({
-              text: text,
-              ...config
-            })
-          });
-          if (ttsRes && ttsRes.ok) break;
-          if (ttsRes) {
-            lastStatus = ttsRes.status;
-            const errTxt = await ttsRes.text().catch(() => '');
-            try {
-              const parsed = JSON.parse(errTxt);
-              lastErrMsg = parsed.detail?.message || parsed.message || errTxt;
-            } catch {
-              lastErrMsg = errTxt;
-            }
-          }
-        } catch (e) {
-          lastErrMsg = e.message;
-        }
-      }
+      const modelsToTry = ['eleven_multilingual_v2', 'eleven_turbo_v2_5', 'eleven_flash_v2_5'];
 
-      // Auto-Heal for 402 (Free user library voice restriction) or 400 (voice_not_found):
-      // If a library voice was rejected because user is on ElevenLabs Free Tier, auto-switch to their account's premade voice
-      if ((!ttsRes || !ttsRes.ok) && accountVoices.length > 0) {
-        const premadeVoice = accountVoices.find(v => v.category === 'premade' && v.voice_id !== voiceId)
-          || accountVoices.find(v => v.voice_id !== voiceId)
-          || accountVoices[0];
+      for (let i = 0; i < Math.min(candidateVoiceIds.length, 4); i++) {
+        const vid = candidateVoiceIds[i];
+        const voiceObj = accountVoices.find(v => v.voice_id === vid) || UNIVERSAL_PREMADE_VOICES.find(v => v.id === vid);
+        const vName = voiceObj ? voiceObj.name : vid;
 
-        if (premadeVoice && premadeVoice.voice_id !== voiceId) {
-          const fallbackVoiceId = premadeVoice.voice_id;
-          const fallbackVoiceName = premadeVoice.name;
+        for (const model of modelsToTry) {
           try {
-            const fallbackRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${fallbackVoiceId}`, {
+            const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1424,52 +1442,67 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
               },
               body: JSON.stringify({
                 text: text,
-                model_id: 'eleven_multilingual_v2',
+                model_id: model,
                 voice_settings: { stability: 0.65, similarity_boost: 0.75 }
               })
             });
-            if (fallbackRes && fallbackRes.ok) {
-              const audioBuffer = await fallbackRes.arrayBuffer();
-              return new Response(audioBuffer, {
-                headers: {
-                  'Content-Type': 'audio/mpeg',
-                  'x-eleven-voice': `${fallbackVoiceName} (Studio Free-Tier Voice)`,
-                  'x-eleven-voice-id': fallbackVoiceId,
-                  'Access-Control-Allow-Origin': '*',
-                  'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id'
-                }
-              });
+
+            if (ttsRes.ok) {
+              audioBuffer = await ttsRes.arrayBuffer();
+              activeVoiceName = vName;
+              activeVoiceId = vid;
+              if (i > 0) isHealed = true;
+              break;
+            } else {
+              lastStatus = ttsRes.status;
+              const errTxt = await ttsRes.text().catch(() => '');
+              try {
+                const parsed = JSON.parse(errTxt);
+                lastErrMsg = parsed.detail?.message || parsed.message || errTxt;
+              } catch {
+                lastErrMsg = errTxt;
+              }
+              // If 402 (Free users cannot use library voices), immediately break model loop and try next voice (premade)
+              if (ttsRes.status === 402) {
+                break;
+              }
             }
-          } catch (e) {}
+          } catch (e) {
+            lastErrMsg = e.message;
+          }
         }
+
+        if (audioBuffer) break;
       }
 
-      if (ttsRes && ttsRes.ok) {
-        const audioBuffer = await ttsRes.arrayBuffer();
+      if (audioBuffer) {
         return new Response(audioBuffer, {
           headers: {
             'Content-Type': 'audio/mpeg',
-            'x-eleven-voice': resolvedVoiceName,
-            'x-eleven-voice-id': voiceId,
+            'x-eleven-voice': `${activeVoiceName}${isHealed ? ' (Studio Free-Tier Voice)' : ''}`,
+            'x-eleven-voice-id': activeVoiceId,
+            'x-eleven-healed': isHealed ? 'true' : 'false',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id'
+            'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id, x-eleven-healed'
           }
         });
       }
 
-      // If ElevenLabs returned an error (quota, etc.)
+      // If all ElevenLabs attempts failed (quota exhausted, invalid key, etc.):
       return json({
         fallback: true,
-        status: lastStatus === 429 ? 'quota_exceeded' : (lastStatus === 401 ? 'invalid_key' : 'eleven_error'),
+        status: lastStatus === 429 ? 'quota_exhausted' : (lastStatus === 402 ? 'free_tier_library_notice' : 'eleven_fallback'),
         statusCode: lastStatus,
-        message: lastErrMsg ? `ElevenLabs error (${lastStatus}): ${lastErrMsg}` : 'ElevenLabs synthesis failed. Using browser Indian voice.'
+        message: lastStatus === 402
+          ? 'ElevenLabs Free Plan does not allow Community VoiceLab voices via API. Switched smoothly to Indian Neural Voice (en-IN).'
+          : (lastStatus === 429 ? 'ElevenLabs monthly character quota consumed. Playing instant Indian Neural Voice (en-IN).' : 'ElevenLabs offline. Playing instant Indian Neural Voice (en-IN).')
       });
 
     } catch (e) {
       return json({
         fallback: true,
         status: 'error',
-        message: 'ElevenLabs request failed: ' + e.message
+        message: 'Speech synthesis fallback active: ' + e.message
       });
     }
   }

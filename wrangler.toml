@@ -6,8 +6,13 @@ pages_build_output_dir = "public"
 ADMIN_PASSWORD = "careers2026"
 STT_MODEL = "scribe_v1"
 STREAM_URL = "https://www.youtube.com/watch?v=jfKfPfyJRdk"
+CF_ACCOUNT_ID = "fd5212b57a3b48ade17607107a583e11"
+CF_D1_DATABASE_ID = "f92d8dd7-b120-4011-b176-3c31665631ed"
+
+[ai]
+binding = "AI"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "careerfair"
-database_id = "careerfair"
+database_name = "careerfair-db"
+database_id = "f92d8dd7-b120-4011-b176-3c31665631ed"
