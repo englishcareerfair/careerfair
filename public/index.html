@@ -1047,6 +1047,7 @@
             <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px;">Select Account Voice (Indian Accent):</label>
             <select id="admin-eleven-voice-select" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;margin-bottom:6px;">
               <option value="">-- Auto-detect Best Studio Voice (Free Tier Compatible) --</option>
+              <option value="voiceforge-local">⚡ VoiceForge Local Studio Engine (Offline-First 127.0.0.1:8765)</option>
             </select>
             <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
               <button type="button" class="btn btn-secondary btn-xs" id="btn-quick-select-free-voice" style="font-size:11px;padding:4px 10px;border-radius:var(--radius-full);background:rgba(56,189,248,0.12);border-color:var(--accent-cyan);color:var(--accent-cyan);">⚡ Auto-Select Free-Tier Studio Voice</button>
@@ -1073,6 +1074,25 @@
         <!-- View 5: Moderation & Content Management -->
         <div id="admin-view-data" class="admin-view-panel" hidden>
           
+                    <!-- 3. Global Exhibition Data Archive & Download -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h4 style="font-size:16px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+                  <span>💾</span> <span>Global Dated Data Archive (Cloudflare D1 careerfair-db)</span>
+                  <span class="badge-pill" style="background:rgba(16,185,129,0.15);color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.3);font-size:11px;">Permanent Storage</span>
+                </h4>
+                <p style="font-size:12.5px;color:var(--text-muted);margin:0;">
+                  All leaderboard scores, visitor reviews, speech metrics, and timestamps are globally stored forever. Download full exhibition archives anytime.
+                </p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" id="btn-download-d1-json" type="button">⬇ Download Global JSON</button>
+                <button class="btn btn-secondary btn-sm" id="btn-download-d1-csv" type="button">⬇ Download Global CSV</button>
+              </div>
+            </div>
+          </div>
+
           <!-- 1. Visitor Reflections Moderation -->
           <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">

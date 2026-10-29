@@ -1540,5 +1540,50 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     }
   }
 
+  // ── 12. GET /export/data (Permanent Cloudflare D1 Dated Data Export) ─────────
+  if ((path === '/export/data' || path === '/export-data') && method === 'GET') {
+    const format = url.searchParams.get('format') || 'json';
+    let feedbackRows = [];
+    let scoreRows = [];
+
+    if (db) {
+      try {
+        const fb = await db.prepare('SELECT * FROM feedback ORDER BY ts DESC').all();
+        feedbackRows = fb.results || [];
+        const sc = await db.prepare('SELECT * FROM scores ORDER BY ts DESC').all();
+        scoreRows = sc.results || [];
+      } catch (e) {
+        console.error('D1 Export error:', e);
+      }
+    }
+
+    if (format === 'csv') {
+      let csv = 'Record_Type,ID,Name,Detail,Metric,Timestamp,ISO_Date\n';
+      for (const f of feedbackRows) {
+        csv += `Feedback,"${f.id}","${(f.name || '').replace(/"/g, '""')}","${(f.comment || '').replace(/"/g, '""')}",${f.r_useful || 5},${f.ts},"${new Date(Number(f.ts)).toISOString()}"\n`;
+      }
+      for (const s of scoreRows) {
+        csv += `Score,"${s.id}","${(s.name || '').replace(/"/g, '""')}","${s.pack} Level ${s.level} (Accuracy ${s.acc}%)",${s.acc},${s.ts},"${new Date(Number(s.ts)).toISOString()}"\n`;
+      }
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="careerfair_global_data_${Date.now()}.csv"`,
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+
+    return json({
+      export_timestamp: Date.now(),
+      export_date_iso: new Date().toISOString(),
+      database: 'careerfair-db (Cloudflare D1)',
+      total_feedback: feedbackRows.length,
+      total_scores: scoreRows.length,
+      feedback: feedbackRows,
+      scores: scoreRows
+    });
+  }
+
   return err('Route not found', 404);
 }

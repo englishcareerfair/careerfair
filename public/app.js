@@ -7128,6 +7128,16 @@ function renderAdminView() {
     gateScreen.hidden = true;
     workspaceScreen.hidden = false;
     initAdminWorkspace();
+
+  // Global D1 Exhibition Data Downloader Wiring
+  $('#btn-download-d1-json')?.addEventListener('click', () => {
+    window.open(getApiUrl('api/export/data?format=json'), '_blank');
+  });
+
+  $('#btn-download-d1-csv')?.addEventListener('click', () => {
+    window.open(getApiUrl('api/export/data?format=csv'), '_blank');
+  });
+
   } else {
     gateScreen.hidden = false;
     workspaceScreen.hidden = true;
@@ -8064,6 +8074,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#admin-gate-screen').hidden = true;
       $('#admin-workspace-screen').hidden = false;
       initAdminWorkspace();
+
+  // Global D1 Exhibition Data Downloader Wiring
+  $('#btn-download-d1-json')?.addEventListener('click', () => {
+    window.open(getApiUrl('api/export/data?format=json'), '_blank');
+  });
+
+  $('#btn-download-d1-csv')?.addEventListener('click', () => {
+    window.open(getApiUrl('api/export/data?format=csv'), '_blank');
+  });
+
       loadFeedbackWall();
       loadLeaderboard();
       showToast('Admin Control Room Unlocked 🔓');
