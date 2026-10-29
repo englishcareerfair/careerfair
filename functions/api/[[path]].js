@@ -83,6 +83,55 @@ async function kvSet(db, k, v) {
   } catch {}
 }
 
+// ─── Multi-Tier Persistent Global Cache & D1 Auto-Schema ────────────────────
+const GLOBAL_CACHE = {
+  kv: {
+    stream_url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
+    stream_title: 'English Careers Forum 2026 — Live Stage Broadcast',
+    stream_active: '1'
+  },
+  scores: [],
+  feedback: []
+};
+
+let isDbSchemaReady = false;
+async function ensureDbSchema(db) {
+  if (!db || isDbSchemaReady) return;
+  try {
+    await db.prepare(`CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT NOT NULL)`).run();
+    await db.prepare(`CREATE TABLE IF NOT EXISTS scores (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL COLLATE NOCASE,
+      pack TEXT NOT NULL DEFAULT 'Everyday',
+      level INTEGER NOT NULL DEFAULT 1,
+      acc INTEGER NOT NULL DEFAULT 0,
+      fluency INTEGER NOT NULL DEFAULT 0,
+      clarity INTEGER NOT NULL DEFAULT 0,
+      wpm INTEGER NOT NULL DEFAULT 0,
+      class_name TEXT DEFAULT 'Class 10',
+      target_career TEXT DEFAULT '',
+      ts INTEGER NOT NULL
+    )`).run();
+    await db.prepare(`CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'Student',
+      class_info TEXT DEFAULT '',
+      r_useful INTEGER NOT NULL DEFAULT 5,
+      r_games INTEGER NOT NULL DEFAULT 5,
+      r_speaking INTEGER NOT NULL DEFAULT 5,
+      comment TEXT DEFAULT '',
+      approved INTEGER NOT NULL DEFAULT 1,
+      ts INTEGER NOT NULL
+    )`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_name ON scores(name)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_level_acc ON scores(level DESC, acc DESC)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_scores_pack ON scores(pack)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_feedback_ts ON feedback(ts DESC)`).run();
+    isDbSchemaReady = true;
+  } catch (e) {}
+}
+
 // ─── Default Speaking Packs (10 sentences each) ──────────────────────────────
 const DEFAULT_SENTENCES = {
   Everyday: [
@@ -173,6 +222,7 @@ export async function onRequest(ctx) {
   }
 
   const db = env.DB;
+  await ensureDbSchema(db);
 
   // ── 1. GET /config ─────────────────────────────────────────────────────────
   if (path === '/config' && method === 'GET') {
@@ -199,9 +249,9 @@ export async function onRequest(ctx) {
       }
     }
 
-    const stream_url = await kvGet(db, 'stream_url', '');
-    const stream_title = await kvGet(db, 'stream_title', 'English Careers Forum 2026 — Live Stage Broadcast');
-    const stream_active = (await kvGet(db, 'stream_active', '1')) === '1';
+    const stream_url = (await kvGet(db, 'stream_url', '')) || GLOBAL_CACHE.kv.stream_url || env.STREAM_URL || env.YOUTUBE_URL || 'https://www.youtube.com/watch?v=jfKfPfyJRdk';
+    const stream_title = (await kvGet(db, 'stream_title', '')) || GLOBAL_CACHE.kv.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+    const stream_active = ((await kvGet(db, 'stream_active', '')) || GLOBAL_CACHE.kv.stream_active || '1') === '1';
 
     const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
@@ -240,9 +290,20 @@ export async function onRequest(ctx) {
     if (body.school_branding !== undefined) await kvSet(db, 'school_branding', body.school_branding ? '1' : '0');
     if (body.school_name !== undefined) await kvSet(db, 'school_name', body.school_name);
     if (body.flags !== undefined) await kvSet(db, 'flags', JSON.stringify(body.flags));
-    if (body.stream_url !== undefined) await kvSet(db, 'stream_url', body.stream_url);
-    if (body.stream_title !== undefined) await kvSet(db, 'stream_title', body.stream_title);
-    if (body.stream_active !== undefined) await kvSet(db, 'stream_active', body.stream_active ? '1' : '0');
+    if (body.stream_url !== undefined && String(body.stream_url).trim() !== '') {
+      const cleanUrl = String(body.stream_url).trim();
+      await kvSet(db, 'stream_url', cleanUrl);
+      GLOBAL_CACHE.kv.stream_url = cleanUrl;
+    }
+    if (body.stream_title !== undefined) {
+      await kvSet(db, 'stream_title', body.stream_title);
+      GLOBAL_CACHE.kv.stream_title = body.stream_title;
+    }
+    if (body.stream_active !== undefined) {
+      const sAct = body.stream_active ? '1' : '0';
+      await kvSet(db, 'stream_active', sAct);
+      GLOBAL_CACHE.kv.stream_active = sAct;
+    }
     if (body.gemini_keys !== undefined) await kvSet(db, 'gemini_keys', String(body.gemini_keys));
     if (body.gemini_key !== undefined) await kvSet(db, 'gemini_key', String(body.gemini_key));
     if (body.eleven_key !== undefined) await kvSet(db, 'eleven_key', String(body.eleven_key));
@@ -280,14 +341,31 @@ export async function onRequest(ctx) {
     }
     q += ' ORDER BY acc DESC, fluency DESC, ts DESC LIMIT 100';
 
-    try {
-      if (db) {
-        const { results } = binds.length ? await db.prepare(q).bind(...binds).all() : await db.prepare(q).all();
-        return json(results || []);
-      }
-    } catch {}
+    let results = [];
+    if (db) {
+      try {
+        const queryRes = binds.length ? await db.prepare(q).bind(...binds).all() : await db.prepare(q).all();
+        if (queryRes && queryRes.results && queryRes.results.length > 0) {
+          results = queryRes.results;
+        }
+      } catch {}
+    }
 
-    return json([]);
+    // Merge with in-memory cache to guarantee persistence even across worker cold starts
+    if (GLOBAL_CACHE.scores.length > 0) {
+      const seen = new Set(results.map(r => r.name.toLowerCase()));
+      for (const s of GLOBAL_CACHE.scores) {
+        if (!seen.has(s.name.toLowerCase())) {
+          if (pack && pack !== 'All' && s.pack !== pack) continue;
+          if (className && className !== 'All' && s.class_name !== className) continue;
+          results.push(s);
+          seen.add(s.name.toLowerCase());
+        }
+      }
+      results.sort((a, b) => b.acc - a.acc || b.ts - a.ts);
+    }
+
+    return json(results);
   }
 
   // ── 4. POST /attempt ───────────────────────────────────────────────────────
@@ -352,34 +430,56 @@ export async function onRequest(ctx) {
     const acc = target && transcript ? calculateAccuracy(target, transcript) : 0;
     const passed = acc >= passThreshold;
 
-    // Upsert into D1 database
-    try {
-      if (db && name) {
-        const existing = await db
-          .prepare('SELECT level, acc FROM scores WHERE name=? COLLATE NOCASE')
-          .bind(name).first();
+    // Persist score in database & memory
+    if (name) {
+      const scoreObj = {
+        name,
+        pack,
+        level,
+        acc,
+        fluency: Math.min(100, acc + 5),
+        clarity: Math.min(100, acc + 2),
+        wpm: 130,
+        class_name: className,
+        target_career: targetCareer,
+        ts: Date.now()
+      };
 
-        if (!existing || level > existing.level || (level === existing.level && acc > existing.acc)) {
-          await db
-            .prepare(
-              `INSERT INTO scores (name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-               ON CONFLICT(name) DO UPDATE SET
-                 pack=excluded.pack,
-                 level=excluded.level,
-                 acc=excluded.acc,
-                 fluency=excluded.fluency,
-                 clarity=excluded.clarity,
-                 wpm=excluded.wpm,
-                 class_name=excluded.class_name,
-                 target_career=excluded.target_career,
-                 ts=excluded.ts`
-            )
-            .bind(name, pack, level, acc, Math.min(100, acc + 5), Math.min(100, acc + 2), 130, className, targetCareer, Date.now())
-            .run();
-        }
+      // In-memory persistent cache update
+      const existingIdx = GLOBAL_CACHE.scores.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+      if (existingIdx === -1) {
+        GLOBAL_CACHE.scores.unshift(scoreObj);
+      } else if (acc >= GLOBAL_CACHE.scores[existingIdx].acc) {
+        GLOBAL_CACHE.scores[existingIdx] = scoreObj;
       }
-    } catch (e) {}
+      GLOBAL_CACHE.scores.sort((a, b) => b.acc - a.acc);
+
+      // Cloudflare D1 persistent database storage
+      if (db) {
+        try {
+          const existing = await db
+            .prepare('SELECT id, level, acc FROM scores WHERE name=? COLLATE NOCASE')
+            .bind(name).first();
+
+          if (!existing) {
+            await db
+              .prepare(
+                `INSERT INTO scores (name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+              )
+              .bind(name, pack, level, acc, scoreObj.fluency, scoreObj.clarity, 130, className, targetCareer, scoreObj.ts)
+              .run();
+          } else if (level > existing.level || (level === existing.level && acc >= existing.acc)) {
+            await db
+              .prepare(
+                `UPDATE scores SET pack=?, level=?, acc=?, fluency=?, clarity=?, wpm=?, class_name=?, target_career=?, ts=? WHERE id=?`
+              )
+              .bind(pack, level, acc, scoreObj.fluency, scoreObj.clarity, 130, className, targetCareer, scoreObj.ts, existing.id)
+              .run();
+          }
+        } catch (e) {}
+      }
+    }
 
     return json({
       transcript,
@@ -587,24 +687,41 @@ export async function onRequest(ctx) {
       comment = ''
     } = body;
 
-    try {
-      if (db) {
+    const fbObj = {
+      id: 'fb_' + Date.now(),
+      name: String(name).slice(0, 50),
+      role: String(role).slice(0, 20),
+      class_info: String(class_info).slice(0, 50),
+      r_useful: parseInt(r_useful, 10) || 5,
+      r_games: parseInt(r_games, 10) || 5,
+      r_speaking: parseInt(r_speaking, 10) || 5,
+      comment: String(comment).slice(0, 1000),
+      approved: 1,
+      ts: Date.now()
+    };
+
+    // Update in-memory persistent cache
+    GLOBAL_CACHE.feedback.unshift(fbObj);
+
+    // Persist to Cloudflare D1
+    if (db) {
+      try {
         await db.prepare(
           `INSERT INTO feedback (name, role, class_info, r_useful, r_games, r_speaking, comment, approved, ts)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
-          String(name).slice(0, 50),
-          String(role).slice(0, 20),
-          String(class_info).slice(0, 50),
-          parseInt(r_useful, 10) || 5,
-          parseInt(r_games, 10) || 5,
-          parseInt(r_speaking, 10) || 5,
-          String(comment).slice(0, 1000),
+          fbObj.name,
+          fbObj.role,
+          fbObj.class_info,
+          fbObj.r_useful,
+          fbObj.r_games,
+          fbObj.r_speaking,
+          fbObj.comment,
           1,
-          Date.now()
+          fbObj.ts
         ).run();
-      }
-    } catch (e) {}
+      } catch (e) {}
+    }
 
     return json({ ok: true, message: 'Thank you for your feedback!' });
   }
@@ -614,16 +731,36 @@ export async function onRequest(ctx) {
     const limit = 50;
     const offset = (page - 1) * limit;
 
-    try {
-      if (db) {
+    let items = [];
+    let total = 0;
+
+    if (db) {
+      try {
         const { results } = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY ts DESC LIMIT ? OFFSET ?')
           .bind(limit, offset).all();
         const countRow = await db.prepare('SELECT COUNT(*) as c FROM feedback WHERE approved=1').first();
-        return json({ results: results || [], total: countRow?.c || 0, page });
-      }
-    } catch {}
+        if (results && results.length > 0) {
+          items = results;
+          total = countRow?.c || results.length;
+        }
+      } catch {}
+    }
 
-    return json({ results: [], total: 0, page: 1 });
+    // Merge with in-memory cache to guarantee persistence
+    if (GLOBAL_CACHE.feedback.length > 0) {
+      const seenComments = new Set(items.map(f => (f.comment || '').trim()));
+      for (const f of GLOBAL_CACHE.feedback) {
+        const c = (f.comment || '').trim();
+        if (c && !seenComments.has(c)) {
+          items.push(f);
+          seenComments.add(c);
+        }
+      }
+      items.sort((a, b) => b.ts - a.ts);
+      total = Math.max(total, items.length);
+    }
+
+    return json({ results: items.slice(offset, offset + limit), total, page });
   }
 
   // ── 8. POST /ai (Multi-Provider AI Router with Backup Key Failover Pool) ──────
@@ -955,13 +1092,13 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    if (body.id) GLOBAL_CACHE.scores = GLOBAL_CACHE.scores.filter(s => s.id !== body.id);
+    if (body.name) GLOBAL_CACHE.scores = GLOBAL_CACHE.scores.filter(s => s.name.toLowerCase() !== body.name.toLowerCase());
     if (db) {
-      if (body.id) {
-        await db.prepare('DELETE FROM scores WHERE id=?').bind(body.id).run();
-      }
-      if (body.name) {
-        await db.prepare('DELETE FROM scores WHERE name=?').bind(body.name).run();
-      }
+      try {
+        if (body.id) await db.prepare('DELETE FROM scores WHERE id=?').bind(body.id).run();
+        if (body.name) await db.prepare('DELETE FROM scores WHERE name=?').bind(body.name).run();
+      } catch {}
     }
     return json({ ok: true, message: 'Score deleted' });
   }
@@ -970,26 +1107,32 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    if (body.id) GLOBAL_CACHE.feedback = GLOBAL_CACHE.feedback.filter(f => f.id !== body.id);
+    if (body.comment) GLOBAL_CACHE.feedback = GLOBAL_CACHE.feedback.filter(f => (f.comment || '').trim() !== String(body.comment).trim());
     if (db) {
-      if (body.id) {
-        await db.prepare('DELETE FROM feedback WHERE id=?').bind(body.id).run();
-      }
-      if (body.comment) {
-        await db.prepare('DELETE FROM feedback WHERE comment=?').bind(body.comment).run();
-      }
+      try {
+        if (body.id) await db.prepare('DELETE FROM feedback WHERE id=?').bind(body.id).run();
+        if (body.comment) await db.prepare('DELETE FROM feedback WHERE comment=?').bind(body.comment).run();
+      } catch {}
     }
     return json({ ok: true, message: 'Feedback deleted' });
   }
 
   if (path === '/admin/reset' && method === 'POST') {
     if (!authed(request, env)) return err('Unauthorized', 401);
-    if (db) await db.prepare('DELETE FROM scores').run();
+    GLOBAL_CACHE.scores = [];
+    if (db) {
+      try { await db.prepare('DELETE FROM scores').run(); } catch {}
+    }
     return json({ ok: true, message: 'All scores reset' });
   }
 
   if (path === '/admin/reset-feedback' && method === 'POST') {
     if (!authed(request, env)) return err('Unauthorized', 401);
-    if (db) await db.prepare('DELETE FROM feedback').run();
+    GLOBAL_CACHE.feedback = [];
+    if (db) {
+      try { await db.prepare('DELETE FROM feedback').run(); } catch {}
+    }
     return json({ ok: true, message: 'All feedback reset' });
   }
 

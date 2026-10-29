@@ -21,7 +21,7 @@ const STATE = {
     timer: 0,
     school_branding: true,
     school_name: 'Kanakia International School Mira Road',
-    stream_url: localStorage.getItem('cf_stream_url') || '',
+    stream_url: localStorage.getItem('cf_stream_url') || 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     stream_title: localStorage.getItem('cf_stream_title') || 'English Careers Forum 2026 — Live Stage Broadcast',
     stream_active: localStorage.getItem('cf_stream_active') !== 'false',
     stream_autoplay: localStorage.getItem('cf_stream_autoplay') !== 'false',
@@ -1841,6 +1841,31 @@ async function evaluateSpeakAttempt() {
   // Persist student name
   STATE.studentName = name;
   localStorage.setItem('cf_student_name', name);
+
+  // Persist student score in local storage so it is never lost even if offline or cold start
+  try {
+    const localScoreObj = {
+      id: 'sc_' + Date.now(),
+      name,
+      pack: speakPack,
+      level: STATE.speakLevel || 1,
+      acc,
+      fluency: Math.min(100, acc + 5),
+      clarity: Math.min(100, acc + 2),
+      wpm: 130,
+      class_name: STATE.studentClass || 'Class 10',
+      target_career: '',
+      ts: Date.now()
+    };
+    const curScores = JSON.parse(localStorage.getItem('cf_user_scores') || '[]');
+    const sIdx = curScores.findIndex(s => s.name.toLowerCase() === name.toLowerCase());
+    if (sIdx === -1) {
+      curScores.unshift(localScoreObj);
+    } else if (acc >= (curScores[sIdx].acc || 0)) {
+      curScores[sIdx] = localScoreObj;
+    }
+    localStorage.setItem('cf_user_scores', JSON.stringify(curScores));
+  } catch (e) {}
 
   // Send score to backend API (no level requirement)
   fetchApi('attempt', 'POST', {
@@ -6747,42 +6772,75 @@ async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
   if (!tbody) return;
 
-  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">Loading real-time scores...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);"><span class="spinner-sm"></span> Loading real-time scores...</td></tr>`;
 
-  let scores = [];
+  let serverScores = [];
   try {
     const data = await fetchApi(`scores${filterPack && filterPack !== 'All' ? '?pack=' + encodeURIComponent(filterPack) : ''}`);
     if (data && Array.isArray(data) && data.length > 0) {
-      scores = data;
+      serverScores = data;
     }
   } catch (e) {}
 
-  const isReset = localStorage.getItem('cf_scores_reset') === 'true';
-  const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
+  let localScores = [];
+  try {
+    const raw = localStorage.getItem('cf_user_scores');
+    if (raw) localScores = JSON.parse(raw);
+  } catch (e) {}
 
-  if (!scores.length && !isReset) {
-    const BENCHMARK_SCORES = [
-      { id: 'bm_1', name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
-      { id: 'bm_2', name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
-      { id: 'bm_3', name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
-      { id: 'bm_4', name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
-      { id: 'bm_5', name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
-      { id: 'bm_6', name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
-    ];
-
-    scores = (filterPack && filterPack !== 'All')
-      ? BENCHMARK_SCORES.filter(s => s.pack.toLowerCase() === filterPack.toLowerCase())
-      : BENCHMARK_SCORES;
+  // Multi-tier merge: server scores + browser local scores (deduplicating by student name, keeping best score)
+  const mergedMap = new Map();
+  if (Array.isArray(serverScores)) {
+    serverScores.forEach(s => {
+      if (s && s.name) {
+        mergedMap.set(s.name.toLowerCase().trim(), s);
+      }
+    });
+  }
+  if (Array.isArray(localScores)) {
+    localScores.forEach(s => {
+      if (s && s.name) {
+        const key = s.name.toLowerCase().trim();
+        const existing = mergedMap.get(key);
+        if (!existing || Number(s.acc || 0) >= Number(existing.acc || 0)) {
+          mergedMap.set(key, s);
+        }
+      }
+    });
   }
 
-  // Filter out any scores deleted by administrator
+  let scores = Array.from(mergedMap.values());
+
+  // Save merged state back into local storage so real scores are never lost
+  try {
+    localStorage.setItem('cf_user_scores', JSON.stringify(scores));
+  } catch (e) {}
+
+  // Filter by speaking pack if selected
+  if (filterPack && filterPack !== 'All') {
+    scores = scores.filter(s => (s.pack || '').toLowerCase() === filterPack.toLowerCase());
+  }
+
+  // Filter out any scores explicitly deleted by administrator
+  const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
   if (deletedScores.length > 0) {
     scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
   }
 
+  scores.sort((a, b) => (Number(b.acc) || 0) - (Number(a.acc) || 0) || (Number(b.ts) || 0) - (Number(a.ts) || 0));
+
   tbody.innerHTML = '';
+  // Zero default mock scores — only real student exhibition scores
   if (!scores.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">No scored attempts yet in ${escapeHtml(filterPack)}. Take the speech test to claim #1!</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" style="text-align:center;padding:36px 20px;color:var(--text-muted);">
+          <div style="font-size:26px;margin-bottom:8px;">🎙️</div>
+          <div style="font-weight:700;font-size:15px;color:var(--text-main);margin-bottom:4px;">No Exhibition Scores Recorded Yet</div>
+          <div style="font-size:13px;color:var(--text-dim);">Be the first student to test your speech in the Speech Lab and claim the #1 spot!</div>
+        </td>
+      </tr>
+    `;
     return;
   }
 
@@ -6798,11 +6856,11 @@ async function loadLeaderboard(filterPack = 'All') {
     tr.innerHTML = `
       <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
       <td><strong>${escapeHtml(sc.name)}</strong>${delBtnHtml}</td>
-      <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack)}</span></td>
+      <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'Everyday')}</span></td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
       <td>${sc.wpm || 130}</td>
-      <td style="font-size:12px;color:var(--text-dim);">${new Date(sc.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+      <td style="font-size:12px;color:var(--text-dim);">${sc.ts ? new Date(Number(sc.ts)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -7478,6 +7536,7 @@ function initAdminWorkspace() {
       await fetchApi('admin/reset', 'POST', {});
     } catch {}
     localStorage.setItem('cf_scores_reset', 'true');
+    localStorage.removeItem('cf_user_scores');
     localStorage.removeItem('cf_deleted_scores');
     showToast('All leaderboard scores reset');
     loadLeaderboard();
@@ -7827,9 +7886,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (cfg.banner) $('#broadcast-text').textContent = cfg.banner;
     if (cfg.school_name) $('#school-branding-name').textContent = `${cfg.school_name} ©`;
-    if (cfg.stream_url !== undefined && cfg.stream_url !== '') STATE.config.stream_url = cfg.stream_url;
-    if (cfg.stream_title) STATE.config.stream_title = cfg.stream_title;
-    if (cfg.stream_active !== undefined) STATE.config.stream_active = cfg.stream_active;
+    const localStreamUrl = (localStorage.getItem('cf_stream_url') || '').trim();
+    if (cfg.stream_url && cfg.stream_url.trim()) {
+      STATE.config.stream_url = cfg.stream_url.trim();
+      localStorage.setItem('cf_stream_url', cfg.stream_url.trim());
+    } else if (localStreamUrl) {
+      STATE.config.stream_url = localStreamUrl;
+      fetchApi('admin/config', 'PUT', { stream_url: localStreamUrl }).catch(() => {});
+    } else {
+      STATE.config.stream_url = 'https://www.youtube.com/watch?v=jfKfPfyJRdk';
+      localStorage.setItem('cf_stream_url', STATE.config.stream_url);
+    }
+    if (cfg.stream_title) {
+      STATE.config.stream_title = cfg.stream_title;
+      localStorage.setItem('cf_stream_title', cfg.stream_title);
+    }
+    if (cfg.stream_active !== undefined) {
+      STATE.config.stream_active = cfg.stream_active;
+      localStorage.setItem('cf_stream_active', String(cfg.stream_active));
+    }
     renderHeroStream();
 
     // Synchronize feature flags across sessions
