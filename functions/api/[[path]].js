@@ -387,7 +387,7 @@ export async function onRequest(ctx) {
     return json(results);
   }
 
-  // ── 4. POST /attempt ───────────────────────────────────────────────────────
+  // ── 4. POST /attempt (Global D1 Leaderboard Attempt Persistence) ──────
   if (path === '/attempt' && method === 'POST') {
     let name = 'Explorer';
     let level = 1;
@@ -397,6 +397,10 @@ export async function onRequest(ctx) {
     let className = 'Class 10';
     let targetCareer = '';
     let audioFile = null;
+    let inputAcc = null;
+    let inputFluency = null;
+    let inputClarity = null;
+    let inputWpm = null;
 
     const contentType = request.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
@@ -409,8 +413,12 @@ export async function onRequest(ctx) {
       className = (formData.get('class_name') || 'Class 10').toString().trim();
       targetCareer = (formData.get('target_career') || '').toString().trim();
       audioFile = formData.get('audio');
+      if (formData.get('acc') !== null && formData.get('acc') !== '') inputAcc = Number(formData.get('acc'));
+      if (formData.get('fluency') !== null && formData.get('fluency') !== '') inputFluency = Number(formData.get('fluency'));
+      if (formData.get('clarity') !== null && formData.get('clarity') !== '') inputClarity = Number(formData.get('clarity'));
+      if (formData.get('wpm') !== null && formData.get('wpm') !== '') inputWpm = Number(formData.get('wpm'));
     } else {
-      let body;
+      let body = {};
       try { body = await request.json(); } catch { body = {}; }
       name = (body.name || 'Explorer').trim().slice(0, 40);
       level = parseInt(body.level || '1', 10) || 1;
@@ -419,6 +427,10 @@ export async function onRequest(ctx) {
       fallbackText = (body.fallback_text || '').trim();
       className = (body.class_name || 'Class 10').trim();
       targetCareer = (body.target_career || '').trim();
+      if (body.acc !== undefined && body.acc !== null && body.acc !== '') inputAcc = Number(body.acc);
+      if (body.fluency !== undefined && body.fluency !== null && body.fluency !== '') inputFluency = Number(body.fluency);
+      if (body.clarity !== undefined && body.clarity !== null && body.clarity !== '') inputClarity = Number(body.clarity);
+      if (body.wpm !== undefined && body.wpm !== null && body.wpm !== '') inputWpm = Number(body.wpm);
     }
 
     let transcript = fallbackText;
@@ -446,10 +458,23 @@ export async function onRequest(ctx) {
     }
 
     const passThreshold = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
-    let acc = (typeof body !== 'undefined' && body.acc !== undefined && !isNaN(Number(body.acc)))
-      ? Math.round(Number(body.acc))
+    let acc = (inputAcc !== null && !isNaN(inputAcc))
+      ? Math.round(inputAcc)
       : (target && transcript ? calculateAccuracy(target, transcript) : 0);
     acc = Math.max(0, Math.min(100, acc));
+
+    let fluency = (inputFluency !== null && !isNaN(inputFluency))
+      ? Math.round(inputFluency)
+      : Math.min(100, acc + 5);
+
+    let clarity = (inputClarity !== null && !isNaN(inputClarity))
+      ? Math.round(inputClarity)
+      : Math.min(100, acc + 2);
+
+    let wpm = (inputWpm !== null && !isNaN(inputWpm))
+      ? Math.round(inputWpm)
+      : 130;
+
     const passed = acc >= passThreshold;
 
     // Persist score in database & memory
@@ -459,9 +484,9 @@ export async function onRequest(ctx) {
         pack,
         level,
         acc,
-        fluency: Math.min(100, acc + 5),
-        clarity: Math.min(100, acc + 2),
-        wpm: 130,
+        fluency,
+        clarity,
+        wpm,
         class_name: className,
         target_career: targetCareer,
         ts: Date.now()
@@ -489,23 +514,29 @@ export async function onRequest(ctx) {
                 `INSERT INTO scores (name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
               )
-              .bind(name, pack, level, acc, scoreObj.fluency, scoreObj.clarity, 130, className, targetCareer, scoreObj.ts)
+              .bind(name, pack, level, acc, fluency, clarity, wpm, className, targetCareer, scoreObj.ts)
               .run();
-          } else if (level > existing.level || (level === existing.level && acc >= existing.acc)) {
+          } else {
+            const bestAcc = Math.max(acc, existing.acc);
             await db
               .prepare(
                 `UPDATE scores SET pack=?, level=?, acc=?, fluency=?, clarity=?, wpm=?, class_name=?, target_career=?, ts=? WHERE id=?`
               )
-              .bind(pack, level, acc, scoreObj.fluency, scoreObj.clarity, 130, className, targetCareer, scoreObj.ts, existing.id)
+              .bind(pack, level, bestAcc, fluency, clarity, wpm, className, targetCareer, scoreObj.ts, existing.id)
               .run();
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('D1 score insert/update error:', e);
+        }
       }
     }
 
     return json({
       transcript,
       acc,
+      fluency,
+      clarity,
+      wpm,
       passed,
       passThreshold,
       level,
@@ -1264,7 +1295,9 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
           ok: false,
           status: vRes.status === 401 ? 'invalid_key' : 'api_error',
           statusCode: vRes.status,
-          message: vRes.status === 401 ? 'Invalid ElevenLabs API Key. Please verify your key on elevenlabs.io.' : `ElevenLabs API error (${vRes.status}): ${errDetail.slice(0, 120)}`
+          message: errDetail.includes('API key ID used as API key') 
+              ? 'You entered the Key ID instead of the Secret API Key. In ElevenLabs (Settings → API Keys), please copy the actual secret key.'
+              : (vRes.status === 401 ? 'Invalid ElevenLabs API Key. Please verify your key on elevenlabs.io.' : `ElevenLabs API error (${vRes.status}): ${errDetail.slice(0, 120)}`)
         });
       }
 

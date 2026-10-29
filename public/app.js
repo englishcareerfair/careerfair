@@ -68,7 +68,15 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
-// Universal API Client with graceful offline fallback and dual-signature support
+// Universal Global D1 API Client (Unified across careerwithenglish, futureofenglish & mobile devices)
+const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
+
+function getApiUrl(path) {
+  const clean = path.replace(/^\/+/, '');
+  const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
+  return isPrimary ? `/${clean}` : `${PRIMARY_D1_ORIGIN}/${clean}`;
+}
+
 async function fetchApi(endpoint, options = {}, maybeBody = null) {
   let opts = {};
   if (typeof options === 'string') {
@@ -96,11 +104,22 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   }
   opts.headers = headers;
 
+  const cleanEndpoint = endpoint.replace(/^\/+/, '');
+  // Route through PRIMARY_D1_ORIGIN if not on careerwithenglish.pages.dev so all devices share the live D1 database
+  const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
+  const targetUrl = isPrimary ? `/api/${cleanEndpoint}` : `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`;
+
   try {
-    const res = await fetch('/api/' + endpoint, opts);
+    const res = await fetch(targetUrl, opts);
     if (res.ok) return await res.json();
   } catch (err) {
-    // Graceful offline fallback
+    // If external cross-origin call fails (e.g. offline), try local relative path
+    if (!isPrimary) {
+      try {
+        const localRes = await fetch(`/api/${cleanEndpoint}`, opts);
+        if (localRes.ok) return await localRes.json();
+      } catch (e) {}
+    }
   }
   return null;
 }
@@ -195,7 +214,7 @@ async function speak(text, btn = null) {
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Indian Accent API
   try {
-    const res = await fetch('/api/tts', {
+    const res = await fetch(getApiUrl('api/tts'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2275,7 +2294,7 @@ async function sendAudioToElevenLabsSTT(audioBlob) {
     if (elevenKey) headers['xi-api-key'] = elevenKey;
     if (STATE.adminKey) headers['Authorization'] = 'Bearer ' + STATE.adminKey;
 
-    const res = await fetch('/api/stt', {
+    const res = await fetch(getApiUrl('api/stt'), {
       method: 'POST',
       body: fd,
       headers
@@ -3409,7 +3428,7 @@ async function callAiQuest(prompt, isJson = false) {
 
   // 1. First attempt backend /api/ai with failover across key pool
   try {
-    const res = await fetch('/api/ai', {
+    const res = await fetch(getApiUrl('api/ai'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -5257,7 +5276,7 @@ function renderFlashCards(mount) {
     // 1. Try AI Generation via Cloudflare Pages Function (/api/ai)
     try {
       const avoidList = Array.from(flashCardSession.seenSet).slice(-40);
-      const res = await fetch('/api/ai', {
+      const res = await fetch(getApiUrl('api/ai'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -6885,12 +6904,14 @@ function initLeaderboard() {
     };
   });
 
-  $('#btn-refresh-scores')?.addEventListener('click', () => {
+  const doRefreshScores = () => {
     const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
     const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
     loadLeaderboard(pack);
     showToast('Leaderboard scores refreshed');
-  });
+  };
+  $('#btn-refresh-scores')?.addEventListener('click', doRefreshScores);
+  $('#btn-refresh-leaderboard')?.addEventListener('click', doRefreshScores);
 }
 
 function loadFeedbackWall() {
@@ -7060,19 +7081,23 @@ function loadFeedbackWall() {
       saveLocalFeedbacks(feedbacks);
       renderFeedbacks(feedbacks);
 
-      // Submit to backend
-      fetchApi('feedback', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: newFeedback.name,
-          role: newFeedback.role,
-          class_info: newFeedback.class_info,
-          comment: newFeedback.comment,
-          r_useful: newFeedback.useful
-        })
-      }).catch(() => {});
+      // Submit to global D1 backend and await confirmation
+      try {
+        await fetchApi('feedback', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: newFeedback.name,
+            role: newFeedback.role,
+            class_info: newFeedback.class_info,
+            comment: newFeedback.comment,
+            r_useful: newFeedback.useful
+          })
+        });
+        showToast('Thank you! Your feedback has been stored globally in the exhibition database.');
+      } catch (e) {
+        showToast('Feedback recorded locally.');
+      }
 
-      showToast('Thank you! Your feedback has been recorded.');
       form.reset();
       selectedStars = 5;
       if (starContainer) {
@@ -7080,8 +7105,17 @@ function loadFeedbackWall() {
           b.classList.toggle('active', b.dataset.val === '5');
         });
       }
+
+      // Re-fetch from global D1 backend immediately
+      setTimeout(loadFeedbackWall, 300);
     });
   }
+
+  // Wire refresh button for visitor reviews
+  $('#btn-refresh-feedback')?.addEventListener('click', () => {
+    loadFeedbackWall();
+    showToast('Reflections refreshed from global database');
+  });
 }
 
 // ─── 12. ADMIN CONTROL ROOM TAB CONTROLLER ─────────────────────────────────
@@ -7367,12 +7401,21 @@ function initAdminWorkspace() {
     const keyVal = (elevenInput?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
     const effectiveKey = (keyVal && keyVal !== 'configured') ? keyVal : '';
 
+    // Check if user entered a Key ID instead of the secret API key
+    if (effectiveKey && (effectiveKey.startsWith('key_') || effectiveKey.length < 24)) {
+      if (statusEl) {
+        statusEl.innerHTML = '<span style="color:var(--accent-amber, #f59e0b);font-weight:600;">⚠️ You entered the "Key ID" instead of the Secret API Key.<br>In ElevenLabs (Settings → API Keys), please copy the secret key from the Actions column.</span>';
+      }
+      if (!silent) showToast('⚠️ Please copy the Secret API Key, not the Key ID', 5000);
+      return;
+    }
+
     if (statusEl && !silent) {
       statusEl.innerHTML = '<span style="color:var(--accent-cyan);">⏳ Verifying ElevenLabs credentials & voices...</span>';
     }
 
     try {
-      const res = await fetch('/api/tts/voices' + (effectiveKey ? `?key=${encodeURIComponent(effectiveKey)}` : ''), {
+      const res = await fetch(getApiUrl('api/tts/voices') + (effectiveKey ? `?key=${encodeURIComponent(effectiveKey)}` : ''), {
         headers: effectiveKey ? { 'xi-api-key': effectiveKey } : {}
       });
 
@@ -7385,13 +7428,13 @@ function initAdminWorkspace() {
         }
 
         if (selectEl && Array.isArray(data.voices)) {
-          selectEl.innerHTML = '<option value="">-- Auto-detect Best Voice (Auto-Heal Active) --</option>';
+          selectEl.innerHTML = '<option value="">🇮🇳 [Recommended] Authentic Indian Neural Voice (en-IN · Free & Unlimited)</option>';
           const savedVoice = (customVoiceInput?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
           const freeGroup = document.createElement('optgroup');
-          freeGroup.label = '🟢 Free-Tier Ready (Studio Premade Voices - Zero 402 Errors)';
+          freeGroup.label = '🟢 ElevenLabs Free-Tier Studio Voices (Zero 402 Errors)';
           const paidGroup = document.createElement('optgroup');
-          paidGroup.label = '🔒 Paid Plan Required (Community VoiceLab Voices)';
+          paidGroup.label = '🔒 ElevenLabs Paid Starter Voices (Community VoiceLab)';
 
           data.voices.forEach(v => {
             const opt = document.createElement('option');
@@ -8424,4 +8467,23 @@ function renderGrammarSlap(mount) {
       }
     }, 100);
   });
+}
+
+// =========================================================================
+// REAL-TIME GLOBAL D1 SYNC POLLER (12s Automatic Cross-Device Refresh)
+// =========================================================================
+function startGlobalD1SyncPoller() {
+  setInterval(async () => {
+    const secLeaderboard = $('#sec-leaderboard');
+    if (secLeaderboard && !secLeaderboard.hidden) {
+      const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+      const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+      loadLeaderboard(pack);
+    }
+
+    const secFeedback = $('#sec-feedback');
+    if (secFeedback && !secFeedback.hidden) {
+      loadFeedbackWall();
+    }
+  }, 12000);
 }

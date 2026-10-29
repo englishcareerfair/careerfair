@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=6.4">
+  <link rel="stylesheet" href="styles.css?v=6.5">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=6.4" defer></script>
+  <script src="app.js?v=6.5" defer></script>
 </head>
 <body>
 
@@ -800,7 +800,12 @@
               <h3 style="font-size:18px;font-weight:800;margin:0 0 4px 0;">Recent Visitor Reflections</h3>
               <p style="font-size:13px;color:var(--text-muted);margin:0;">Reflections and thoughts submitted by students, parents, and guests.</p>
             </div>
-            <span class="badge-pill" id="feedback-count-badge" style="background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;font-weight:700;">0 Reviews</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-feedback" style="font-size:12px;padding:4px 10px;">
+                <span>🔄</span> <span>Refresh Reviews</span>
+              </button>
+              <span class="badge-pill" id="feedback-count-badge" style="background:var(--bg-subtle);border:1px solid var(--border);font-size:12px;font-weight:700;">0 Reviews</span>
+            </div>
           </div>
           <div id="feedback-wall-list" style="margin-top:16px;display:flex;flex-direction:column;gap:12px;"></div>
         </div>
@@ -1034,7 +1039,7 @@
             <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key (or set ELEVEN_KEY in Cloudflare)">
             <div id="admin-eleven-status" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;"></div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
-              Powers authentic studio-grade Indian accent text-to-speech across the entire website (ElevenLabs Multilingual v2). If not configured, platform gracefully runs high-fidelity on-device Indian English (en-IN) neural voice.
+              Powers studio-grade Indian accent text-to-speech across the entire website. <strong style="color:var(--accent-cyan);">Note:</strong> In ElevenLabs (Settings → API Keys), please copy the secret key (do not copy the Key ID column). On the ElevenLabs Free Plan, community voices (e.g. Aditi) are restricted by ElevenLabs via API; our platform smoothly runs our high-fidelity Indian English (en-IN) neural voice!
             </div>
           </div>
 
