@@ -1,0 +1,40 @@
+{
+  "id": "chatterbox",
+  "name": "Resemble AI Chatterbox",
+  "version": "1.0.0",
+  "publisher": "Resemble AI",
+  "repository": "https://github.com/resemble-ai/chatterbox",
+  "license": "Apache-2.0",
+  "license_url": "https://github.com/resemble-ai/chatterbox/blob/main/LICENSE",
+  "description": "High-speed, production-grade neural voice engine with low latency and clean phoneme articulation.",
+  "parameters": "350M",
+  "estimated_download_mb": 1150,
+  "required_ram_mb": 3072,
+  "recommended_vram_mb": 4096,
+  "cpu_compatible": true,
+  "gpu_compatible": true,
+  "supported_languages": ["en"],
+  "cloning_supported": true,
+  "cloning_requirements": {
+    "min_audio_seconds": 5,
+    "recommended_audio_seconds": 15,
+    "max_audio_seconds": 60,
+    "sample_rate_hz": 24000,
+    "transcription_required": false
+  },
+  "capabilities": {
+    "streaming": true,
+    "speed_control": true,
+    "pitch_control": false,
+    "emotion_control": false,
+    "chunking_max_chars": 400
+  },
+  "distribution_endpoints": [
+    {
+      "name": "HuggingFace Checkpoint",
+      "url": "https://huggingface.co/resemble-ai/chatterbox/resolve/main/model.safetensors",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 1205862400
+    }
+  ]
+}

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoiceForge — Offline-First AI Voice Studio</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="../src/styles/studio.css">
+  <style>
+    /* Inline utility enhancements */
+    .grid-2col { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+    .grid-3col { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; }
+    .card-title { font-size: 17px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .muted-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+    .dim-text { font-size: 12px; color: var(--text-dim); }
+    .flex-row { display: flex; align-items: center; gap: 10px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; }
+    .pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); text-transform: uppercase; }
+    .pill-green { background: rgba(16, 185, 129, 0.15); color: var(--accent-mint); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-indigo { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); border: 1px solid rgba(99, 102, 241, 0.3); }
+    .pill-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .pill-red { background: rgba(244, 63, 94, 0.15); color: var(--accent-coral); border: 1px solid rgba(244, 63, 94, 0.3); }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="studio-header">
+      <div class="brand-row">
+        <img src="favicon.svg" alt="VoiceForge Logo" class="brand-logo">
+        <div>
+          <h1 class="brand-title">VoiceForge</h1>
+          <div style="font-size:10.5px;color:var(--text-dim);letter-spacing:0.3px;">OFFLINE-FIRST AI VOICE STUDIO</div>
+        </div>
+      </div>
+
+      <nav class="nav-pills">
+        <button class="nav-btn active" data-tab="studio">🎙️ Studio</button>
+        <button class="nav-btn" data-tab="voicelab">🧬 VoiceLab</button>
+        <button class="nav-btn" data-tab="history">📜 History</button>
+        <button class="nav-btn" data-tab="models">📦 Models</button>
+        <button class="nav-btn" data-tab="hardware">⚡ Hardware</button>
+        <button class="nav-btn" data-tab="admin">⚙️ Admin</button>
+      </nav>
+
+      <div class="header-status-group">
+        <span class="status-pill offline" id="connection-pill">🟢 OFFLINE READY</span>
+        <span class="status-pill" id="mode-pill" style="background:rgba(99,102,241,0.15);color:var(--accent-indigo);border:1px solid rgba(99,102,241,0.3);">MODE: OFFLINE ONLY</span>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-stage">
+      <!-- 1. STUDIO TAB -->
+      <section id="tab-studio" class="tab-panel">
+        <div class="studio-grid">
+          <!-- Left: Script Editor -->
+          <div class="editor-card">
+            <div class="flex-between">
+              <span class="form-label" style="margin:0;">Narration Script</span>
+              <div class="flex-row">
+                <button class="btn-secondary" id="btn-sample-script" style="font-size:11.5px;padding:4px 10px;">Load Sample Script</button>
+                <button class="btn-secondary" id="btn-clear-script" style="font-size:11.5px;padding:4px 10px;">Clear</button>
+              </div>
+            </div>
+
+            <textarea id="script-input" class="script-textarea" placeholder="Enter or paste text to synthesize with human-like voice cloning... Supports multi-paragraph speeches, technical lectures, or dramatic storytelling."></textarea>
+
+            <div class="stats-bar">
+              <span id="char-word-count">0 characters · 0 words</span>
+              <span id="chunk-estimate-badge" class="badge-tag">1 chunk estimated</span>
+            </div>
+
+            <!-- Waveform & Audio Player -->
+            <div class="audio-player-card" id="player-container" style="display:none;">
+              <div class="flex-between">
+                <strong style="font-size:14px;color:var(--accent-cyan);" id="player-title">Synthesized Audio</strong>
+                <span style="font-size:12px;color:var(--text-dim);" id="player-duration">0:00</span>
+              </div>
+              <audio id="audio-element" controls style="width:100%;height:38px;border-radius:var(--radius-sm);"></audio>
+              <div class="flex-between" style="margin-top:6px;">
+                <div class="flex-row">
+                  <a id="btn-download-wav" class="btn-secondary" download="voiceforge_speech.wav">⬇ Download WAV</a>
+                  <button class="btn-secondary" id="btn-save-script-history">💾 Save to History</button>
+                </div>
+                <span class="dim-text" id="route-indicator">Synthesized via Local Engine</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Synthesis Controls -->
+          <div class="panel-card">
+            <div>
+              <label class="form-label">Voice Profile</label>
+              <select id="select-voice" class="select-input">
+                <option value="voice-studio-artisan">Aarav Studio (Articulate Indian/Global English)</option>
+                <option value="voice-studio-aditi">Aditi Warmth (Engaging Conversational)</option>
+              </select>
+              <div style="margin-top:4px;display:flex;justify-content:flex-end;">
+                <button class="btn-secondary" id="btn-preview-voice-sample" style="font-size:11px;padding:2px 8px;">🔊 Preview Timbre</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">Voice Model</label>
+              <select id="select-model" class="select-input">
+                <option value="neural-starter">VoiceForge Neural Starter (Fast / 0MB)</option>
+                <option value="chatterbox">Resemble AI Chatterbox (Apache 2.0)</option>
+                <option value="qwen3-tts">Qwen3-TTS Expressive (Apache 2.0)</option>
+                <option value="fish-speech">Fish Speech 1.5 Dual-AR (Apache 2.0)</option>
+                <option value="xtts-v2">Coqui XTTS-v2 (CPML)</option>
+              </select>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:4px;" id="model-desc-caption">
+                Instant-on lightweight neural synthesis engine.
+              </div>
+            </div>
+
+            <div>
+              <div class="flex-between">
+                <label class="form-label">Speed Multiplier</label>
+                <span id="speed-label" style="font-size:12px;font-weight:700;color:var(--accent-indigo);">1.00x</span>
+              </div>
+              <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.05" value="1.0" style="width:100%;">
+            </div>
+
+            <div>
+              <label class="form-label">Emotion / Style</label>
+              <select id="select-emotion" class="select-input">
+                <option value="neutral">Neutral &amp; Articulate</option>
+                <option value="cheerful">Cheerful &amp; Uplifting</option>
+                <option value="somber">Reflective &amp; Somber</option>
+                <option value="commanding">Commanding &amp; Authoritative</option>
+                <option value="whisper">Soft &amp; Intimate</option>
+              </select>
+            </div>
+
+            <div style="margin-top:8px;">
+              <button class="btn-primary" id="btn-generate" style="width:100%;">
+                <span>⚡</span> <span>Synthesize Voice</span>
+              </button>
+              <button class="btn-danger" id="btn-cancel" style="width:100%;margin-top:8px;display:none;">
+                ⏹ Cancel Generation
+              </button>
+            </div>
+
+            <div id="generation-progress-box" style="display:none;">
+              <div class="flex-between dim-text">
+                <span id="progress-status-text">Synthesizing audio chunks...</span>
+                <span id="progress-percent">0%</span>
+              </div>
+              <div class="progress-bar-wrap">
+                <div id="progress-bar-fill" class="progress-bar-fill" style="width:0%;"></div>
+              </div>
+            </div>
+
+            <div id="generation-error-box" style="display:none;padding:10px;background:rgba(244,63,94,0.12);border:1px solid var(--accent-coral);border-radius:var(--radius-sm);color:var(--accent-coral);font-size:12px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. VOICELAB TAB (VOICE CLONING) -->
+      <section id="tab-voicelab" class="tab-panel" style="display:none;">
+        <div class="grid-2col">
+          <!-- Clone Engine -->
+          <div class="card">
+            <h2 class="card-title"><span>🧬</span> Clone New Voice Profile</h2>
+            <p class="muted-text" style="margin-bottom:16px;">
+              Generate high-fidelity zero-shot voice clones using reference recordings (5 to 30 seconds of clean speech).
+            </p>
+
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div>
+                <label class="form-label">Voice Name</label>
+                <input type="text" id="clone-name" class="text-input" placeholder="e.g. Professor Sharma or My Studio Voice">
+              </div>
+
+              <div>
+                <label class="form-label">Description &amp; Language</label>
+                <div class="flex-row">
+                  <input type="text" id="clone-desc" class="text-input" placeholder="e.g. Natural conversational English" style="flex:1;">
+                  <select id="clone-lang" class="select-input" style="width:110px;">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Reference Audio (Choose File or Record Mic)</label>
+                <input type="file" id="clone-file-input" accept="audio/*" class="text-input" style="padding:6px;">
+                <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+                  <button type="button" class="btn-secondary btn-sm" id="btn-record-mic">🎙️ Record Microphone</button>
+                  <span id="recording-timer" class="dim-text" style="display:none;color:var(--accent-coral);font-weight:700;">● Recording (0s)...</span>
+                  <audio id="recorded-preview" controls style="display:none;height:32px;flex:1;"></audio>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Reference Transcript (Optional but recommended for Qwen3/Fish)</label>
+                <textarea id="clone-transcript" class="text-input" rows="2" placeholder="Exact words spoken in the reference audio..."></textarea>
+              </div>
+
+              <!-- Mandatory Ethical & Legal Consent -->
+              <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;">
+                <label style="display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--text-muted);cursor:pointer;">
+                  <input type="checkbox" id="clone-consent-check" style="margin-top:3px;">
+                  <span>
+                    <strong>Voice Ownership &amp; Consent Confirmation:</strong> I certify that I own this voice or possess explicit legal authorization to clone it. VoiceForge strictly prohibits non-consensual voice impersonation.
+                  </span>
+                </label>
+              </div>
+
+              <button class="btn-primary" id="btn-save-clone" disabled>
+                <span>🧬</span> <span>Extract Conditioning &amp; Save Voice</span>
+              </button>
+              <div id="clone-status-box" class="dim-text"></div>
+            </div>
+          </div>
+
+          <!-- Saved Voices Library -->
+          <div class="card">
+            <div class="flex-between" style="margin-bottom:12px;">
+              <h2 class="card-title" style="margin:0;"><span>📚</span> Saved Voice Profiles</h2>
+              <button class="btn-secondary" id="btn-refresh-voices" style="font-size:11.5px;padding:4px 8px;">🔄 Refresh</button>
+            </div>
+            <div id="voices-list-container" style="display:flex;flex-direction:column;gap:10px;max-height:500px;overflow-y:auto;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. HISTORY TAB -->
+      <section id="tab-history" class="tab-panel" style="display:none;">
+        <div class="card">
+          <div class="flex-between" style="margin-bottom:14px;">
+            <div>
+              <h2 class="card-title" style="margin:0;"><span>📜</span> Generation History &amp; Reusable Scripts</h2>
+              <p class="muted-text">Access past generated audio tracks, inspect generation settings, and reuse previous scripts.</p>
+            </div>
+            <button class="btn-secondary" id="btn-clear-history" style="font-size:11.5px;">🗑 Clear History</button>
+          </div>
+          <div id="history-items-container" style="display:flex;flex-direction:column;gap:10px;">
+            <div class="dim-text" style="padding:20px;text-align:center;">No speech generations recorded yet. Synthesize your first script in the Studio tab!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. MODELS TAB -->
+      <section id="tab-models" class="tab-panel" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <h2 class="card-title"><span>📦</span> Model Registry &amp; Download Manager</h2>
+          <p class="muted-text">
+            Inspect official open-source model weights, licensing terms, disk requirements, and atomic download progress.
+          </p>
+        </div>
+        <div class="grid-3col" id="model-cards-container">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- 5. HARDWARE DIAGNOSTICS TAB -->
+      <section id="tab-hardware" class="tab-panel" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <div class="flex-between">
+            <div>
+              <h2 class="card-title" style="margin:0;"><span>⚡</span> Hardware &amp; Inference Diagnostics</h2>
+              <p class="muted-text">Deep inspection of OS, CPU, RAM, NVIDIA GPU, VRAM, and model readiness.</p>
+            </div>
+            <button class="btn-secondary" id="btn-refresh-hardware">🔄 Re-scan Hardware</button>
+          </div>
+        </div>
+
+        <div class="grid-2col" style="margin-bottom:18px;">
+          <div class="card">
+            <h3 class="card-title" style="font-size:15px;">System &amp; Memory Specs</h3>
+            <div id="hardware-system-details" style="font-size:13.5px;display:flex;flex-direction:column;gap:8px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title" style="font-size:15px;">GPU &amp; CUDA Acceleration</h3>
+            <div id="hardware-gpu-details" style="font-size:13.5px;display:flex;flex-direction:column;gap:8px;">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title" style="font-size:15px;">Model Compatibility Evaluation</h3>
+          <div id="model-compat-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. ADMIN DASHBOARD TAB -->
+      <section id="tab-admin" class="tab-panel" style="display:none;">
+        <div class="card" style="margin-bottom:18px;">
+          <h2 class="card-title"><span>⚙️</span> Admin Dashboard: Routing &amp; Policy Control</h2>
+          <p class="muted-text">Configure global execution modes, cloud provider fallback, concurrency limits, and export D1 database records.</p>
+        </div>
+
+        <div class="grid-2col" style="margin-bottom:18px;">
+          <!-- Execution Mode Selector -->
+          <div class="card">
+            <h3 class="card-title" style="font-size:15px;">Persistent Execution Mode</h3>
+            <p class="muted-text" style="margin-bottom:12px;">Controls whether inference calls remain local or can route to cloud services.</p>
+            
+            <div style="display:flex;flex-direction:column;gap:8px;" id="mode-radio-group">
+              <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+                <input type="radio" name="routing-mode" value="OFFLINE_ONLY">
+                <div>
+                  <strong>OFFLINE ONLY</strong>
+                  <div class="dim-text">Exclusively local inference. No prompt, voice, or audio is ever transmitted.</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+                <input type="radio" name="routing-mode" value="LOCAL_FIRST">
+                <div>
+                  <strong>LOCAL FIRST</strong>
+                  <div class="dim-text">Prefers local engine; falls back to cloud only if configured and disclosed.</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+                <input type="radio" name="routing-mode" value="CLOUD_FIRST">
+                <div>
+                  <strong>CLOUD FIRST</strong>
+                  <div class="dim-text">Uses remote GPU inference provider when configured; local engine fallback.</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+                <input type="radio" name="routing-mode" value="CLOUD_ONLY">
+                <div>
+                  <strong>CLOUD ONLY</strong>
+                  <div class="dim-text">Exclusively remote cloud inference. Never silently switches to local.</div>
+                </div>
+              </label>
+
+              <label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;">
+                <input type="radio" name="routing-mode" value="MANUAL">
+                <div>
+                  <strong>MANUAL</strong>
+                  <div class="dim-text">Let the user select local or cloud route per generation.</div>
+                </div>
+              </label>
+            </div>
+            <button class="btn-primary" id="btn-save-mode" style="margin-top:12px;width:100%;">Save Routing Policy</button>
+          </div>
+
+          <!-- Global Exhibition Data Export & Cloudflare D1 -->
+          <div class="card">
+            <h3 class="card-title" style="font-size:15px;">Global Dated Data &amp; Cloudflare D1 Storage</h3>
+            <p class="muted-text" style="margin-bottom:12px;">
+              Data is globally dated, synced, and permanently stored on Cloudflare D1 (<code>careerfair-db</code>). Download anytime as JSON or CSV.
+            </p>
+
+            <div style="background:var(--bg-base);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+              <div style="font-weight:700;color:var(--accent-mint);margin-bottom:4px;">🟢 Database Connected (D1 careerfair-db)</div>
+              <div style="font-size:12px;color:var(--text-dim);">UUID: f92d8dd7-b120-4011-b176-3c31665631ed</div>
+              <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">Stores Leaderboards, Feedback Reflections, Voice Profiles, and Job Audits globally across all devices.</div>
+            </div>
+
+            <div class="flex-row" style="flex-wrap:wrap;">
+              <button class="btn-primary" id="btn-export-d1-json">⬇ Download Global JSON</button>
+              <button class="btn-secondary" id="btn-export-d1-csv">⬇ Download Global CSV</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+
+  <!-- Client App Logic -->
+  <script src="./app.js"></script>
+</body>
+</html>

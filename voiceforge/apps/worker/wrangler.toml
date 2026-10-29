@@ -1,0 +1,19 @@
+name = "voiceforge-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+DEFAULT_ROUTING_MODE = "OFFLINE_ONLY"
+ALLOW_ANONYMOUS_GENERATION = "true"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "careerfair-db"
+database_id = "f92d8dd7-b120-4011-b176-3c31665631ed"
+
+# Optional R2 bucket for production cloud audio storage
+# [[r2_buckets]]
+# binding = "AUDIO_BUCKET"
+# bucket_name = "voiceforge-audio-assets"

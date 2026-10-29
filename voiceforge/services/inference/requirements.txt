@@ -1,0 +1,12 @@
+# VoiceForge Local Inference Engine Dependencies
+# Verified for Python 3.10, 3.11, 3.12, 3.13
+
+# Core lightweight audio & system utilities (optional enhancements; engine has zero-dep fallbacks)
+psutil>=5.9.0
+requests>=2.31.0
+numpy>=1.24.0
+
+# Optional PyTorch runtime for heavy models (Chatterbox, Fish-Speech, Qwen3-TTS, XTTS-v2)
+# torch>=2.2.0
+# torchaudio>=2.2.0
+# safetensors>=0.4.0

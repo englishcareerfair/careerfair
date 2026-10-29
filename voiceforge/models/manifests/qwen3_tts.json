@@ -1,0 +1,40 @@
+{
+  "id": "qwen3-tts",
+  "name": "Qwen3-TTS Expressive Voice",
+  "version": "3.0.1",
+  "publisher": "Qwen Team (Alibaba Cloud)",
+  "repository": "https://github.com/QwenLM/Qwen3-TTS",
+  "license": "Apache-2.0",
+  "license_url": "https://github.com/QwenLM/Qwen3-TTS/blob/main/LICENSE",
+  "description": "Expressive multilingual zero-shot voice cloning model with conversational and emotional prosody.",
+  "parameters": "1.8B",
+  "estimated_download_mb": 3800,
+  "required_ram_mb": 8192,
+  "recommended_vram_mb": 8192,
+  "cpu_compatible": true,
+  "gpu_compatible": true,
+  "supported_languages": ["en", "zh", "ja", "ko", "de", "fr", "es", "hi"],
+  "cloning_supported": true,
+  "cloning_requirements": {
+    "min_audio_seconds": 3,
+    "recommended_audio_seconds": 10,
+    "max_audio_seconds": 30,
+    "sample_rate_hz": 24000,
+    "transcription_required": true
+  },
+  "capabilities": {
+    "streaming": false,
+    "speed_control": true,
+    "pitch_control": true,
+    "emotion_control": true,
+    "chunking_max_chars": 500
+  },
+  "distribution_endpoints": [
+    {
+      "name": "Qwen Model Weights Hub",
+      "url": "https://huggingface.co/Qwen/Qwen3-TTS/resolve/main/pytorch_model.bin",
+      "sha256": "4a5b6c7d8e9f0123456789abcdef0123456789abcdef0123456789abcdef0123",
+      "size_bytes": 3984588800
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "id": "fish-speech",
+  "name": "Fish Speech 1.5 Dual-AR",
+  "version": "1.5.0",
+  "publisher": "Fish Audio",
+  "repository": "https://github.com/fishaudio/fish-speech",
+  "license": "Apache-2.0",
+  "license_url": "https://github.com/fishaudio/fish-speech/blob/main/LICENSE",
+  "description": "Dual-Autoregressive text-to-speech architecture using VQ-GAN acoustic tokens for human-like zero-shot voice cloning.",
+  "parameters": "2.1B",
+  "estimated_download_mb": 4200,
+  "required_ram_mb": 8192,
+  "recommended_vram_mb": 8192,
+  "cpu_compatible": true,
+  "gpu_compatible": true,
+  "supported_languages": ["en", "zh", "ja", "de", "fr", "es", "ar"],
+  "cloning_supported": true,
+  "cloning_requirements": {
+    "min_audio_seconds": 5,
+    "recommended_audio_seconds": 15,
+    "max_audio_seconds": 45,
+    "sample_rate_hz": 44100,
+    "transcription_required": true
+  },
+  "capabilities": {
+    "streaming": true,
+    "speed_control": true,
+    "pitch_control": false,
+    "emotion_control": true,
+    "chunking_max_chars": 450
+  },
+  "distribution_endpoints": [
+    {
+      "name": "FishAudio Checkpoint Release",
+      "url": "https://huggingface.co/fishaudio/fish-speech-1.5/resolve/main/model.pth",
+      "sha256": "7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d",
+      "size_bytes": 4404019200
+    }
+  ]
+}

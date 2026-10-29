@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.tmp
+
+# Node / Web
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+
+# Secrets
+.dev.vars
+.env

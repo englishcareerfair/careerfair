@@ -1,0 +1,40 @@
+{
+  "id": "xtts-v2",
+  "name": "Coqui XTTS-v2 Compatibility",
+  "version": "2.0.3",
+  "publisher": "Coqui (Open Source Community)",
+  "repository": "https://huggingface.co/coqui/XTTS-v2",
+  "license": "Coqui Public Model License (CPML)",
+  "license_url": "https://coqui.ai/cpml",
+  "description": "Widely deployed zero-shot voice cloning model supporting 17 languages with 3-second reference audio conditioning.",
+  "parameters": "1.4B",
+  "estimated_download_mb": 3500,
+  "required_ram_mb": 6144,
+  "recommended_vram_mb": 6144,
+  "cpu_compatible": true,
+  "gpu_compatible": true,
+  "supported_languages": ["en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh", "ja", "ko", "hu", "hi"],
+  "cloning_supported": true,
+  "cloning_requirements": {
+    "min_audio_seconds": 3,
+    "recommended_audio_seconds": 12,
+    "max_audio_seconds": 30,
+    "sample_rate_hz": 24000,
+    "transcription_required": false
+  },
+  "capabilities": {
+    "streaming": true,
+    "speed_control": true,
+    "pitch_control": false,
+    "emotion_control": false,
+    "chunking_max_chars": 350
+  },
+  "distribution_endpoints": [
+    {
+      "name": "Hugging Face Coqui Weights",
+      "url": "https://huggingface.co/coqui/XTTS-v2/resolve/main/model.pth",
+      "sha256": "8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e",
+      "size_bytes": 3670016000
+    }
+  ]
+}

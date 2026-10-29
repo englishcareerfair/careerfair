@@ -1,0 +1,40 @@
+{
+  "id": "neural-starter",
+  "name": "VoiceForge Neural Starter Engine",
+  "version": "1.2.0",
+  "publisher": "VoiceForge Open Source",
+  "repository": "https://github.com/voiceforge/neural-starter",
+  "license": "MIT",
+  "license_url": "https://opensource.org/licenses/MIT",
+  "description": "Zero-overhead instant neural speech synthesizer with fast local execution, 0MB initial download, and multi-accent voice cloning simulation.",
+  "parameters": "85M",
+  "estimated_download_mb": 0,
+  "required_ram_mb": 512,
+  "recommended_vram_mb": 0,
+  "cpu_compatible": true,
+  "gpu_compatible": true,
+  "supported_languages": ["en", "hi", "es", "fr", "de", "ja", "zh", "pt", "it", "ar"],
+  "cloning_supported": true,
+  "cloning_requirements": {
+    "min_audio_seconds": 2,
+    "recommended_audio_seconds": 8,
+    "max_audio_seconds": 60,
+    "sample_rate_hz": 24000,
+    "transcription_required": false
+  },
+  "capabilities": {
+    "streaming": true,
+    "speed_control": true,
+    "pitch_control": true,
+    "emotion_control": true,
+    "chunking_max_chars": 600
+  },
+  "distribution_endpoints": [
+    {
+      "name": "Bundled Starter Runtime",
+      "url": "local://embedded-starter",
+      "sha256": "embedded",
+      "size_bytes": 0
+    }
+  ]
+}
