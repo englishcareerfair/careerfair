@@ -5,9 +5,9 @@
  */
 
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
-// Light Mode is default on start
+// Dark Mode is default on start
 const savedInitialTheme = localStorage.getItem('cf_theme');
-const initialResolvedTheme = savedInitialTheme === 'dark' ? 'dark' : 'light';
+const initialResolvedTheme = (savedInitialTheme === 'light') ? 'light' : 'dark';
 
 const STATE = {
   theme: initialResolvedTheme,
