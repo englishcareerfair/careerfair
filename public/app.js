@@ -9755,8 +9755,6 @@ function initAdminWorkspace() {
       $(`#admin-view-${view}`).hidden = false;
       if (view === 'data') {
         renderAdminModeration();
-      } else if (view === 'keys') {
-        renderAdminKeys();
       } else if (view === 'telemetry') {
         renderAdminTelemetry();
       }
