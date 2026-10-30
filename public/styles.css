@@ -4307,3 +4307,136 @@ button, a, input, select, textarea {
   position: relative;
   z-index: 5;
 }
+
+
+/* ─── THEMED DROPDOWNS & BUSINESS CARD INPUT CONTROLS ─────────────────────── */
+select.form-select,
+.form-select {
+  width: 100%;
+  padding: 11px 40px 11px 14px;
+  background-color: #0d1527;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2300f0ff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px 16px;
+  border: 1px solid rgba(0, 240, 255, 0.28);
+  border-radius: var(--radius-md, 10px);
+  color: #f1f5f9;
+  font-family: var(--font-body, inherit);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+select.form-select:hover,
+.form-select:hover {
+  border-color: rgba(0, 240, 255, 0.55);
+  box-shadow: 0 6px 18px rgba(0, 240, 255, 0.12), inset 0 1px 3px rgba(255, 255, 255, 0.08);
+}
+
+select.form-select:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--accent-cyan, #00f0ff);
+  box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.25), 0 8px 24px rgba(0, 240, 255, 0.18);
+  background-color: #111c34;
+}
+
+select.form-select optgroup {
+  background-color: #0b1120;
+  color: #38bdf8;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 8px 4px;
+}
+
+select.form-select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+  padding: 10px 14px;
+  font-family: var(--font-body, inherit);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+select.form-select option:hover,
+select.form-select option:focus,
+select.form-select option:checked {
+  background-color: #1e293b;
+  color: #00f0ff;
+}
+
+/* Phone & Contact Badges on Card */
+.biz-card-contact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  font-family: var(--font-mono, monospace);
+  color: #38bdf8;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+}
+.biz-card-contact-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: rgba(0, 240, 255, 0.12);
+  color: #00f0ff;
+  font-size: 11px;
+}
+
+/* Custom Profession Toggle Button */
+.btn-toggle-custom {
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px dashed rgba(0, 240, 255, 0.4);
+  color: #38bdf8;
+  padding: 5px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-toggle-custom:hover {
+  background: rgba(0, 240, 255, 0.18);
+  border-color: #00f0ff;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-toggle-phone {
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px dashed rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  padding: 5px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-toggle-phone:hover {
+  background: rgba(52, 211, 153, 0.22);
+  border-color: #34d399;
+  color: #ffffff;
+  transform: translateY(-1px);
+}

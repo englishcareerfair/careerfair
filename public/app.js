@@ -752,6 +752,117 @@ const CAREERS_DATA = [
     exams: "TISS NET / University Entrance",
     englishSuperpower: "Persuasive grant proposals and grassroots storytelling that unlock crores in philanthropic funding for underserved communities."
   }
+,
+  {
+    "title": "Quantum Computing & Cryptography Architect",
+    "icon": "\u269b\ufe0f",
+    "cat": "Tech",
+    "desc": "Architect next-generation fault-tolerant quantum algorithms and post-quantum cryptographic security protocols for sovereign infrastructure.",
+    "skills": "Quantum Circuit Design, Post-Quantum Cryptography, Qiskit, Linear Algebra",
+    "salary": "\u20b928L \u2013 \u20b975L+/yr",
+    "degrees": "B.Tech CSE/Physics (IIT) + M.S./Ph.D. Quantum Information",
+    "exams": "GATE, GRE, Qiskit Global Certification",
+    "englishSuperpower": "Explaining complex quantum superposition and entanglement principles in clear executive briefing briefs."
+},
+  {
+    "title": "Bio-Robotics Surgeon & Bionic Prosthetics Lead",
+    "icon": "\ud83e\uddbe",
+    "cat": "Health",
+    "desc": "Lead neural-interfaced robotic micro-surgeries and develop AI-driven cybernetic prosthetics that restore motor capabilities.",
+    "skills": "Robotic Surgery (Da Vinci), Neural Prosthetics, Biocompatible Engineering",
+    "salary": "\u20b925L \u2013 \u20b965L+/yr",
+    "degrees": "MBBS + M.S. Surgery / MCh Bio-Robotics (AIIMS / Johns Hopkins)",
+    "exams": "NEET-PG, USMLE, Robotic Surgical Fellowship",
+    "englishSuperpower": "Communicating high-stakes surgical telemetry and empathetic patient care instructions across cross-disciplinary medical teams."
+},
+  {
+    "title": "Renewable Energy Grid & Fusion Systems Director",
+    "icon": "\u26a1",
+    "cat": "Tech",
+    "desc": "Design zero-carbon continental microgrids and oversee magnetic confinement fusion reactor power distribution architectures.",
+    "skills": "Clean Energy Systems, Grid Optimization, Fusion Plasma Physics, SCADA",
+    "salary": "\u20b922L \u2013 \u20b955L+/yr",
+    "degrees": "B.Tech Electrical / Energy Systems + M.Tech Clean Grid Engineering",
+    "exams": "GATE, IEEE Energy Specialist, CEM",
+    "englishSuperpower": "Drafting international net-zero grid compliance pacts and presenting sovereign clean energy transitions."
+},
+  {
+    "title": "Autonomous Vehicle Fleet & Aerospace Systems Lead",
+    "icon": "\ud83d\udef8",
+    "cat": "Aviation",
+    "desc": "Direct autonomous electric vertical takeoff and landing (eVTOL) aircraft fleets and ground autonomous sensor fusion algorithms.",
+    "skills": "Computer Vision, SLAM, Avionics Systems, FAA/DGCA Urban Air Mobility",
+    "salary": "\u20b924L \u2013 \u20b960L+/yr",
+    "degrees": "B.Tech Aerospace / Robotics + M.S. Autonomous Systems",
+    "exams": "DGCA Drone Pilot Pro, FAA Part 107, IEEE Robotics",
+    "englishSuperpower": "Formulating failsafe air traffic protocols and testifying before sovereign aviation authorities."
+},
+  {
+    "title": "Cyber Defense & Threat Intelligence Commander",
+    "icon": "\ud83d\udee1\ufe0f",
+    "cat": "Law",
+    "desc": "Direct sovereign red/blue cybersecurity defense operations and mitigate zero-day nation-state cyber warfare threats.",
+    "skills": "Offensive Security, Threat Hunting, Reverse Engineering, Incident Command",
+    "salary": "\u20b920L \u2013 \u20b952L+/yr",
+    "degrees": "B.Tech Cybersecurity / Forensic Tech + CISSP / OSCP",
+    "exams": "OSCP, CISSP, CEH Master, SANS GIAC",
+    "englishSuperpower": "Translating zero-day vulnerability disclosures into emergency tactical action orders for boardroom executives."
+},
+  {
+    "title": "AI Virtual Cinematographer & Metahuman Director",
+    "icon": "\ud83c\udfac",
+    "cat": "Creative",
+    "desc": "Direct photorealistic virtual production worlds, real-time Unreal Engine cinematics, and generative AI character performances.",
+    "skills": "Unreal Engine 5, Generative Diffusion Models, Virtual Lighting, Storytelling",
+    "salary": "\u20b918L \u2013 \u20b948L+/yr",
+    "degrees": "B.Des Digital Arts / Film Direction (FTII / NID) + Unreal Engine Master",
+    "exams": "Epic Games Virtual Production Fellow, Adobe Certified",
+    "englishSuperpower": "Crafting evocative visual prompts, actor dialogue, and worldbuilding narrative bibles."
+},
+  {
+    "title": "Space Habitat Architect & Orbital Station Designer",
+    "icon": "\ud83c\udf0c",
+    "cat": "Tech",
+    "desc": "Design modular microgravity space stations, lunar research habitats, and closed-loop bio-regenerative life support pods.",
+    "skills": "Parametric Architecture, Microgravity Engineering, CAD/BIM, ECLSS",
+    "salary": "\u20b926L \u2013 \u20b970L+/yr",
+    "degrees": "B.Arch + M.S. Space Architecture (ISU / MIT Media Lab)",
+    "exams": "ISRO / NASA Space Systems Fellow, LEED Platinum",
+    "englishSuperpower": "Presenting extraterrestrial colony safety charters and multi-agency mission proposals."
+},
+  {
+    "title": "Cognitive Neuro-Ethicist & AI Governance Director",
+    "icon": "\ud83e\udde0",
+    "cat": "Public Policy",
+    "desc": "Establish international ethics frameworks for brain-computer interfaces, artificial general intelligence, and cognitive liberty.",
+    "skills": "Neuro-ethics, AI Safety, International Human Rights Law, Policy Drafting",
+    "salary": "\u20b920L \u2013 \u20b950L+/yr",
+    "degrees": "M.A./Ph.D. Neurophilosophy & Bioethics (Oxford / Harvard)",
+    "exams": "UPSC / Global Policy Fellowship, UNESCO AI Ethics Certified",
+    "englishSuperpower": "Authoring global governance whitepapers and negotiating treaties on neural data privacy."
+},
+  {
+    "title": "Esports Franchise Executive & Game Ecosystem Lead",
+    "icon": "\ud83c\udfae",
+    "cat": "Business",
+    "desc": "Direct multi-million dollar global esports tournament leagues, talent development pipelines, and interactive gaming brands.",
+    "skills": "Franchise Management, Media Rights, Broadcast Production, Brand Partnerships",
+    "salary": "\u20b918L \u2013 \u20b945L+/yr",
+    "degrees": "BBA / MBA Sports Management / Media Strategy (IIM)",
+    "exams": "CAT, Esports Business Certified, Global Sports Marketing",
+    "englishSuperpower": "Negotiating multi-million dollar broadcast streaming sponsorships and energizing live stadium crowds."
+},
+  {
+    "title": "Algorithmic Quantitative Trader & FinTech Architect",
+    "icon": "\ud83d\udcc8",
+    "cat": "Business",
+    "desc": "Engineer ultra-low latency high-frequency algorithmic trading strategies and decentralized autonomous financial protocols.",
+    "skills": "High-Frequency Trading, Stochastic Calculus, C++20, Risk Modeling",
+    "salary": "\u20b935L \u2013 \u20b91.2Cr+/yr",
+    "degrees": "B.Tech/M.S. Quantitative Finance / Mathematics (IIT / NYU Courant)",
+    "exams": "CFA Level 3, FRM Certified, QuantNet Top Rank",
+    "englishSuperpower": "Synthesizing market sentiment anomalies into high-conviction investment committee briefs."
+}
 ];
 
 // Colleges Dataset with Verified Official Accreditation
@@ -7480,6 +7591,66 @@ const CAREER_CREDENTIALS_MAP = {
     "Executive Director · Global Education NGO (1M+ Students Empowered)",
     "Schwab Foundation Social Entrepreneur of the Year · World Bank Fellow",
     "Ashoka Global Fellow · United Nations SDG Impact Champion"
+  ],
+  "Quantum Computing & Cryptography Architect": [
+      "Ph.D. Quantum Information (MIT) \u00b7 Qiskit Core Fellow",
+      "Chief Quantum Architect \u00b7 Post-Quantum Standard Contributor (NIST)",
+      "Staff Quantum Systems Lead \u00b7 Superconducting Qubit Certified",
+      "B.Tech CSE (IIT) \u00b7 Distinguished Quantum Research Scholar"
+  ],
+  "Bio-Robotics Surgeon & Bionic Prosthetics Lead": [
+      "MBBS \u00b7 MCh Bio-Robotics \u00b7 Da Vinci Master Console Certified",
+      "Fellow Royal College of Surgeons (FRCS) \u00b7 Neural Interface Pioneer",
+      "Chief of Robotic Surgery \u00b7 AIIMS Gold Medalist",
+      "Bionic Prosthetics Innovation Chair \u00b7 Johns Hopkins Medicine Fellow"
+  ],
+  "Renewable Energy Grid & Fusion Systems Director": [
+      "M.Tech Clean Energy Systems \u00b7 IEEE Smart Grid Fellow",
+      "Director Fusion Power Distribution \u00b7 ITER Scientific Contributor",
+      "Certified Energy Manager (CEM) \u00b7 Net-Zero Grid Pioneer",
+      "Chief Grid Architect \u00b7 International Solar Alliance Lead"
+  ],
+  "Autonomous Vehicle Fleet & Aerospace Systems Lead": [
+      "M.S. Aerospace & Autonomous Flight (Stanford) \u00b7 DGCA Gold",
+      "Head of eVTOL Flight Operations \u00b7 FAA Urban Mobility Certified",
+      "Chief Robotics Engineer \u00b7 IEEE Autonomous Systems Fellow",
+      "Senior Fleet Director \u00b7 100M+ Autonomous Safe Miles Lead"
+  ],
+  "Cyber Defense & Threat Intelligence Commander": [
+      "CISSP \u00b7 OSCP Master \u00b7 Sovereign Cybersecurity Command Lead",
+      "Offensive Security Certified Expert (OSCE) \u00b7 Zero-Day Defense Fellow",
+      "Chief Information Security Officer (CISO) \u00b7 Black Hat Keynote Honoree",
+      "B.Tech Cyber Forensics \u00b7 Interpol Cyber Advisory Group Alum"
+  ],
+  "AI Virtual Cinematographer & Metahuman Director": [
+      "B.Des Film Direction (FTII) \u00b7 Epic Games Unreal Master Fellow",
+      "Academy Award Technical Achievement Nominee \u00b7 Virtual Production Lead",
+      "Chief Creative Director \u00b7 Generative Metahuman Studios",
+      "Art Directors Guild \u00b7 Cannes Lions Grand Prix Winner"
+  ],
+  "Space Habitat Architect & Orbital Station Designer": [
+      "M.S. Space Architecture (ISU) \u00b7 NASA Artemis Design Honoree",
+      "Chief Architect \u00b7 Low-Earth Orbit Commercial Spaceport",
+      "LEED AP Space Habitat Certified \u00b7 AIA Space Design Fellow",
+      "Lunar Gateway Habitat Principal Designer \u00b7 ISRO Scholar"
+  ],
+  "Cognitive Neuro-Ethicist & AI Governance Director": [
+      "Ph.D. Bioethics & Neural Governance (Oxford) \u00b7 UN AI Advisor",
+      "Chairperson Global Neuro-Rights Council \u00b7 UNESCO Ethics Fellow",
+      "Senior Policy Fellow \u00b7 Harvard Berkman Klein Center",
+      "Chief AI Safety Strategist \u00b7 International Digital Rights Charter"
+  ],
+  "Esports Franchise Executive & Game Ecosystem Lead": [
+      "MBA Sports Management (IIM) \u00b7 Global Esports Executive of the Year",
+      "Commissioner International Pro League \u00b7 Riot & Valve Partner",
+      "Franchise President \u00b7 World Championship Winning Organization",
+      "Forbes 30 Under 30 Games \u00b7 Interactive Media Strategist"
+  ],
+  "Algorithmic Quantitative Trader & FinTech Architect": [
+      "M.S. Quantitative Finance (NYU Courant) \u00b7 CFA Level 3 Charterholder",
+      "Head of Systematic Trading \u00b7 Multi-Strategy Alpha Fund Lead",
+      "Financial Risk Manager (FRM) \u00b7 Top Quant League Gold Medalist",
+      "Distinguished Quant Architect \u00b7 Ultra-Low Latency Protocol Designer"
   ]
 };
 
@@ -7514,7 +7685,7 @@ function renderQrCode(containerEl, url, size = 68) {
   }
 }
 
-function showEnlargedQrModal(name, title, creds, verifyUrl) {
+function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '') {
   let modal = $('#modal-qr-enlarged');
   if (!modal) {
     modal = document.createElement('div');
@@ -7523,6 +7694,12 @@ function showEnlargedQrModal(name, title, creds, verifyUrl) {
     document.body.appendChild(modal);
   }
 
+  const phoneBadgeHtml = phone ? `
+    <div style="font-family:var(--font-mono);font-size:12.5px;color:#38bdf8;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+      <span>📱</span> <span>${escapeHtml(phone)}</span>
+    </div>
+  ` : '';
+
   modal.innerHTML = `
     <div class="modal-card" style="max-width:440px;text-align:center;position:relative;">
       <button type="button" class="modal-close-btn" id="btn-close-qr-modal" aria-label="Close modal">×</button>
@@ -7530,9 +7707,10 @@ function showEnlargedQrModal(name, title, creds, verifyUrl) {
         📱 SCAN TO VERIFY CREDENTIAL
       </div>
       <h3 style="font-size:20px;margin:0 0 4px 0;">${escapeHtml(name)}</h3>
-      <div style="color:var(--accent-cyan);font-size:13.5px;font-weight:700;margin-bottom:16px;">
+      <div style="color:var(--accent-cyan);font-size:13.5px;font-weight:700;margin-bottom:8px;">
         ${escapeHtml(title)}
       </div>
+      ${phoneBadgeHtml}
 
       <div id="modal-qr-code-target" style="background:#ffffff;padding:16px;border-radius:12px;width:220px;height:220px;margin:0 auto 16px auto;box-shadow:0 10px 30px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;"></div>
 
@@ -7565,7 +7743,7 @@ function showEnlargedQrModal(name, title, creds, verifyUrl) {
   });
 }
 
-function showVerifiedCredentialModal(student, title, creds) {
+function showVerifiedCredentialModal(student, title, creds, phone = '') {
   let modalBackdrop = $('#modal-verified-credential');
   if (!modalBackdrop) {
     modalBackdrop = document.createElement('div');
@@ -7573,6 +7751,13 @@ function showVerifiedCredentialModal(student, title, creds) {
     modalBackdrop.className = 'modal-backdrop';
     document.body.appendChild(modalBackdrop);
   }
+
+  const phoneRowHtml = phone ? `
+    <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Executive Contact Line</div>
+    <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;">
+      <span>📱</span> <span>${escapeHtml(phone)}</span>
+    </div>
+  ` : '';
 
   modalBackdrop.innerHTML = `
     <div class="modal-card" style="max-width:540px;text-align:center;position:relative;">
@@ -7591,7 +7776,8 @@ function showVerifiedCredentialModal(student, title, creds) {
         <div style="font-family:var(--font-mono);font-size:13.5px;color:var(--text-main);font-weight:600;margin-bottom:10px;">
           ${escapeHtml(creds)}
         </div>
-        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Issuing Academy</div>
+        ${phoneRowHtml}
+        <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Issuing Academy</div>
         <div style="font-size:12.5px;color:var(--text-muted);">
           🏛️ Kanakia International School Mira Road · English Careers Forum
         </div>
@@ -7637,7 +7823,8 @@ function checkIncomingCardVerification() {
       const student = params.get('student') || 'Executive Explorer';
       const title = params.get('title') || 'Future Career Leader';
       const creds = params.get('creds') || 'Class of 2040 · Executive Honors';
-      showVerifiedCredentialModal(student, title, creds);
+      const phone = params.get('phone') || '';
+      showVerifiedCredentialModal(student, title, creds, phone);
     }
   } catch (e) {}
 }
@@ -7656,6 +7843,8 @@ function renderFutureBusinessCard(mount) {
     categories[cat].push(c);
   });
 
+  const totalCareerCount = CAREERS_DATA.length;
+
   // Build career options HTML grouped by category
   let careerOptionsHtml = '';
   for (const [catName, list] of Object.entries(categories)) {
@@ -7667,9 +7856,17 @@ function renderFutureBusinessCard(mount) {
     careerOptionsHtml += `</optgroup>`;
   }
 
+  // Add Custom Option at top or bottom
+  careerOptionsHtml += `<optgroup label="── ✍️ CUSTOM CAREER ──">`;
+  careerOptionsHtml += `<option value="__custom__">✨ ✍️ + Type Custom Dream Profession...</option>`;
+  careerOptionsHtml += `</optgroup>`;
+
   mount.innerHTML = `
     <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🪪 Future Business Card Generator</h3>
+      <h3 style="font-size:20px;display:flex;align-items:center;gap:8px;">
+        <span>🪪</span> <span>Future Business Card Generator</span>
+        <span class="badge-pill badge-global" style="font-size:11px;font-family:var(--font-mono);">${totalCareerCount}+ Elite Pathways</span>
+      </h3>
       <p style="font-size:13.5px;color:var(--text-dim);">Design your executive credentials for the year 2040 complete with dynamic QR verification.</p>
     </div>
 
@@ -7678,16 +7875,25 @@ function renderFutureBusinessCard(mount) {
       <div>
         <div style="margin-bottom:12px;">
           <label for="biz-name" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Your Name:</label>
-          <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your name">
+          <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your full name">
         </div>
 
         <div style="margin-bottom:12px;">
-          <label for="biz-career-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">
-            Future Dream Career (32 Career Paths):
-          </label>
-          <select id="biz-career-select" class="form-select" style="width:100%;font-weight:600;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="biz-career-select" style="font-size:13px;font-weight:700;margin:0;">
+              Future Dream Career (${totalCareerCount} Career Paths):
+            </label>
+            <button type="button" class="btn-toggle-custom" id="btn-custom-career-toggle" title="Switch to custom career input">
+              <span>✍️</span> <span>Custom Profession</span>
+            </button>
+          </div>
+          <select id="biz-career-select" class="form-select" style="width:100%;">
             ${careerOptionsHtml}
           </select>
+          <div id="biz-custom-career-container" style="display:none;margin-top:8px;">
+            <input type="text" id="biz-career-custom" placeholder="Type your dream profession (e.g. Chief AI Officer, Quantum Bio-Chemist)...">
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">✨ Type any custom title you envision for yourself in 2040.</div>
+          </div>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -7698,6 +7904,23 @@ function renderFutureBusinessCard(mount) {
             <!-- Populated dynamically based on career choice -->
           </select>
           <input type="text" id="biz-creds-custom" placeholder="Type your custom degrees, licenses or honors..." style="display:none;margin-top:8px;">
+        </div>
+
+        <!-- Optional Phone / WhatsApp Contact Field -->
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label for="biz-phone" style="font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;">
+              <span>Executive Contact / Phone</span>
+              <span style="font-size:11px;color:var(--text-dim);font-weight:normal;">(Optional)</span>
+            </label>
+            <button type="button" class="btn-toggle-phone" id="btn-toggle-phone-row" title="Toggle phone field on card">
+              <span>📞</span> <span>+ Add Contact Line</span>
+            </button>
+          </div>
+          <div id="biz-phone-container" style="display:none;">
+            <input type="tel" id="biz-phone" placeholder="e.g. +91 98765 43210 or executive@direct.line">
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🔒 Included on card &amp; QR verification if provided.</div>
+          </div>
         </div>
 
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
@@ -7721,6 +7944,10 @@ function renderFutureBusinessCard(mount) {
               <div class="biz-card-badge">CLASS OF 2040 · EXECUTIVE CREDENTIAL</div>
               <h3 class="biz-card-name" id="bc-name">${escapeHtml(STATE.studentName || 'Explorer')}</h3>
               <div class="biz-card-title" id="bc-title">${escapeHtml(initialCareer)}</div>
+              <div class="biz-card-contact" id="bc-contact-row" style="display:none;">
+                <span class="biz-card-contact-icon">📞</span>
+                <span id="bc-phone"></span>
+              </div>
             </div>
             <div id="bc-qr-mount" class="biz-card-qr-box" title="Click to view & scan full-size verification badge">
               <!-- Crisp vector QR code rendered here -->
@@ -7743,8 +7970,17 @@ function renderFutureBusinessCard(mount) {
 
   const nameInput = $('#biz-name');
   const careerSelect = $('#biz-career-select');
+  const careerCustomContainer = $('#biz-custom-career-container');
+  const careerCustomInput = $('#biz-career-custom');
+  const btnCustomToggle = $('#btn-custom-career-toggle');
+
   const credsSelect = $('#biz-creds-select');
   const credsCustomInput = $('#biz-creds-custom');
+
+  const phoneContainer = $('#biz-phone-container');
+  const phoneInput = $('#biz-phone');
+  const btnPhoneToggle = $('#btn-toggle-phone-row');
+
   const cardEl = $('#biz-card-render');
 
   // Helper to populate credentials select based on chosen career
@@ -7774,35 +8010,56 @@ function renderFutureBusinessCard(mount) {
   const updateCard = (animatePulse = false) => {
     const rawName = (nameInput?.value || '').trim();
     const name = rawName || 'Explorer';
-    const career = careerSelect?.value || 'Commercial Airline Pilot';
+
+    let career = careerSelect?.value || 'Commercial Airline Pilot';
+    if (career === '__custom__') {
+      const customTitle = (careerCustomInput?.value || '').trim();
+      career = customTitle || 'Chief Innovation Officer';
+    }
 
     let creds = credsSelect?.value || '';
     if (creds === '__custom__') {
       creds = (credsCustomInput?.value || '').trim() || 'Class of 2040 · Executive Honors';
     }
 
+    const phone = (phoneInput?.value || '').trim();
+
     // Update DOM on the card preview
     const bcName = $('#bc-name');
     const bcTitle = $('#bc-title');
     const bcCreds = $('#bc-creds');
+    const bcContactRow = $('#bc-contact-row');
+    const bcPhone = $('#bc-phone');
 
     if (bcName) bcName.textContent = name;
     if (bcTitle) bcTitle.textContent = career;
     if (bcCreds) bcCreds.textContent = creds;
+
+    if (bcContactRow && bcPhone) {
+      if (phone) {
+        bcPhone.textContent = phone;
+        bcContactRow.style.display = 'flex';
+      } else {
+        bcContactRow.style.display = 'none';
+      }
+    }
 
     // Generate dynamic verification URL
     const baseOrigin = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
       ? window.location.origin
       : 'https://careerfair.pages.dev';
     const pathname = window.location.pathname || '/';
-    const verifyUrl = `${baseOrigin}${pathname}?verify=2040&student=${encodeURIComponent(name)}&title=${encodeURIComponent(career)}&creds=${encodeURIComponent(creds)}`;
+    let verifyUrl = `${baseOrigin}${pathname}?verify=2040&student=${encodeURIComponent(name)}&title=${encodeURIComponent(career)}&creds=${encodeURIComponent(creds)}`;
+    if (phone) {
+      verifyUrl += `&phone=${encodeURIComponent(phone)}`;
+    }
 
     // Render crisp scan-ready vector QR code
     const qrMount = $('#bc-qr-mount');
     if (qrMount) {
       renderQrCode(qrMount, verifyUrl, 74);
       qrMount.onclick = () => {
-        showEnlargedQrModal(name, career, creds, verifyUrl);
+        showEnlargedQrModal(name, career, creds, verifyUrl, phone);
       };
     }
 
@@ -7814,21 +8071,41 @@ function renderFutureBusinessCard(mount) {
       showToast('Business Card Updated! 🪪✨');
     }
 
-    return { name, career, creds, verifyUrl };
+    return { name, career, creds, phone, verifyUrl };
   };
 
   // 1. Initial population of credentials for default career
   populateCredentialsForCareer(initialCareer);
   updateCard(false);
 
-  // 2. Wire career selection change -> updates credentials dropdown & updates card immediately
+  // 2. Wire career selection change
   careerSelect?.addEventListener('change', () => {
     const selectedCareer = careerSelect.value;
-    populateCredentialsForCareer(selectedCareer);
+    if (selectedCareer === '__custom__') {
+      if (careerCustomContainer) careerCustomContainer.style.display = 'block';
+      careerCustomInput?.focus();
+      populateCredentialsForCareer('__custom__');
+    } else {
+      if (careerCustomContainer) careerCustomContainer.style.display = 'none';
+      populateCredentialsForCareer(selectedCareer);
+    }
     updateCard(false);
   });
 
-  // 3. Wire credentials dropdown change -> shows custom input if chosen & updates card immediately
+  // Wire Custom Profession Button toggle
+  btnCustomToggle?.addEventListener('click', () => {
+    if (careerSelect) {
+      careerSelect.value = '__custom__';
+      if (careerCustomContainer) careerCustomContainer.style.display = 'block';
+      careerCustomInput?.focus();
+      populateCredentialsForCareer('__custom__');
+      updateCard(false);
+    }
+  });
+
+  careerCustomInput?.addEventListener('input', () => updateCard(false));
+
+  // 3. Wire credentials dropdown change
   credsSelect?.addEventListener('change', () => {
     if (credsSelect.value === '__custom__') {
       if (credsCustomInput) {
@@ -7841,17 +8118,35 @@ function renderFutureBusinessCard(mount) {
     updateCard(false);
   });
 
-  // 4. Wire real-time keystroke input listeners for instant live updating
+  // 4. Wire phone row toggle
+  btnPhoneToggle?.addEventListener('click', () => {
+    if (phoneContainer) {
+      const isHidden = phoneContainer.style.display === 'none' || !phoneContainer.style.display;
+      phoneContainer.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+        phoneInput?.focus();
+        btnPhoneToggle.innerHTML = '<span>✕</span> <span>Hide Contact Line</span>';
+      } else {
+        btnPhoneToggle.innerHTML = '<span>📞</span> <span>+ Add Contact Line</span>';
+        if (phoneInput) phoneInput.value = '';
+        updateCard(false);
+      }
+    }
+  });
+
+  phoneInput?.addEventListener('input', () => updateCard(false));
+
+  // 5. Wire real-time keystroke input listeners for instant live updating
   nameInput?.addEventListener('input', () => updateCard(false));
   nameInput?.addEventListener('change', () => updateCard(false));
   credsCustomInput?.addEventListener('input', () => updateCard(false));
 
-  // 5. Wire Update button click -> updates with celebratory pulse glow & toast
+  // 6. Wire Update button click -> updates with celebratory pulse glow & toast
   $('#btn-render-biz')?.addEventListener('click', () => {
     updateCard(true);
   });
 
-  // 6. Wire Copy Share Link button
+  // 7. Wire Copy Share Link button
   $('#btn-share-biz')?.addEventListener('click', () => {
     const { verifyUrl } = updateCard(false);
     if (navigator.clipboard) {
@@ -7860,14 +8155,14 @@ function renderFutureBusinessCard(mount) {
     showToast('Verification Link copied! 📋');
   });
 
-  // 7. Wire Download Card PNG button
+  // 8. Wire Download Card PNG button
   $('#btn-download-biz')?.addEventListener('click', () => {
-    const { name, career, creds } = updateCard(false);
-    downloadBusinessCardImage(name, career, creds);
+    const { name, career, creds, phone } = updateCard(false);
+    downloadBusinessCardImage(name, career, creds, phone);
   });
 }
 
-function downloadBusinessCardImage(name, title, creds) {
+function downloadBusinessCardImage(name, title, creds, phone = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 460;
@@ -7913,6 +8208,13 @@ function downloadBusinessCardImage(name, title, creds) {
   ctx.fillStyle = '#00f0ff';
   ctx.font = 'bold 19px "Plus Jakarta Sans", sans-serif';
   ctx.fillText(title, 40, 146);
+
+  // Phone / Contact if available
+  if (phone) {
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '600 14px "JetBrains Mono", monospace';
+    ctx.fillText(`📱 ${phone}`, 40, 176);
+  }
 
   // Credentials
   ctx.fillStyle = '#cbd5e1';
