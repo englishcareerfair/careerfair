@@ -26,8 +26,6 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.7" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/universal-sentence-encoder@1.3.3/dist/universal-sentence-encoder.min.js" defer></script>
   <script src="app.js?v=7.7" defer></script>
 </head>
 <body>
@@ -139,7 +137,7 @@
               <span>🏛️</span> <span>Explore Colleges</span>
             </button>
             <button class="btn btn-secondary" onclick="switchTab('games')">
-              <span>🎮</span> <span>Play Jobtris &amp; Wordle</span>
+              <span>🎮</span> <span>Play Wordle &amp; Quests</span>
             </button>
           </div>
         </div>
@@ -636,7 +634,7 @@
           <h2 class="section-title">Career Language Arcade</h2>
         </div>
         <p class="section-desc">
-          Interactive arcade games: Jobtris semantic matching, Wordle 6-guess vocabulary, Flash Cards studio, Live Dictionary, Spelling Bee challenge, and Career Hangman.
+          Interactive arcade games: Wordle 6-guess vocabulary, Flash Cards studio, Live Dictionary, Spelling Bee challenge, and Career Hangman.
         </p>
       </div>
 
@@ -647,8 +645,7 @@
         </button>
 
         <div class="filter-row shelf-scroll-track" id="game-picker-tabs">
-          <button class="filter-chip active" data-game="jobtris">🎮 Jobtris (Semantic Tetris)</button>
-          <button class="filter-chip" data-game="quest-scribe">📜 The Scribe (Gothic Quest)</button>
+          <button class="filter-chip active" data-game="quest-scribe">📜 The Scribe (Gothic Quest)</button>
           <button class="filter-chip" data-game="quest-etym">🏛️ The Etymologist (Word Detective)</button>
           <button class="filter-chip" data-game="quest-bard">🪞 The Bard's Mirror (Poetic AI)</button>
           <button class="filter-chip" data-game="quest-oracle">🔮 The Career Oracle (Divination)</button>
@@ -1298,7 +1295,7 @@
         <div class="footer-col-nav">
           <h4 class="footer-heading">Interactive Studio</h4>
           <ul class="footer-links-list">
-            <li><a href="javascript:void(0)" onclick="switchTab('games')">🎮 Language Arcade &amp; Jobtris</a></li>
+            <li><a href="javascript:void(0)" onclick="switchTab('games')">🎮 Language Arcade &amp; AI Quests</a></li>
             <li><a href="javascript:void(0)" onclick="switchTab('roadmap')">🗺️ "My Plan" Roadmap &amp; Quiz</a></li>
             <li><a href="javascript:void(0)" onclick="switchTab('leaderboard')">🏆 Exhibition Leaderboard</a></li>
             <li><a href="javascript:void(0)" onclick="switchTab('admin')">⚙️ Administrator Control Console</a></li>
