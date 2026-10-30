@@ -1476,60 +1476,107 @@
   (() => {
     // ===== SETTINGS =====
     const CONFIG = {
-      // Dark mode: Yellowish / Warm Gold ('212,175,55', '245,158,11')
-      // Light mode: Vibrant Cyan / Tech Blue ('0,166,255', '37,99,235')
-      colors: ['212,175,55', '245,158,11'], // RGB strings, one picked at random per particle
-      perMove: 2,       // particles spawned per mouse move
-      size: 2.2,        // particle radius in px
-      fade: 0.02,       // higher = shorter trail
-      glow: 10,         // glow blur in px
-      dot: true,        // show the glowing dot that follows the cursor
-      hideCursor: true  // hide the normal cursor (only when dot is on)
+      colors: ['#e8a04a', '#d4af37', '#f0b45a'],
+      count: 90,
+      minSize: 2,
+      maxSize: 9,
+      speed: 0.25,
+      shards: true,
+      shardCount: 7,
+      shardColor: '255,225,170',
+      shardOpacity: 0.07,
+      zIndex: 0,
+
+      // cursor reaction
+      mouse: 'repel',     // 'repel' | 'attract' | 'none'
+      radius: 160,        // how far the cursor reaches, in px
+      strength: 1.6,      // how hard particles get pushed or pulled
+      parallax: 0.02      // shards drift slightly with the cursor (0 = off)
     };
 
-    // Mode-adaptive color themes:
-    // In dark mode: Yellowish gold ('212,175,55', '245,158,11')
-    // In light mode: Blue ('0,166,255', '37,99,235')
+    // Mode-adaptive color themes: Gold/Amber in Dark, Deep warm Amber/Bronze in Light
     const syncThemeColors = () => {
-      const isDark = (document.documentElement.getAttribute('data-theme') || 'dark') === 'dark';
+      const isDark = (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
       if (isDark) {
-        CONFIG.colors = ['212,175,55', '245,158,11'];
+        CONFIG.colors = ['#e8a04a', '#d4af37', '#f0b45a'];
+        CONFIG.shardColor = '255,225,170';
+        CONFIG.shardOpacity = 0.07;
       } else {
-        CONFIG.colors = ['0,166,255', '37,99,235'];
+        CONFIG.colors = ['#b45309', '#c27803', '#d97706', '#92400e'];
+        CONFIG.shardColor = '180,83,9';
+        CONFIG.shardOpacity = 0.045;
       }
-      paintDot();
+      if (particles && particles.length) {
+        particles.forEach(p => {
+          p.c = CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)];
+        });
+      }
     };
 
     // ===== SETUP =====
     const cv = document.createElement('canvas');
-    cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999;width:100%;height:100%;';
-    document.body.appendChild(cv);
-    const cx = cv.getContext('2d'), P = [];
-    const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+    cv.style.cssText = `position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:${CONFIG.zIndex};`;
+    document.body.prepend(cv);
+    const cx = cv.getContext('2d');
+    let W, H, dpr;
+    const rand = (a, b) => a + Math.random() * (b - a);
+
+    function resize() {
+      dpr = Math.min(devicePixelRatio || 1, 2);
+      W = innerWidth; H = innerHeight;
+      cv.width = W * dpr; cv.height = H * dpr;
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
     resize(); addEventListener('resize', resize, { passive: true });
 
-    let dot;
-    if (CONFIG.dot) {
-      dot = document.createElement('div');
-      dot.style.cssText = 'position:fixed;left:-50px;top:-50px;width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:100000;transform:translate(-50%,-50%);transition:background 0.25s ease, box-shadow 0.25s ease;';
-      document.body.appendChild(dot);
-      if (CONFIG.hideCursor && matchMedia('(hover:hover)').matches) {
-        const s = document.createElement('style');
-        s.textContent = 'body,a,button,input,select,textarea,label{cursor:none!important}';
-        document.head.appendChild(s);
-      }
+    // ===== CURSOR =====
+    const M = { x: -9999, y: -9999, px: 0, py: 0 };
+    addEventListener('pointermove', e => {
+      M.x = e.clientX; M.y = e.clientY;
+      M.px = e.clientX / (innerWidth || 1) - 0.5;
+      M.py = e.clientY / (innerHeight || 1) - 0.5;
+    }, { passive: true });
+    addEventListener('pointerleave', () => { M.x = M.y = -9999; });
+    document.addEventListener('mouseleave', () => { M.x = M.y = -9999; });
+
+    // ===== PARTICLES =====
+    let particles = [];
+    function makeParticle(anywhere) {
+      const big = Math.random() < 0.12;
+      return {
+        x: rand(0, W || innerWidth),
+        y: anywhere ? rand(0, H || innerHeight) : (H || innerHeight) + 20,
+        s: big ? rand(CONFIG.maxSize * 0.6, CONFIG.maxSize) : rand(CONFIG.minSize, CONFIG.maxSize * 0.5),
+        vx: rand(-0.15, 0.15) * CONFIG.speed * 4,
+        vy: -rand(0.2, 1) * CONFIG.speed,
+        kx: 0, ky: 0,
+        a: rand(0.5, 0.95),
+        ph: rand(0, 6.28),
+        c: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)]
+      };
     }
-    const paintDot = () => {
-      if (!dot) return;
-      const c = CONFIG.colors[0];
-      dot.style.background = `radial-gradient(#fff,rgb(${c}) 40%,transparent 70%)`;
-      dot.style.boxShadow = `0 0 22px 6px rgba(${c},.47)`;
-    };
+    const initParticles = () => { particles = Array.from({ length: CONFIG.count }, () => makeParticle(true)); };
 
-    // Initial theme sync
+    // ===== SHARDS =====
+    let shards = [];
+    function makeShard() {
+      const r = rand(70, 190);
+      return {
+        x: rand(-0.05, 1.05) * (W || innerWidth), y: rand(-0.05, 1.05) * (H || innerHeight),
+        rot: rand(0, 6.28), vr: rand(-0.0015, 0.0015),
+        vx: rand(-0.12, 0.12) * CONFIG.speed * 2, vy: rand(-0.12, 0.12) * CONFIG.speed * 2,
+        depth: rand(0.5, 1.5),
+        pts: [0, 1, 2, 3].map(i => ({ a: i * Math.PI / 2 + rand(-0.5, 0.5), r: r * rand(0.55, 1.2) }))
+      };
+    }
+    const initShards = () => { shards = CONFIG.shards ? Array.from({ length: CONFIG.shardCount }, makeShard) : []; };
+
+    // Initial theme sync & initialization
     syncThemeColors();
+    initParticles();
+    initShards();
 
-    // Listen to theme changes automatically via MutationObserver
+    // Listen to theme changes automatically via MutationObserver on data-theme
     const themeObserver = new MutationObserver(muts => {
       for (const m of muts) {
         if (m.type === 'attributes' && m.attributeName === 'data-theme') {
@@ -1538,51 +1585,71 @@
       }
     });
     themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    window.syncCursorParticlesTheme = syncThemeColors;
-
-    // ===== EVENTS =====
-    addEventListener('mousemove', e => {
-      if (dot) { dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; }
-      for (let i = 0; i < CONFIG.perMove; i++) {
-        P.push({
-          x: e.clientX, y: e.clientY,
-          vx: (Math.random() - .5) * 1.2,
-          vy: -Math.random() * 1.5 - .3,
-          l: 1,
-          c: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)]
-        });
-      }
-    }, { passive: true });
+    window.syncBackgroundParticlesTheme = syncThemeColors;
 
     // ===== ANIMATION LOOP =====
-    (function loop() {
-      cx.clearRect(0, 0, cv.width, cv.height);
-      for (let i = P.length - 1; i >= 0; i--) {
-        const p = P[i];
-        p.x += p.vx; p.y += p.vy; p.l -= CONFIG.fade;
-        if (p.l <= 0) { P.splice(i, 1); continue; }
-        cx.fillStyle = `rgba(${p.c},${p.l})`;
-        cx.shadowColor = `rgb(${p.c})`;
-        cx.shadowBlur = CONFIG.glow;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let t = 0, ox = 0, oy = 0;
+    function frame() {
+      t += 0.016;
+      cx.clearRect(0, 0, W, H);
+
+      // smooth parallax offset
+      ox += (M.px * W * CONFIG.parallax - ox) * 0.05;
+      oy += (M.py * H * CONFIG.parallax - oy) * 0.05;
+
+      for (const s of shards) {
+        if (!still) { s.x += s.vx; s.y += s.vy; s.rot += s.vr; }
+        if (s.x < -250) s.x = W + 250; if (s.x > W + 250) s.x = -250;
+        if (s.y < -250) s.y = H + 250; if (s.y > H + 250) s.y = -250;
+        const sx = s.x + ox * s.depth * -1, sy = s.y + oy * s.depth * -1;
         cx.beginPath();
-        cx.arc(p.x, p.y, CONFIG.size * p.l, 0, 7);
+        s.pts.forEach((p, i) => {
+          const px = sx + Math.cos(p.a + s.rot) * p.r, py = sy + Math.sin(p.a + s.rot) * p.r;
+          i ? cx.lineTo(px, py) : cx.moveTo(px, py);
+        });
+        cx.closePath();
+        cx.fillStyle = `rgba(${CONFIG.shardColor},${CONFIG.shardOpacity})`;
         cx.fill();
       }
-      requestAnimationFrame(loop);
-    })();
 
-    // ===== CHANGE COLOR =====
-    // Accepts hex ('#ff0066') or RGB strings ('255,0,102'). Pass one or more colors.
-    const toRGB = c => {
-      if (c[0] !== '#') return c;
-      if (c.length === 4) c = '#' + [...c.slice(1)].map(x => x + x).join('');
-      const n = parseInt(c.slice(1), 16);
-      return `${n >> 16},${(n >> 8) & 255},${n & 255}`;
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+
+        if (CONFIG.mouse !== 'none' && !still) {
+          const dx = p.x - M.x, dy = p.y - M.y, d = Math.hypot(dx, dy);
+          if (d < CONFIG.radius && d > 0.01) {
+            const f = (1 - d / CONFIG.radius) * CONFIG.strength * (CONFIG.mouse === 'repel' ? 1 : -1);
+            p.kx += (dx / d) * f;
+            p.ky += (dy / d) * f;
+          }
+        }
+        p.kx *= 0.92; p.ky *= 0.92;
+
+        if (!still) {
+          p.x += p.vx + Math.sin(t + p.ph) * 0.1 + p.kx;
+          p.y += p.vy + p.ky;
+        }
+        if (p.y < -20) particles[i] = makeParticle(false);
+        if (p.y > H + 40) p.y = -20;
+        if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
+
+        cx.globalAlpha = p.a * (0.6 + 0.4 * Math.sin(t * 2 + p.ph));
+        cx.fillStyle = p.c;
+        cx.fillRect(p.x, p.y, p.s, p.s);
+      }
+      cx.globalAlpha = 1;
+      requestAnimationFrame(frame);
+    }
+    frame();
+
+    // ===== CHANGE COLORS =====
+    // setParticleColors('#00e5ff')  or  setParticleColors('#ff0066', '#ffd400')
+    window.setParticleColors = (...c) => {
+      CONFIG.colors = c.flat();
+      particles.forEach(p => p.c = CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)]);
     };
-    window.setParticleColor = (...colors) => {
-      CONFIG.colors = colors.flat().map(toRGB);
-      paintDot();
-    };
+    window.setParticleColor = window.setParticleColors;
   })();
   </script>
 
