@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=6.9">
+  <link rel="stylesheet" href="styles.css?v=7.0">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=6.9" defer></script>
+  <script src="app.js?v=7.0" defer></script>
 </head>
 <body>
 
@@ -89,7 +89,7 @@
         <button class="tab-btn" data-tab="teleprompter" data-flag="anchorMode"><span>📹</span> News Anchor &amp; Interview</button>
         <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">7 Modes</span></button>
         <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
-        <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
+        <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard <span class="tab-badge" id="tab-badge-leaderboard">Live Top 10</span></button>
         <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback <span class="tab-badge" id="tab-badge-feedback">⭐ 5.0</span></button>
         <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
       </div>
@@ -693,9 +693,12 @@
           <button class="filter-chip" data-board-pack="Academic">Academic</button>
         </div>
 
-        <button class="btn btn-secondary btn-sm" id="btn-refresh-leaderboard" type="button">
-          <span>🔄</span> <span>Refresh Scores</span>
-        </button>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="badge-pill" id="leaderboard-count-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.3);font-size:12px;font-weight:700;">Live Top 10</span>
+          <button class="btn btn-secondary btn-sm" id="btn-refresh-leaderboard" type="button" style="font-size:12px;padding:4px 10px;">
+            <span>🔄</span> <span>Refresh Scores</span>
+          </button>
+        </div>
       </div>
 
       <div class="table-wrapper">

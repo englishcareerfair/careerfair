@@ -6828,66 +6828,73 @@ function downloadBusinessCardImage(name, title, creds) {
   }
 }
 // ─── 11. LEADERBOARD & FEEDBACK WALL ──────────────────────────────────────────
+function updateLeaderboardBadges(scores) {
+  const list = Array.isArray(scores) ? scores : [];
+  const count = list.length;
+  let topAcc = 0;
+  if (count > 0) {
+    topAcc = list.reduce((m, s) => Math.max(m, Number(s.acc || 0)), 0);
+  }
+
+  // 1. Navigation Tab badge: [ 🏆 Leaderboard ] [ 🎯 98% Top ] (like [ 🎮 Arcade Games ] [ 7 Modes ])
+  const tabBadge = $('#tab-badge-leaderboard');
+  if (tabBadge) {
+    tabBadge.textContent = topAcc > 0 ? `🎯 ${topAcc}% Top` : (count > 0 ? `Top ${Math.min(10, count)}` : 'Live Top 10');
+  }
+
+  // 2. Section header badge
+  const countBadge = $('#leaderboard-count-badge');
+  if (countBadge) {
+    countBadge.textContent = count > 0 ? `🏆 ${count} Attempt${count === 1 ? '' : 's'}${topAcc > 0 ? ` · Top ${topAcc}%` : ''}` : 'Live Top 10';
+  }
+}
+
 async function loadLeaderboard(filterPack = 'All') {
   const tbody = $('#leaderboard-table-body');
   if (!tbody) return;
 
   tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);"><span class="spinner-sm"></span> Loading real-time scores...</td></tr>`;
 
-  let serverScores = [];
+  let serverScores = null;
   try {
     const data = await fetchApi(`scores${filterPack && filterPack !== 'All' ? '?pack=' + encodeURIComponent(filterPack) : ''}`);
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (Array.isArray(data)) {
       serverScores = data;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Leaderboard sync note:', e);
+  }
 
-  let localScores = [];
-  try {
-    const raw = localStorage.getItem('cf_user_scores');
-    if (raw) localScores = JSON.parse(raw);
-  } catch (e) {}
-
-  // Multi-tier merge: server scores + browser local scores (deduplicating by student name, keeping best score)
-  const mergedMap = new Map();
+  let scores = [];
   if (Array.isArray(serverScores)) {
-    serverScores.forEach(s => {
-      if (s && s.name) {
-        mergedMap.set(s.name.toLowerCase().trim(), s);
+    // Cloudflare D1 is the single authoritative source of truth:
+    // Overwrite local cache with authoritative server items so deleted scores disappear everywhere!
+    scores = serverScores;
+    try {
+      if (!filterPack || filterPack === 'All') {
+        localStorage.setItem('cf_user_scores', JSON.stringify(scores));
       }
-    });
-  }
-  if (Array.isArray(localScores)) {
-    localScores.forEach(s => {
-      if (s && s.name) {
-        const key = s.name.toLowerCase().trim();
-        const existing = mergedMap.get(key);
-        if (!existing || Number(s.acc || 0) >= Number(existing.acc || 0)) {
-          mergedMap.set(key, s);
-        }
-      }
-    });
+    } catch (e) {}
+  } else {
+    // Fallback to local storage only if offline or network unreachable
+    try {
+      const raw = localStorage.getItem('cf_user_scores');
+      if (raw) scores = JSON.parse(raw);
+    } catch (e) {}
+    if (filterPack && filterPack !== 'All') {
+      scores = scores.filter(s => (s.pack || '').toLowerCase() === filterPack.toLowerCase());
+    }
   }
 
-  let scores = Array.from(mergedMap.values());
-
-  // Save merged state back into local storage so real scores are never lost
-  try {
-    localStorage.setItem('cf_user_scores', JSON.stringify(scores));
-  } catch (e) {}
-
-  // Filter by speaking pack if selected
-  if (filterPack && filterPack !== 'All') {
-    scores = scores.filter(s => (s.pack || '').toLowerCase() === filterPack.toLowerCase());
-  }
-
-  // Filter out any scores explicitly deleted by administrator
+  // Filter out any scores explicitly deleted in this session
   const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
   if (deletedScores.length > 0) {
     scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
   }
 
   scores.sort((a, b) => (Number(b.acc) || 0) - (Number(a.acc) || 0) || (Number(b.ts) || 0) - (Number(a.ts) || 0));
+
+  updateLeaderboardBadges(scores);
 
   tbody.innerHTML = '';
   // Zero default mock scores — only real student exhibition scores
@@ -6910,7 +6917,7 @@ async function loadLeaderboard(filterPack = 'All') {
     const tr = document.createElement('tr');
     const medal = i === 0 ? '🥇 1st' : i === 1 ? '🥈 2nd' : i === 2 ? '🥉 3rd' : `#${i + 1}`;
     const delBtnHtml = isAdmin
-      ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:8px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" onclick="window.adminDeleteScore('${escapeHtml(String(sc.id || ''))}', '${escapeHtml(sc.name)}')">🗑️</button>`
+      ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:8px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️</button>`
       : '';
 
     tr.innerHTML = `
@@ -6936,14 +6943,44 @@ function initLeaderboard() {
     };
   });
 
-  const doRefreshScores = () => {
-    const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
-    const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
-    loadLeaderboard(pack);
-    showToast('Leaderboard scores refreshed');
-  };
-  $('#btn-refresh-scores')?.addEventListener('click', doRefreshScores);
-  $('#btn-refresh-leaderboard')?.addEventListener('click', doRefreshScores);
+  const refreshLeaderboardBtn = $('#btn-refresh-leaderboard') || $('#btn-refresh-scores');
+  if (refreshLeaderboardBtn && !refreshLeaderboardBtn._boundRefresh) {
+    refreshLeaderboardBtn._boundRefresh = true;
+    refreshLeaderboardBtn.addEventListener('click', async () => {
+      refreshLeaderboardBtn.disabled = true;
+      const origHtml = refreshLeaderboardBtn.innerHTML;
+      refreshLeaderboardBtn.innerHTML = '<span>⏳</span> <span>Refreshing...</span>';
+      try {
+        const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+        const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+        await loadLeaderboard(pack);
+        showToast('Leaderboard scores refreshed from global database');
+      } finally {
+        refreshLeaderboardBtn.disabled = false;
+        refreshLeaderboardBtn.innerHTML = origHtml;
+      }
+    });
+  }
+
+  // Also wire secondary refresh button if present
+  const secondaryBtn = $('#btn-refresh-scores');
+  if (secondaryBtn && secondaryBtn !== refreshLeaderboardBtn && !secondaryBtn._boundRefresh) {
+    secondaryBtn._boundRefresh = true;
+    secondaryBtn.addEventListener('click', async () => {
+      secondaryBtn.disabled = true;
+      const origHtml = secondaryBtn.innerHTML;
+      secondaryBtn.innerHTML = '<span>⏳</span> <span>Refreshing...</span>';
+      try {
+        const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+        const pack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+        await loadLeaderboard(pack);
+        showToast('Leaderboard scores refreshed from global database');
+      } finally {
+        secondaryBtn.disabled = false;
+        secondaryBtn.innerHTML = origHtml;
+      }
+    });
+  }
 }
 
 function updateFeedbackBadges(feedbacks) {
@@ -7235,14 +7272,30 @@ window.adminDeleteScore = async function(id, name) {
   if (!confirm(`Are you sure you want to delete score attempt for ${name}?`)) return;
 
   try {
-    await fetchApi('admin/del', 'POST', { id, name });
-  } catch (e) {}
+    await fetchApi('admin/del', {
+      method: 'POST',
+      body: JSON.stringify({ id, name })
+    });
+  } catch (e) {
+    console.error('Delete score error:', e);
+  }
 
   try {
     const deleted = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
     if (name && !deleted.includes(name)) deleted.push(name);
     if (id && !deleted.includes(String(id))) deleted.push(String(id));
     localStorage.setItem('cf_deleted_scores', JSON.stringify(deleted));
+
+    const raw = localStorage.getItem('cf_user_scores');
+    if (raw) {
+      let items = JSON.parse(raw);
+      items = items.filter(s => {
+        if (id && String(s.id).trim() === String(id).trim()) return false;
+        if (name && (s.name || '').trim().toLowerCase() === name.trim().toLowerCase()) return false;
+        return true;
+      });
+      localStorage.setItem('cf_user_scores', JSON.stringify(items));
+    }
   } catch (e) {}
 
   showToast(`Score attempt for ${name} removed`);
@@ -7364,7 +7417,7 @@ async function renderAdminModeration() {
             <td>${sc.wpm || 130}</td>
             <td style="font-size:12px;color:var(--text-dim);">${timeStr}</td>
             <td style="text-align:center;">
-              <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;" onclick="window.adminDeleteScore('${escapeHtml(String(sc.id || ''))}', '${escapeHtml(sc.name)}')">🗑️ Delete</button>
+              <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️ Delete</button>
             </td>
           </tr>
         `;
@@ -8084,6 +8137,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       const avgBadge = $('#feedback-avg-badge');
       if (avgBadge) avgBadge.textContent = `⭐ ${cfg.avg_feedback} Avg`;
     }
+    if (cfg.top_score) {
+      const tabBadge = $('#tab-badge-leaderboard');
+      if (tabBadge) tabBadge.textContent = `🎯 ${cfg.top_score}% Top`;
+    }
   }
 
   // Pre-render home heroes & stats
@@ -8094,6 +8151,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const cachedFb = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
     updateFeedbackBadges(cachedFb);
+  } catch (e) {}
+
+  try {
+    const cachedScores = JSON.parse(localStorage.getItem('cf_user_scores') || '[]');
+    updateLeaderboardBadges(cachedScores);
   } catch (e) {}
 
   // ─── BACKGROUND MULTI-SYSTEM GLOBAL SYNCHRONIZER ───
@@ -8113,6 +8175,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (tabBadge) tabBadge.textContent = `⭐ ${liveCfg.avg_feedback}`;
           const avgBadge = $('#feedback-avg-badge');
           if (avgBadge) avgBadge.textContent = `⭐ ${liveCfg.avg_feedback} Avg`;
+        }
+        if (liveCfg.top_score) {
+          const tabBadge = $('#tab-badge-leaderboard');
+          if (tabBadge) tabBadge.textContent = `🎯 ${liveCfg.top_score}% Top`;
         }
       }
 

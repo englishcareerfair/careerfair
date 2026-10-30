@@ -264,16 +264,21 @@ export async function onRequest(ctx) {
     let totalScores = 0;
     let totalFeedback = 0;
     let avgFeedback = '5.0';
+    let topScore = 0;
     if (db) {
       try {
-        const sRow = await db.prepare('SELECT COUNT(*) as c FROM scores').first();
+        const sRow = await db.prepare('SELECT COUNT(*) as c, MAX(acc) as max_acc FROM scores').first();
         totalScores = sRow?.c || 0;
+        topScore = sRow?.max_acc || 0;
         const fRow = await db.prepare('SELECT COUNT(*) as c, AVG(r_useful) as avg_rating FROM feedback WHERE approved=1').first();
         totalFeedback = fRow?.c || 0;
         if (fRow && fRow.avg_rating !== null && fRow.avg_rating !== undefined) {
           avgFeedback = Number(fRow.avg_rating).toFixed(1);
         }
       } catch {}
+    }
+    if (!topScore && GLOBAL_CACHE.scores.length > 0) {
+      topScore = GLOBAL_CACHE.scores.reduce((m, s) => Math.max(m, Number(s.acc || 0)), 0);
     }
 
     return json({
@@ -297,7 +302,8 @@ export async function onRequest(ctx) {
       db_status: db ? 'connected' : 'unbound',
       total_scores: totalScores || GLOBAL_CACHE.scores.length,
       total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length,
-      avg_feedback: avgFeedback
+      avg_feedback: avgFeedback,
+      top_score: topScore
     });
   }
 
@@ -1188,13 +1194,32 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    if (body.id) GLOBAL_CACHE.scores = GLOBAL_CACHE.scores.filter(s => s.id !== body.id);
-    if (body.name) GLOBAL_CACHE.scores = GLOBAL_CACHE.scores.filter(s => s.name.toLowerCase() !== body.name.toLowerCase());
+    const id = body.id;
+    const name = body.name ? String(body.name).trim() : '';
+
+    // 1. Purge from in-memory cache
+    GLOBAL_CACHE.scores = (GLOBAL_CACHE.scores || []).filter(s => {
+      if (id && String(s.id).trim() === String(id).trim()) return false;
+      if (name && (s.name || '').trim().toLowerCase() === name.toLowerCase()) return false;
+      return true;
+    });
+
+    // 2. Purge from persistent Cloudflare D1 database
     if (db) {
       try {
-        if (body.id) await db.prepare('DELETE FROM scores WHERE id=?').bind(body.id).run();
-        if (body.name) await db.prepare('DELETE FROM scores WHERE name=?').bind(body.name).run();
-      } catch {}
+        if (id && !isNaN(Number(id))) {
+          await db.prepare('DELETE FROM scores WHERE id=?').bind(Number(id)).run();
+        }
+        if (id) {
+          await db.prepare('DELETE FROM scores WHERE id=?').bind(String(id)).run();
+        }
+        if (name) {
+          await db.prepare('DELETE FROM scores WHERE LOWER(TRIM(name))=LOWER(?)').bind(name).run();
+          await db.prepare('DELETE FROM scores WHERE name=?').bind(name).run();
+        }
+      } catch (e) {
+        console.warn('D1 score delete error:', e);
+      }
     }
     return json({ ok: true, message: 'Score deleted' });
   }
