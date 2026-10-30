@@ -1258,5 +1258,92 @@
   <!-- Toast Container -->
   <div id="toast-container" aria-live="polite"></div>
 
+  <!-- Interactive Cursor-Following Ambient Particles -->
+  <script>
+  (() => {
+    // ===== SETTINGS =====
+    const CONFIG = {
+      colors: ['212,175,55', '193,18,31'], // RGB strings, one is picked at random per particle
+      perMove: 2,       // particles spawned per mouse move
+      size: 2.2,        // particle radius in px
+      fade: 0.02,       // higher = shorter trail
+      glow: 10,         // glow blur in px
+      dot: true,        // show the glowing dot that follows the cursor
+      hideCursor: true  // hide the normal cursor (only when dot is on)
+    };
+
+    // ===== SETUP =====
+    const cv = document.createElement('canvas');
+    cv.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:99999';
+    document.body.appendChild(cv);
+    const cx = cv.getContext('2d'), P = [];
+    const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+    resize(); addEventListener('resize', resize);
+
+    let dot;
+    if (CONFIG.dot) {
+      dot = document.createElement('div');
+      dot.style.cssText = 'position:fixed;left:-50px;top:-50px;width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:100000;transform:translate(-50%,-50%)';
+      document.body.appendChild(dot);
+      if (CONFIG.hideCursor && matchMedia('(hover:hover)').matches) {
+        const s = document.createElement('style');
+        s.textContent = 'body,a,button,input,select,textarea,label{cursor:none!important}';
+        document.head.appendChild(s);
+      }
+    }
+    const paintDot = () => {
+      if (!dot) return;
+      const c = CONFIG.colors[0];
+      dot.style.background = `radial-gradient(#fff,rgb(${c}) 40%,transparent 70%)`;
+      dot.style.boxShadow = `0 0 22px 6px rgba(${c},.47)`;
+    };
+    paintDot();
+
+    // ===== EVENTS =====
+    addEventListener('mousemove', e => {
+      if (dot) { dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px'; }
+      for (let i = 0; i < CONFIG.perMove; i++) {
+        P.push({
+          x: e.clientX, y: e.clientY,
+          vx: (Math.random() - .5) * 1.2,
+          vy: -Math.random() * 1.5 - .3,
+          l: 1,
+          c: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)]
+        });
+      }
+    });
+
+    // ===== ANIMATION LOOP =====
+    (function loop() {
+      cx.clearRect(0, 0, cv.width, cv.height);
+      for (let i = P.length - 1; i >= 0; i--) {
+        const p = P[i];
+        p.x += p.vx; p.y += p.vy; p.l -= CONFIG.fade;
+        if (p.l <= 0) { P.splice(i, 1); continue; }
+        cx.fillStyle = `rgba(${p.c},${p.l})`;
+        cx.shadowColor = `rgb(${p.c})`;
+        cx.shadowBlur = CONFIG.glow;
+        cx.beginPath();
+        cx.arc(p.x, p.y, CONFIG.size * p.l, 0, 7);
+        cx.fill();
+      }
+      requestAnimationFrame(loop);
+    })();
+
+    // ===== CHANGE COLOR =====
+    // Accepts hex ('#ff0066') or RGB strings ('255,0,102'). Pass one or more colors.
+    const toRGB = c => {
+      if (c[0] !== '#') return c;
+      if (c.length === 4) c = '#' + [...c.slice(1)].map(x => x + x).join('');
+      const n = parseInt(c.slice(1), 16);
+      return `${n >> 16},${(n >> 8) & 255},${n & 255}`;
+    };
+    window.setParticleColor = (...colors) => {
+      CONFIG.colors = colors.flat().map(toRGB);
+      paintDot();
+    };
+  })();
+  </script>
+
 </body>
 </html>
