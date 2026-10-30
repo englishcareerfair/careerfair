@@ -2686,8 +2686,158 @@ let teleprompterState = {
   recordedChunks: [],
   lastBlobUrl: null,
   lastFileName: null,
-  cameraStream: null
+  cameraStream: null,
+  compositeAnimId: null,
+  recordedMicStream: null,
+  activeCompCanvas: null,
+  schoolLogo: null
 };
+
+// Pre-load Kanakia International School Logo for broadcast video compositing
+if (!teleprompterState.schoolLogo && typeof Image !== 'undefined') {
+  const sLogo = new Image();
+  sLogo.src = 'logo.png';
+  teleprompterState.schoolLogo = sLogo;
+}
+
+// Canvas rounded rectangle drawing helper for cross-browser reliability
+function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, radius);
+    return;
+  }
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+// Draw Kanakia International School Logo at Top Left (Downloaded Video Only)
+function drawBroadcastSchoolLogo(ctx, width, height, scale) {
+  const logo = teleprompterState.schoolLogo;
+  if (!logo || !logo.complete || !logo.naturalWidth) return;
+
+  const logoPadX = Math.round(28 * scale);
+  const logoPadY = Math.round(22 * scale);
+  const logoSize = Math.round(68 * scale);
+  const cardPad = Math.round(7 * scale);
+  const cardW = logoSize + cardPad * 2;
+  const cardH = logoSize + cardPad * 2;
+  const cardR = Math.round(12 * scale);
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+  ctx.shadowBlur = 14 * scale;
+  ctx.shadowOffsetY = 4 * scale;
+
+  // Frosted dark broadcast station card
+  ctx.fillStyle = 'rgba(10, 16, 32, 0.82)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+  ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
+
+  drawCanvasRoundedRect(ctx, logoPadX, logoPadY, cardW, cardH, cardR);
+  ctx.fill();
+  ctx.stroke();
+
+  // Draw Kanakia International School logo
+  ctx.shadowColor = 'transparent';
+  ctx.drawImage(logo, logoPadX + cardPad, logoPadY + cardPad, logoSize, logoSize);
+  ctx.restore();
+}
+
+// Draw Authentic Lower-Third Broadcast Banner at Bottom (WITHOUT Teleprompter text)
+function drawBroadcastLowerThird(ctx, width, height, scale) {
+  const bannerMarginX = Math.round(20 * scale);
+  const bannerMarginBottom = Math.round(18 * scale);
+  const bannerH = Math.round(54 * scale);
+  const bannerW = width - (bannerMarginX * 2);
+  const bannerY = height - bannerMarginBottom - bannerH;
+  const bannerX = bannerMarginX;
+  const radius = Math.round(10 * scale);
+
+  ctx.save();
+  // Drop shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+  ctx.shadowBlur = 18 * scale;
+  ctx.shadowOffsetY = 6 * scale;
+
+  // Background Gradient matching .news-lower-third:
+  // linear-gradient(90deg, #ff2a85 0%, #b5179e 40%, rgba(14, 20, 38, 0.96) 100%)
+  const grad = ctx.createLinearGradient(bannerX, bannerY, bannerX + bannerW, bannerY);
+  grad.addColorStop(0, '#ff2a85');
+  grad.addColorStop(0.38, '#b5179e');
+  grad.addColorStop(0.85, 'rgba(14, 20, 38, 0.96)');
+  grad.addColorStop(1, 'rgba(14, 20, 38, 0.98)');
+  ctx.fillStyle = grad;
+
+  drawCanvasRoundedRect(ctx, bannerX, bannerY, bannerW, bannerH, radius);
+  ctx.fill();
+
+  // Subtle border
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.lineWidth = Math.max(1, Math.round(1 * scale));
+  ctx.stroke();
+
+  // 1. Tag Pill (e.g. BREAKING NEWS)
+  const tagEl = document.getElementById('lower-third-tag');
+  const tagText = (tagEl ? tagEl.textContent.trim() : 'BREAKING NEWS') || 'BREAKING NEWS';
+
+  const tagFontSize = Math.round(12 * scale);
+  ctx.font = `800 ${tagFontSize}px "Space Grotesk", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif`;
+  const tagMetrics = ctx.measureText(tagText);
+  const tagPadX = Math.round(10 * scale);
+  const pillW = Math.round(tagMetrics.width + (tagPadX * 2));
+  const pillH = Math.round(28 * scale);
+  const pillX = bannerX + Math.round(12 * scale);
+  const pillY = bannerY + Math.round((bannerH - pillH) / 2);
+  const pillRadius = Math.round(5 * scale);
+
+  // White pill background
+  ctx.fillStyle = '#ffffff';
+  drawCanvasRoundedRect(ctx, pillX, pillY, pillW, pillH, pillRadius);
+  ctx.fill();
+
+  // Pink tag text
+  ctx.fillStyle = '#ff2a85';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillText(tagText, pillX + (pillW / 2), pillY + (pillH / 2) + 0.5);
+
+  // 2. Headline / Copy Text
+  const copyEl = document.getElementById('lower-third-copy');
+  let copyText = (copyEl ? copyEl.textContent.trim() : '') || 'STUDENT BROADCAST · KANAKIA INTERNATIONAL SCHOOL';
+
+  const copyFontSize = Math.round(15 * scale);
+  ctx.font = `700 ${copyFontSize}px "Space Grotesk", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+
+  const copyX = pillX + pillW + Math.round(14 * scale);
+  const copyY = bannerY + Math.round(bannerH / 2);
+  const maxCopyW = bannerX + bannerW - copyX - Math.round(16 * scale);
+
+  // Truncate if exceeds max width
+  let displayText = copyText;
+  if (ctx.measureText(displayText).width > maxCopyW) {
+    while (displayText.length > 4 && ctx.measureText(displayText + '...').width > maxCopyW) {
+      displayText = displayText.slice(0, -1);
+    }
+    displayText += '...';
+  }
+  ctx.fillText(displayText, copyX, copyY);
+
+  ctx.restore();
+}
 
 function initTeleprompter() {
   const cameraBtn = $('#btn-start-camera');
@@ -3187,7 +3337,7 @@ function initTeleprompter() {
     }
   });
 
-  // 8. Recording and Downloading (Toggle Record Clip <-> Stop Recording)
+  // 8. Recording and Downloading (Toggle Record Clip <-> Stop Recording with Overlays)
   recordBtn?.addEventListener('click', async () => {
     const recText = $('#record-btn-text');
     const studentName = nameInput?.value.trim();
@@ -3197,6 +3347,21 @@ function initTeleprompter() {
       clearInterval(teleprompterState.recordTimer);
       teleprompterState.recordTimer = null;
       teleprompterState.isRecording = false;
+
+      if (teleprompterState.compositeAnimId) {
+        cancelAnimationFrame(teleprompterState.compositeAnimId);
+        teleprompterState.compositeAnimId = null;
+      }
+
+      if (teleprompterState.recordedMicStream) {
+        teleprompterState.recordedMicStream.getTracks().forEach(t => t.stop());
+        teleprompterState.recordedMicStream = null;
+      }
+
+      if (teleprompterState.activeCompCanvas && teleprompterState.activeCompCanvas.parentNode) {
+        teleprompterState.activeCompCanvas.remove();
+        teleprompterState.activeCompCanvas = null;
+      }
 
       recordBtn.classList.remove('btn-recording');
       if (recText) recText.textContent = 'Record Broadcast Clip';
@@ -3213,7 +3378,7 @@ function initTeleprompter() {
       if (teleprompterState.mediaRecorder && teleprompterState.mediaRecorder.state !== 'inactive') {
         teleprompterState.mediaRecorder.stop();
       }
-      showToast('Finalizing broadcast recording...');
+      showToast('Finalizing broadcast recording with overlays...');
       return;
     }
 
@@ -3225,32 +3390,89 @@ function initTeleprompter() {
     }
 
     try {
-      let recordStream = null;
+      // Determine canvas resolution (HD 1280x720 or native webcam resolution)
+      let compW = 1280;
+      let compH = 720;
+      if (teleprompterState.isCameraOn && video && video.videoWidth > 0 && video.videoHeight > 0) {
+        compW = Math.max(1280, video.videoWidth);
+        compH = Math.max(720, video.videoHeight);
+      }
 
-      if (teleprompterState.isCameraOn && teleprompterState.cameraStream && teleprompterState.cameraStream.active) {
-        recordStream = teleprompterState.cameraStream;
-      } else if (canvas) {
-        // Record from the animated studio canvas
-        recordStream = canvas.captureStream(30);
-        // Attempt to capture microphone audio for voiceover
+      // Create offscreen compositing canvas attached hidden to DOM for solid rendering
+      const compCanvas = document.createElement('canvas');
+      compCanvas.width = compW;
+      compCanvas.height = compH;
+      compCanvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;pointer-events:none;opacity:0;z-index:-1;';
+      document.body.appendChild(compCanvas);
+      teleprompterState.activeCompCanvas = compCanvas;
+      const compCtx = compCanvas.getContext('2d', { alpha: false });
+
+      // Frame composer: Draws webcam or studio background + Logo (top-left) + Lower third (bottom).
+      // Crucially, NO teleprompter text is drawn into the recording!
+      const renderCompositeFrame = () => {
+        // 1. Draw Background or Camera Feed
+        if (teleprompterState.isCameraOn && video && video.readyState >= 2) {
+          compCtx.save();
+          // Mirror video frame horizontally so recording matches the preview monitor
+          compCtx.translate(compW, 0);
+          compCtx.scale(-1, 1);
+          compCtx.drawImage(video, 0, 0, compW, compH);
+          compCtx.restore();
+        } else if (canvas) {
+          // Draw animated studio canvas (globe, equalizer, telemetry)
+          compCtx.drawImage(canvas, 0, 0, compW, compH);
+        } else {
+          compCtx.fillStyle = '#070c1d';
+          compCtx.fillRect(0, 0, compW, compH);
+        }
+
+        const scale = compW / 1280;
+
+        // 2. Kanakia International School Logo at Top Left (Downloaded Video Only)
+        drawBroadcastSchoolLogo(compCtx, compW, compH, scale);
+
+        // 3. Lower-Third Broadcast Banner (Tag pill + Student/Role/School Copy)
+        drawBroadcastLowerThird(compCtx, compW, compH, scale);
+      };
+
+      // Draw initial frame immediately so stream is ready
+      renderCompositeFrame();
+
+      // Continuous compositor animation loop
+      const compositeLoop = () => {
+        if (!teleprompterState.isRecording) return;
+        renderCompositeFrame();
+        teleprompterState.compositeAnimId = requestAnimationFrame(compositeLoop);
+      };
+
+      // Capture 30 FPS stream from compositing canvas
+      const canvasStream = compCanvas.captureStream ? compCanvas.captureStream(30) : (compCanvas.mozCaptureStream ? compCanvas.mozCaptureStream(30) : null);
+      if (!canvasStream) {
+        showToast('Canvas stream capture unsupported on this browser.');
+        compCanvas.remove();
+        return;
+      }
+
+      // Audio setup (webcam mic or microphone getUserMedia)
+      let audioTracks = [];
+      if (teleprompterState.isCameraOn && teleprompterState.cameraStream) {
+        audioTracks = teleprompterState.cameraStream.getAudioTracks();
+      }
+      if (!audioTracks || audioTracks.length === 0) {
         try {
           const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const audioTracks = mic.getAudioTracks();
-          if (audioTracks.length > 0) {
-            recordStream = new MediaStream([
-              ...recordStream.getVideoTracks(),
-              ...audioTracks
-            ]);
-          }
+          teleprompterState.recordedMicStream = mic;
+          audioTracks = mic.getAudioTracks();
         } catch {
-          // Audio not available, record video only
+          // Audio optional if denied or missing
         }
       }
 
-      if (!recordStream) {
-        showToast('Unable to capture broadcast stream.');
-        return;
-      }
+      const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...(audioTracks || [])
+      ];
+      const recordStream = new MediaStream(combinedTracks);
 
       teleprompterState.recordedChunks = [];
       let supportedMime = '';
@@ -3258,6 +3480,7 @@ function initTeleprompter() {
         'video/webm;codecs=vp9,opus',
         'video/webm;codecs=vp8,opus',
         'video/webm',
+        'video/mp4;codecs=avc1,mp4a.40.2',
         'video/mp4'
       ];
       for (const m of mimeCandidates) {
@@ -3277,10 +3500,24 @@ function initTeleprompter() {
       };
 
       recorder.onstop = () => {
+        if (teleprompterState.compositeAnimId) {
+          cancelAnimationFrame(teleprompterState.compositeAnimId);
+          teleprompterState.compositeAnimId = null;
+        }
+        if (teleprompterState.recordedMicStream) {
+          teleprompterState.recordedMicStream.getTracks().forEach(t => t.stop());
+          teleprompterState.recordedMicStream = null;
+        }
+        if (teleprompterState.activeCompCanvas && teleprompterState.activeCompCanvas.parentNode) {
+          teleprompterState.activeCompCanvas.remove();
+          teleprompterState.activeCompCanvas = null;
+        }
+
         const blob = new Blob(teleprompterState.recordedChunks, { type: supportedMime || 'video/webm' });
         const blobUrl = URL.createObjectURL(blob);
         const safeName = studentName.replace(/[^a-zA-Z0-9_-]/g, '_');
-        const fileName = `EnglishCareers_${safeName}_${Date.now()}.webm`;
+        const ext = (supportedMime && supportedMime.includes('mp4')) ? 'mp4' : 'webm';
+        const fileName = `EnglishCareers_${safeName}_${Date.now()}.${ext}`;
 
         teleprompterState.lastBlobUrl = blobUrl;
         teleprompterState.lastFileName = fileName;
@@ -3303,11 +3540,11 @@ function initTeleprompter() {
             document.body.appendChild(reDl);
             reDl.click();
             document.body.removeChild(reDl);
-            showToast('Downloading saved video clip...');
+            showToast('Downloading saved broadcast clip...');
           };
         }
 
-        showToast('✅ Broadcast clip saved! Video downloaded to your device.');
+        showToast('✅ Broadcast clip saved! Video downloaded with official overlays.');
       };
 
       recorder.start(250);
@@ -3315,7 +3552,10 @@ function initTeleprompter() {
       teleprompterState.isRecording = true;
       teleprompterState.recordSeconds = 0;
 
-      // Start teleprompter when recording begins
+      // Start compositing loop
+      teleprompterState.compositeAnimId = requestAnimationFrame(compositeLoop);
+
+      // Start teleprompter scrolling on-screen for the speaker
       teleprompterState.prompterStarted = true;
       teleprompterState.isPrompterPaused = false;
       updatePrompterButtonUI();
