@@ -901,7 +901,6 @@
           <button class="filter-chip" data-admin-view="broadcast">Announcement &amp; Timer</button>
           <button class="filter-chip" data-admin-view="branding">Branding &amp; Theme</button>
           <button class="filter-chip" data-admin-view="ai">AI &amp; Speech Router</button>
-          <button class="filter-chip" data-admin-view="telemetry">Drive Telemetry</button>
           <button class="filter-chip" data-admin-view="data">Moderation &amp; Exports</button>
         </div>
 
@@ -1272,56 +1271,7 @@
         
 
         <!-- View 7: Google Drive rclone Telemetry & Issue Rectifier -->
-        <div id="admin-view-telemetry" class="admin-view-panel" hidden>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
-            <div>
-              <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:2px;">Google Drive Interaction Telemetry Archive</h4>
-              <p style="font-size:13px;color:var(--text-muted);margin:0;">
-                Review student interaction sessions, camera presence checks, audio clips, and screen states stored indefinitely on Google Drive.
-              </p>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn btn-secondary btn-sm" id="btn-refresh-telemetry" type="button">🔄 Refresh Telemetry</button>
-            </div>
-          </div>
-
-          <!-- Sessions Table -->
-          <div style="margin-bottom:20px;">
-            <div class="table-wrapper" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
-              <table style="width:100%;font-size:12.5px;">
-                <thead>
-                  <tr>
-                    <th>Session ID</th>
-                    <th>Visitor Name</th>
-                    <th>Device Info</th>
-                    <th>Interactions</th>
-                    <th>Sensors</th>
-                    <th>Google Drive Destination</th>
-                    <th>Timestamp</th>
-                    <th style="width:110px;text-align:center;">Files / Logs</th>
-                  </tr>
-                </thead>
-                <tbody id="admin-telemetry-table-body">
-                  <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading telemetry archive...</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- User Issues & Glitch Rectification Section -->
-          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-              <h5 style="font-size:15px;font-weight:800;color:var(--text-main);margin:0;">🛠️ User-Reported Glitches &amp; Errors</h5>
-              <button class="btn btn-secondary btn-xs" id="btn-refresh-issues" type="button">🔄 Refresh Inquiries</button>
-            </div>
-            <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px 0;">
-              Track and rectify user inquiries or speech recognition issues posted by students/parents.
-            </p>
-            <div id="admin-issues-container" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;">
-              <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Loading user inquiries...</div>
-            </div>
-          </div>
-        </div>
+        
       </div>
     </section>
 

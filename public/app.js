@@ -9722,8 +9722,6 @@ function initAdminWorkspace() {
       $(`#admin-view-${view}`).hidden = false;
       if (view === 'data') {
         renderAdminModeration();
-      } else if (view === 'telemetry') {
-        renderAdminTelemetry();
       }
       if (window.AppRouter) {
         window.AppRouter.navigate('/admin/' + view, { silent: true });
