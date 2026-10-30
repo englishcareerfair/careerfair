@@ -392,6 +392,16 @@ export async function onRequest(ctx) {
     const rclone_remote = (await kvGet(db, 'rclone_remote', '')) || GLOBAL_CACHE.kv.rclone_remote || env.RCLONE_REMOTE || 'gdrive:careerfair_telemetry';
     const rclone_endpoint = (await kvGet(db, 'rclone_endpoint', '')) || env.RCLONE_ENDPOINT || '';
 
+    let user_titles = {};
+    if (db) {
+      try {
+        const rawTitles = await kvGet(db, 'user_titles', '{}');
+        if (rawTitles) user_titles = JSON.parse(rawTitles);
+      } catch {}
+    } else {
+      user_titles = GLOBAL_CACHE.user_titles || {};
+    }
+
     const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
     const eleven_key = (await kvGet(db, 'eleven_key', '')) || (env.ELEVEN_KEY ? 'configured' : '');
@@ -430,6 +440,7 @@ export async function onRequest(ctx) {
       stream_active,
       rclone_remote,
       rclone_endpoint,
+      user_titles,
       gemini_keys,
       gemini_key: gemini_keys,
       eleven_voice,
@@ -2237,14 +2248,16 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     return json({ ok: true, id, pinned: isPinned });
   }
 
-  if (path === '/admin/user-title') {
+  if (path === '/admin/user-title' || path === '/user-titles') {
     if (method === 'GET') {
       let map = {};
       if (db) {
         try {
-          const row = await db.prepare("SELECT v FROM kv WHERE k = 'user_titles'").first();
-          if (row && row.v) map = JSON.parse(row.v);
+          const raw = await kvGet(db, 'user_titles', '{}');
+          if (raw) map = JSON.parse(raw);
         } catch {}
+      } else {
+        map = GLOBAL_CACHE.user_titles || {};
       }
       return json({ ok: true, titles: map });
     }
@@ -2262,19 +2275,27 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       let map = {};
       if (db) {
         try {
-          const row = await db.prepare("SELECT v FROM kv WHERE k = 'user_titles'").first();
-          if (row && row.v) {
-            try { map = JSON.parse(row.v); } catch {}
+          const raw = await kvGet(db, 'user_titles', '{}');
+          if (raw) {
+            try { map = JSON.parse(raw); } catch {}
           }
           if (cleanTitle) {
             map[name] = cleanTitle;
           } else {
             delete map[name];
           }
-          await db.prepare("INSERT OR REPLACE INTO kv (k, v) VALUES ('user_titles', ?)").bind(JSON.stringify(map)).run();
+          await kvSet(db, 'user_titles', JSON.stringify(map));
         } catch (e) {
           console.warn('D1 user title error:', e);
         }
+      }
+
+      // Keep in-memory cache synchronized
+      if (!GLOBAL_CACHE.user_titles) GLOBAL_CACHE.user_titles = {};
+      if (cleanTitle) {
+        GLOBAL_CACHE.user_titles[name] = cleanTitle;
+      } else {
+        delete GLOBAL_CACHE.user_titles[name];
       }
 
       return json({ ok: true, name, title: cleanTitle, titles: map });

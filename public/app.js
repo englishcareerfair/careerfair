@@ -9393,6 +9393,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     STATE.config = Object.assign({}, STATE.config, cfg);
 
+    // Synchronize authoritative user titles from Cloudflare D1
+    if (cfg.user_titles && typeof cfg.user_titles === 'object') {
+      try {
+        localStorage.setItem('cf_user_titles', JSON.stringify(cfg.user_titles));
+      } catch {}
+    }
+
     // Ensure empty backend config never wipes client-side stored Gemini keys
     if (cfg.gemini_keys || cfg.gemini_key) {
       const gKeys = cfg.gemini_keys || cfg.gemini_key;
@@ -9493,6 +9500,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const liveCfg = await fetchApi('config');
       if (liveCfg) {
         if (liveCfg.db_connected !== undefined) STATE.config.db_connected = liveCfg.db_connected;
+        if (liveCfg.user_titles && typeof liveCfg.user_titles === 'object') {
+          try {
+            localStorage.setItem('cf_user_titles', JSON.stringify(liveCfg.user_titles));
+          } catch {}
+        }
         if (liveCfg.stream_url && liveCfg.stream_url.trim() !== STATE.config.stream_url) {
           STATE.config.stream_url = liveCfg.stream_url.trim();
           localStorage.setItem('cf_stream_url', liveCfg.stream_url.trim());
@@ -9655,6 +9667,10 @@ function startGlobalD1SyncPoller() {
     if (secFeedback && !secFeedback.hidden) {
       loadFeedbackWall();
     }
+
+    if (typeof window.loadUserTitles === 'function') {
+      window.loadUserTitles();
+    }
   }, 12000);
 }
 
@@ -9705,6 +9721,24 @@ window.adminTogglePinFeedback = async function(id, pinnedVal, comment = '') {
   }
 };
 
+window.loadUserTitles = async function() {
+  try {
+    const res = await fetchApi('admin/user-title');
+    if (res && res.titles && typeof res.titles === 'object') {
+      localStorage.setItem('cf_user_titles', JSON.stringify(res.titles));
+      return res.titles;
+    }
+  } catch (e) {
+    console.warn('User titles fetch note:', e);
+  }
+  try {
+    const stored = localStorage.getItem('cf_user_titles');
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+};
+
 window.adminAssignUserTitle = async function(encodedName) {
   const name = decodeURIComponent(encodedName || '');
   if (!name) return;
@@ -9727,11 +9761,12 @@ window.adminAssignUserTitle = async function(encodedName) {
   }
   localStorage.setItem('cf_user_titles', JSON.stringify(userTitlesMap));
 
+  // Sync with D1 database
   try {
-    await fetchApi('admin/user-title', {
-      method: 'POST',
-      body: JSON.stringify({ name, title: clean })
-    });
+    const res = await fetchApi('admin/user-title', 'POST', { name, title: clean });
+    if (res && res.titles && typeof res.titles === 'object') {
+      localStorage.setItem('cf_user_titles', JSON.stringify(res.titles));
+    }
   } catch (e) {
     console.warn('User title sync note:', e);
   }
@@ -9761,10 +9796,7 @@ window.adminBanIp = async function(ipToBan) {
   localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
 
   try {
-    await fetchApi('admin/ban-ip', {
-      method: 'POST',
-      body: JSON.stringify({ ip, action: 'ban' })
-    });
+    await fetchApi('admin/ban-ip', 'POST', { ip, action: 'ban' });
   } catch (e) {
     console.warn('Ban IP note:', e);
   }
@@ -9787,10 +9819,7 @@ window.adminUnbanIp = async function(ip) {
   localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
 
   try {
-    await fetchApi('admin/ban-ip', {
-      method: 'POST',
-      body: JSON.stringify({ ip, action: 'unban' })
-    });
+    await fetchApi('admin/ban-ip', 'POST', { ip, action: 'unban' });
   } catch (e) {
     console.warn('Unban IP note:', e);
   }
