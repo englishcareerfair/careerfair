@@ -14,9 +14,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=7.3">
+  <link rel="stylesheet" href="styles.css?v=7.4">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=7.3" defer></script>
+  <!-- High-Precision Vector PDF, Tesseract OCR & Confetti -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+  <!-- Architectural Engines -->
+  <script src="dopamine-engine.js?v=7.4" defer></script>
+  <script src="game-completion-detector.js?v=7.4" defer></script>
+  <script src="dossier-pdf.js?v=7.4" defer></script>
+  <script src="guide-avatar.js?v=7.4" defer></script>
+  <script src="app.js?v=7.4" defer></script>
 </head>
 <body>
 
@@ -52,8 +61,13 @@
         </div>
 
         <!-- Spoken Greeting Button -->
-        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
+        <button class="audio-greeting-btn" id="btn-greeting" data-flag="guide_enabled" type="button" aria-label="Listen to humanoid audio greeting and start AI guide">
           <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-text-desktop">Listen AI Greeting</span><span class="greeting-text-mobile">Greeting</span></span>
+        </button>
+
+        <!-- Official 2-Page Student Career Dossier & Business Card Download Button -->
+        <button class="btn btn-secondary btn-sm" id="btn-header-dossier" data-flag="pdf_export" type="button" style="border-radius:var(--radius-full);font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-color:rgba(0,240,255,0.4);" title="Download 2-Page Official Student Career Dossier & Business Card">
+          <span>📄</span> <span class="dossier-btn-text">Dossier &amp; Card</span>
         </button>
       </div>
       
@@ -874,6 +888,8 @@
           <button class="filter-chip" data-admin-view="broadcast">Announcement &amp; Timer</button>
           <button class="filter-chip" data-admin-view="branding">Branding &amp; Theme</button>
           <button class="filter-chip" data-admin-view="ai">AI &amp; Speech Router</button>
+          <button class="filter-chip" data-admin-view="keys">API Keys</button>
+          <button class="filter-chip" data-admin-view="telemetry">Drive Telemetry</button>
           <button class="filter-chip" data-admin-view="data">Moderation &amp; Exports</button>
         </div>
 
@@ -1071,8 +1087,28 @@
             </details>
           </div>
 
+          <div style="margin-top:16px;padding:14px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <strong style="font-size:13px;color:var(--text-main);">Pure Google Drive rclone Telemetry Bridge</strong>
+              <span class="badge-pill" style="font-size:10px;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);">No R2 Storage</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px 0;">
+              Interactions, speech audio, camera presence logs, and screen states are archived indefinitely to Google Drive via rclone HTTP RC or backend bridge.
+            </p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div>
+                <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">rclone Remote Destination:</label>
+                <input type="text" id="admin-rclone-remote" value="gdrive:careerfair_telemetry" style="font-family:var(--font-mono);font-size:12px;width:100%;box-sizing:border-box;">
+              </div>
+              <div>
+                <label style="font-size:11.5px;font-weight:700;display:block;margin-bottom:4px;">rclone HTTP RC Endpoint (Optional):</label>
+                <input type="text" id="admin-rclone-endpoint" placeholder="e.g. http://127.0.0.1:5572" style="font-family:var(--font-mono);font-size:12px;width:100%;box-sizing:border-box;">
+              </div>
+            </div>
+          </div>
+
           <div style="display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save API Credentials</button>
+            <button class="btn btn-primary btn-sm" id="btn-save-ai" type="button">Save AI &amp; Cloud Credentials</button>
             <button class="btn btn-secondary btn-sm" id="btn-test-tts-voice" type="button">Test Humanoid Voice 🔊</button>
             <span id="admin-tts-test-status" style="font-size:12px;font-weight:600;margin-left:4px;"></span>
           </div>
@@ -1175,6 +1211,140 @@
           </div>
 
         </div>
+
+        <!-- View 6: Granular Scoped API Key Manager -->
+        <div id="admin-view-keys" class="admin-view-panel" hidden>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:2px;">Scoped API Key Management</h4>
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                Generate cryptographic bearer tokens (<code>ecf_...</code>) with granular scope controls for external dashboards, school portals, and automated scoring systems.
+              </p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-api-keys" type="button">🔄 Refresh Keys</button>
+          </div>
+
+          <!-- Create New Key Card -->
+          <div class="card" style="background:var(--bg-subtle);border:1px solid var(--border);padding:18px;margin-bottom:18px;">
+            <h5 style="font-size:14px;font-weight:700;margin:0 0 10px 0;">Create New Scoped API Key</h5>
+            <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:240px;">
+                <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Key Label / Description:</label>
+                <input type="text" id="admin-new-key-label" placeholder="e.g. Leaderboard Wall Screen / Analytics Bot" style="font-size:13px;">
+              </div>
+            </div>
+
+            <label style="font-size:12px;font-weight:700;display:block;margin-bottom:6px;">Select Granular Permissions (Scopes):</label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;margin-bottom:14px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+                <input type="checkbox" id="scope-read-leaderboard" checked style="width:18px;height:18px;accent-color:var(--accent-cyan);">
+                <span><code>read:leaderboard</code> (Read Scores)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+                <input type="checkbox" id="scope-write-scores" style="width:18px;height:18px;accent-color:var(--accent-cyan);">
+                <span><code>write:scores</code> (Submit Scores)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+                <input type="checkbox" id="scope-read-telemetry" style="width:18px;height:18px;accent-color:var(--accent-cyan);">
+                <span><code>read:telemetry</code> (Read Archive)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+                <input type="checkbox" id="scope-read-feedback" style="width:18px;height:18px;accent-color:var(--accent-cyan);">
+                <span><code>read:feedback</code> (Read Reviews)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;">
+                <input type="checkbox" id="scope-manage-config" style="width:18px;height:18px;accent-color:var(--accent-cyan);">
+                <span><code>manage:config</code> (System Config)</span>
+              </label>
+            </div>
+
+            <button class="btn btn-primary btn-sm" id="btn-generate-api-key" type="button">
+              🔑 Generate Scoped API Key
+            </button>
+
+            <!-- Reveal Box for newly created key -->
+            <div id="admin-new-key-reveal" class="admin-token-reveal-box" hidden>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <strong style="color:#10b981;font-size:13px;">✅ New API Key Created! Copy it now:</strong>
+                <button class="btn btn-secondary btn-xs" id="btn-copy-new-key" type="button">📋 Copy Key</button>
+              </div>
+              <code id="admin-new-key-text" style="word-break:break-all;font-size:13px;color:#ffffff;display:block;background:rgba(0,0,0,0.4);padding:8px;border-radius:6px;"></code>
+              <p style="font-size:11.5px;color:#94a3b8;margin:6px 0 0 0;">For security, the full key token is hashed with SHA-256 and will not be displayed again.</p>
+            </div>
+          </div>
+
+          <!-- Active Keys Table -->
+          <div class="table-wrapper" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+            <table style="width:100%;font-size:13px;">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Key Label</th>
+                  <th>Token Prefix</th>
+                  <th>Granted Scopes</th>
+                  <th>Created</th>
+                  <th>Last Used</th>
+                  <th style="width:90px;text-align:center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-keys-table-body">
+                <tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Loading active keys...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- View 7: Google Drive rclone Telemetry & Issue Rectifier -->
+        <div id="admin-view-telemetry" class="admin-view-panel" hidden>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:2px;">Google Drive Interaction Telemetry Archive</h4>
+              <p style="font-size:13px;color:var(--text-muted);margin:0;">
+                Review student interaction sessions, camera presence checks, audio clips, and screen states stored indefinitely on Google Drive.
+              </p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-telemetry" type="button">🔄 Refresh Telemetry</button>
+            </div>
+          </div>
+
+          <!-- Sessions Table -->
+          <div style="margin-bottom:20px;">
+            <div class="table-wrapper" style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-sm);">
+              <table style="width:100%;font-size:12.5px;">
+                <thead>
+                  <tr>
+                    <th>Session ID</th>
+                    <th>Visitor Name</th>
+                    <th>Device Info</th>
+                    <th>Interactions</th>
+                    <th>Sensors</th>
+                    <th>Google Drive Destination</th>
+                    <th>Timestamp</th>
+                    <th style="width:110px;text-align:center;">Files / Logs</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-telemetry-table-body">
+                  <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading telemetry archive...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- User Issues & Glitch Rectification Section -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+              <h5 style="font-size:15px;font-weight:800;color:var(--text-main);margin:0;">🛠️ User-Reported Glitches &amp; Errors</h5>
+              <button class="btn btn-secondary btn-xs" id="btn-refresh-issues" type="button">🔄 Refresh Inquiries</button>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px 0;">
+              Track and rectify user inquiries or speech recognition issues posted by students/parents.
+            </p>
+            <div id="admin-issues-container" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;">
+              <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Loading user inquiries...</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1250,8 +1420,76 @@
           <span>Cross-Platform Responsive PWA</span>
         </div>
       </div>
+
+      <!-- Statutory Interaction Archive Legal Notice (Terms of Service & Privacy Policy) -->
+      <div class="footer-statutory-notice" style="margin-top:16px;padding:12px 16px;background:rgba(0,0,0,0.25);border-radius:var(--radius-sm);border:1px solid var(--border);font-size:11.5px;color:var(--text-dim);line-height:1.5;text-align:left;">
+        <strong style="color:var(--text-muted);display:block;margin-bottom:4px;">📜 Statutory Data &amp; Telemetry Retention Notice (TOS &amp; Privacy Policy):</strong>
+        In accordance with institutional exhibition policies, all attendee interactions—including spoken speech evaluation audio, camera presence telemetry, digital guide sessions, screen state transitions, and game score attempts—are securely archived indefinitely to the exhibition's Google Drive archive until administrative deletion. By exploring this platform, attendees consent to this indefinite telemetry capture. <a href="javascript:void(0)" id="link-open-tos" style="color:var(--accent-cyan);text-decoration:underline;">Read Full Terms of Service &amp; Privacy Policy</a>. <a href="javascript:void(0)" id="link-report-issue" style="color:#10b981;font-weight:700;margin-left:10px;text-decoration:underline;">🛠️ Report Error / Request Rectification</a>.
+      </div>
     </div>
   </footer>
+
+  <!-- Modal: Terms of Service & Privacy Policy -->
+  <div id="tos-pp-modal" class="mystery-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tos-modal-title">
+    <div class="card" style="max-width:580px;width:100%;max-height:85vh;overflow-y:auto;background:var(--surface-card);border:2px solid var(--accent-cyan);border-radius:var(--radius-lg);padding:24px;position:relative;text-align:left;">
+      <button class="mystery-modal-close" id="btn-close-tos" aria-label="Close Terms modal">✕</button>
+      <h3 id="tos-modal-title" style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:8px;">Statutory Terms of Service &amp; Privacy Policy</h3>
+      <div style="font-size:11px;color:var(--accent-cyan);margin-bottom:14px;font-weight:600;">ENGLISH CAREERS FORUM 2026 · KANAKIA INTERNATIONAL SCHOOL MIRA ROAD</div>
+      <div style="font-size:12.5px;color:var(--text-muted);line-height:1.55;display:flex;flex-direction:column;gap:12px;">
+        <p><strong>1. Indefinite Telemetry &amp; Interaction Storage:</strong> All student and visitor interactions with this platform—including audio speech evaluation attempts, camera-based human presence detections, screen state OCR captures, selected career trajectories, and arcade gaming scores—are continuously logged and stored indefinitely in the exhibition Google Drive archive using dedicated rclone synchronization protocols until explicitly deleted by platform administrators.</p>
+        <p><strong>2. Academic &amp; Research Evaluation:</strong> The collected data is solely utilized for academic evaluation, generating the official 2-Page Student Career Dossier, speech articulation analysis (accuracy, fluency, cadence), and curriculum enhancement.</p>
+        <p><strong>3. Data Rectification &amp; Error Reporting:</strong> Any student or parent who encounters an error, scoring anomaly, or requests data rectification may submit an inquiry directly through the platform or administrative console for prompt review and resolution.</p>
+        <p><strong>4. Encapsulation &amp; Security:</strong> Administrative API access is strictly governed via scoped cryptographic bearer tokens (<code>ecf_...</code>), guaranteeing zero unauthorized data disclosure.</p>
+      </div>
+      <div style="margin-top:18px;text-align:right;">
+        <button class="btn btn-primary btn-sm" id="btn-agree-tos">I Understand &amp; Agree</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Report Platform Issue / Error Rectification -->
+  <div id="user-issue-modal" class="mystery-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="issue-modal-title">
+    <div class="card" style="max-width:520px;width:100%;background:var(--surface-card);border:2px solid var(--accent-cyan);border-radius:var(--radius-lg);padding:24px;position:relative;text-align:left;">
+      <button class="mystery-modal-close" id="btn-close-issue-modal" aria-label="Close Issue Modal">✕</button>
+      <h3 id="issue-modal-title" style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:6px;">🛠️ Report Error or Request Rectification</h3>
+      <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;">Found an issue with speech recording, camera detection, or game scores? Send your report directly to the platform administrator.</p>
+
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Your Name / Student ID:</label>
+          <input type="text" id="issue-user-name" placeholder="e.g. Aarav Sharma" style="width:100%;font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Issue Category:</label>
+          <select id="issue-category" style="width:100%;font-size:13px;padding:8px 12px;background:var(--bg-subtle);color:var(--text-main);border:1px solid var(--border);border-radius:var(--radius-sm);">
+            <option value="Audio / Speech Recognition">🎙️ Audio / Speech Recognition</option>
+            <option value="Camera / Presence Detection">📷 Camera / Presence Detection</option>
+            <option value="Game Completion OCR">🎮 Game Scoring &amp; OCR</option>
+            <option value="PDF Dossier Generation">📄 PDF Dossier Generation</option>
+            <option value="General Question / Error">❓ General Platform Error</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Describe the Error / Rectification Needed:</label>
+          <textarea id="issue-description" rows="3" placeholder="Please describe what happened..." style="width:100%;font-size:13px;padding:8px 12px;background:var(--bg-subtle);color:var(--text-main);border:1px solid var(--border);border-radius:var(--radius-sm);resize:vertical;"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-user-issue">Cancel</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-submit-user-issue">Submit Inquiry 🚀</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Admin Session Files & Interaction Details Viewer -->
+  <div id="admin-session-details-modal" class="mystery-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="admin-session-modal-title">
+    <div class="card" style="max-width:640px;width:100%;max-height:85vh;overflow-y:auto;background:var(--surface-card);border:2px solid #10b981;border-radius:var(--radius-lg);padding:24px;position:relative;text-align:left;">
+      <button class="mystery-modal-close" id="btn-close-session-modal" aria-label="Close details">✕</button>
+      <h3 id="admin-session-modal-title" style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:4px;">📂 Google Drive Interaction Archive</h3>
+      <div id="admin-session-modal-subtitle" style="font-size:12px;color:var(--text-dim);margin-bottom:14px;"></div>
+      <div id="admin-session-modal-body"></div>
+    </div>
+  </div>
 
   <!-- Toast Container -->
   <div id="toast-container" aria-live="polite"></div>

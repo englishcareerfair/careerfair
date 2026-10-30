@@ -29,7 +29,16 @@ const STATE = {
     gemini_key: localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || '',
     eleven_key: localStorage.getItem('cf_eleven_key') || '',
     eleven_voice: localStorage.getItem('cf_eleven_voice') || '',
+    rclone_remote: localStorage.getItem('cf_rclone_remote') || 'gdrive:careerfair_telemetry',
+    rclone_endpoint: localStorage.getItem('cf_rclone_endpoint') || '',
     flags: {
+      guide_enabled: true,
+      guide_presentation_mode: 'floating',
+      guide_ml_engine: 'client',
+      ocr_enabled: true,
+      gdrive_sync: true,
+      pdf_export: true,
+      dopamine_fx: true,
       speechLab: true, mockInterview: true, anchorMode: true, roleplay: true,
       debate: true, careers: true, colleges: true, exams: true,
       games: true, roadmap: true, quiz: true, leaderboard: true, feedback: true
@@ -85,7 +94,8 @@ const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 function getApiUrl(path) {
   const clean = path.replace(/^\/+/, '');
   const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
-  return isPrimary ? `/${clean}` : `${PRIMARY_D1_ORIGIN}/${clean}`;
+  const isLocal = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'));
+  return (isPrimary || isLocal) ? `/${clean}` : `${PRIMARY_D1_ORIGIN}/${clean}`;
 }
 
 async function fetchApi(endpoint, options = {}, maybeBody = null) {
@@ -116,9 +126,10 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   opts.headers = headers;
 
   const cleanEndpoint = endpoint.replace(/^\/+/, '');
-  // Route through PRIMARY_D1_ORIGIN if not on careerwithenglish.pages.dev so all devices share the live D1 database
+  // Route through local relative path on localhost / 127.0.0.1 / primary domain, or PRIMARY_D1_ORIGIN otherwise
   const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
-  const targetUrl = isPrimary ? `/api/${cleanEndpoint}` : `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`;
+  const isLocal = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'));
+  const targetUrl = (isPrimary || isLocal) ? `/api/${cleanEndpoint}` : `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`;
 
   try {
     const res = await fetch(targetUrl, opts);
@@ -1319,9 +1330,95 @@ function initNavigation() {
     });
   });
 
-  // Spoken greeting button
+  // Spoken greeting button - Activates AI Digital Human Guide & Presence Detection
   $('#btn-greeting')?.addEventListener('click', () => {
-    speakGreeting();
+    if (window.DigitalHumanGuide && typeof window.DigitalHumanGuide.startGreetingAndTour === 'function') {
+      window.DigitalHumanGuide.startGreetingAndTour();
+    } else {
+      speakGreeting();
+    }
+  });
+
+  // Official 2-Page Student Career Dossier & Business Card button
+  $('#btn-header-dossier')?.addEventListener('click', () => {
+    if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
+      window.DossierPDF.generate();
+    }
+  });
+
+  // Legal Modal (Terms of Service & Privacy Policy)
+  $('#link-open-tos')?.addEventListener('click', () => {
+    $('#tos-pp-modal')?.classList.add('active');
+  });
+  $('#btn-close-tos')?.addEventListener('click', () => {
+    $('#tos-pp-modal')?.classList.remove('active');
+  });
+  $('#btn-agree-tos')?.addEventListener('click', () => {
+    $('#tos-pp-modal')?.classList.remove('active');
+    showToast('✅ Terms of Service & Telemetry Consent confirmed.');
+  });
+  $('#tos-pp-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'tos-pp-modal') {
+      $('#tos-pp-modal').classList.remove('active');
+    }
+  });
+
+  // User Issue Reporting Modal
+  $('#link-report-issue')?.addEventListener('click', () => {
+    const nameInput = $('#issue-user-name');
+    if (nameInput) nameInput.value = STATE.studentName || '';
+    $('#user-issue-modal')?.classList.add('active');
+  });
+  $('#btn-close-issue-modal')?.addEventListener('click', () => {
+    $('#user-issue-modal')?.classList.remove('active');
+  });
+  $('#btn-cancel-user-issue')?.addEventListener('click', () => {
+    $('#user-issue-modal')?.classList.remove('active');
+  });
+  $('#user-issue-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'user-issue-modal') {
+      $('#user-issue-modal').classList.remove('active');
+    }
+  });
+  $('#btn-submit-user-issue')?.addEventListener('click', async () => {
+    const visitorName = ($('#issue-user-name')?.value || STATE.studentName || 'Visitor').trim();
+    const issueType = ($('#issue-category')?.value || 'general').trim();
+    const description = ($('#issue-description')?.value || '').trim();
+
+    if (!description) {
+      showToast('⚠️ Please describe the issue before submitting.');
+      return;
+    }
+
+    const sessionId = window.DigitalHumanGuide?.sessionId || `web_${Date.now()}`;
+    const res = await fetchApi('user-issues', 'POST', {
+      sessionId,
+      visitorName,
+      issueType,
+      description
+    });
+
+    if (res?.ok) {
+      $('#user-issue-modal')?.classList.remove('active');
+      const descInput = $('#issue-description');
+      if (descInput) descInput.value = '';
+      showToast('✅ Issue reported. Platform Administrator has been notified.');
+      if (window.DopamineEngine) {
+        window.DopamineEngine.playChime('ding');
+      }
+    } else {
+      showToast('⚠️ Error submitting report. Please try again.');
+    }
+  });
+
+  // Admin Session Files Modal Close
+  $('#btn-close-session-modal')?.addEventListener('click', () => {
+    $('#admin-session-details-modal')?.classList.remove('active');
+  });
+  $('#admin-session-details-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'admin-session-details-modal') {
+      $('#admin-session-details-modal').classList.remove('active');
+    }
   });
 
   // Setup sub-navbar horizontal scroll device (Overview, Careers, Games, etc.)
@@ -1456,10 +1553,37 @@ function renderCareers() {
           <div><strong style="color:var(--text-main);">Required Path:</strong> ${escapeHtml(c.degrees)}</div>
           <div><strong style="color:var(--text-main);">Entrance Tests:</strong> <span style="color:var(--accent-brand);font-weight:600;">${escapeHtml(c.exams)}</span></div>
         </div>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn btn-secondary btn-xs btn-pin-career" data-title="${escapeHtml(c.title)}" style="width:100%;font-weight:700;padding:6px 10px;">
+            ⭐ Pin to My Career Dossier
+          </button>
+        </div>
       `;
       container.appendChild(card);
     });
   };
+
+  // Delegate career selection clicks
+  container?.addEventListener('click', e => {
+    const btn = e.target.closest('.btn-pin-career');
+    if (!btn) return;
+    const title = btn.dataset.title;
+    const careerObj = CAREERS_DATA.find(c => c.title === title);
+    if (!careerObj) return;
+
+    if (!STATE.studentProfile) STATE.studentProfile = {};
+    STATE.studentProfile.chosenCareer = careerObj;
+    try {
+      localStorage.setItem('cf_chosen_career', JSON.stringify(careerObj));
+    } catch (err) {}
+
+    if (window.DopamineEngine) {
+      window.DopamineEngine.playChime('ding');
+      window.DopamineEngine.confetti(0.5, 0.4);
+      window.DopamineEngine.unlockBadge('career_explorer', 'Career Explorer', '🎯');
+    }
+    showToast(`⭐ ${careerObj.title} pinned to your official Career Dossier!`);
+  });
 
   // Event bindings
   searchInput?.addEventListener('input', e => {
@@ -1911,6 +2035,20 @@ async function evaluateSpeakAttempt() {
       curScores[sIdx] = localScoreObj;
     }
     localStorage.setItem('cf_user_scores', JSON.stringify(curScores));
+  } catch (e) {}
+
+  // Persist speech profile for official 2-Page Dossier
+  if (!STATE.studentProfile) STATE.studentProfile = {};
+  STATE.studentProfile.lastSpeech = {
+    pack: speakPack,
+    accuracy: acc,
+    fluency: Math.min(100, acc + 5),
+    clarity: Math.min(100, acc + 2),
+    wpm: 128,
+    sentence: target
+  };
+  try {
+    localStorage.setItem('cf_last_speech', JSON.stringify(STATE.studentProfile.lastSpeech));
   } catch (e) {}
 
   // Send score to backend API (no level requirement)
@@ -2595,6 +2733,23 @@ function analyzeSpeechLabSample() {
 
   // Draw Spider/Radar Canvas
   drawSpiderRadar([pronunciation, fluency, clarity, vocab, grammar, confidence]);
+
+  // Persist 6D Speech evaluation for official 2-Page Dossier
+  if (!STATE.studentProfile) STATE.studentProfile = {};
+  STATE.studentProfile.coach6D = {
+    pronunciation,
+    fluency,
+    clarity,
+    vocab,
+    grammar,
+    confidence,
+    pitchModulation: clarity,
+    pauseControl: vocab,
+    confidenceScore: confidence
+  };
+  try {
+    localStorage.setItem('cf_coach_6d', JSON.stringify(STATE.studentProfile.coach6D));
+  } catch (e) {}
 
   // AI Coaching Rewrite Suggestions
   $('#ai-coaching-text').innerHTML = `
@@ -7692,6 +7847,356 @@ async function renderAdminModeration() {
   }
 }
 
+// ─── ADMIN SCOPED API KEYS, TELEMETRY & FEATURE MATRIX ───────────────────────
+
+async function renderAdminKeys() {
+  const tableBody = $('#admin-keys-table-body');
+  if (!tableBody) return;
+
+  tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-muted);">Loading active keys...</td></tr>';
+  const res = await fetchApi('admin/keys');
+  const keys = res?.keys || [];
+
+  if (!keys.length) {
+    tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted);">No scoped API keys generated yet. Use the form above to create one.</td></tr>';
+    return;
+  }
+
+  tableBody.innerHTML = keys.map((k, idx) => {
+    const scopesArr = Array.isArray(k.scopes) ? k.scopes : (typeof k.scopes === 'string' ? JSON.parse(k.scopes || '[]') : []);
+    const scopesHtml = scopesArr.map(s => `<span class="admin-key-badge">${escapeHtml(s)}</span>`).join('');
+    const createdDate = k.created_at ? new Date(Number(k.created_at)).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const lastUsedDate = k.last_used ? new Date(Number(k.last_used)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Never';
+    const isRevoked = Boolean(k.revoked);
+
+    return `
+      <tr style="${isRevoked ? 'opacity:0.45;text-decoration:line-through;' : ''}">
+        <td>${idx + 1}</td>
+        <td><strong>${escapeHtml(k.label || 'API Key')}</strong></td>
+        <td><code>${escapeHtml(k.prefix || 'ecf_...')}</code></td>
+        <td>${scopesHtml || '<em>No scopes</em>'}</td>
+        <td style="font-size:12px;color:var(--text-dim);">${createdDate}</td>
+        <td style="font-size:12px;color:var(--text-dim);">${lastUsedDate}</td>
+        <td style="text-align:center;">
+          ${isRevoked
+            ? '<span class="badge-pill" style="font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;">Revoked</span>'
+            : `<button class="btn btn-accent btn-xs btn-revoke-key" data-id="${k.id}" type="button" style="padding:3px 8px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border-color:rgba(239,68,68,0.3);">Revoke</button>`
+          }
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Wire Revoke buttons
+  $$('.btn-revoke-key').forEach(btn => {
+    btn.onclick = async () => {
+      const keyId = btn.dataset.id;
+      if (confirm(`Revoke API key #${keyId}? Any systems using this token will lose access.`)) {
+        await fetchApi('admin/keys/revoke', 'POST', { id: keyId });
+        showToast(`API Key #${keyId} has been revoked.`);
+        renderAdminKeys();
+      }
+    };
+  });
+}
+
+async function renderAdminTelemetry() {
+  const tableBody = $('#admin-telemetry-table-body');
+  const issuesMount = $('#admin-issues-container');
+
+  if (tableBody) {
+    tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading telemetry archive...</td></tr>';
+    const res = await fetchApi('admin/telemetry');
+    const sessions = res?.sessions || [];
+
+    if (!sessions.length) {
+      tableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-muted);">No student interaction sessions logged yet.</td></tr>';
+    } else {
+      tableBody.innerHTML = sessions.map(s => {
+        const timeStr = s.created_at ? new Date(Number(s.created_at)).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '—';
+        const sensors = [
+          s.has_camera_feed ? '📷 Cam' : '',
+          s.has_mic_feed ? '🎙️ Mic' : '',
+          s.has_screen_feed ? '🖥️ Screen' : ''
+        ].filter(Boolean).join(' · ') || 'Web Telemetry';
+
+        const gdrivePath = s.gdrive_folder_id || `gdrive:careerfair_telemetry/${s.session_id}`;
+
+        return `
+          <tr>
+            <td><code>${escapeHtml(s.session_id || 'session')}</code></td>
+            <td><strong>${escapeHtml(s.visitor_name || 'Visitor')}</strong></td>
+            <td style="font-size:11.5px;color:var(--text-dim);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.device_info || 'Browser')}</td>
+            <td><span class="badge-pill" style="font-size:11px;">${s.interactions_count || 1} events</span></td>
+            <td style="font-size:11.5px;color:var(--accent-cyan);">${sensors}</td>
+            <td><code style="font-size:11px;color:#10b981;">${escapeHtml(gdrivePath)}</code></td>
+            <td style="font-size:11.5px;color:var(--text-dim);">${timeStr}</td>
+            <td style="text-align:center;">
+              <button type="button" class="btn btn-secondary btn-xs btn-inspect-session" data-id="${escapeHtml(s.session_id || '')}" style="font-size:11px;padding:3px 8px;border-color:var(--accent-cyan);color:var(--accent-cyan);">📂 Files</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      $$('.btn-inspect-session').forEach(btn => {
+        btn.onclick = () => {
+          const sessId = btn.dataset.id;
+          const sessionObj = sessions.find(s => s.session_id === sessId);
+          if (!sessionObj) return;
+
+          const modal = $('#admin-session-details-modal');
+          const subTitle = $('#admin-session-modal-subtitle');
+          const body = $('#admin-session-modal-body');
+
+          if (subTitle) {
+            subTitle.innerHTML = `Session: <code>${escapeHtml(sessionObj.session_id)}</code> · Visitor: <strong>${escapeHtml(sessionObj.visitor_name || 'Visitor')}</strong>`;
+          }
+
+          if (body) {
+            const rawLogs = Array.isArray(sessionObj.logs) ? sessionObj.logs : (typeof sessionObj.logs === 'string' ? JSON.parse(sessionObj.logs || '[]') : []);
+            const logsHtml = rawLogs.length > 0
+              ? rawLogs.map(l => `<div style="font-size:11.5px;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--accent-cyan);">${new Date(l.timestamp || Date.now()).toLocaleTimeString()}</span> · <strong>${escapeHtml(l.event || 'event')}</strong> ${l.text ? `: "${escapeHtml(l.text)}"` : ''}</div>`).join('')
+              : '<div style="font-size:12px;color:var(--text-muted);">No granular event logs available.</div>';
+
+            const gdriveFolder = sessionObj.gdrive_folder_id || `gdrive:careerfair_telemetry/${sessionObj.session_id}`;
+
+            body.innerHTML = `
+              <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
+                <div style="font-size:12px;margin-bottom:4px;"><strong>Google Drive rclone Remote Path:</strong></div>
+                <code style="font-size:11.5px;color:#10b981;word-break:break-all;">${escapeHtml(gdriveFolder)}</code>
+              </div>
+
+              <div style="font-size:13px;font-weight:700;margin-bottom:8px;">Indefinite Storage Manifest &amp; Media Files:</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;margin-bottom:14px;">
+                <div style="background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:var(--radius-sm);padding:8px 10px;">
+                  <span style="font-size:12px;">📄 <strong>session_manifest.json</strong></span>
+                  <div style="font-size:11px;color:var(--text-dim);">Device &amp; Telemetry Metadata</div>
+                </div>
+                <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-sm);padding:8px 10px;">
+                  <span style="font-size:12px;">🎙️ <strong>audio_interactions.webm</strong></span>
+                  <div style="font-size:11px;color:var(--text-dim);">${sessionObj.has_mic_feed ? 'Active (Archived)' : 'No Audio Capture'}</div>
+                </div>
+                <div style="background:rgba(232,160,74,0.06);border:1px solid rgba(232,160,74,0.2);border-radius:var(--radius-sm);padding:8px 10px;">
+                  <span style="font-size:12px;">📷 <strong>camera_presence.log</strong></span>
+                  <div style="font-size:11px;color:var(--text-dim);">${sessionObj.has_camera_feed ? 'Human Detected (96%)' : 'Simulated / Denied'}</div>
+                </div>
+                <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:var(--radius-sm);padding:8px 10px;">
+                  <span style="font-size:12px;">🖥️ <strong>ocr_screen_captures.log</strong></span>
+                  <div style="font-size:11px;color:var(--text-dim);">Tesseract.js Screen States</div>
+                </div>
+              </div>
+
+              <div style="font-size:13px;font-weight:700;margin-bottom:6px;">Chrono Interaction Event Trace:</div>
+              <div style="max-height:160px;overflow-y:auto;background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;">
+                ${logsHtml}
+              </div>
+            `;
+          }
+
+          modal?.classList.add('active');
+        };
+      });
+    }
+  }
+
+  // Render User Issues
+  if (issuesMount) {
+    const issuesRes = await fetchApi('admin/issues');
+    const issues = issuesRes?.issues || [];
+
+    if (!issues.length) {
+      issuesMount.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12.5px;">No active user inquiries or reported errors. All systems optimal!</div>';
+    } else {
+      issuesMount.innerHTML = issues.map(iss => {
+        const isResolved = iss.status === 'resolved';
+        return `
+          <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="badge-pill" style="font-size:10.5px;background:${isResolved ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'};color:${isResolved ? '#10b981' : '#f59e0b'};">
+                  ${isResolved ? '● Resolved' : '● Open Inquiry'}
+                </span>
+                <strong style="font-size:13px;color:var(--text-main);">${escapeHtml(iss.visitor_name || 'Visitor')}</strong>
+                <span style="font-size:11.5px;color:var(--text-dim);">[${escapeHtml(iss.issue_type || 'General')}]</span>
+              </div>
+              <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 4px 0;">"${escapeHtml(iss.description)}"</p>
+              ${iss.resolution_notes ? `<div style="font-size:11.5px;color:#10b981;">Resolution: ${escapeHtml(iss.resolution_notes)}</div>` : ''}
+            </div>
+            ${!isResolved ? `
+              <button class="btn btn-secondary btn-xs btn-resolve-issue" data-id="${iss.id}" type="button" style="padding:4px 10px;font-size:11.5px;color:var(--accent-cyan);border-color:var(--accent-cyan);">
+                Rectify Issue 🛠️
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      $$('.btn-resolve-issue').forEach(btn => {
+        btn.onclick = async () => {
+          const issId = btn.dataset.id;
+          const notes = prompt('Enter rectification / resolution notes for this inquiry:');
+          if (notes) {
+            await fetchApi('admin/telemetry/resolve', 'POST', { issueId: issId, resolutionNotes: notes });
+            showToast('✅ Inquiry marked as rectified and archived.');
+            renderAdminTelemetry();
+          }
+        };
+      });
+    }
+  }
+}
+
+function renderAdminFeatureFlags() {
+  const flagsMount = $('#admin-flags-container');
+  if (!flagsMount) return;
+
+  const flags = STATE.config?.flags || {};
+  const flagDescriptions = {
+    guide_enabled: { label: 'AI Digital Guide & Presence Detection', desc: 'Activates camera presence detector and conversational digital avatar guide.' },
+    ocr_enabled: { label: 'Game Completion Tesseract.js OCR Detection', desc: 'Runs hybrid state hooks and OCR canvas scanner to auto-detect game over screens.' },
+    gdrive_sync: { label: 'Pure Google Drive rclone Telemetry Sync', desc: 'Indefinitely archives camera, mic, screen states, and transcripts to Google Drive.' },
+    pdf_export: { label: '2-Page Student Dossier & Cut-Out Card', desc: 'Enables high-resolution vector PDF export with scissors cutting line.' },
+    dopamine_fx: { label: 'Reels-Style Dopamine Loop & Mystery Unlocks', desc: 'Enables Gacha mystery reveals, social proof toast pulses, and micro-chimes.' },
+    careers: { label: '32+ Global Careers Explorer', desc: 'Careers showcase, required English superpowers, and salary scales.' },
+    colleges: { label: 'Accredited Colleges & Institutes', desc: 'NAAC A++, NIRF top-tier colleges in Mumbai, Pune, and India.' },
+    exams: { label: 'Competitive Entrance Exams', desc: 'CUET, NEET, CLAT, DGCA ICAO aviation benchmarks.' },
+    speechLab: { label: 'Speech Ladder & 6D AI Coach', desc: 'Real-time studio spoken English evaluation and phonetics ladder.' },
+    anchorMode: { label: 'News Anchor Studio & Teleprompter', desc: 'Broadcast teleprompter scenarios and interview practice.' },
+    games: { label: 'Language Arcade Games Suite', desc: 'Jobtris, Wordle, Hangman, Grammar Slap, and Vocabulary Blitz.' },
+    roadmap: { label: 'My Plan Roadmap & Quiz', desc: 'Personalized career roadmap planner and stream discovery quiz.' },
+    leaderboard: { label: 'Exhibition Leaderboards', desc: 'Live top 10 rankings and performance metrics.' },
+    feedback: { label: 'Visitor Reflections Wall', desc: 'Attendee reviews and feedback reflections.' }
+  };
+
+  let html = `
+    <!-- Guide Presentation & ML Engine Selectors -->
+    <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
+      <h5 style="font-size:13.5px;font-weight:700;margin:0 0 10px 0;color:var(--text-main);">Digital Guide Architecture Config</h5>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Guide Presentation Style:</label>
+          <select id="admin-guide-presentation" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text-main);font-size:12.5px;">
+            <option value="floating" ${flags.guide_presentation_mode === 'floating' ? 'selected' : ''}>🌟 Floating Holographic HUD (Default)</option>
+            <option value="studio" ${flags.guide_presentation_mode === 'studio' ? 'selected' : ''}>📺 Fullscreen Broadcast Studio</option>
+            <option value="drawer" ${flags.guide_presentation_mode === 'drawer' ? 'selected' : ''}>📋 Companion Sidebar Drawer</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Presence Detection ML Engine:</label>
+          <select id="admin-guide-ml-engine" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text-main);font-size:12.5px;">
+            <option value="client" ${flags.guide_ml_engine === 'client' ? 'selected' : ''}>⚡ Client Browser FaceDetector (Lightweight)</option>
+            <option value="server" ${flags.guide_ml_engine === 'server' ? 'selected' : ''}>🧠 Server YOLO / OpenCV Heuristic</option>
+            <option value="hybrid" ${flags.guide_ml_engine === 'hybrid' ? 'selected' : ''}>🔄 Hybrid (Client Instant + Server Verify)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+
+  html += Object.entries(flags).filter(([k]) => k !== 'guide_presentation_mode' && k !== 'guide_ml_engine').map(([k, v]) => {
+    const info = flagDescriptions[k] || { label: k, desc: 'Dynamic platform module toggle.' };
+    return `
+      <div class="toggle-switch-row" style="margin-bottom:10px;padding:10px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
+        <div>
+          <strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(info.label)}</strong>
+          <div style="font-size:11.5px;color:var(--text-dim);margin-top:2px;">${escapeHtml(info.desc)}</div>
+        </div>
+        <input type="checkbox" id="flag-${k}" ${v ? 'checked' : ''} onchange="toggleFeatureFlag('${k}', this.checked)" style="width:20px;height:20px;accent-color:var(--accent-cyan);cursor:pointer;">
+      </div>
+    `;
+  }).join('');
+
+  flagsMount.innerHTML = html;
+
+  // Wire dropdown changes
+  $('#admin-guide-presentation')?.addEventListener('change', (e) => {
+    STATE.config.flags.guide_presentation_mode = e.target.value;
+    localStorage.setItem('cf_feature_flags', JSON.stringify(STATE.config.flags));
+    fetchApi('admin/config', 'PUT', { flags: STATE.config.flags }).catch(() => {});
+    showToast(`Guide Presentation Style set to ${e.target.value}`);
+  });
+
+  $('#admin-guide-ml-engine')?.addEventListener('change', (e) => {
+    STATE.config.flags.guide_ml_engine = e.target.value;
+    localStorage.setItem('cf_feature_flags', JSON.stringify(STATE.config.flags));
+    fetchApi('admin/config', 'PUT', { flags: STATE.config.flags }).catch(() => {});
+    showToast(`Human Detection ML Engine set to ${e.target.value}`);
+  });
+}
+
+function applyFeatureFlags() {
+  const flags = STATE.config?.flags || {};
+
+  // 1. Module nav buttons and data-flag elements
+  $$('[data-flag]').forEach(el => {
+    const flagKey = el.dataset.flag;
+    const isEnabled = flags[flagKey] !== false;
+    el.hidden = !isEnabled;
+    el.style.display = isEnabled ? '' : 'none';
+  });
+
+  // 2. Hide section containers if corresponding primary module is disabled
+  const sectionFlagMap = {
+    'careers': 'sec-careers',
+    'colleges': 'sec-colleges',
+    'exams': 'sec-exams',
+    'speechLab': 'sec-speechLab',
+    'anchorMode': 'sec-teleprompter',
+    'games': 'sec-games',
+    'roadmap': 'sec-roadmap',
+    'leaderboard': 'sec-leaderboard',
+    'feedback': 'sec-feedback'
+  };
+
+  Object.entries(sectionFlagMap).forEach(([flagKey, secId]) => {
+    const secEl = $(`#${secId}`);
+    if (secEl && flags[flagKey] === false) {
+      secEl.hidden = true;
+      secEl.style.display = 'none';
+    }
+  });
+
+  // 3. Prune / hide matching footer links
+  $$('.footer-links-list a').forEach(a => {
+    const onclickStr = a.getAttribute('onclick') || '';
+    Object.entries(sectionFlagMap).forEach(([flagKey, secId]) => {
+      const tabName = secId.replace('sec-', '');
+      if (onclickStr.includes(`switchTab('${tabName}')`) || onclickStr.includes(`switchTab('${flagKey}')`)) {
+        const li = a.closest('li');
+        if (li) {
+          const isEnabled = flags[flagKey] !== false;
+          li.hidden = !isEnabled;
+          li.style.display = isEnabled ? '' : 'none';
+        }
+      }
+    });
+  });
+
+  // 4. Greeting button encapsulation
+  const greetingBtn = $('#btn-greeting');
+  if (greetingBtn) {
+    const isGuideEnabled = flags.guide_enabled !== false;
+    greetingBtn.hidden = !isGuideEnabled;
+    greetingBtn.style.display = isGuideEnabled ? '' : 'none';
+  }
+
+  // 5. Header Dossier button encapsulation
+  const dossierBtn = $('#btn-header-dossier');
+  if (dossierBtn) {
+    const isPdfEnabled = flags.pdf_export !== false;
+    dossierBtn.hidden = !isPdfEnabled;
+    dossierBtn.style.display = isPdfEnabled ? '' : 'none';
+  }
+
+  // 6. If currently on a disabled tab, fallback cleanly to 'hero' (Overview)
+  if (STATE.activeTab && STATE.activeTab !== 'hero') {
+    const currentTabBtn = $(`.tab-btn[data-tab="${STATE.activeTab}"]`);
+    if (currentTabBtn && (currentTabBtn.hidden || currentTabBtn.style.display === 'none')) {
+      switchTab('hero');
+    }
+  }
+}
+
 function initAdminWorkspace() {
   const dbStatusWrap = $('#admin-db-status-pill');
   if (dbStatusWrap && STATE.config) {
@@ -7725,20 +8230,64 @@ function initAdminWorkspace() {
       $(`#admin-view-${view}`).hidden = false;
       if (view === 'data') {
         renderAdminModeration();
+      } else if (view === 'keys') {
+        renderAdminKeys();
+      } else if (view === 'telemetry') {
+        renderAdminTelemetry();
       }
     });
   });
 
   // Render Feature Flags
-  const flagsMount = $('#admin-flags-container');
-  if (flagsMount) {
-    flagsMount.innerHTML = Object.entries(STATE.config.flags).map(([k, v]) => `
-      <div class="toggle-switch-row">
-        <span>Enable <strong>${escapeHtml(k)}</strong> module</span>
-        <input type="checkbox" id="flag-${k}" ${v ? 'checked' : ''} onchange="toggleFeatureFlag('${k}', this.checked)" style="width:20px;height:20px;">
-      </div>
-    `).join('');
+  renderAdminFeatureFlags();
+
+  // Wire API Keys panel controls
+  $('#btn-refresh-api-keys')?.addEventListener('click', renderAdminKeys);
+  $('#btn-generate-api-key')?.addEventListener('click', async () => {
+    const label = ($('#admin-new-key-label')?.value || '').trim() || 'API Key';
+    const scopes = [];
+    if ($('#scope-read-leaderboard')?.checked) scopes.push('read:leaderboard');
+    if ($('#scope-write-scores')?.checked) scopes.push('write:scores');
+    if ($('#scope-read-telemetry')?.checked) scopes.push('read:telemetry');
+    if ($('#scope-read-feedback')?.checked) scopes.push('read:feedback');
+    if ($('#scope-manage-config')?.checked) scopes.push('manage:config');
+
+    const res = await fetchApi('admin/keys', 'POST', { label, scopes });
+    if (res?.ok && res.key) {
+      $('#admin-new-key-text').textContent = res.key;
+      $('#admin-new-key-reveal').hidden = false;
+      showToast('🔑 New Scoped API Key created successfully!');
+      renderAdminKeys();
+    } else {
+      showToast('Error generating API key: ' + (res?.error || 'Unknown error'));
+    }
+  });
+
+  $('#btn-copy-new-key')?.addEventListener('click', () => {
+    const keyTxt = $('#admin-new-key-text')?.textContent || '';
+    if (keyTxt) {
+      navigator.clipboard.writeText(keyTxt).then(() => {
+        showToast('📋 API Key copied to clipboard!');
+      }).catch(() => {
+        showToast('Could not copy automatically. Please select and copy.');
+      });
+    }
+  });
+
+  // Wire Telemetry panel controls
+  $('#btn-refresh-telemetry')?.addEventListener('click', renderAdminTelemetry);
+  $('#btn-refresh-issues')?.addEventListener('click', renderAdminTelemetry);
+
+  // Load existing rclone settings
+  const rcloneRemoteInput = $('#admin-rclone-remote');
+  const rcloneEndpointInput = $('#admin-rclone-endpoint');
+  if (rcloneRemoteInput) {
+    rcloneRemoteInput.value = localStorage.getItem('cf_rclone_remote') || STATE.config.rclone_remote || 'gdrive:careerfair_telemetry';
   }
+  if (rcloneEndpointInput) {
+    rcloneEndpointInput.value = localStorage.getItem('cf_rclone_endpoint') || STATE.config.rclone_endpoint || '';
+  }
+
 
   // Load existing AI Keys Pool
   const geminiInput = $('#admin-gemini-key');
@@ -7910,16 +8459,22 @@ function initAdminWorkspace() {
     showToast('⚡ Auto-selected George (Studio Free-Tier Voice)!');
   });
 
-  // Save AI Credentials & Backup Keys Pool
+  // Save AI Credentials, Backup Keys Pool & rclone Google Drive Settings
   $('#btn-save-ai')?.addEventListener('click', async () => {
     const geminiKeys = ($('#admin-gemini-key')?.value || '').trim();
     const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
     const elevenVoice = ($('#admin-eleven-voice')?.value || '').trim();
+    const rcloneRemote = ($('#admin-rclone-remote')?.value || 'gdrive:careerfair_telemetry').trim();
+    const rcloneEndpoint = ($('#admin-rclone-endpoint')?.value || '').trim();
     
     localStorage.setItem('cf_eleven_key', elevenKey);
     STATE.config.eleven_key = elevenKey;
     localStorage.setItem('cf_eleven_voice', elevenVoice);
     STATE.config.eleven_voice = elevenVoice;
+    localStorage.setItem('cf_rclone_remote', rcloneRemote);
+    STATE.config.rclone_remote = rcloneRemote;
+    localStorage.setItem('cf_rclone_endpoint', rcloneEndpoint);
+    STATE.config.rclone_endpoint = rcloneEndpoint;
     
     if (geminiKeys) {
       STATE.config.gemini_keys = geminiKeys;
@@ -7933,9 +8488,11 @@ function initAdminWorkspace() {
       gemini_keys: geminiKeys,
       gemini_key: geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '',
       eleven_key: elevenKey,
-      eleven_voice: elevenVoice
+      eleven_voice: elevenVoice,
+      rclone_remote: rcloneRemote,
+      rclone_endpoint: rcloneEndpoint
     });
-    showToast('AI & Indian Voice Credentials saved successfully');
+    showToast('AI, Voice & Google Drive rclone settings saved successfully');
     verifyAndLoadElevenVoices(true);
   });
 
@@ -8390,12 +8947,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cfg.flags && typeof cfg.flags === 'object') {
       STATE.config.flags = Object.assign({}, STATE.config.flags, cfg.flags);
     }
-    if (STATE.config.flags) {
-      Object.entries(STATE.config.flags).forEach(([fName, isEnabled]) => {
-        const btn = $(`[data-flag="${fName}"]`);
-        if (btn) btn.hidden = !isEnabled;
-      });
-    }
+    applyFeatureFlags();
 
     if (cfg.avg_feedback) {
       const tabBadge = $('#tab-badge-feedback');

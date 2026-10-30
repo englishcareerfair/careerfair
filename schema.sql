@@ -51,4 +51,51 @@ INSERT OR IGNORE INTO kv (k, v) VALUES ('timer', '0');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('theme', 'cinematic');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('school_branding', '1');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('school_name', 'Kanakia International School Mira Road');
-INSERT OR IGNORE INTO kv (k, v) VALUES ('flags', '{"speechLab":true,"mockInterview":true,"anchorMode":true,"roleplay":true,"debate":true,"careers":true,"colleges":true,"exams":true,"games":true,"roadmap":true,"quiz":true,"leaderboard":true,"feedback":true}');
+INSERT OR IGNORE INTO kv (k, v) VALUES ('flags', '{"guide_enabled":true,"guide_presentation_mode":"floating","guide_ml_engine":"client","ocr_enabled":true,"gdrive_sync":true,"pdf_export":true,"dopamine_fx":true,"speechLab":true,"mockInterview":true,"anchorMode":true,"roleplay":true,"debate":true,"careers":true,"colleges":true,"exams":true,"games":true,"roadmap":true,"quiz":true,"leaderboard":true,"feedback":true}');
+INSERT OR IGNORE INTO kv (k, v) VALUES ('rclone_remote', 'gdrive:careerfair_telemetry');
+
+-- Granular Scoped API Keys for External Integrations & Leaderboard API
+CREATE TABLE IF NOT EXISTS api_keys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key_hash TEXT UNIQUE NOT NULL,
+  prefix TEXT NOT NULL,
+  label TEXT NOT NULL,
+  scopes TEXT NOT NULL, -- JSON array: ['read:leaderboard', 'write:scores', ...]
+  created_at INTEGER NOT NULL,
+  last_used INTEGER,
+  revoked INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash);
+
+-- Visitor Telemetry & Pure Google Drive Storage Archive
+CREATE TABLE IF NOT EXISTS telemetry_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT UNIQUE NOT NULL,
+  visitor_name TEXT DEFAULT 'Visitor',
+  device_info TEXT DEFAULT '',
+  interactions_count INTEGER DEFAULT 0,
+  has_camera_feed INTEGER DEFAULT 0,
+  has_mic_feed INTEGER DEFAULT 0,
+  has_screen_feed INTEGER DEFAULT 0,
+  gdrive_folder_id TEXT DEFAULT '',
+  gdrive_file_urls TEXT DEFAULT '[]',
+  logs TEXT DEFAULT '[]',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_telemetry_created ON telemetry_sessions(created_at DESC);
+
+-- User Inquiries & Glitch Rectification Tracking
+CREATE TABLE IF NOT EXISTS user_issues (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id TEXT DEFAULT '',
+  visitor_name TEXT DEFAULT '',
+  issue_type TEXT DEFAULT 'general',
+  description TEXT NOT NULL,
+  status TEXT DEFAULT 'open', -- 'open' | 'resolved'
+  resolution_notes TEXT DEFAULT '',
+  created_at INTEGER NOT NULL,
+  resolved_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_user_issues_status ON user_issues(status);
+
