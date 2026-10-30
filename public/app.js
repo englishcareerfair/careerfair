@@ -2977,73 +2977,32 @@ function refreshSpeechCoachTip(userTriggered = false) {
 }
 
 function cleanSpeechWord(w) {
-  return String(w || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function getWordSimilarity(s1, s2) {
-  if (!s1 || !s2) return 0;
-  if (s1 === s2) return 1.0;
-  if (s1.includes(s2) || s2.includes(s1)) {
-    return Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length);
-  }
-  const m = s1.length;
-  const n = s2.length;
-  const dp = [];
-  for (let i = 0; i <= m; i++) {
-    dp[i] = [i];
-  }
-  for (let j = 0; j <= n; j++) {
-    dp[0][j] = j;
-  }
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
-    }
-  }
-  const dist = dp[m][n];
-  return 1.0 - (dist / Math.max(m, n));
+  return String(w || '').toLowerCase().replace(/[^\w]/g, '');
 }
 
 function isWordMatch(spoken, target) {
   if (!spoken || !target) return false;
   if (spoken === target) return true;
-
-  // Exact substring containment
-  if (spoken.includes(target) || target.includes(spoken)) {
-    if (Math.min(spoken.length, target.length) >= 2) return true;
-  }
-
-  // Prefix match (e.g. communicate vs communicating, listen vs listening, ele vs eloquence)
-  const minPrefix = Math.min(3, Math.min(spoken.length, target.length));
-  if (minPrefix >= 2 && spoken.slice(0, minPrefix) === target.slice(0, minPrefix)) {
+  // Prefix match (e.g. communicate vs communicating, listen vs listening)
+  if (target.length >= 4 && (spoken.startsWith(target.slice(0, 4)) || target.startsWith(spoken.slice(0, 4)))) {
     return true;
   }
-
-  // Common speech recognition phonetic consonant stem match
-  const stem1 = spoken.replace(/[aeiouy]/g, '');
-  const stem2 = target.replace(/[aeiouy]/g, '');
-  if (stem1 && stem2 && (stem1 === stem2 || stem1.includes(stem2) || stem2.includes(stem1))) {
-    return true;
+  // Allow 1 character typo or phoneme variation for words of length >= 4
+  if (Math.abs(spoken.length - target.length) <= 1 && target.length >= 4) {
+    let diff = 0;
+    const minLen = Math.min(spoken.length, target.length);
+    for (let i = 0; i < minLen; i++) {
+      if (spoken[i] !== target[i]) diff++;
+    }
+    diff += Math.abs(spoken.length - target.length);
+    if (diff <= 1) return true;
   }
-
-  // Levenshtein similarity threshold (>= 40% match passes)
-  const sim = getWordSimilarity(spoken, target);
-  if (sim >= 0.40) return true;
-
   return false;
 }
-
-let speechLabLastSpokenWordCount = 0;
 
 function changeSpeechLabSentence(userTriggered = false) {
   stopAllVoice();
   isSpeechLabPassed = false;
-  speechLabLastSpokenWordCount = 0;
 
   const screen = $('#speech-lab-ai-screen');
   if (screen) screen.classList.remove('speech-lab-screen-complete');
@@ -3158,50 +3117,31 @@ function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
   if (!speechLabTargetWords.length || isPassingSentence) return;
 
   STATE.speechLabTranscript = ((STATE.speechLabTranscript || '') + ' ' + spokenFullText).trim();
-  const spokenTokens = spokenFullText.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(Boolean);
-  if (!spokenTokens.length) return;
+  const spokenTokens = spokenFullText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
 
-  // In-line sequential advancement: words are completed sequentially in a line.
+  // In-line sequential advancement: words MUST be completed sequentially in a line.
+  // Never jump ahead into the middle of the sentence when previous words have not been spoken.
   let targetPointer = 0;
   while (targetPointer < speechLabTargetWords.length && speechLabPassedIndices.has(targetPointer)) {
     targetPointer++;
   }
 
-  // Detect newly spoken tokens in this utterance
-  const totalSpoken = spokenTokens.length;
-  const newTokensCount = Math.max(1, totalSpoken - speechLabLastSpokenWordCount);
-  speechLabLastSpokenWordCount = totalSpoken;
-
-  const recentTokens = spokenTokens.slice(-Math.min(newTokensCount + 1, totalSpoken));
-  let advancedAny = false;
-
-  // 1. First pass: try fuzzy / phonetic matching against target word (or 1-word lookahead)
-  for (const spoken of recentTokens) {
+  for (const spoken of spokenTokens) {
     if (targetPointer >= speechLabTargetWords.length) break;
 
+    // Check exact current expected target word
     const currentClean = cleanSpeechWord(speechLabTargetWords[targetPointer]);
     if (isWordMatch(spoken, currentClean)) {
       speechLabPassedIndices.add(targetPointer);
       targetPointer++;
-      advancedAny = true;
     } else if (targetPointer + 1 < speechLabTargetWords.length) {
+      // Natural speech forgiveness: allow at most a 1-word lookahead (e.g. if a tiny connector like "a" or "to" was softly whispered)
       const nextClean = cleanSpeechWord(speechLabTargetWords[targetPointer + 1]);
       if (isWordMatch(spoken, nextClean)) {
-        speechLabPassedIndices.add(targetPointer);
-        speechLabPassedIndices.add(targetPointer + 1);
+        speechLabPassedIndices.add(targetPointer);     // Count skipped connector as satisfied
+        speechLabPassedIndices.add(targetPointer + 1); // Mark current matched word
         targetPointer += 2;
-        advancedAny = true;
       }
-    }
-  }
-
-  // 2. Immediate user satisfaction: If the user spoke words or a phrase, ALWAYS advance the current word
-  // forward in line, so the user is never irritated by having to repeat words due to microphone pronunciation differences!
-  if (!advancedAny && targetPointer < speechLabTargetWords.length && newTokensCount > 0) {
-    const advanceSteps = Math.min(newTokensCount, speechLabTargetWords.length - targetPointer);
-    for (let s = 0; s < advanceSteps; s++) {
-      speechLabPassedIndices.add(targetPointer);
-      targetPointer++;
     }
   }
 
