@@ -101,20 +101,8 @@
     }
   }
 
-  // ── 3. Live Social Proof Pulse Ticker (FOMO Mechanics) ──────────────────────
-  const SOCIAL_PULSES = [
-    { text: '🔥 38 students from Class 10 explored Commercial Aviation Captain today!', icon: '✈️' },
-    { text: '⚡ Aarav P. scored 98% Accuracy in 6D AI Speech Studio!', icon: '🎙️' },
-    { text: '🌟 29 students bookmarked AI & Quantum Systems Architect!', icon: '💻' },
-    { text: '🏆 Jobtris High Score broken: 1,840 pts by Ananya (Class 9)!', icon: '🎮' },
-    { text: '🩺 44 parents reviewed Chief Surgical Consults curriculum!', icon: '🩺' },
-    { text: '⚖️ Supreme Court Advocate moot scenario completed with A+ honors!', icon: '⚖️' },
-    { text: '📜 52 official Student Dossiers generated & printed today!', icon: '📄' },
-    { text: '🎓 Top-tier accreditation: 8 students matched with IIT/NLSIU paths!', icon: '🏛️' }
-  ];
-
-  let pulseInterval = null;
-  let pulseIndex = 0;
+  // ── 3. Real Top-10 Leaderboard Score Notification Toast ────────────────────
+  let notificationHideTimer = null;
 
   function initSocialProofPulses() {
     if (document.getElementById('social-proof-toast')) return;
@@ -123,38 +111,61 @@
     toast.className = 'social-proof-toast';
     toast.setAttribute('aria-live', 'polite');
     toast.innerHTML = `
-      <div class="pulse-indicator-dot"></div>
+      <div class="pulse-indicator-dot" style="background:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.8);"></div>
       <div class="pulse-content" id="social-proof-content">
-        <span class="pulse-icon">🔥</span>
-        <span class="pulse-msg">Welcome to English Careers Forum 2026!</span>
+        <span class="pulse-icon">🏆</span>
+        <span class="pulse-msg" style="font-weight:600;">Leaderboard Active</span>
       </div>
-      <button class="pulse-dismiss" id="social-proof-dismiss" aria-label="Dismiss live alert">✕</button>
+      <button class="pulse-dismiss" id="social-proof-dismiss" aria-label="Dismiss leaderboard alert">✕</button>
     `;
     document.body.appendChild(toast);
 
     toast.querySelector('#social-proof-dismiss').onclick = () => {
       toast.classList.remove('visible');
+      if (notificationHideTimer) clearTimeout(notificationHideTimer);
     };
+  }
 
-    const cyclePulse = () => {
-      // Check feature flag
-      if (window.STATE?.config?.flags?.dopamine_fx === false) {
-        toast.classList.remove('visible');
-        return;
-      }
-      const item = SOCIAL_PULSES[pulseIndex % SOCIAL_PULSES.length];
-      pulseIndex++;
-      const content = document.getElementById('social-proof-content');
-      if (!content) return;
-      content.innerHTML = `<span class="pulse-icon">${item.icon}</span> <span class="pulse-msg">${item.text}</span>`;
-      toast.classList.add('visible');
-      setTimeout(() => {
-        toast.classList.remove('visible');
-      }, 7000);
-    };
+  // Notifies ONLY when a REAL student score reaches the Top 10 ranks (<= 10)
+  function notifyTop10Score(scoreRecord) {
+    if (!scoreRecord || typeof scoreRecord !== 'object') return;
+    const rank = Number(scoreRecord.rank);
+    if (!rank || rank < 1 || rank > 10) return; // STRICT GUARD: Only Rank 1 to 10
 
-    setTimeout(cyclePulse, 3500);
-    pulseInterval = setInterval(cyclePulse, 16000);
+    if (window.STATE?.config?.flags?.dopamine_fx === false) return;
+
+    initSocialProofPulses();
+    const toast = document.getElementById('social-proof-toast');
+    const content = document.getElementById('social-proof-content');
+    if (!toast || !content) return;
+
+    const rankLabel = rank === 1 ? '🥇 #1 High Score!' : rank === 2 ? '🥈 #2 Leaderboard!' : rank === 3 ? '🥉 #3 Leaderboard!' : `🏆 Top 10 (Rank #${rank})!`;
+    const name = escapeHtml(scoreRecord.name || 'Student');
+    const acc = scoreRecord.acc !== undefined ? `${scoreRecord.acc}%` : '';
+    const pack = escapeHtml(scoreRecord.pack || 'Speech Arena');
+
+    content.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="font-weight:800;font-size:12px;color:#ffd700;letter-spacing:0.4px;">
+          ${rankLabel}
+        </div>
+        <div style="font-size:12px;color:#ffffff;line-height:1.35;">
+          <strong>${name}</strong> achieved <strong>${acc}</strong> in ${pack}!
+        </div>
+      </div>
+    `;
+
+    // Visual theme highlighting Top 10 excellence
+    toast.style.borderColor = 'rgba(255,215,0,0.55)';
+    toast.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.35)';
+
+    toast.classList.add('visible');
+    playSynthesizedChime('fanfare');
+
+    if (notificationHideTimer) clearTimeout(notificationHideTimer);
+    notificationHideTimer = setTimeout(() => {
+      toast.classList.remove('visible');
+    }, 7500);
   }
 
   // ── 4. Mystery Trajectory Card Reveal (Gacha Unboxing Sequence) ─────────────
@@ -446,6 +457,7 @@
     confetti: triggerConfettiBurst,
     openMysteryTrajectory: openMysteryTrajectoryModal,
     showMysteryCard: openMysteryTrajectoryModal,
+    notifyTop10Score: notifyTop10Score,
     showLivePulse: showLivePulse,
     generateStoryGraphic: generateStoryGraphic,
     unlockBadge: unlockBadge

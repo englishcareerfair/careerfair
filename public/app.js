@@ -2059,6 +2059,13 @@ async function evaluateSpeakAttempt() {
     fallback_text: transcript,
     class_name: STATE.studentClass,
     acc
+  }).then(async () => {
+    // Refresh leaderboard and evaluate top 10 rank
+    try {
+      const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+      const curPack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+      await loadLeaderboard(curPack);
+    } catch (e) {}
   });
 
   if (resultBox) {
@@ -7400,6 +7407,33 @@ async function loadLeaderboard(filterPack = 'All') {
 
   scores.sort((a, b) => (Number(b.acc) || 0) - (Number(a.acc) || 0) || (Number(b.ts) || 0) - (Number(a.ts) || 0));
 
+  // Check for any newly arrived Top 10 scores and notify in real-time
+  try {
+    const knownTopKeys = window._lastKnownTop10Keys || new Set();
+    const isFirstLoad = !window._lastKnownTop10Keys;
+    const currentTopKeys = new Set();
+    const top10 = scores.slice(0, 10);
+
+    top10.forEach((item, idx) => {
+      const key = `${item.id || ''}_${item.name || ''}_${item.acc || ''}_${item.ts || ''}`;
+      currentTopKeys.add(key);
+      if (!isFirstLoad && !knownTopKeys.has(key)) {
+        // A genuine new top 10 score has entered the leaderboard!
+        if (window.DopamineEngine && typeof window.DopamineEngine.notifyTop10Score === 'function') {
+          window.DopamineEngine.notifyTop10Score({
+            rank: idx + 1,
+            name: item.name,
+            acc: item.acc,
+            pack: item.pack
+          });
+        }
+      }
+    });
+    window._lastKnownTop10Keys = currentTopKeys;
+  } catch (e) {
+    console.debug('Leaderboard top-10 check note:', e);
+  }
+
   updateLeaderboardBadges(scores);
 
   tbody.innerHTML = '';
@@ -9358,6 +9392,11 @@ function renderWordBlitz(mount) {
           })
         });
         showToast('🏆 Score saved to Exhibition Leaderboard!');
+        try {
+          const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+          const curPack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+          await loadLeaderboard(curPack);
+        } catch (e) {}
       } catch (e) {
         showToast('Score saved locally!');
       }
