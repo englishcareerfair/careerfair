@@ -3145,9 +3145,100 @@ html, body {
 .arc-nav-row {
   display: flex;
   justify-content: center;
-  gap: 12px;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin: 18px auto 22px;
+  flex-wrap: wrap;
+}
+
+.arc-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--radius-full, 9999px);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.arc-nav-btn:hover {
+  background: rgba(0, 240, 255, 0.14);
+  color: var(--accent-cyan, #00f0ff);
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.arc-nav-btn:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 240, 255, 0.2);
+}
+
+.arc-nav-arrow {
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 800;
+  display: inline-block;
+  transition: transform 0.22s ease;
+}
+
+#arc-prev:hover .arc-nav-arrow {
+  transform: translateX(-4px);
+}
+
+#arc-next:hover .arc-nav-arrow {
+  transform: translateX(4px);
+}
+
+.arc-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  background: var(--surface-card, rgba(15, 23, 42, 0.7));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.2px;
+}
+
+[data-theme="light"] .arc-nav-btn,
+[data-theme="corporate"] .arc-nav-btn {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .arc-nav-btn:hover,
+[data-theme="corporate"] .arc-nav-btn:hover {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
+  border-color: #0284c7;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.2);
+}
+
+[data-theme="light"] .arc-indicator-pill,
+[data-theme="corporate"] .arc-indicator-pill {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* Quest Stage Arena */

@@ -3843,9 +3843,19 @@ function renderGamingHall(mount) {
     <div class="arc-stage">
       <div class="arc-carousel" id="gaming-arc-carousel"></div>
       <div class="arc-nav-row">
-        <button class="arc-nav-btn" id="arc-prev" title="Previous Quest">◀ Previous</button>
-        <span style="font-size:12.5px;color:var(--text-muted);font-weight:600;" id="arc-indicator">Quest 1 of 5</span>
-        <button class="arc-nav-btn" id="arc-next" title="Next Quest">Next ▶</button>
+        <button class="arc-nav-btn" id="arc-prev" title="Previous Quest" type="button">
+          <span class="arc-nav-arrow">‹</span>
+          <span>Previous</span>
+        </button>
+        <div class="arc-indicator-pill" id="arc-indicator">
+          <span>Quest 1 of 5</span>
+          <span style="opacity:0.4;">·</span>
+          <span style="color:var(--accent-cyan);font-weight:800;">The Scribe</span>
+        </div>
+        <button class="arc-nav-btn" id="arc-next" title="Next Quest" type="button">
+          <span>Next</span>
+          <span class="arc-nav-arrow">›</span>
+        </button>
       </div>
     </div>
 
@@ -3885,11 +3895,16 @@ function renderGamingHall(mount) {
       card.style.pointerEvents = absOffset > 2 ? 'none' : 'auto';
 
       card.innerHTML = `
-        <div class="arc-card-icon">${q.icon}</div>
-        <div class="arc-card-title">${q.title}</div>
-        <div class="arc-card-subtitle">${q.subtitle}</div>
-        <div class="arc-card-desc">${q.desc}</div>
-        <div class="arc-card-action">${absOffset === 0 ? '▶ Launch Quest' : 'Click to Inspect'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span class="arc-card-icon" style="font-size:26px;">${q.icon}</span>
+          <span class="badge-pill" style="font-size:10.5px;padding:2px 8px;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);font-weight:700;">Quest ${q.num}</span>
+        </div>
+        <div class="arc-card-title" style="font-size:17px;font-weight:800;color:var(--text-main);margin-bottom:4px;">${q.title}</div>
+        <div class="arc-card-subtitle" style="font-size:11.5px;font-weight:700;color:var(--accent-cyan);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">${escapeHtml(q.tag || '')}</div>
+        <div class="arc-card-desc" style="font-size:12.5px;color:var(--text-muted);line-height:1.45;flex:1;">${q.desc}</div>
+        <div class="arc-card-action" style="margin-top:12px;font-size:12px;font-weight:700;color:${absOffset === 0 ? 'var(--accent-cyan)' : 'var(--text-dim)'};display:flex;align-items:center;gap:6px;">
+          ${absOffset === 0 ? '▶ Launch Quest' : 'Click to Inspect'}
+        </div>
       `;
 
       card.addEventListener('click', () => {
@@ -3905,7 +3920,13 @@ function renderGamingHall(mount) {
       carousel.appendChild(card);
     });
 
-    if (indicator) indicator.textContent = `Quest ${activeIndex + 1} of ${n} · ${GAMING_HALL_QUESTS[activeIndex].title}`;
+    if (indicator) {
+      indicator.innerHTML = `
+        <span style="opacity:0.8;">Quest ${activeIndex + 1} of ${n}</span>
+        <span style="opacity:0.4;">·</span>
+        <span style="color:var(--accent-cyan);font-weight:800;">${GAMING_HALL_QUESTS[activeIndex].title}</span>
+      `;
+    }
   }
 
   function launchQuest(idx) {
