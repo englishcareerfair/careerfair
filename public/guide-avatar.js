@@ -47,11 +47,7 @@
     }
 
     init() {
-      const btn = document.getElementById('btn-greeting');
-      if (btn && !btn.__guideHooked) {
-        btn.__guideHooked = true;
-        btn.addEventListener('click', () => this.startGreetingAndTour());
-      }
+      // Normal greeting button retained for native audio greeting playback
     }
 
     getPresentationMode() {

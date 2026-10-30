@@ -1466,13 +1466,9 @@ function initNavigation() {
     });
   });
 
-  // Spoken greeting button - Activates AI Digital Human Guide & Presence Detection
+  // Spoken greeting button (Normal Audio Greeting)
   $('#btn-greeting')?.addEventListener('click', () => {
-    if (window.DigitalHumanGuide && typeof window.DigitalHumanGuide.startGreetingAndTour === 'function') {
-      window.DigitalHumanGuide.startGreetingAndTour();
-    } else {
-      speakGreeting();
-    }
+    speakGreeting();
   });
 
   // Official 2-Page Student Career Dossier & Business Card button
