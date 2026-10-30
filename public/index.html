@@ -14,9 +14,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=6.8">
+  <link rel="stylesheet" href="styles.css?v=6.9">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
-  <script src="app.js?v=6.8" defer></script>
+  <script src="app.js?v=6.9" defer></script>
 </head>
 <body>
 
@@ -90,7 +90,7 @@
         <button class="tab-btn" data-tab="games" data-flag="games"><span>🎮</span> Arcade Games <span class="tab-badge">7 Modes</span></button>
         <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
         <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard</button>
-        <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback</button>
+        <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback <span class="tab-badge" id="tab-badge-feedback">⭐ 5.0</span></button>
         <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
       </div>
 
@@ -805,7 +805,8 @@
               <h3 style="font-size:18px;font-weight:800;margin:0 0 4px 0;">Recent Visitor Reflections</h3>
               <p style="font-size:13px;color:var(--text-muted);margin:0;">Reflections and thoughts submitted by students, parents, and guests.</p>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="badge-pill" id="feedback-avg-badge" style="background:rgba(245,158,11,0.15);color:var(--accent-gold, #f59e0b);border:1px solid rgba(245,158,11,0.3);font-size:12px;font-weight:700;">⭐ 5.0 Avg</span>
               <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-feedback" style="font-size:12px;padding:4px 10px;">
                 <span>🔄</span> <span>Refresh Reviews</span>
               </button>

@@ -47,10 +47,21 @@ const STATE = {
 const $ = sel => document.querySelector(sel);
 const $$ = sel => document.querySelectorAll(sel);
 
-// Toast Notification
+// Toast Notification (With Spam Protection & Max Concurrency)
 function showToast(msg, duration = 3000) {
   const container = $('#toast-container');
   if (!container) return;
+
+  // Prevent duplicate toast spam (e.g. repeated refresh notifications)
+  const activeToasts = Array.from(container.querySelectorAll('.toast'));
+  const isDuplicate = activeToasts.some(el => el.textContent.includes(msg));
+  if (isDuplicate) return;
+
+  // Keep at most 3 toasts on screen simultaneously
+  while (container.children.length >= 3) {
+    container.removeChild(container.firstChild);
+  }
+
   const t = document.createElement('div');
   t.className = 'toast';
   t.innerHTML = `<span>💬</span> <span>${escapeHtml(msg)}</span>`;
@@ -6935,7 +6946,35 @@ function initLeaderboard() {
   $('#btn-refresh-leaderboard')?.addEventListener('click', doRefreshScores);
 }
 
-function loadFeedbackWall() {
+function updateFeedbackBadges(feedbacks) {
+  const list = Array.isArray(feedbacks) ? feedbacks : [];
+  const count = list.length;
+  let avg = '5.0';
+  if (count > 0) {
+    const sum = list.reduce((acc, f) => acc + Math.max(1, Math.min(5, Number(f.useful ?? f.r_useful ?? 5))), 0);
+    avg = (sum / count).toFixed(1);
+  }
+
+  // 1. Navigation Tab badge: [ 💬 Feedback ] [ ⭐ 5.0 ] (like [ 🎮 Arcade Games ] [ 7 Modes ])
+  const tabBadge = $('#tab-badge-feedback');
+  if (tabBadge) {
+    tabBadge.textContent = `⭐ ${avg}`;
+  }
+
+  // 2. Reviews count badge
+  const countBadge = $('#feedback-count-badge');
+  if (countBadge) {
+    countBadge.textContent = `${count} Review${count === 1 ? '' : 's'}`;
+  }
+
+  // 3. Header average rating badge in recent reflections card
+  const avgBadge = $('#feedback-avg-badge');
+  if (avgBadge) {
+    avgBadge.textContent = `⭐ ${avg} Avg`;
+  }
+}
+
+async function loadFeedbackWall() {
   const list = $('#feedback-wall-list');
   const countBadge = $('#feedback-count-badge');
   const form = $('#feedback-form');
@@ -6981,8 +7020,9 @@ function loadFeedbackWall() {
   }
 
   function renderFeedbacks(feedbacks) {
+    updateFeedbackBadges(feedbacks);
+
     if (!feedbacks || feedbacks.length === 0) {
-      if (countBadge) countBadge.textContent = '0 Reviews';
       list.innerHTML = `
         <div class="feedback-empty-state">
           <span class="feedback-empty-icon">💬</span>
@@ -6993,13 +7033,9 @@ function loadFeedbackWall() {
       return;
     }
 
-    if (countBadge) {
-      countBadge.textContent = `${feedbacks.length} Review${feedbacks.length > 1 ? 's' : ''}`;
-    }
-
     list.innerHTML = feedbacks.map(f => {
       const starCount = Math.max(1, Math.min(5, Number(f.useful ?? f.r_useful ?? 5)));
-      const stars = '⭐'.repeat(starCount) + (starCount === 1 ? '☆☆☆☆' : starCount === 2 ? '☆☆☆' : starCount === 3 ? '☆☆' : starCount === 4 ? '☆' : '') + ` (${starCount}/5)`;
+      const stars = '⭐'.repeat(starCount) + (starCount === 1 ? '☆☆☆☆' : starCount === 2 ? '☆☆☆' : starCount === 3 ? '☆☆' : starCount === 4 ? '☆' : '');
       const timeStr = f.ts ? formatFriendlyTime(f.ts) : '';
       const roleBadge = f.class_info && f.class_info !== f.role
         ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
@@ -7007,7 +7043,7 @@ function loadFeedbackWall() {
 
       const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
       const delBtnHtml = isAdmin
-        ? `<button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="margin-left:auto;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;" onclick="window.adminDeleteFeedback('${escapeHtml(String(f.id || ''))}', '${escapeHtml(f.comment || '')}')">🗑️ Delete (Admin)</button>`
+        ? `<button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="margin-left:auto;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">🗑️ Delete (Admin)</button>`
         : '';
 
       return `
@@ -7029,44 +7065,35 @@ function loadFeedbackWall() {
     }).join('');
   }
 
-  // Load and render initial state from localStorage (guarantees no fake reviews)
+  // Load and render initial state from local cache for instant UI display
   let feedbacks = getLocalFeedbacks();
   renderFeedbacks(feedbacks);
 
-  // Attempt to fetch public real reviews from server if available
-  fetchApi('feedback')
-    .then(res => {
-      const serverItems = res?.results || res?.feedback || [];
-      if (Array.isArray(serverItems) && serverItems.length > 0) {
-        // Merge without duplicating
-        const seenComments = new Set(feedbacks.map(f => (f.comment || '').trim()));
-        let changed = false;
-        for (const item of serverItems) {
-          const comment = (item.comment || '').trim();
-          if (comment && !seenComments.has(comment)) {
-            feedbacks.push({
-              id: item.id || 'srv_' + Math.random().toString(36).substr(2, 9),
-              name: item.name || 'Visitor',
-              role: item.role || 'Student',
-              class_info: item.class_info || '',
-              useful: item.r_useful || item.useful || 5,
-              comment: item.comment,
-              ts: item.ts || Date.now()
-            });
-            seenComments.add(comment);
-            changed = true;
-          }
-        }
-        if (changed) {
-          feedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-          saveLocalFeedbacks(feedbacks);
-          renderFeedbacks(feedbacks);
-        }
-      }
-    })
-    .catch(() => {});
+  // Authoritative global synchronization from Cloudflare D1
+  try {
+    const res = await fetchApi('feedback');
+    const serverItems = res?.results || res?.feedback;
+    if (Array.isArray(serverItems)) {
+      // The global database is the single source of truth:
+      // Overwrite local cache with authoritative server items so deleted reviews disappear everywhere!
+      feedbacks = serverItems.map(item => ({
+        id: item.id,
+        name: item.name || 'Visitor',
+        role: item.role || 'Student',
+        class_info: item.class_info || '',
+        useful: Math.max(1, Math.min(5, Number(item.r_useful || item.useful || 5))),
+        comment: String(item.comment || '').trim(),
+        ts: Number(item.ts || Date.now())
+      }));
+      feedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      saveLocalFeedbacks(feedbacks);
+      renderFeedbacks(feedbacks);
+    }
+  } catch (err) {
+    console.warn('Global feedback sync note:', err);
+  }
 
-  // Handle feedback form submission
+  // Handle feedback form submission (bound once)
   if (form && !form._boundFeedback) {
     form._boundFeedback = true;
     form.addEventListener('submit', async e => {
@@ -7087,36 +7114,26 @@ function loadFeedbackWall() {
         return;
       }
 
-      const newFeedback = {
-        id: 'fb_' + Date.now(),
-        name,
-        role,
-        class_info: classInfo,
-        useful: selectedStars,
-        comment,
-        ts: Date.now()
-      };
+      const submitBtn = $('#btn-submit-feedback');
+      if (submitBtn) submitBtn.disabled = true;
 
-      // Prepend to list
-      feedbacks.unshift(newFeedback);
-      saveLocalFeedbacks(feedbacks);
-      renderFeedbacks(feedbacks);
-
-      // Submit to global D1 backend and await confirmation
+      // Submit directly to global D1 backend and await persistence
       try {
         await fetchApi('feedback', {
           method: 'POST',
           body: JSON.stringify({
-            name: newFeedback.name,
-            role: newFeedback.role,
-            class_info: newFeedback.class_info,
-            comment: newFeedback.comment,
-            r_useful: newFeedback.useful
+            name,
+            role,
+            class_info: classInfo,
+            comment,
+            r_useful: selectedStars
           })
         });
         showToast('Thank you! Your feedback has been stored globally in the exhibition database.');
-      } catch (e) {
-        showToast('Feedback recorded locally.');
+      } catch (err) {
+        showToast('Feedback submitted.');
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
       }
 
       form.reset();
@@ -7127,16 +7144,28 @@ function loadFeedbackWall() {
         });
       }
 
-      // Re-fetch from global D1 backend immediately
+      // Re-fetch authoritative global list immediately
       setTimeout(loadFeedbackWall, 300);
     });
   }
 
-  // Wire refresh button for visitor reviews
-  $('#btn-refresh-feedback')?.addEventListener('click', () => {
-    loadFeedbackWall();
-    showToast('Reflections refreshed from global database');
-  });
+  // Wire refresh button for visitor reviews ONCE (idempotent, single listener)
+  const refreshBtn = $('#btn-refresh-feedback');
+  if (refreshBtn && !refreshBtn._boundRefresh) {
+    refreshBtn._boundRefresh = true;
+    refreshBtn.addEventListener('click', async () => {
+      refreshBtn.disabled = true;
+      const origHtml = refreshBtn.innerHTML;
+      refreshBtn.innerHTML = '<span>⏳</span> <span>Refreshing...</span>';
+      try {
+        await loadFeedbackWall();
+        showToast('Reflections refreshed from global database');
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = origHtml;
+      }
+    });
+  }
 }
 
 // ─── 12. ADMIN CONTROL ROOM TAB CONTROLLER ─────────────────────────────────
@@ -7176,15 +7205,20 @@ window.adminDeleteFeedback = async function(id, comment) {
   if (!confirm('Are you sure you want to delete this visitor reflection?')) return;
   
   try {
-    await fetchApi('admin/del-feedback', 'POST', { id, comment });
-  } catch (e) {}
+    await fetchApi('admin/del-feedback', {
+      method: 'POST',
+      body: JSON.stringify({ id, comment })
+    });
+  } catch (e) {
+    console.error('Delete reflection error:', e);
+  }
 
   try {
     const raw = localStorage.getItem('cf_user_feedbacks');
     if (raw) {
       let items = JSON.parse(raw);
       items = items.filter(f => {
-        if (id && String(f.id) === String(id)) return false;
+        if (id && String(f.id).trim() === String(id).trim()) return false;
         if (comment && String(f.comment).trim() === String(comment).trim()) return false;
         return true;
       });
@@ -7193,8 +7227,8 @@ window.adminDeleteFeedback = async function(id, comment) {
   } catch (e) {}
 
   showToast('Visitor reflection deleted');
-  loadFeedbackWall();
-  renderAdminModeration();
+  await loadFeedbackWall();
+  await renderAdminModeration();
 };
 
 window.adminDeleteScore = async function(id, name) {
@@ -7212,8 +7246,8 @@ window.adminDeleteScore = async function(id, name) {
   } catch (e) {}
 
   showToast(`Score attempt for ${name} removed`);
-  loadLeaderboard();
-  renderAdminModeration();
+  await loadLeaderboard();
+  await renderAdminModeration();
 };
 
 async function renderAdminModeration() {
@@ -7230,26 +7264,26 @@ async function renderAdminModeration() {
 
     try {
       const res = await fetchApi('feedback');
-      const serverItems = res?.results || res?.feedback || [];
-      if (Array.isArray(serverItems) && serverItems.length > 0) {
-        const seen = new Set(allFeedbacks.map(f => (f.comment || '').trim()));
-        for (const item of serverItems) {
-          const c = (item.comment || '').trim();
-          if (c && !seen.has(c)) {
-            allFeedbacks.push({
-              id: item.id,
-              name: item.name || 'Visitor',
-              role: item.role || 'Student',
-              class_info: item.class_info || '',
-              useful: item.r_useful || 5,
-              comment: item.comment,
-              ts: item.ts || Date.now()
-            });
-            seen.add(c);
-          }
-        }
+      const serverItems = res?.results || res?.feedback;
+      if (Array.isArray(serverItems)) {
+        // Global D1 is the authoritative source of truth:
+        // Any deleted reviews vanish globally from the admin view
+        allFeedbacks = serverItems.map(item => ({
+          id: item.id,
+          name: item.name || 'Visitor',
+          role: item.role || 'Student',
+          class_info: item.class_info || '',
+          useful: item.r_useful || item.useful || 5,
+          comment: item.comment,
+          ts: item.ts || Date.now()
+        }));
+        try {
+          localStorage.setItem('cf_user_feedbacks', JSON.stringify(allFeedbacks));
+        } catch {}
       }
-    } catch {}
+    } catch (e) {
+      console.warn('Admin feedback fetch note:', e);
+    }
 
     allFeedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
@@ -7274,7 +7308,7 @@ async function renderAdminModeration() {
               </div>
               <div style="font-size:13.5px;color:var(--text-main);font-style:italic;">"${escapeHtml(f.comment || '')}"</div>
             </div>
-            <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" onclick="window.adminDeleteFeedback('${escapeHtml(String(f.id || ''))}', '${escapeHtml(f.comment || '')}')">🗑️ Delete</button>
+            <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">🗑️ Delete</button>
           </div>
         `;
       }).join('');
@@ -8043,12 +8077,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (btn) btn.hidden = !isEnabled;
       });
     }
+
+    if (cfg.avg_feedback) {
+      const tabBadge = $('#tab-badge-feedback');
+      if (tabBadge) tabBadge.textContent = `⭐ ${cfg.avg_feedback}`;
+      const avgBadge = $('#feedback-avg-badge');
+      if (avgBadge) avgBadge.textContent = `⭐ ${cfg.avg_feedback} Avg`;
+    }
   }
 
   // Pre-render home heroes & stats
   renderCareers();
   renderColleges();
   checkIncomingCardVerification();
+
+  try {
+    const cachedFb = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
+    updateFeedbackBadges(cachedFb);
+  } catch (e) {}
 
   // ─── BACKGROUND MULTI-SYSTEM GLOBAL SYNCHRONIZER ───
   // Automatically synchronizes live stream, scores, and feedback across systems
@@ -8061,6 +8107,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           STATE.config.stream_url = liveCfg.stream_url.trim();
           localStorage.setItem('cf_stream_url', liveCfg.stream_url.trim());
           renderHeroStream();
+        }
+        if (liveCfg.avg_feedback) {
+          const tabBadge = $('#tab-badge-feedback');
+          if (tabBadge) tabBadge.textContent = `⭐ ${liveCfg.avg_feedback}`;
+          const avgBadge = $('#feedback-avg-badge');
+          if (avgBadge) avgBadge.textContent = `⭐ ${liveCfg.avg_feedback} Avg`;
         }
       }
 

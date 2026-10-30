@@ -263,12 +263,16 @@ export async function onRequest(ctx) {
 
     let totalScores = 0;
     let totalFeedback = 0;
+    let avgFeedback = '5.0';
     if (db) {
       try {
         const sRow = await db.prepare('SELECT COUNT(*) as c FROM scores').first();
         totalScores = sRow?.c || 0;
-        const fRow = await db.prepare('SELECT COUNT(*) as c FROM feedback').first();
+        const fRow = await db.prepare('SELECT COUNT(*) as c, AVG(r_useful) as avg_rating FROM feedback WHERE approved=1').first();
         totalFeedback = fRow?.c || 0;
+        if (fRow && fRow.avg_rating !== null && fRow.avg_rating !== undefined) {
+          avgFeedback = Number(fRow.avg_rating).toFixed(1);
+        }
       } catch {}
     }
 
@@ -292,7 +296,8 @@ export async function onRequest(ctx) {
       db_connected: Boolean(db),
       db_status: db ? 'connected' : 'unbound',
       total_scores: totalScores || GLOBAL_CACHE.scores.length,
-      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length
+      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length,
+      avg_feedback: avgFeedback
     });
   }
 
@@ -786,15 +791,19 @@ export async function onRequest(ctx) {
 
     let items = [];
     let total = 0;
+    let avg = 5.0;
 
     if (db) {
       try {
         const { results } = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY ts DESC LIMIT ? OFFSET ?')
           .bind(limit, offset).all();
-        const countRow = await db.prepare('SELECT COUNT(*) as c FROM feedback WHERE approved=1').first();
+        const statRow = await db.prepare('SELECT COUNT(*) as c, AVG(r_useful) as avg_rating FROM feedback WHERE approved=1').first();
         if (results && results.length > 0) {
           items = results;
-          total = countRow?.c || results.length;
+          total = statRow?.c || results.length;
+          if (statRow && statRow.avg_rating !== null && statRow.avg_rating !== undefined) {
+            avg = Number(Number(statRow.avg_rating).toFixed(1));
+          }
         }
       } catch {}
     }
@@ -813,7 +822,12 @@ export async function onRequest(ctx) {
       total = Math.max(total, items.length);
     }
 
-    return json({ results: items.slice(offset, offset + limit), total, page });
+    if (items.length > 0) {
+      const sum = items.reduce((s, it) => s + Math.max(1, Math.min(5, Number(it.r_useful || it.useful || 5))), 0);
+      avg = Number((sum / items.length).toFixed(1));
+    }
+
+    return json({ results: items.slice(offset, offset + limit), total, page, avg });
   }
 
   // ── 8. POST /ai (Multi-Provider AI Router with Backup Key Failover Pool) ──────
@@ -1189,13 +1203,32 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authed(request, env)) return err('Unauthorized', 401);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    if (body.id) GLOBAL_CACHE.feedback = GLOBAL_CACHE.feedback.filter(f => f.id !== body.id);
-    if (body.comment) GLOBAL_CACHE.feedback = GLOBAL_CACHE.feedback.filter(f => (f.comment || '').trim() !== String(body.comment).trim());
+    const id = body.id;
+    const comment = body.comment ? String(body.comment).trim() : '';
+
+    // 1. Purge from in-memory cache
+    GLOBAL_CACHE.feedback = (GLOBAL_CACHE.feedback || []).filter(f => {
+      if (id && String(f.id).trim() === String(id).trim()) return false;
+      if (comment && (f.comment || '').trim() === comment) return false;
+      return true;
+    });
+
+    // 2. Purge from persistent Cloudflare D1 database
     if (db) {
       try {
-        if (body.id) await db.prepare('DELETE FROM feedback WHERE id=?').bind(body.id).run();
-        if (body.comment) await db.prepare('DELETE FROM feedback WHERE comment=?').bind(body.comment).run();
-      } catch {}
+        if (id && !isNaN(Number(id))) {
+          await db.prepare('DELETE FROM feedback WHERE id=?').bind(Number(id)).run();
+        }
+        if (id) {
+          await db.prepare('DELETE FROM feedback WHERE id=?').bind(String(id)).run();
+        }
+        if (comment) {
+          await db.prepare('DELETE FROM feedback WHERE TRIM(comment)=?').bind(comment).run();
+          await db.prepare('DELETE FROM feedback WHERE comment=?').bind(comment).run();
+        }
+      } catch (e) {
+        console.warn('D1 feedback delete error:', e);
+      }
     }
     return json({ ok: true, message: 'Feedback deleted' });
   }

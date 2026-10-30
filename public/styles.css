@@ -556,8 +556,20 @@ button, input, select, textarea {
   font-size: 11px;
   padding: 1px 6px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: var(--text-muted);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  line-height: 1.4;
+  letter-spacing: -0.2px;
+}
+
+[data-theme="light"] .tab-badge,
+[data-theme="corporate"] .tab-badge {
+  background: rgba(0, 0, 0, 0.08);
+  color: #334155;
 }
 
 /* ─── 6. MAIN CONTENT & SECTIONS ──────────────────────────────────────────── */
