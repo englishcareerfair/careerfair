@@ -232,9 +232,7 @@ async function speak(text, btn = null) {
 
   // Resolve ElevenLabs keys pool (Main & Backups)
   let rawElevenKeys = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
-  let elevenKeyList = rawElevenKeys.split(/[
-
-,]+/).map(k => k.trim()).filter(Boolean);
+  let elevenKeyList = rawElevenKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
   const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs with Automatic Key Failover
@@ -252,14 +250,14 @@ async function speak(text, btn = null) {
         body: JSON.stringify({
           text: text,
           apiKey: effectiveKey,
-          voiceId: savedVoiceId, // Preserve the selected voice across all API keys!
+          voiceId: savedVoiceId,
           accent: 'indian'
         })
       });
 
       // If key is quota exhausted or invalid (401, 402, 429), remove it and promote next backup key to Main
       if (res.status === 401 || res.status === 402 || res.status === 429) {
-        console.warn(`ElevenLabs key ${currentKey.slice(0, 6)}... quota exhausted or invalid (status ${res.status}). Removing key and failing over to next backup key.`);
+        console.warn(`ElevenLabs key ${currentKey.slice(0, 6)}... quota exhausted or invalid (status ${res.status}). Failing over to next backup key.`);
         elevenKeyList.shift();
         const updatedPool = elevenKeyList.join('\n');
         localStorage.setItem('cf_eleven_keys', updatedPool);
@@ -297,65 +295,34 @@ async function speak(text, btn = null) {
         await currentTtsAudio.play();
         playedSuccessfully = true;
         return;
+      } else {
+        let errInfo = '';
+        let errStatus = '';
+        try {
+          const errJson = await res.json();
+          errInfo = errJson.message || errJson.error || errJson.details || '';
+          errStatus = errJson.status || '';
+        } catch (e) {}
+
+        if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+          const testStatus = $('#admin-tts-test-status');
+          if (testStatus) {
+            if (errStatus === 'free_tier_library_notice' || errInfo.includes('Free users') || errInfo.includes('library voices')) {
+              testStatus.textContent = `⚠️ Playing On-Device Indian Voice (en-IN) — Free Plan Notice`;
+              testStatus.style.color = 'var(--accent-cyan)';
+              showToast('ℹ️ ElevenLabs Free Plan restricts Community VoiceLab voices via API. Playing Indian Neural Voice.', 4000);
+            } else {
+              testStatus.textContent = `ℹ️ Playing On-Device Indian Voice (en-IN)`;
+              testStatus.style.color = 'var(--accent-cyan)';
+            }
+          }
+        }
+        break;
       }
     } catch (e) {
       console.warn('TTS attempt exception:', e);
       break;
     }
-  }
-
-    const contentType = res.headers.get('content-type') || '';
-    if (res.ok && contentType.includes('audio')) {
-      const audioBlob = await res.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      currentTtsAudio = new Audio(audioUrl);
-
-      const activeVoiceName = res.headers.get('x-eleven-voice') || 'Studio Indian Accent';
-
-      currentTtsAudio.onended = () => {
-        stopAllVoice();
-      };
-
-      currentTtsAudio.onerror = () => {
-        fallbackIndianNeuralSpeech(text, targetBtn);
-      };
-
-      if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
-        const testStatus = $('#admin-tts-test-status');
-        if (testStatus) {
-          const isHealed = res.headers.get('x-eleven-healed') === 'true';
-          testStatus.textContent = `✅ Playing ElevenLabs (${activeVoiceName}${isHealed ? ' · Studio Free Tier Compatible' : ''})!`;
-          testStatus.style.color = 'var(--accent-green, #10b981)';
-        }
-      }
-
-      await currentTtsAudio.play();
-      return;
-    } else {
-      let errInfo = '';
-      let errStatus = '';
-      try {
-        const errJson = await res.json();
-        errInfo = errJson.message || errJson.error || errJson.details || '';
-        errStatus = errJson.status || '';
-      } catch (e) {}
-
-      if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
-        const testStatus = $('#admin-tts-test-status');
-        if (testStatus) {
-          if (errStatus === 'free_tier_library_notice' || errInfo.includes('Free users') || errInfo.includes('library voices')) {
-            testStatus.textContent = `🇮🇳 Playing On-Device Indian Voice (en-IN) · Free Plan Notice`;
-            testStatus.style.color = 'var(--accent-cyan)';
-            showToast('ℹ️ ElevenLabs Free Plan restricts Community VoiceLab voices via API. Playing Indian Neural Voice.', 4000);
-          } else {
-            testStatus.textContent = `🇮🇳 Playing On-Device Indian Voice (en-IN)`;
-            testStatus.style.color = 'var(--accent-cyan)';
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('ElevenLabs Indian TTS API unreachable, falling back to Indian neural voice:', err);
   }
 
   // 2. Fallback to High-Fidelity Indian English Browser Neural Speech (en-IN)
@@ -2142,6 +2109,11 @@ const AppRouter = {
 
 window.AppRouter = AppRouter;
 window.slugify = slugify;
+window.switchTab = switchTab;
+window.setTheme = setTheme;
+window.stopAllVoice = stopAllVoice;
+window.speak = speak;
+window.speakGreeting = speakGreeting;
 
 function switchTab(tabId, options = {}) {
   // Stop all active voice playback when navigating
