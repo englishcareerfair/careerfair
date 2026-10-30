@@ -99,7 +99,6 @@ body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Ambient glow background */
@@ -320,7 +319,7 @@ button, input, select, textarea {
 }
 
 /* =========================================================================
-   ANIMATED THEME SWITCHER (Physical Sliding Pill & Micro-Animations)
+   ANIMATED THEME SWITCHER (Ultra-Fluid Hardware-Accelerated Sliding Glider)
    ========================================================================= */
 .theme-switcher {
   position: relative;
@@ -333,7 +332,7 @@ button, input, select, textarea {
   user-select: none;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
   overflow: hidden;
-  transition: background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 [data-theme="dark"] .theme-switcher {
@@ -342,7 +341,7 @@ button, input, select, textarea {
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* Sliding Glider Pill */
+/* Sliding Glider Pill - Pure GPU-Composited Translation */
 .theme-switcher-slider {
   position: absolute;
   top: 3px;
@@ -351,42 +350,22 @@ button, input, select, textarea {
   width: calc(50% - 3px);
   background: #ffffff;
   border-radius: var(--radius-full, 9999px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: transform 0.38s cubic-bezier(0.34, 1.45, 0.64, 1),
-              background-color 0.35s ease,
-              box-shadow 0.35s ease,
-              width 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06);
   pointer-events: none;
   z-index: 1;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1),
+              background-color 0.15s ease,
+              box-shadow 0.15s ease;
   will-change: transform;
 }
 
 /* Dark mode position of the glider */
-.theme-switcher[data-active-theme="dark"] .theme-switcher-slider {
-  transform: translateX(100%);
+.theme-switcher[data-active-theme="dark"] .theme-switcher-slider,
+[data-theme="dark"] .theme-switcher .theme-switcher-slider {
+  transform: translate3d(100%, 0, 0);
   background: #1e293b;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 12px rgba(99, 102, 241, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-}
-
-/* Tactile Elastic Stretch while in transit */
-.theme-switcher.theme-switching[data-active-theme="dark"] .theme-switcher-slider {
-  animation: sliderElasticRight 0.38s cubic-bezier(0.34, 1.45, 0.64, 1);
-}
-
-.theme-switcher.theme-switching[data-active-theme="light"] .theme-switcher-slider {
-  animation: sliderElasticLeft 0.38s cubic-bezier(0.34, 1.45, 0.64, 1);
-}
-
-@keyframes sliderElasticRight {
-  0% { transform: translateX(0) scaleX(1); }
-  45% { transform: translateX(50%) scaleX(1.18); }
-  100% { transform: translateX(100%) scaleX(1); }
-}
-
-@keyframes sliderElasticLeft {
-  0% { transform: translateX(100%) scaleX(1); }
-  45% { transform: translateX(50%) scaleX(1.18); }
-  100% { transform: translateX(0) scaleX(1); }
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* Button items (sit on top of the sliding glider) */
@@ -406,7 +385,7 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: color 0.25s ease, transform 0.15s ease;
+  transition: color 0.15s ease;
   box-shadow: none !important;
   outline: none;
   flex: 1;
@@ -414,7 +393,7 @@ button, input, select, textarea {
 }
 
 .theme-btn:active {
-  transform: scale(0.93);
+  transform: scale(0.96);
 }
 
 .theme-btn.active {
@@ -426,46 +405,30 @@ button, input, select, textarea {
   color: var(--accent-cyan, #38bdf8);
 }
 
-/* Icon rotation & spring pulse animations */
+/* Icon micro-animations */
 .theme-btn-icon {
   display: inline-block;
   font-size: 14px;
   line-height: 1;
-  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease, opacity 0.25s ease;
+  transition: transform 0.18s ease, opacity 0.15s ease;
 }
 
-/* Sun spins and glows when activated */
-.theme-btn[data-theme-val="light"].active .theme-btn-icon {
-  transform: rotate(360deg) scale(1.18);
-  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.7));
+.theme-btn.active .theme-btn-icon {
+  transform: scale(1.1);
   opacity: 1;
 }
 
-.theme-btn[data-theme-val="light"]:not(.active) .theme-btn-icon {
-  transform: rotate(0deg) scale(0.92);
-  opacity: 0.65;
-}
-
-/* Moon rotates into a crescent angle and glows */
-.theme-btn[data-theme-val="dark"].active .theme-btn-icon {
-  transform: rotate(-18deg) scale(1.18);
-  filter: drop-shadow(0 0 5px rgba(129, 140, 248, 0.8));
-  opacity: 1;
-}
-
-.theme-btn[data-theme-val="dark"]:not(.active) .theme-btn-icon {
-  transform: rotate(0deg) scale(0.92);
+.theme-btn:not(.active) .theme-btn-icon {
+  transform: scale(0.92);
   opacity: 0.65;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .theme-switcher-slider {
-    transition: none !important;
-    animation: none !important;
-  }
+  .theme-switcher-slider,
+  .theme-btn,
   .theme-btn-icon {
     transition: none !important;
-    transform: none !important;
+    animation: none !important;
   }
 }
 

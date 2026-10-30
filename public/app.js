@@ -1370,41 +1370,23 @@ function setTheme(themeName, silent = false) {
   const mode = (themeName === 'dark' || themeName === 'cinematic') ? 'dark' : 'light';
   STATE.theme = mode;
 
-  // Trigger slider animation and elastic stretch on switcher container
+  // Instant hardware-accelerated theme switch without laggy view transitions or reflow
+  document.documentElement.setAttribute('data-theme', mode);
+  localStorage.setItem('cf_theme', mode);
+
+  const metaTheme = $('meta[name="theme-color"]');
+  if (metaTheme) {
+    metaTheme.setAttribute('content', mode === 'dark' ? '#0c0d10' : '#f8fafc');
+  }
+
   const switcher = $('.theme-switcher');
   if (switcher) {
     switcher.setAttribute('data-active-theme', mode);
-    switcher.classList.remove('theme-switching');
-    // Force DOM reflow to re-trigger CSS keyframe animation smoothly
-    void switcher.offsetWidth;
-    switcher.classList.add('theme-switching');
-    setTimeout(() => switcher.classList.remove('theme-switching'), 420);
   }
 
-  const applyDomTheme = () => {
-    document.documentElement.setAttribute('data-theme', mode);
-    localStorage.setItem('cf_theme', mode);
-
-    const metaTheme = $('meta[name="theme-color"]');
-    if (metaTheme) {
-      metaTheme.setAttribute('content', mode === 'dark' ? '#0c0d10' : '#f8fafc');
-    }
-
-    $$('.theme-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.themeVal === mode);
-    });
-  };
-
-  // Modern View Transition API for smooth screen cross-fade if supported
-  if (document.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.startViewTransition(applyDomTheme);
-  } else {
-    applyDomTheme();
-  }
-
-  if (!silent) {
-    showToast(`Switched to ${mode === 'dark' ? 'Dark' : 'Light'} mode`);
-  }
+  $$('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.themeVal === mode);
+  });
 }
 
 // ─── 4. SECTION RENDERERS ─────────────────────────────────────────────────────
