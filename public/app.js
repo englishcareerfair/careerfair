@@ -1317,7 +1317,11 @@ function initNavigation() {
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const targetTab = btn.dataset.tab;
-      switchTab(targetTab);
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/' + (targetTab === 'hero' ? '' : targetTab));
+      } else {
+        switchTab(targetTab);
+      }
     });
   });
 
@@ -1435,7 +1439,517 @@ function initNavigation() {
   initLeaderboard();
 }
 
-function switchTab(tabId) {
+// =========================================================================
+// HIERARCHICAL DEEP LINKING ROUTER (QR CODE & STAND-ALONE SUB-URL ROUTING)
+// Architecture: /:tab/:subtab/:part (e.g. /careers/aviation/commercial-airline-pilot)
+// Supports both clean pathname URLs and hash routes (/#/...) interchangeably!
+// =========================================================================
+
+function slugify(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/['"’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+const AppRouter = {
+  current: {
+    tab: 'hero',
+    subtab: '',
+    part: '',
+    path: '/'
+  },
+  _isRouting: false,
+
+  // Normalizes any path/hash into clean lowercase '/tab/subtab/part' format
+  normalizePath(raw) {
+    if (!raw) return '/hero';
+    let p = String(raw).trim();
+    // Strip hash prefix
+    if (p.startsWith('#/')) p = p.slice(1);
+    else if (p.startsWith('#') && !p.startsWith('#sec-')) p = '/' + p.slice(1);
+    // Strip trailing index.html
+    p = p.replace(/\/index\.html$/i, '');
+    // Ensure leading slash, strip trailing slashes
+    if (!p.startsWith('/')) p = '/' + p;
+    p = p.replace(/\/+$/, '') || '/hero';
+    return p;
+  },
+
+  // Reads current path from location (hash first if present, then pathname, then query params)
+  getCurrentPath() {
+    const hash = window.location.hash || '';
+    if (hash.startsWith('#/') || (hash.startsWith('#') && hash.length > 1 && !hash.startsWith('#sec-'))) {
+      return this.normalizePath(hash);
+    }
+
+    const pathname = window.location.pathname || '/';
+    if (pathname !== '/' && pathname !== '/index.html') {
+      return this.normalizePath(pathname);
+    }
+
+    const search = window.location.search;
+    if (search) {
+      const q = new URLSearchParams(search);
+      const tab = q.get('tab');
+      if (tab) {
+        const sub = q.get('sub') || q.get('cat') || q.get('game') || q.get('pack') || '';
+        const part = q.get('part') || q.get('id') || q.get('level') || '';
+        return this.normalizePath('/' + [tab, sub, part].filter(Boolean).join('/'));
+      }
+    }
+
+    return '/hero';
+  },
+
+  // Updates the browser address bar with the canonical URL
+  updateUrl(path, replace = false) {
+    const cleanPath = this.normalizePath(path);
+    this.current.path = cleanPath;
+
+    try {
+      const isFile = window.location.protocol === 'file:';
+      if (isFile) {
+        const targetHash = '#' + cleanPath;
+        if (window.location.hash !== targetHash) {
+          if (replace) window.location.replace(targetHash);
+          else window.location.hash = targetHash;
+        }
+        return;
+      }
+
+      const targetUrl = cleanPath + (window.location.search || '');
+      if (window.location.pathname !== cleanPath || window.location.hash) {
+        if (replace) {
+          window.history.replaceState({ path: cleanPath }, '', targetUrl);
+        } else {
+          window.history.pushState({ path: cleanPath }, '', targetUrl);
+        }
+      }
+    } catch (e) {
+      try {
+        window.location.hash = '#' + cleanPath;
+      } catch (err) {}
+    }
+  },
+
+  // Programmatically navigates to a new route
+  navigate(path, options = {}) {
+    const cleanPath = this.normalizePath(path);
+    if (options.silent) {
+      this.updateUrl(cleanPath, options.replace !== false);
+      return;
+    }
+    this.updateUrl(cleanPath, options.replace === true);
+    this.routeTo(cleanPath, options);
+  },
+
+  // Callback when tab is switched via switchTab
+  onTabSwitched(tabId) {
+    if (this._isRouting) return;
+    this.current.tab = tabId;
+    this.current.subtab = '';
+    this.current.part = '';
+    this.updateUrl('/' + (tabId === 'hero' ? '' : tabId), false);
+  },
+
+  // Dispatches route to UI elements
+  routeTo(rawPath, options = {}) {
+    this._isRouting = true;
+    try {
+      const path = this.normalizePath(rawPath);
+      const segments = path.replace(/^\/+|\/+$/g, '').split('/').map(s => s.trim().toLowerCase()).filter(Boolean);
+      
+      let rawTab = segments[0] || 'hero';
+      const subtab = segments[1] || '';
+      const part = segments[2] || '';
+
+      // Tab aliases
+      const TAB_ALIASES = {
+        '': 'hero',
+        'home': 'hero',
+        'overview': 'hero',
+        'arcade': 'games',
+        'coach': 'speechLab',
+        'speech-lab': 'speechLab',
+        'speechlab': 'speechLab',
+        'anchor': 'teleprompter',
+        'news': 'teleprompter',
+        'plan': 'roadmap',
+        'myplan': 'roadmap'
+      };
+      let tab = TAB_ALIASES[rawTab] || rawTab;
+
+      // Special route: /guide or /guide/tour
+      if (tab === 'guide' || tab === 'tour') {
+        switchTab('hero', { fromRouter: true });
+        this.current = { tab: 'hero', subtab: 'guide', part: '', path };
+        if (window.DigitalHumanGuide && typeof window.DigitalHumanGuide.startGreetingAndTour === 'function') {
+          setTimeout(() => window.DigitalHumanGuide.startGreetingAndTour(), 300);
+        }
+        return;
+      }
+
+      // Feature Flag Guard
+      if (window.STATE?.config?.flags) {
+        const flagKeyMap = {
+          careers: 'careers',
+          colleges: 'colleges',
+          exams: 'exams',
+          speak: 'speechLab',
+          speechLab: 'speechLab',
+          teleprompter: 'anchorMode',
+          games: 'games',
+          roadmap: 'roadmap',
+          leaderboard: 'leaderboard',
+          feedback: 'feedback'
+        };
+        const flagKey = flagKeyMap[tab];
+        if (flagKey && window.STATE.config.flags[flagKey] === false) {
+          tab = 'hero';
+        }
+      }
+
+      // Switch to main tab (skip sub initialization so we can cleanly control it)
+      switchTab(tab, { fromRouter: true, skipSubInit: true, keepScroll: Boolean(part) });
+      this.current = { tab, subtab, part, path };
+
+      // Dispatch Tab-Specific Sub-Routing
+      if (tab === 'careers') {
+        this._routeCareers(subtab, part);
+      } else if (tab === 'colleges') {
+        this._routeColleges(subtab, part);
+      } else if (tab === 'exams') {
+        this._routeExams(subtab, part);
+      } else if (tab === 'speak') {
+        this._routeSpeak(subtab, part);
+      } else if (tab === 'speechLab') {
+        initSpeechLab();
+      } else if (tab === 'teleprompter') {
+        this._routeTeleprompter(subtab, part);
+      } else if (tab === 'games') {
+        this._routeGames(subtab, part);
+      } else if (tab === 'roadmap') {
+        this._routeRoadmap(subtab, part);
+      } else if (tab === 'leaderboard') {
+        this._routeLeaderboard(subtab, part);
+      } else if (tab === 'feedback') {
+        loadFeedbackWall();
+      } else if (tab === 'admin') {
+        this._routeAdmin(subtab, part);
+      }
+
+      // If URL was in hash or query, normalize browser address bar to clean path
+      this.updateUrl(path, true);
+
+    } finally {
+      this._isRouting = false;
+    }
+  },
+
+  // 1. Careers Sub-Routing: /careers/:category/:careerSlug
+  _routeCareers(catSlug, careerSlug) {
+    renderCareers();
+    const catMap = {
+      all: 'All',
+      health: 'Health',
+      healthcare: 'Health',
+      aviation: 'Aviation',
+      defense: 'Aviation',
+      tech: 'Tech',
+      software: 'Tech',
+      law: 'Law',
+      justice: 'Law',
+      media: 'Media',
+      journalism: 'Media',
+      business: 'Business',
+      finance: 'Business',
+      creative: 'Creative',
+      arts: 'Creative',
+      policy: 'Public Policy',
+      'public-policy': 'Public Policy',
+      publicpolicy: 'Public Policy'
+    };
+
+    const targetCat = catMap[catSlug] || (catSlug ? 'All' : null);
+    if (targetCat) {
+      const chip = $(`#career-category-filters .filter-chip[data-cat="${targetCat}"]`);
+      if (chip) {
+        $$('#career-category-filters .filter-chip').forEach(b => b.classList.remove('active'));
+        chip.classList.add('active');
+        const input = $('#career-search-input');
+        if (input) input.dispatchEvent(new Event('input'));
+      }
+    }
+
+    if (careerSlug) {
+      setTimeout(() => {
+        const cards = $$('#careers-cards-container .card');
+        for (const card of cards) {
+          const title = (card.querySelector('.card-title')?.textContent || '').trim();
+          if (slugify(title).includes(careerSlug) || careerSlug.includes(slugify(title))) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('deeplink-target-highlight');
+            setTimeout(() => card.classList.remove('deeplink-target-highlight'), 3800);
+            break;
+          }
+        }
+      }, 150);
+    }
+  },
+
+  // 2. Colleges Sub-Routing: /colleges/:region/:collegeOrAccred
+  _routeColleges(regSlug, part) {
+    renderColleges();
+    const regMap = {
+      maharashtra: 'Maharashtra',
+      mumbai: 'Maharashtra',
+      pune: 'Maharashtra',
+      panindia: 'PanIndia',
+      'pan-india': 'PanIndia',
+      india: 'PanIndia',
+      abroad: 'Abroad',
+      global: 'Abroad'
+    };
+    const targetRegion = regMap[regSlug];
+    if (targetRegion) {
+      const chip = $(`#college-region-filters .filter-chip[data-region="${targetRegion}"]`);
+      if (chip) {
+        chip.click();
+      }
+    }
+
+    if (part) {
+      setTimeout(() => {
+        if (part.includes('naac')) {
+          const sel = $('#college-accreditation-filter');
+          if (sel) {
+            sel.value = 'NAAC A++';
+            sel.dispatchEvent(new Event('change'));
+          }
+        } else if (part.includes('nirf')) {
+          const sel = $('#college-accreditation-filter');
+          if (sel) {
+            sel.value = 'NIRF Top 50';
+            sel.dispatchEvent(new Event('change'));
+          }
+        } else {
+          const cards = $$('#colleges-cards-container .card');
+          for (const card of cards) {
+            const title = (card.querySelector('.card-title')?.textContent || '').trim();
+            if (slugify(title).includes(part) || part.includes(slugify(title))) {
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              card.classList.add('deeplink-target-highlight');
+              setTimeout(() => card.classList.remove('deeplink-target-highlight'), 3800);
+              break;
+            }
+          }
+        }
+      }, 150);
+    }
+  },
+
+  // 3. Exams Sub-Routing: /exams/:examSlug
+  _routeExams(examSlug) {
+    renderExams();
+    if (!examSlug) return;
+    setTimeout(() => {
+      const cards = $$('#exams-cards-container .card');
+      for (const card of cards) {
+        const title = (card.querySelector('.card-title')?.textContent || '').trim();
+        if (slugify(title).includes(examSlug) || examSlug.includes(slugify(title))) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          card.classList.add('deeplink-target-highlight');
+          setTimeout(() => card.classList.remove('deeplink-target-highlight'), 3800);
+          break;
+        }
+      }
+    }, 150);
+  },
+
+  // 4. Speak Studio Sub-Routing: /speak/:pack/:level
+  _routeSpeak(packSlug, levelPart) {
+    initSpeakLadder();
+    const packMap = {
+      everyday: 'Everyday',
+      journalism: 'Journalism',
+      media: 'Journalism',
+      law: 'Law',
+      court: 'Law',
+      academic: 'Academic',
+      scholarly: 'Academic'
+    };
+    const pack = packMap[packSlug];
+    if (pack) {
+      const chip = $(`#speak-pack-filters .filter-chip[data-pack="${pack}"]`);
+      if (chip) chip.click();
+    }
+    if (levelPart) {
+      const lvl = Number(String(levelPart).replace(/\D/g, ''));
+      if (lvl >= 1 && lvl <= 5) {
+        STATE.speakLevel = lvl;
+        changeSpeechSentence();
+      }
+    }
+  },
+
+  // 5. Teleprompter Sub-Routing: /teleprompter/:script/:speed
+  _routeTeleprompter(scriptSlug, speedSlug) {
+    initTeleprompter();
+    const sel = $('#anchor-script-select');
+    if (sel && scriptSlug) {
+      const validOptions = Array.from(sel.options).map(o => o.value);
+      const match = validOptions.find(opt => opt === scriptSlug || scriptSlug.includes(opt));
+      if (match) {
+        sel.value = match;
+        sel.dispatchEvent(new Event('change'));
+      }
+    }
+    if (speedSlug) {
+      const speedBtn = $(`#speed-${speedSlug}`);
+      if (speedBtn) speedBtn.click();
+    }
+  },
+
+  // 6. Arcade Games Sub-Routing: /games/:game/:quest
+  _routeGames(gameSlug, questSlug) {
+    const gameMap = {
+      jobtris: 'jobtris',
+      tetris: 'jobtris',
+      'gaming-hall': 'gaming-hall',
+      hall: 'gaming-hall',
+      quests: 'gaming-hall',
+      wordle: 'wordle',
+      flashcards: 'flashcards',
+      flashcard: 'flashcards',
+      dict: 'dict',
+      dictionary: 'dict',
+      spelling: 'spelling',
+      'spelling-bee': 'spelling',
+      hangman: 'hangman',
+      blitz: 'blitz',
+      'word-blitz': 'blitz',
+      slap: 'slap',
+      'grammar-slap': 'slap'
+    };
+    const gameKey = gameMap[gameSlug] || 'jobtris';
+    renderGameArena(gameKey);
+
+    if (gameKey === 'gaming-hall' && questSlug) {
+      const questMap = {
+        scribe: 0,
+        'the-scribe': 0,
+        '1': 0,
+        etym: 1,
+        'the-etymologist': 1,
+        '2': 1,
+        bard: 2,
+        'the-bards-mirror': 2,
+        '3': 2,
+        oracle: 3,
+        'the-career-oracle': 3,
+        '4': 3,
+        cipher: 4,
+        'the-ink-cipher': 4,
+        '5': 4
+      };
+      if (questMap[questSlug] !== undefined) {
+        gamingHallArcIndex = questMap[questSlug];
+        if (typeof updateGamingHallArc === 'function') {
+          updateGamingHallArc();
+        }
+      }
+    }
+  },
+
+  // 7. Roadmap Tools Sub-Routing: /roadmap/:tool/:detail
+  _routeRoadmap(toolSlug, detail) {
+    const toolMap = {
+      bizcard: 'bizcard',
+      card: 'bizcard',
+      businesscard: 'bizcard',
+      myplan: 'myplan',
+      plan: 'myplan',
+      roadmap: 'myplan',
+      quiz: 'quiz'
+    };
+    const toolKey = toolMap[toolSlug] || 'bizcard';
+    renderPlanTool(toolKey);
+
+    if (toolKey === 'bizcard' && detail) {
+      setTimeout(() => {
+        const sel = $('#bizcard-career-select');
+        if (sel) {
+          const opts = Array.from(sel.options);
+          const matched = opts.find(o => slugify(o.value).includes(detail) || detail.includes(slugify(o.value)));
+          if (matched) {
+            sel.value = matched.value;
+            sel.dispatchEvent(new Event('change'));
+          }
+        }
+      }, 150);
+    }
+  },
+
+  // 8. Leaderboard Sub-Routing: /leaderboard/:pack
+  _routeLeaderboard(packSlug) {
+    const packMap = {
+      all: 'All',
+      everyday: 'Everyday',
+      journalism: 'Journalism',
+      media: 'Journalism',
+      law: 'Law',
+      academic: 'Academic'
+    };
+    const pack = packMap[packSlug] || 'All';
+    loadLeaderboard(pack);
+    const chip = $(`#leaderboard-pack-filters .filter-chip[data-board-pack="${pack}"]`);
+    if (chip) {
+      $$('#leaderboard-pack-filters .filter-chip').forEach(b => b.classList.remove('active'));
+      chip.classList.add('active');
+    }
+  },
+
+  // 9. Admin Sub-Routing: /admin/:view
+  _routeAdmin(viewSlug) {
+    renderAdminView();
+    if (viewSlug && STATE.adminKey) {
+      setTimeout(() => {
+        const chip = $(`#admin-tab-row .filter-chip[data-admin-view="${viewSlug}"]`);
+        if (chip) chip.click();
+      }, 100);
+    }
+  },
+
+  // Returns canonical shareable URL for QR code generation
+  getShareableUrl(path = this.current.path) {
+    const origin = window.location.origin;
+    const clean = this.normalizePath(path);
+    return origin + clean;
+  },
+
+  // Initializes router listeners and executes initial route on boot
+  init() {
+    window.addEventListener('popstate', () => {
+      this.routeTo(this.getCurrentPath(), { fromHistory: true });
+    });
+
+    window.addEventListener('hashchange', () => {
+      this.routeTo(this.getCurrentPath(), { fromHistory: true });
+    });
+
+    // Run initial route
+    const initialPath = this.getCurrentPath();
+    this.routeTo(initialPath, { isInitial: true });
+  }
+};
+
+window.AppRouter = AppRouter;
+window.slugify = slugify;
+
+function switchTab(tabId, options = {}) {
   // Stop all active voice playback when navigating
   stopAllVoice();
 
@@ -1457,21 +1971,30 @@ function switchTab(tabId) {
   const targetSec = $(`#sec-${tabId}`);
   if (targetSec) {
     targetSec.hidden = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!options.keepScroll) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
-  // Trigger lazy section initializers
-  if (tabId === 'careers') renderCareers();
-  if (tabId === 'colleges') renderColleges();
-  if (tabId === 'exams') renderExams();
-  if (tabId === 'speak') initSpeakLadder();
-  if (tabId === 'speechLab') initSpeechLab();
-  if (tabId === 'teleprompter') initTeleprompter();
-  if (tabId === 'games') renderGameArena('jobtris');
-  if (tabId === 'roadmap') renderPlanTool('bizcard');
-  if (tabId === 'leaderboard') loadLeaderboard();
-  if (tabId === 'feedback') loadFeedbackWall();
-  if (tabId === 'admin') renderAdminView();
+  // Synchronize URL with router if this was triggered directly (not from router routeTo)
+  if (!options.fromRouter && window.AppRouter && typeof window.AppRouter.onTabSwitched === 'function') {
+    window.AppRouter.onTabSwitched(tabId);
+  }
+
+  // Trigger lazy section initializers (only if not already handled by router sub-initializer)
+  if (!options.skipSubInit) {
+    if (tabId === 'careers') renderCareers();
+    if (tabId === 'colleges') renderColleges();
+    if (tabId === 'exams') renderExams();
+    if (tabId === 'speak') initSpeakLadder();
+    if (tabId === 'speechLab') initSpeechLab();
+    if (tabId === 'teleprompter') initTeleprompter();
+    if (tabId === 'games') renderGameArena('jobtris');
+    if (tabId === 'roadmap') renderPlanTool('bizcard');
+    if (tabId === 'leaderboard') loadLeaderboard();
+    if (tabId === 'feedback') loadFeedbackWall();
+    if (tabId === 'admin') renderAdminView();
+  }
 }
 
 function setTheme(themeName, silent = false) {
@@ -1535,6 +2058,9 @@ function renderCareers() {
     filtered.forEach(c => {
       const card = document.createElement('article');
       card.className = 'card';
+      const cSlug = slugify(c.title);
+      card.dataset.careerSlug = cSlug;
+      card.id = 'career-' + cSlug;
       card.innerHTML = `
         <div class="card-header">
           <div class="card-icon" aria-hidden="true">${c.icon}</div>
@@ -1565,11 +2091,21 @@ function renderCareers() {
 
   // Delegate career selection clicks
   container?.addEventListener('click', e => {
+    const cardEl = e.target.closest('.card');
     const btn = e.target.closest('.btn-pin-career');
-    if (!btn) return;
-    const title = btn.dataset.title;
+    const title = btn ? btn.dataset.title : (cardEl ? cardEl.querySelector('.card-title')?.textContent : '');
+    if (!title) return;
+
     const careerObj = CAREERS_DATA.find(c => c.title === title);
     if (!careerObj) return;
+
+    if (window.AppRouter) {
+      const catSlug = slugify(careerObj.cat || activeCat);
+      const careerSlug = slugify(careerObj.title);
+      window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug) + '/' + careerSlug, { silent: true });
+    }
+
+    if (!btn) return; // If clicked card outside button, just updated URL
 
     if (!STATE.studentProfile) STATE.studentProfile = {};
     STATE.studentProfile.chosenCareer = careerObj;
@@ -1597,6 +2133,10 @@ function renderCareers() {
       btn.classList.add('active');
       activeCat = btn.dataset.cat;
       update();
+      if (window.AppRouter) {
+        const catSlug = slugify(activeCat);
+        window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug), { silent: true });
+      }
     });
   });
 
@@ -1634,6 +2174,9 @@ function renderColleges() {
     filtered.forEach(col => {
       const card = document.createElement('article');
       card.className = 'card';
+      const colSlug = slugify(col.name);
+      card.dataset.collegeSlug = colSlug;
+      card.id = 'college-' + colSlug;
       
       const badgeClass = col.accreditation.badgeType === 'naac' ? 'badge-naac'
                        : col.accreditation.badgeType === 'nirf' ? 'badge-nirf'
@@ -1661,18 +2204,34 @@ function renderColleges() {
     });
   };
 
+  container.addEventListener('click', e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const colSlug = card.dataset.collegeSlug;
+    if (colSlug && window.AppRouter) {
+      window.AppRouter.navigate('/colleges/' + slugify(activeRegion) + '/' + colSlug, { silent: true });
+    }
+  });
+
   regionFilters.forEach(btn => {
     btn.addEventListener('click', () => {
       regionFilters.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       activeRegion = btn.dataset.region;
       update();
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
+      }
     });
   });
 
   accredFilter?.addEventListener('change', e => {
     activeAccred = e.target.value;
     update();
+    if (window.AppRouter) {
+      const accredSlug = activeAccred !== 'All' ? slugify(activeAccred) : '';
+      window.AppRouter.navigate('/colleges/' + slugify(activeRegion) + (accredSlug ? '/' + accredSlug : ''), { silent: true });
+    }
   });
 
   update();
@@ -1687,6 +2246,9 @@ function renderExams() {
   EXAMS_DATA.forEach(ex => {
     const card = document.createElement('article');
     card.className = 'card';
+    const exSlug = slugify(ex.name);
+    card.dataset.examSlug = exSlug;
+    card.id = 'exam-' + exSlug;
     card.innerHTML = `
       <div class="card-header">
         <div class="card-icon" style="background:rgba(255,183,3,0.1);">📝</div>
@@ -1712,6 +2274,15 @@ function renderExams() {
       </div>
     `;
     container.appendChild(card);
+  });
+
+  container.addEventListener('click', e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const exSlug = card.dataset.examSlug;
+    if (exSlug && window.AppRouter) {
+      window.AppRouter.navigate('/exams/' + exSlug, { silent: true });
+    }
   });
 }
 
@@ -1801,6 +2372,9 @@ function initSpeakLadder() {
       const packTag = $('#active-challenge-pack-tag');
       if (packTag) packTag.textContent = btn.textContent;
       changeSpeechSentence();
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/speak/' + slugify(speakPack), { silent: true });
+      }
     });
   });
 
@@ -3498,6 +4072,10 @@ function initTeleprompter() {
       teleprompterState.currentSpeed = 4.2;
       showToast('Teleprompter speed set to Fast (Breaking News Pace)');
     }
+    if (window.AppRouter) {
+      const scriptKey = scriptSelect?.value || 'breaking';
+      window.AppRouter.navigate('/teleprompter/' + scriptKey + '/' + spd, { silent: true });
+    }
   };
 
   speedSlow?.addEventListener('click', () => setSpeed('slow', speedSlow));
@@ -3528,6 +4106,10 @@ function initTeleprompter() {
   // 5. Script / Roleplay Dropdown Selection
   scriptSelect?.addEventListener('change', e => {
     applyScript(e.target.value);
+    if (window.AppRouter) {
+      const spd = teleprompterState.currentSpeed === 1.2 ? 'slow' : teleprompterState.currentSpeed === 4.2 ? 'fast' : 'normal';
+      window.AppRouter.navigate('/teleprompter/' + e.target.value + (spd !== 'normal' ? '/' + spd : ''), { silent: true });
+    }
   });
 
   // 6. Name input listener
@@ -3873,7 +4455,11 @@ function initGamePicker() {
   // Wire game selection chips
   $$('#game-picker-tabs .filter-chip').forEach(btn => {
     btn.onclick = () => {
-      renderGameArena(btn.dataset.game);
+      const gameKey = btn.dataset.game;
+      renderGameArena(gameKey);
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/games/' + gameKey, { silent: true });
+      }
       // Auto-center the clicked game chip in the visible viewport
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     };
@@ -4313,7 +4899,7 @@ function getCipherOfflineInspector(q, currentCase) {
   }
 }
 
-function renderGamingHall(mount) {
+function renderGamingHall(mount, initialQuestIdx = 0) {
   mount.innerHTML = `
     <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
@@ -4362,7 +4948,16 @@ function renderGamingHall(mount) {
   const carousel = $('#gaming-arc-carousel');
   const stageInner = $('#quest-stage-inner');
   const indicator = $('#arc-indicator');
-  let activeIndex = 0;
+  let activeIndex = (typeof initialQuestIdx === 'number' && initialQuestIdx >= 0 && initialQuestIdx < GAMING_HALL_QUESTS.length)
+    ? initialQuestIdx
+    : (gamingHallArcIndex || 0);
+
+  function syncQuestUrl() {
+    gamingHallArcIndex = activeIndex;
+    if (window.AppRouter && GAMING_HALL_QUESTS[activeIndex]) {
+      window.AppRouter.navigate('/games/gaming-hall/' + GAMING_HALL_QUESTS[activeIndex].id, { silent: true });
+    }
+  }
 
   function renderArc() {
     carousel.innerHTML = '';
@@ -4404,6 +4999,7 @@ function renderGamingHall(mount) {
           launchQuest(i);
         } else {
           activeIndex = i;
+          syncQuestUrl();
           renderArc();
           launchQuest(i);
         }
@@ -4437,18 +5033,27 @@ function renderGamingHall(mount) {
 
   $('#arc-prev')?.addEventListener('click', () => {
     activeIndex = (activeIndex - 1 + GAMING_HALL_QUESTS.length) % GAMING_HALL_QUESTS.length;
+    syncQuestUrl();
     renderArc();
     launchQuest(activeIndex);
   });
 
   $('#arc-next')?.addEventListener('click', () => {
     activeIndex = (activeIndex + 1) % GAMING_HALL_QUESTS.length;
+    syncQuestUrl();
     renderArc();
     launchQuest(activeIndex);
   });
 
+  window.setGamingHallQuest = (idx) => {
+    activeIndex = idx;
+    syncQuestUrl();
+    renderArc();
+    launchQuest(idx);
+  };
+
   renderArc();
-  launchQuest(0);
+  launchQuest(activeIndex);
 }
 
 // QUEST 1: The Scribe
@@ -6170,7 +6775,11 @@ function renderPlanTool(toolKey = 'bizcard') {
 function initPlanTools() {
   $$('#plan-tools-tabs .filter-chip').forEach(btn => {
     btn.onclick = () => {
-      renderPlanTool(btn.dataset.tool);
+      const toolKey = btn.dataset.tool;
+      renderPlanTool(toolKey);
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/roadmap/' + toolKey, { silent: true });
+      }
     };
   });
 }
@@ -7480,6 +8089,9 @@ function initLeaderboard() {
       btn.classList.add('active');
       const pack = btn.dataset.boardPack || 'All';
       loadLeaderboard(pack);
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/leaderboard/' + slugify(pack), { silent: true });
+      }
     };
   });
 
@@ -8354,6 +8966,9 @@ function initAdminWorkspace() {
       } else if (view === 'telemetry') {
         renderAdminTelemetry();
       }
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/admin/' + view, { silent: true });
+      }
     });
   });
 
@@ -9084,6 +9699,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCareers();
   renderColleges();
   checkIncomingCardVerification();
+
+  // Initialize Hierarchical Deep-Linking Router
+  if (window.AppRouter && typeof window.AppRouter.init === 'function') {
+    window.AppRouter.init();
+  }
 
   try {
     const cachedFb = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
