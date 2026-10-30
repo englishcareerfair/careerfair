@@ -2154,7 +2154,6 @@ function switchTab(tabId, options = {}) {
     if (tabId === 'games') renderGameArena('jobtris');
     if (tabId === 'roadmap') renderPlanTool('bizcard');
     if (tabId === 'leaderboard') loadLeaderboard();
-    if (tabId === 'voicelab' && window.VoiceLab) window.VoiceLab.init();
     if (tabId === 'feedback') loadFeedbackWall();
     if (tabId === 'admin') renderAdminView();
   }
