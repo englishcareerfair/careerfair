@@ -1945,6 +1945,23 @@ const AppRouter = {
     const gameMap = {
       jobtris: 'jobtris',
       tetris: 'jobtris',
+      'quest-scribe': 'quest-scribe',
+      scribe: 'quest-scribe',
+      'the-scribe': 'quest-scribe',
+      'quest-etym': 'quest-etym',
+      etym: 'quest-etym',
+      etymologist: 'quest-etym',
+      'the-etymologist': 'quest-etym',
+      'quest-bard': 'quest-bard',
+      bard: 'quest-bard',
+      'the-bard': 'quest-bard',
+      'the-bards-mirror': 'quest-bard',
+      'quest-oracle': 'quest-oracle',
+      oracle: 'quest-oracle',
+      'the-career-oracle': 'quest-oracle',
+      'quest-cipher': 'quest-cipher',
+      cipher: 'quest-cipher',
+      'the-ink-cipher': 'quest-cipher',
       'gaming-hall': 'gaming-hall',
       hall: 'gaming-hall',
       quests: 'gaming-hall',
@@ -4542,6 +4559,52 @@ function initTeleprompter() {
 }
 
 // ─── 9. ARCADE GAMES SUITE (JOBTRIS, WORDLE, FLASHCARDS, ETC.) ────────────────
+function renderStandaloneQuest(mount, questIdx) {
+  const q = GAMING_HALL_QUESTS[questIdx];
+  mount.innerHTML = `
+    <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <h3 style="font-size:22px;display:flex;align-items:center;gap:8px;margin:0 0 4px 0;">
+            <span>${q.icon}</span> <span>Quest ${q.num}: ${escapeHtml(q.title)}</span>
+          </h3>
+          <span style="font-size:13px;color:var(--text-dim);">
+            ${escapeHtml(q.tag)} · ${escapeHtml(q.desc)}
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">
+            ✨ Powered by Gemini AI
+          </span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-view-all-quests-arc" title="View 3D Arc of all 5 quests">
+            <span>🔮</span> <span>All Quests Arc</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="quest-view-card" id="standalone-quest-mount" style="padding:16px;background:var(--surface-raised, rgba(15,23,42,0.6));border:1px solid var(--border);border-radius:var(--radius-lg, 12px);"></div>
+  `;
+
+  $('#btn-view-all-quests-arc')?.addEventListener('click', () => {
+    renderGameArena('gaming-hall');
+    if (window.AppRouter) {
+      window.AppRouter.navigate('/games/gaming-hall', { silent: true });
+    }
+  });
+
+  const stage = $('#standalone-quest-mount');
+  if (stage) {
+    switch (questIdx) {
+      case 0: launchQuestScribe(stage); break;
+      case 1: launchQuestEtym(stage); break;
+      case 2: launchQuestBard(stage); break;
+      case 3: launchQuestOracle(stage); break;
+      case 4: launchQuestCipher(stage); break;
+      default: launchQuestScribe(stage);
+    }
+  }
+}
+
 function renderGameArena(gameKey) {
   const mount = $('#game-arena-mount');
   if (!mount) return;
@@ -4554,6 +4617,16 @@ function renderGameArena(gameKey) {
 
   if (gameKey === 'jobtris') {
     renderJobtris(mount);
+  } else if (gameKey === 'quest-scribe' || gameKey === 'scribe') {
+    renderStandaloneQuest(mount, 0);
+  } else if (gameKey === 'quest-etym' || gameKey === 'etym' || gameKey === 'etymologist') {
+    renderStandaloneQuest(mount, 1);
+  } else if (gameKey === 'quest-bard' || gameKey === 'bard') {
+    renderStandaloneQuest(mount, 2);
+  } else if (gameKey === 'quest-oracle' || gameKey === 'oracle') {
+    renderStandaloneQuest(mount, 3);
+  } else if (gameKey === 'quest-cipher' || gameKey === 'cipher') {
+    renderStandaloneQuest(mount, 4);
   } else if (gameKey === 'blitz') {
     renderWordBlitz(mount);
   } else if (gameKey === 'slap') {
