@@ -25,6 +25,7 @@
   <script src="game-completion-detector.js?v=7.7" defer></script>
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.7" defer></script>
+  <script src="voicelab.js" defer></script>
   <script src="app.js?v=7.7" defer></script>
 </head>
 <body>
@@ -105,6 +106,7 @@
         <button class="tab-btn" data-tab="roadmap" data-flag="roadmap"><span>🗺️</span> My Plan &amp; Quiz</button>
         <button class="tab-btn" data-tab="leaderboard" data-flag="leaderboard"><span>🏆</span> Leaderboard <span class="tab-badge" id="tab-badge-leaderboard">Live Top 10</span></button>
         <button class="tab-btn" data-tab="feedback" data-flag="feedback"><span>💬</span> Feedback <span class="tab-badge" id="tab-badge-feedback">⭐ 5.0</span></button>
+        <button class="tab-btn" data-tab="voicelab" data-flag="voiceLab"><span>🧬</span> Voice Lab <span class="tab-badge">AI Clone</span></button>
         <button class="tab-btn" data-tab="admin"><span>⚙️</span> Admin</button>
       </div>
 
@@ -840,6 +842,437 @@
     </section>
 
     <!-- ── SECTION: ADMIN CONTROL ROOM ── -->
+    
+    <!-- ── SECTION: VOICE LAB (AI VOICE CLONING EXPERIENCE) ── -->
+    <section class="section-shell" id="sec-voicelab" hidden>
+      <div class="section-head">
+        <div>
+          <div class="section-label">ZERO-SHOT NEURAL TIMBRE CLONING</div>
+          <h2 class="section-title">VOICE LAB — Discover the Voice of AI</h2>
+        </div>
+        <p class="section-desc">
+          Speak into the microphone for 10–20 seconds. Our open-source AI neural model will isolate your vocal characteristics, extract your pitch, resonance, and timbre, and let you synthesize completely new sentences in your authentic cloned voice.
+        </p>
+      </div>
+
+      <!-- Voice Lab Live Status Bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 16px;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;">
+          <span class="status-indicator live" id="vl-status-dot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent-green, #10b981);box-shadow:0 0 10px rgba(16,185,129,0.6);"></span>
+          <span style="font-weight:700;color:var(--text-main);" id="vl-backend-indicator">OFFLINE AI READY</span>
+          <span style="color:var(--text-dim);">|</span>
+          <span style="color:var(--text-muted);font-family:var(--font-mono);font-size:11.5px;" id="vl-backend-url">127.0.0.1:8765 (Local Python Engine)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="badge-pill" id="vl-hardware-pill" style="font-size:11px;background:rgba(99,102,241,0.15);color:var(--accent-indigo, #6366f1);border:1px solid rgba(99,102,241,0.3);">⚡ GPU ACCELERATED (GTX 1650)</span>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-clear-session" style="font-size:11.5px;padding:4px 10px;">
+            <span>🗑️</span> <span>CLEAR MY VOICE SESSION</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Voice Lab Experience Modes Sub-Navbar -->
+      <div class="filter-row" style="margin-bottom:20px;">
+        <button class="filter-chip active" data-vl-mode="clone">🎙️ 1. Clone My Voice</button>
+        <button class="filter-chip" data-vl-mode="challenge">🏆 2. Voice Challenge</button>
+        <button class="filter-chip" data-vl-mode="timemachine">⏳ 3. Voice Time Machine</button>
+        <button class="filter-chip" data-vl-mode="multilingual">🌐 4. Multilingual Lab</button>
+        <button class="filter-chip" data-vl-mode="doppelganger">🎭 5. Doppelgänger Studio</button>
+        <button class="filter-chip" data-vl-mode="guess">❓ 6. Guess the Voice</button>
+        <button class="filter-chip" data-vl-mode="assistant">🤖 7. Voice-Controlled AI</button>
+        <button class="filter-chip" data-vl-mode="howitworks">📖 8. How AI Clones Voice</button>
+      </div>
+
+      <!-- PANEL 1: PRIMARY VOICE CLONING JOURNEY -->
+      <div id="vl-panel-clone" class="vl-panel">
+        <div class="grid-2col" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));gap:20px;align-items:start;">
+          
+          <!-- Left Column: Audio Recording & Voice Profile Creation -->
+          <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h3 style="font-size:18px;margin:0;display:flex;align-items:center;gap:8px;">
+                <span>🎙️</span> <span>Step 1: Capture Voice Sample</span>
+              </h3>
+              <span class="badge-pill" style="font-size:11px;background:rgba(16,185,129,0.12);color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.3);">30–90s Experience</span>
+            </div>
+
+            <!-- Reading Prompt Selection -->
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">
+                Suggested Sample Sentence (Read aloud naturally)
+              </div>
+              <div id="vl-sample-sentence-text" style="font-size:14px;color:var(--text-main);font-style:italic;line-height:1.5;">
+                "Artificial intelligence is changing how humans interact with technology. Today, I am going to discover something extraordinary: a computer that can speak using the characteristics of my own voice."
+              </div>
+              <div style="margin-top:8px;display:flex;gap:8px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-sentence-tech" style="font-size:11px;">Tech Prompt</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-sentence-career" style="font-size:11px;">Career Prompt</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-sentence-custom" style="font-size:11px;">Speak Naturally</button>
+              </div>
+            </div>
+
+            <!-- Waveform Canvas & Live Visualizer -->
+            <div style="position:relative;background:#060814;border:1px solid var(--border);border-radius:var(--radius-md);height:90px;overflow:hidden;margin-bottom:14px;display:flex;align-items:center;justify-content:center;">
+              <canvas id="vl-audio-visualizer-canvas" width="600" height="90" style="width:100%;height:100%;display:block;"></canvas>
+              <div id="vl-visualizer-placeholder" style="position:absolute;font-size:12px;color:var(--text-dim);pointer-events:none;display:flex;align-items:center;gap:6px;">
+                <span>🎵</span> <span>Microphone level &amp; acoustic waveform preview</span>
+              </div>
+            </div>
+
+            <!-- Recording Action Controls -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-primary" id="btn-vl-record-toggle" style="flex:1;min-width:160px;">
+                <span id="vl-record-icon">🎙️</span> <span id="vl-record-label">Start Recording</span>
+              </button>
+              <button type="button" class="btn btn-secondary" id="btn-vl-rerecord" style="display:none;">
+                <span>🔄</span> <span>Record Again</span>
+              </button>
+              <span id="vl-record-timer" style="font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--accent-coral, #f43f5e);display:none;">● 00:00</span>
+            </div>
+
+            <!-- Original Recording Audio Playback -->
+            <div id="vl-recorded-preview-container" style="display:none;background:var(--surface-raised, rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:14px;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">Original Recording (What you actually said):</div>
+              <audio id="vl-recorded-audio-element" controls style="width:100%;height:32px;"></audio>
+            </div>
+
+            <!-- Name Your Voice & Mandatory Ethics Consent -->
+            <div style="margin-bottom:14px;">
+              <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:4px;">Voice Profile Name</label>
+              <input type="text" id="vl-voice-name-input" placeholder="e.g. My Authentic Voice or Student Timbre" style="width:100%;font-size:13px;box-sizing:border-box;">
+            </div>
+
+            <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:16px;">
+              <label style="display:flex;align-items:flex-start;gap:8px;font-size:11.5px;color:var(--text-muted);cursor:pointer;line-height:1.4;">
+                <input type="checkbox" id="vl-consent-checkbox" style="margin-top:2px;">
+                <span>
+                  <strong>Privacy &amp; Voice Ownership Consent:</strong> I consent to using this recording to create a temporary AI-generated version of my own voice for this exhibition. Audio is stored only temporarily and can be wiped instantly.
+                </span>
+              </label>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btn-vl-condition-voice" style="width:100%;" disabled>
+              <span>🧬</span> <span>Extract Vocal Timbre &amp; Build Profile</span>
+            </button>
+            <div id="vl-conditioning-feedback" style="font-size:12px;color:var(--text-dim);margin-top:8px;min-height:16px;"></div>
+          </div>
+
+          <!-- Right Column: Speech Synthesis in Cloned Voice -->
+          <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <h3 style="font-size:18px;margin:0;display:flex;align-items:center;gap:8px;">
+                <span>🔊</span> <span>Step 2: Generate New Speech</span>
+              </h3>
+              <span id="vl-active-voice-badge" class="badge-pill" style="font-size:11px;background:rgba(212,175,55,0.15);color:var(--accent-gold, #d4af37);border:1px solid rgba(212,175,55,0.3);">No Voice Profile Selected</span>
+            </div>
+
+            <p style="font-size:12.5px;color:var(--text-muted);margin:0 0 12px 0;">
+              Type any new sentence you want the AI to speak. It will generate speech using the timbre and resonance of your voice.
+            </p>
+
+            <!-- Custom Script Textarea -->
+            <div style="margin-bottom:12px;">
+              <textarea id="vl-synthesis-text" rows="3" placeholder="Type anything you want the AI to say in your voice..." style="width:100%;font-size:13.5px;line-height:1.5;box-sizing:border-box;">Hello, welcome to our school career fair! Artificial intelligence is incredible.</textarea>
+            </div>
+
+            <!-- Quick Template Sentences -->
+            <div style="margin-bottom:16px;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);margin-bottom:6px;">Quick Career Fair Scripts:</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                <button type="button" class="btn btn-secondary btn-sm vl-quick-script" data-text="Hello, welcome to our career fair! The future of education is right here." style="font-size:11px;">Welcome</button>
+                <button type="button" class="btn btn-secondary btn-sm vl-quick-script" data-text="Can you believe a computer just copied my voice without me saying this?" style="font-size:11px;">Disbelief</button>
+                <button type="button" class="btn btn-secondary btn-sm vl-quick-script" data-text="Good English opens every door, from aerospace engineering to courtroom law." style="font-size:11px;">School Motto</button>
+                <button type="button" class="btn btn-secondary btn-sm vl-quick-script" data-text="Artificial intelligence is an extraordinary tool when guided by human creativity." style="font-size:11px;">Inspirational</button>
+              </div>
+            </div>
+
+            <!-- Generation Settings: Speed, Emotion, Model -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+              <div>
+                <label style="font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;">Delivery Emotion</label>
+                <select id="vl-emotion-select" style="width:100%;font-size:12.5px;">
+                  <option value="neutral">Natural Conversational</option>
+                  <option value="cheerful">Cheerful &amp; Enthusiastic</option>
+                  <option value="commanding">Commanding &amp; Authoritative</option>
+                  <option value="somber">Calm &amp; Serious</option>
+                  <option value="whisper">Soft Whisper</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px;">Speaking Pace (<span id="vl-speed-val">1.0x</span>)</label>
+                <input type="range" id="vl-speed-slider" min="0.6" max="1.5" step="0.1" value="1.0" style="width:100%;">
+              </div>
+            </div>
+
+            <!-- Synthesize Button -->
+            <button type="button" class="btn btn-primary" id="btn-vl-synthesize-speech" style="width:100%;margin-bottom:14px;">
+              <span>⚡</span> <span>Generate In My Voice</span>
+            </button>
+
+            <!-- Synthesis Progress Bar -->
+            <div id="vl-progress-container" style="display:none;margin-bottom:14px;">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:4px;">
+                <span id="vl-progress-status">Synthesizing vocal formants...</span>
+                <span id="vl-progress-percent">0%</span>
+              </div>
+              <div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;">
+                <div id="vl-progress-fill" style="width:0%;height:100%;background:linear-gradient(90deg, var(--accent-gold, #d4af37), var(--accent-crimson, #c1121f));transition:width 0.2s ease;"></div>
+              </div>
+            </div>
+
+            <!-- Generated Audio Player & The Wow Moment -->
+            <div id="vl-generated-result-card" style="display:none;background:rgba(212,175,55,0.06);border:1px solid rgba(212,175,55,0.3);border-radius:var(--radius-md);padding:14px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:16px;">✨</span>
+                <strong style="color:var(--accent-gold, #d4af37);font-size:13.5px;">Wait... YOU DIDN'T ACTUALLY SAY THAT!</strong>
+              </div>
+              <p style="font-size:12px;color:var(--text-muted);margin:0 0 10px 0;">
+                That sentence was synthesized from scratch using your personal vocal signature. Play it below to hear yourself speak words you never uttered:
+              </p>
+              <audio id="vl-generated-audio-element" controls style="width:100%;height:34px;margin-bottom:10px;"></audio>
+              
+              <!-- Side-by-side comparison -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-play-original" style="font-size:11.5px;">
+                  <span>▶️</span> <span>Play Original (Actual Words)</span>
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-vl-play-cloned" style="font-size:11.5px;">
+                  <span>▶️</span> <span>Play AI Cloned Voice</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 2: VOICE CHALLENGE -->
+      <div id="vl-panel-challenge" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>🏆</span> <span>Voice Challenge — Match the Model</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            The AI generates a sophisticated sentence in your voice. Try repeating it into the microphone to test your cadence and pronunciation match!
+          </p>
+          <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px;">
+            <div style="font-size:12px;font-weight:700;color:var(--accent-gold, #d4af37);margin-bottom:6px;">Target Sentence:</div>
+            <div id="vl-challenge-prompt" style="font-size:15px;color:var(--text-main);font-weight:600;line-height:1.5;">
+              "Precision in pronunciation reflects clarity in communication."
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;">
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-play-challenge-target">▶️ Listen to Target in Cloned Voice</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-vl-record-challenge-attempt">🎙️ Record My Attempt</button>
+            </div>
+          </div>
+          <div id="vl-challenge-feedback" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-md);padding:14px;">
+            <div style="font-size:13.5px;font-weight:700;color:var(--accent-green, #10b981);margin-bottom:4px;">Speech Match Analysis:</div>
+            <div id="vl-challenge-score" style="font-size:13px;color:var(--text-main);">Word accuracy: 96% | Articulation pace: Optimal (148 WPM)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 3: VOICE TIME MACHINE -->
+      <div id="vl-panel-timemachine" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>⏳</span> <span>AI Voice Time Machine</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            Hear your authentic voice shifted across acoustic frequency spectrums: from a deep broadcasting baritone to a youthful high-energy resonance.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:16px;">
+            <button type="button" class="btn btn-secondary vl-timemachine-btn" data-preset="youth">
+              <span>🌱</span> <strong>Youthful Resonance</strong> (+18% Pitch)
+            </button>
+            <button type="button" class="btn btn-secondary vl-timemachine-btn" data-preset="baritone">
+              <span>🎙️</span> <strong>Broadcast Baritone</strong> (-15% Pitch)
+            </button>
+            <button type="button" class="btn btn-secondary vl-timemachine-btn" data-preset="speedrush">
+              <span>⚡</span> <strong>Fast Presenter</strong> (1.35x Pace)
+            </button>
+            <button type="button" class="btn btn-secondary vl-timemachine-btn" data-preset="slowmeditate">
+              <span>🧘</span> <strong>Meditative Calm</strong> (0.75x Pace)
+            </button>
+          </div>
+          <audio id="vl-timemachine-audio" controls style="width:100%;height:34px;display:none;"></audio>
+        </div>
+      </div>
+
+      <!-- PANEL 4: MULTILINGUAL VOICE LAB -->
+      <div id="vl-panel-multilingual" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>🌐</span> <span>Multilingual Voice Lab</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            Speak sentences in languages you may not even know fluently, while preserving your exact personal voice timbre!
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:16px;">
+            <button type="button" class="btn btn-secondary vl-multilingual-btn" data-lang="hi" data-text="शिक्षा ही वह सबसे शक्तिशाली हथियार है जिससे आप दुनिया को बदल सकते हैं।">
+              <span>🇮🇳</span> <strong>Hindi (हिंदी)</strong>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Nelson Mandela quote</div>
+            </button>
+            <button type="button" class="btn btn-secondary vl-multilingual-btn" data-lang="mr" data-text="ज्ञान ही खरी शक्ती आहे, आणि शिक्षण भविष्याची गुरुकिल्ली आहे.">
+              <span>🚩</span> <strong>Marathi (मराठी)</strong>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Knowledge &amp; Education</div>
+            </button>
+            <button type="button" class="btn btn-secondary vl-multilingual-btn" data-lang="fr" data-text="L'intelligence artificielle transforme l'avenir de l'apprentissage mondial.">
+              <span>🇫🇷</span> <strong>French (Français)</strong>
+              <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">AI Future Quote</div>
+            </button>
+          </div>
+          <audio id="vl-multilingual-audio" controls style="width:100%;height:34px;display:none;"></audio>
+        </div>
+      </div>
+
+      <!-- PANEL 5: DOPPELGANGER STUDIO -->
+      <div id="vl-panel-doppelganger" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>🎭</span> <span>AI Voice Doppelgänger Studio</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            Experience your cloned voice acting across three wildly distinct professional personas:
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:14px;margin-bottom:16px;">
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
+              <div style="font-size:13px;font-weight:700;color:var(--text-main);margin-bottom:4px;">🎬 Movie Trailer Narrator</div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 10px 0;">"In a world driven by artificial intelligence, one human learned to master the machine."</p>
+              <button type="button" class="btn btn-secondary btn-sm vl-persona-btn" data-emotion="commanding" data-text="In a world driven by artificial intelligence, one human learned to master the machine.">▶️ Generate Narrator</button>
+            </div>
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
+              <div style="font-size:13px;font-weight:700;color:var(--text-main);margin-bottom:4px;">📺 Breaking News Anchor</div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 10px 0;">"Good evening, we are broadcasting live from the English Careers Exhibition."</p>
+              <button type="button" class="btn btn-secondary btn-sm vl-persona-btn" data-emotion="neutral" data-text="Good evening, we are broadcasting live from the English Careers Exhibition.">▶️ Generate Anchor</button>
+            </div>
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
+              <div style="font-size:13px;font-weight:700;color:var(--text-main);margin-bottom:4px;">🌟 Motivational Speaker</div>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:0 0 10px 0;">"Your potential is not defined by what you already know, but by your willingness to learn."</p>
+              <button type="button" class="btn btn-secondary btn-sm vl-persona-btn" data-emotion="cheerful" data-text="Your potential is not defined by what you already know, but by your willingness to learn.">▶️ Generate Speaker</button>
+            </div>
+          </div>
+          <audio id="vl-doppelganger-audio" controls style="width:100%;height:34px;display:none;"></audio>
+        </div>
+      </div>
+
+      <!-- PANEL 6: GUESS THE VOICE -->
+      <div id="vl-panel-guess" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>❓</span> <span>Interactive Turing Test: Guess the Voice</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            Listen to Sample A and Sample B below. One is an authentic human recording and the other was synthesized by our open-source neural network. Can you spot the AI?
+          </p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:8px;">Sample Track A</div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-play-guess-a" style="margin-bottom:10px;">▶️ Play Track A</button><br>
+              <button type="button" class="btn btn-primary btn-sm vl-guess-choice" data-choice="A">Track A is AI</button>
+            </div>
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-main);margin-bottom:8px;">Sample Track B</div>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-vl-play-guess-b" style="margin-bottom:10px;">▶️ Play Track B</button><br>
+              <button type="button" class="btn btn-primary btn-sm vl-guess-choice" data-choice="B">Track B is AI</button>
+            </div>
+          </div>
+          <div id="vl-guess-result" style="display:none;background:rgba(212,175,55,0.08);border:1px solid rgba(212,175,55,0.3);border-radius:var(--radius-md);padding:14px;">
+            <strong id="vl-guess-verdict" style="color:var(--accent-gold, #d4af37);font-size:14px;"></strong>
+            <p style="font-size:12px;color:var(--text-muted);margin:6px 0 0 0;">
+              AI voice synthesis constructs micro-pitch movements and vowel formants based on learned statistical distributions, but subtle acoustic breath artifacts often reveal the real human!
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 7: VOICE CONTROLLED AI ASSISTANT -->
+      <div id="vl-panel-assistant" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:22px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:800px;margin:0 auto;">
+          <h3 style="font-size:18px;margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+            <span>🤖</span> <span>Voice-Controlled AI Assistant (In Your Voice)</span>
+          </h3>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px 0;">
+            Ask a career question. The assistant calculates the answer and speaks back to you <em>using your own cloned voice</em>:
+          </p>
+          <div style="display:flex;gap:10px;margin-bottom:14px;">
+            <input type="text" id="vl-assistant-query" placeholder="e.g. What does an AI Systems Architect do?" value="What skills do I need to work in artificial intelligence?" style="flex:1;font-size:13.5px;">
+            <button type="button" class="btn btn-primary" id="btn-vl-ask-assistant">Ask Assistant</button>
+          </div>
+          <div id="vl-assistant-response-box" style="display:none;background:var(--surface-raised, rgba(255,255,255,0.03));border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;">
+            <div style="font-size:12px;font-weight:700;color:var(--accent-indigo, #6366f1);margin-bottom:6px;">Assistant Answer:</div>
+            <div id="vl-assistant-text" style="font-size:13.5px;color:var(--text-main);line-height:1.5;margin-bottom:10px;"></div>
+            <audio id="vl-assistant-audio" controls style="width:100%;height:34px;"></audio>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL 8: EDUCATIONAL HOW IT WORKS -->
+      <div id="vl-panel-howitworks" class="vl-panel" style="display:none;">
+        <div class="card" style="padding:24px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface-card);box-shadow:var(--card-shadow);max-width:840px;margin:0 auto;">
+          <h3 style="font-size:19px;margin:0 0 10px 0;display:flex;align-items:center;gap:8px;">
+            <span>📖</span> <span>How Does AI Clone a Human Voice?</span>
+          </h3>
+          <p style="font-size:13.5px;color:var(--text-muted);line-height:1.6;margin-bottom:18px;">
+            Understanding speech synthesis technology: from physical acoustic sound waves to zero-shot neural embedding extraction.
+          </p>
+
+          <!-- Visual Architecture Pipeline Diagram -->
+          <div style="background:#070a18;border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:20px;overflow-x:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;min-width:600px;text-align:center;">
+              <div style="flex:1;padding:8px;">
+                <div style="font-size:24px;margin-bottom:4px;">🗣️</div>
+                <strong style="font-size:12px;color:var(--text-main);display:block;">1. Human Voice</strong>
+                <span style="font-size:10.5px;color:var(--text-dim);">Acoustic Waves</span>
+              </div>
+              <div style="color:var(--accent-gold, #d4af37);font-size:18px;">➔</div>
+              <div style="flex:1;padding:8px;">
+                <div style="font-size:24px;margin-bottom:4px;">📊</div>
+                <strong style="font-size:12px;color:var(--text-main);display:block;">2. Audio Processing</strong>
+                <span style="font-size:10.5px;color:var(--text-dim);">Mel Spectrogram</span>
+              </div>
+              <div style="color:var(--accent-gold, #d4af37);font-size:18px;">➔</div>
+              <div style="flex:1;padding:8px;">
+                <div style="font-size:24px;margin-bottom:4px;">🧬</div>
+                <strong style="font-size:12px;color:var(--text-main);display:block;">3. Neural Timbre</strong>
+                <span style="font-size:10.5px;color:var(--text-dim);">Latent D-Vector</span>
+              </div>
+              <div style="color:var(--accent-gold, #d4af37);font-size:18px;">➔</div>
+              <div style="flex:1;padding:8px;">
+                <div style="font-size:24px;margin-bottom:4px;">✍️</div>
+                <strong style="font-size:12px;color:var(--text-main);display:block;">4. New Text</strong>
+                <span style="font-size:10.5px;color:var(--text-dim);">Phoneme Tokens</span>
+              </div>
+              <div style="color:var(--accent-gold, #d4af37);font-size:18px;">➔</div>
+              <div style="flex:1;padding:8px;">
+                <div style="font-size:24px;margin-bottom:4px;">🔊</div>
+                <strong style="font-size:12px;color:var(--accent-green, #10b981);display:block;">5. Cloned Speech</strong>
+                <span style="font-size:10.5px;color:var(--text-dim);">Neural Waveform</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Glossary Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;">
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;">
+              <strong style="font-size:12.5px;color:var(--accent-gold, #d4af37);">Zero-Shot Voice Cloning</strong>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:4px 0 0 0;line-height:1.4;">Synthesizing a new voice immediately from a brief 5–20s reference recording without fine-tuning or retraining weights.</p>
+            </div>
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;">
+              <strong style="font-size:12.5px;color:var(--accent-indigo, #6366f1);">Speaker Timbre &amp; Formants</strong>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:4px 0 0 0;line-height:1.4;">The distinctive vocal color and harmonic frequency bands determined by the shape of a person's vocal tract and mouth.</p>
+            </div>
+            <div style="background:var(--surface-raised, rgba(255,255,255,0.02));border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;">
+              <strong style="font-size:12.5px;color:var(--accent-green, #10b981);">Inference vs Training</strong>
+              <p style="font-size:11.5px;color:var(--text-muted);margin:4px 0 0 0;line-height:1.4;">Training teaches the neural network how speech works using thousands of hours of audio. Inference is the fast real-time synthesis step.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+
     <section class="section-shell" id="sec-admin" hidden>
       <div class="section-head">
         <div>

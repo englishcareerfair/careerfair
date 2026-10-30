@@ -1577,6 +1577,10 @@ const AppRouter = {
         'speechlab': 'speechLab',
         'anchor': 'teleprompter',
         'news': 'teleprompter',
+        'voicelab': 'voicelab',
+        'voice-lab': 'voicelab',
+        'clone': 'voicelab',
+        'voice': 'voicelab',
         'plan': 'roadmap',
         'myplan': 'roadmap'
       };
@@ -1604,7 +1608,8 @@ const AppRouter = {
           games: 'games',
           roadmap: 'roadmap',
           leaderboard: 'leaderboard',
-          feedback: 'feedback'
+          feedback: 'feedback',
+          voicelab: 'voiceLab'
         };
         const flagKey = flagKeyMap[tab];
         if (flagKey && window.STATE.config.flags[flagKey] === false) {
@@ -1617,6 +1622,17 @@ const AppRouter = {
       this.current = { tab, subtab, part, path };
 
       // Dispatch Tab-Specific Sub-Routing
+      if (tab === 'voicelab') {
+        if (window.VoiceLab && typeof window.VoiceLab.init === 'function') {
+          window.VoiceLab.init();
+        }
+        if (subtab) {
+          const modeChip = $(`#sec-voicelab .filter-chip[data-vl-mode="${subtab}"]`);
+          if (modeChip) modeChip.click();
+        }
+        return;
+      }
+
       if (tab === 'careers') {
         this._routeCareers(subtab, part);
       } else if (tab === 'colleges') {
@@ -1992,6 +2008,7 @@ function switchTab(tabId, options = {}) {
     if (tabId === 'games') renderGameArena('jobtris');
     if (tabId === 'roadmap') renderPlanTool('bizcard');
     if (tabId === 'leaderboard') loadLeaderboard();
+    if (tabId === 'voicelab' && window.VoiceLab) window.VoiceLab.init();
     if (tabId === 'feedback') loadFeedbackWall();
     if (tabId === 'admin') renderAdminView();
   }
