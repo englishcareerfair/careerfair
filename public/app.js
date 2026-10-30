@@ -2860,6 +2860,44 @@ if (!teleprompterState.schoolLogo && typeof Image !== 'undefined') {
   teleprompterState.schoolLogo = sLogo;
 }
 
+// Pre-rendered ultra-crisp school logo cache for broadcast compositor
+let crispLogoCache = null;
+let crispLogoCacheScale = null;
+
+function getCrispSchoolLogo(targetSize) {
+  const rawLogo = teleprompterState.schoolLogo;
+  if (!rawLogo || !rawLogo.complete || !rawLogo.naturalWidth) return null;
+  const scaledKey = `${targetSize}_${rawLogo.naturalWidth}`;
+  if (crispLogoCache && crispLogoCacheScale === scaledKey) {
+    return crispLogoCache;
+  }
+
+  // Multi-step high-quality downsampling:
+  // Downsampling directly from 400x400 to small sizes in one step causes aliasing & moire jitter in canvas.
+  // Step 1: 400x400 -> 200x200
+  const c1 = document.createElement('canvas');
+  c1.width = 200;
+  c1.height = 200;
+  const ctx1 = c1.getContext('2d');
+  ctx1.imageSmoothingEnabled = true;
+  ctx1.imageSmoothingQuality = 'high';
+  ctx1.drawImage(rawLogo, 0, 0, 200, 200);
+
+  // Step 2: 200x200 -> targetSize * 2 (2x supersampling for high DPI crispness)
+  const dprSize = targetSize * 2;
+  const c2 = document.createElement('canvas');
+  c2.width = dprSize;
+  c2.height = dprSize;
+  const ctx2 = c2.getContext('2d');
+  ctx2.imageSmoothingEnabled = true;
+  ctx2.imageSmoothingQuality = 'high';
+  ctx2.drawImage(c1, 0, 0, dprSize, dprSize);
+
+  crispLogoCache = c2;
+  crispLogoCacheScale = scaledKey;
+  return c2;
+}
+
 // Canvas rounded rectangle drawing helper for cross-browser reliability
 function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
   if (typeof ctx.roundRect === 'function') {
@@ -2880,36 +2918,81 @@ function drawCanvasRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-// Draw Kanakia International School Logo at Top Left (Downloaded Video Only)
+// Draw Kanakia International School Logo at Top Left with pristine broadcast TV quality
 function drawBroadcastSchoolLogo(ctx, width, height, scale) {
-  const logo = teleprompterState.schoolLogo;
-  if (!logo || !logo.complete || !logo.naturalWidth) return;
+  const rawLogo = teleprompterState.schoolLogo;
+  if (!rawLogo || !rawLogo.complete || !rawLogo.naturalWidth) return;
 
-  const logoPadX = Math.round(28 * scale);
-  const logoPadY = Math.round(22 * scale);
-  const logoSize = Math.round(68 * scale);
-  const cardPad = Math.round(7 * scale);
-  const cardW = logoSize + cardPad * 2;
-  const cardH = logoSize + cardPad * 2;
-  const cardR = Math.round(12 * scale);
+  const padX = Math.round(26 * scale);
+  const padY = Math.round(20 * scale);
+  const bugH = Math.round(54 * scale);
+  const crestSize = Math.round(40 * scale);
+  const bugW = Math.round(268 * scale);
+  const radius = Math.round(10 * scale);
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
-  ctx.shadowBlur = 14 * scale;
-  ctx.shadowOffsetY = 4 * scale;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
 
-  // Frosted dark broadcast station card
-  ctx.fillStyle = 'rgba(10, 16, 32, 0.82)';
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-  ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
+  // 1. Draw sleek broadcast station capsule backing
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+  ctx.shadowBlur = Math.round(14 * scale);
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = Math.round(4 * scale);
 
-  drawCanvasRoundedRect(ctx, logoPadX, logoPadY, cardW, cardH, cardR);
+  // High-contrast frosted glass gradient
+  const bgGrad = ctx.createLinearGradient(padX, padY, padX + bugW, padY + bugH);
+  bgGrad.addColorStop(0, 'rgba(10, 16, 32, 0.94)');
+  bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.90)');
+  ctx.fillStyle = bgGrad;
+
+  drawCanvasRoundedRect(ctx, padX, padY, bugW, bugH, radius);
   ctx.fill();
+
+  // Subtle metallic gold border
+  ctx.strokeStyle = 'rgba(212, 175, 55, 0.65)';
+  ctx.lineWidth = Math.max(1, Math.round(1.5 * scale));
   ctx.stroke();
 
-  // Draw Kanakia International School logo
+  // IMPORTANT FIX: Explicitly reset all canvas shadow properties before rendering logo/text
   ctx.shadowColor = 'transparent';
-  ctx.drawImage(logo, logoPadX + cardPad, logoPadY + cardPad, logoSize, logoSize);
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
+
+  // 2. Subtle luminous pearl disc behind crest for maximum edge definition & contrast
+  const discX = padX + Math.round(8 * scale);
+  const discY = padY + Math.round((bugH - crestSize) / 2);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.beginPath();
+  ctx.arc(discX + crestSize / 2, discY + crestSize / 2, crestSize / 2 + Math.round(3 * scale), 0, Math.PI * 2);
+  ctx.fill();
+
+  // 3. Draw multi-step downscaled razor-sharp crest
+  const crispLogo = getCrispSchoolLogo(crestSize);
+  if (crispLogo) {
+    ctx.drawImage(crispLogo, discX, discY, crestSize, crestSize);
+  } else {
+    ctx.drawImage(rawLogo, discX, discY, crestSize, crestSize);
+  }
+
+  // 4. Station Typography (Crisp & High-Contrast)
+  const textX = discX + crestSize + Math.round(12 * scale);
+
+  // School main title: "KANAKIA"
+  const titleSize = Math.round(14 * scale);
+  ctx.font = `800 ${titleSize}px "Space Grotesk", "Plus Jakarta Sans", system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  ctx.fillText('KANAKIA', textX, padY + Math.round(10 * scale));
+
+  // Subtitle: "INTERNATIONAL SCHOOL" in warm gold
+  const subSize = Math.round(9.5 * scale);
+  ctx.font = `700 ${subSize}px "Space Grotesk", "Plus Jakarta Sans", system-ui, sans-serif`;
+  ctx.fillStyle = '#d4af37';
+  ctx.fillText('INTERNATIONAL SCHOOL', textX, padY + Math.round(29 * scale));
+
   ctx.restore();
 }
 
@@ -3566,6 +3649,8 @@ function initTeleprompter() {
       document.body.appendChild(compCanvas);
       teleprompterState.activeCompCanvas = compCanvas;
       const compCtx = compCanvas.getContext('2d', { alpha: false });
+      compCtx.imageSmoothingEnabled = true;
+      compCtx.imageSmoothingQuality = 'high';
 
       // Frame composer: Draws webcam or studio background + Logo (top-left) + Lower third (bottom).
       // Crucially, NO teleprompter text is drawn into the recording!
