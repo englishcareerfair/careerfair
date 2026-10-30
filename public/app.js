@@ -7094,7 +7094,7 @@ function renderQrCode(containerEl, url, size = 68) {
   }
 }
 
-function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '') {
+function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '', email = '') {
   let modal = $('#modal-qr-enlarged');
   if (!modal) {
     modal = document.createElement('div');
@@ -7103,11 +7103,21 @@ function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '') {
     document.body.appendChild(modal);
   }
 
-  const phoneBadgeHtml = phone ? `
-    <div style="font-family:var(--font-mono);font-size:12.5px;color:#38bdf8;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
-      <span>📱</span> <span>${escapeHtml(phone)}</span>
-    </div>
-  ` : '';
+  let contactBadgesHtml = '';
+  if (email) {
+    contactBadgesHtml += `
+      <div style="font-family:var(--font-mono);font-size:12px;color:#38bdf8;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span>✉️</span> <span>${escapeHtml(email)}</span>
+      </div>
+    `;
+  }
+  if (phone) {
+    contactBadgesHtml += `
+      <div style="font-family:var(--font-mono);font-size:12px;color:#38bdf8;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span>📱</span> <span>${escapeHtml(phone)}</span>
+      </div>
+    `;
+  }
 
   modal.innerHTML = `
     <div class="modal-card" style="max-width:440px;text-align:center;position:relative;">
@@ -7119,7 +7129,7 @@ function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '') {
       <div style="color:var(--accent-cyan);font-size:13.5px;font-weight:700;margin-bottom:8px;">
         ${escapeHtml(title)}
       </div>
-      ${phoneBadgeHtml}
+      ${contactBadgesHtml}
 
       <div id="modal-qr-code-target" style="background:#ffffff;padding:16px;border-radius:12px;width:220px;height:220px;margin:0 auto 16px auto;box-shadow:0 10px 30px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;"></div>
 
@@ -7318,6 +7328,18 @@ function renderFutureBusinessCard(mount) {
           <input type="text" id="biz-creds-custom" placeholder="Type your custom degrees, licenses or honors..." style="display:none;margin-top:8px;">
         </div>
 
+        <!-- Executive Email Field (Always Visible & Optional) -->
+        <div style="margin-bottom:12px;">
+          <label for="biz-email" style="font-size:13px;font-weight:700;margin:0 0 6px 0;display:flex;justify-content:space-between;align-items:center;">
+            <span>Executive Email:</span>
+            <span style="font-size:11.5px;color:var(--text-dim);font-weight:normal;padding:1px 6px;background:rgba(255,255,255,0.06);border-radius:4px;">Optional</span>
+          </label>
+          <div id="biz-email-container" style="display:block;">
+            <input type="email" id="biz-email" placeholder="e.g. student@kanakia.edu or executive@global.org">
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🔒 Optional: If provided, dynamically included on your 2040 card &amp; QR verification code.</div>
+          </div>
+        </div>
+
         <!-- Executive Contact / Phone Field (Always Visible & Optional) -->
         <div style="margin-bottom:12px;">
           <label for="biz-phone" style="font-size:13px;font-weight:700;margin:0 0 6px 0;display:flex;justify-content:space-between;align-items:center;">
@@ -7351,6 +7373,10 @@ function renderFutureBusinessCard(mount) {
               <div class="biz-card-badge">CLASS OF 2040 · EXECUTIVE CREDENTIAL</div>
               <h3 class="biz-card-name" id="bc-name">${escapeHtml(STATE.studentName || 'Explorer')}</h3>
               <div class="biz-card-title" id="bc-title">${escapeHtml(initialCareer)}</div>
+              <div class="biz-card-contact" id="bc-email-row" style="display:none;">
+                <span class="biz-card-contact-icon">✉️</span>
+                <span id="bc-email"></span>
+              </div>
               <div class="biz-card-contact" id="bc-contact-row" style="display:none;">
                 <span class="biz-card-contact-icon">📞</span>
                 <span id="bc-phone"></span>
@@ -7384,6 +7410,7 @@ function renderFutureBusinessCard(mount) {
   const credsSelect = $('#biz-creds-select');
   const credsCustomInput = $('#biz-creds-custom');
 
+  const emailInput = $('#biz-email');
   const phoneContainer = $('#biz-phone-container');
   const phoneInput = $('#biz-phone');
   const btnPhoneToggle = $('#btn-toggle-phone-row');
@@ -7429,18 +7456,30 @@ function renderFutureBusinessCard(mount) {
       creds = (credsCustomInput?.value || '').trim() || 'Class of 2040 · Executive Honors';
     }
 
+    const email = (emailInput?.value || '').trim();
     const phone = (phoneInput?.value || '').trim();
 
     // Update DOM on the card preview
     const bcName = $('#bc-name');
     const bcTitle = $('#bc-title');
     const bcCreds = $('#bc-creds');
+    const bcEmailRow = $('#bc-email-row');
+    const bcEmail = $('#bc-email');
     const bcContactRow = $('#bc-contact-row');
     const bcPhone = $('#bc-phone');
 
     if (bcName) bcName.textContent = name;
     if (bcTitle) bcTitle.textContent = career;
     if (bcCreds) bcCreds.textContent = creds;
+
+    if (bcEmailRow && bcEmail) {
+      if (email) {
+        bcEmail.textContent = email;
+        bcEmailRow.style.display = 'flex';
+      } else {
+        bcEmailRow.style.display = 'none';
+      }
+    }
 
     if (bcContactRow && bcPhone) {
       if (phone) {
@@ -7457,6 +7496,9 @@ function renderFutureBusinessCard(mount) {
       : 'https://careerfair.pages.dev';
     const pathname = window.location.pathname || '/';
     let verifyUrl = `${baseOrigin}${pathname}?verify=2040&student=${encodeURIComponent(name)}&title=${encodeURIComponent(career)}&creds=${encodeURIComponent(creds)}`;
+    if (email) {
+      verifyUrl += `&email=${encodeURIComponent(email)}`;
+    }
     if (phone) {
       verifyUrl += `&phone=${encodeURIComponent(phone)}`;
     }
@@ -7466,7 +7508,7 @@ function renderFutureBusinessCard(mount) {
     if (qrMount) {
       renderQrCode(qrMount, verifyUrl, 74);
       qrMount.onclick = () => {
-        showEnlargedQrModal(name, career, creds, verifyUrl, phone);
+        showEnlargedQrModal(name, career, creds, verifyUrl, phone, email);
       };
     }
 
@@ -7478,7 +7520,7 @@ function renderFutureBusinessCard(mount) {
       showToast('Business Card Updated! 🪪✨');
     }
 
-    return { name, career, creds, phone, verifyUrl };
+    return { name, career, creds, email, phone, verifyUrl };
   };
 
   // 1. Initial population of credentials for default career
@@ -7541,6 +7583,7 @@ function renderFutureBusinessCard(mount) {
     }
   });
 
+  emailInput?.addEventListener('input', () => updateCard(false));
   phoneInput?.addEventListener('input', () => updateCard(false));
 
   // 5. Wire real-time keystroke input listeners for instant live updating
@@ -7564,12 +7607,12 @@ function renderFutureBusinessCard(mount) {
 
   // 8. Wire Download Card PNG button
   $('#btn-download-biz')?.addEventListener('click', () => {
-    const { name, career, creds, phone } = updateCard(false);
-    downloadBusinessCardImage(name, career, creds, phone);
+    const { name, career, creds, email, phone } = updateCard(false);
+    downloadBusinessCardImage(name, career, creds, phone, email);
   });
 }
 
-function downloadBusinessCardImage(name, title, creds, phone = '') {
+function downloadBusinessCardImage(name, title, creds, phone = '', email = '') {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 460;
@@ -7616,11 +7659,18 @@ function downloadBusinessCardImage(name, title, creds, phone = '') {
   ctx.font = 'bold 19px "Plus Jakarta Sans", sans-serif';
   ctx.fillText(title, 40, 146);
 
-  // Phone / Contact if available
+  // Email and Phone / Contact if available
+  let contactY = 176;
+  if (email) {
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '600 13px "JetBrains Mono", monospace';
+    ctx.fillText(`✉️ ${email}`, 40, contactY);
+    contactY += 24;
+  }
   if (phone) {
     ctx.fillStyle = '#38bdf8';
-    ctx.font = '600 14px "JetBrains Mono", monospace';
-    ctx.fillText(`📱 ${phone}`, 40, 176);
+    ctx.font = '600 13px "JetBrains Mono", monospace';
+    ctx.fillText(`📱 ${phone}`, 40, contactY);
   }
 
   // Credentials
