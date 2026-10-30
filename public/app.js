@@ -4626,9 +4626,7 @@ function renderStandaloneQuest(mount, questIdx) {
           <span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">
             ✨ Powered by Gemini AI
           </span>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-view-all-quests-arc" title="View 3D Arc of all 5 quests">
-            <span>🔮</span> <span>All Quests Arc</span>
-          </button>
+
         </div>
       </div>
     </div>
@@ -8306,7 +8304,10 @@ function renderFutureBusinessCard(mount) {
       <!-- Left Column: Controls & Dynamic Dropdowns -->
       <div>
         <div style="margin-bottom:12px;">
-          <label for="biz-name" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Your Name:</label>
+          <label for="biz-name" style="font-size:13px;font-weight:700;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span>Your Name:</span>
+            <span style="font-size:11.5px;color:#f87171;font-weight:700;padding:1px 6px;background:rgba(239,68,68,0.1);border-radius:4px;">Mandatory *</span>
+          </label>
           <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your full name">
         </div>
 
@@ -8338,20 +8339,15 @@ function renderFutureBusinessCard(mount) {
           <input type="text" id="biz-creds-custom" placeholder="Type your custom degrees, licenses or honors..." style="display:none;margin-top:8px;">
         </div>
 
-        <!-- Optional Phone / WhatsApp Contact Field -->
+        <!-- Executive Contact / Phone Field (Always Visible & Optional) -->
         <div style="margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <label for="biz-phone" style="font-size:13px;font-weight:700;margin:0;display:flex;align-items:center;gap:6px;">
-              <span>Executive Contact / Phone</span>
-              <span style="font-size:11px;color:var(--text-dim);font-weight:normal;">(Optional)</span>
-            </label>
-            <button type="button" class="btn-toggle-phone" id="btn-toggle-phone-row" title="Toggle phone field on card">
-              <span>📞</span> <span>+ Add Contact Line</span>
-            </button>
-          </div>
-          <div id="biz-phone-container" style="display:none;">
+          <label for="biz-phone" style="font-size:13px;font-weight:700;margin:0 0 6px 0;display:flex;justify-content:space-between;align-items:center;">
+            <span>Executive Contact / Phone:</span>
+            <span style="font-size:11.5px;color:var(--text-dim);font-weight:normal;padding:1px 6px;background:rgba(255,255,255,0.06);border-radius:4px;">Optional</span>
+          </label>
+          <div id="biz-phone-container" style="display:block;">
             <input type="tel" id="biz-phone" placeholder="e.g. +91 98765 43210 or executive@direct.line">
-            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🔒 Included on card &amp; QR verification if provided.</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🔒 Optional: If provided, dynamically included on your 2040 card &amp; QR verification code.</div>
           </div>
         </div>
 
