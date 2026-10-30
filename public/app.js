@@ -7988,7 +7988,7 @@ async function loadFeedbackWall() {
       const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
       const adminActionsHtml = isAdmin
         ? `<div style="display:inline-flex;gap:6px;align-items:center;">
-             <button type="button" class="btn btn-sm" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="window.adminTogglePinFeedback('${escapeHtml(String(f.id || ''))}', ${isPinned ? 0 : 1})">
+             <button type="button" class="btn btn-sm" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-pinned="${isPinned ? 0 : 1}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminTogglePinFeedback(this.dataset.id, Number(this.dataset.pinned), decodeURIComponent(this.dataset.comment || ''))">
                ${isPinned ? '📌 Pinned' : '📍 Pin'}
              </button>
              <button type="button" class="btn btn-sm" title="Assign Official Title (e.g. Vice-Principal)" style="background:rgba(0,240,255,0.1);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="window.adminAssignUserTitle('${encodeURIComponent(f.name || '')}')">
@@ -8039,9 +8039,15 @@ async function loadFeedbackWall() {
         class_info: item.class_info || '',
         useful: Math.max(1, Math.min(5, Number(item.r_useful || item.useful || 5))),
         comment: String(item.comment || '').trim(),
+        pinned: Number(item.pinned || 0),
         ts: Number(item.ts || Date.now())
       }));
-      feedbacks.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+      feedbacks.sort((a, b) => {
+        const pinA = Number(a.pinned || 0);
+        const pinB = Number(b.pinned || 0);
+        if (pinA !== pinB) return pinB - pinA;
+        return (Number(b.ts) || 0) - (Number(a.ts) || 0);
+      });
       saveLocalFeedbacks(feedbacks);
       renderFeedbacks(feedbacks);
     }
@@ -8247,6 +8253,7 @@ async function renderAdminModeration() {
           class_info: item.class_info || '',
           useful: item.r_useful || item.useful || 5,
           comment: item.comment,
+          pinned: Number(item.pinned || 0),
           ts: item.ts || Date.now()
         }));
         try {
@@ -9653,30 +9660,45 @@ function startGlobalD1SyncPoller() {
 
 
 // ─── ADMIN EXPANDED CONTROLS: PINNING, TITLES, IP BAN, DYNAMIC API POOLS ──────
-window.adminTogglePinFeedback = async function(id, pinnedVal) {
-  try {
-    await fetchApi('admin/pin-feedback', {
-      method: 'POST',
-      body: JSON.stringify({ id, pinned: pinnedVal })
-    });
-  } catch (e) {
-    console.warn('Pin feedback API note:', e);
-  }
+window.adminTogglePinFeedback = async function(id, pinnedVal, comment = '') {
+  const isPinned = Number(pinnedVal || 0);
+  const cleanComment = (comment || '').trim();
 
-  // Update local cache
+  // Optimistic instant local update
   try {
     const raw = localStorage.getItem('cf_user_feedbacks');
     if (raw) {
       const items = JSON.parse(raw);
-      const target = items.find(f => String(f.id) === String(id));
+      const target = items.find(f => (id && String(f.id) === String(id)) || (cleanComment && (f.comment || '').trim() === cleanComment));
       if (target) {
-        target.pinned = pinnedVal;
+        target.pinned = isPinned;
+        items.sort((a, b) => {
+          const pinA = Number(a.pinned || 0);
+          const pinB = Number(b.pinned || 0);
+          if (pinA !== pinB) return pinB - pinA;
+          return (Number(b.ts) || 0) - (Number(a.ts) || 0);
+        });
         localStorage.setItem('cf_user_feedbacks', JSON.stringify(items));
       }
     }
   } catch {}
 
-  showToast(pinnedVal ? 'Feedback pinned to top! 📌' : 'Feedback unpinned');
+  showToast(isPinned ? 'Feedback pinned to top! 📌' : 'Feedback unpinned');
+  if (typeof renderFeedbacks === 'function' && typeof feedbacks !== 'undefined') {
+    renderFeedbacks(feedbacks);
+  }
+
+  // Persist permanently to Cloudflare D1 & kv
+  try {
+    await fetchApi('admin/pin-feedback', 'POST', {
+      id: id || '',
+      comment: cleanComment,
+      pinned: isPinned
+    });
+  } catch (e) {
+    console.warn('Pin feedback API note:', e);
+  }
+
   await loadFeedbackWall();
   if (typeof renderAdminModeration === 'function') {
     await renderAdminModeration();

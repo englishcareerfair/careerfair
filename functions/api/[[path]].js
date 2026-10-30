@@ -192,6 +192,7 @@ async function ensureDbSchema(db) {
       r_speaking INTEGER NOT NULL DEFAULT 5,
       comment TEXT DEFAULT '',
       approved INTEGER NOT NULL DEFAULT 1,
+      pinned INTEGER NOT NULL DEFAULT 0,
       ts INTEGER NOT NULL
     )`,
     `CREATE TABLE IF NOT EXISTS api_keys (
@@ -988,6 +989,17 @@ export async function onRequest(ctx) {
       } catch {}
     }
 
+    // Retrieve permanently pinned feedback identifiers from kv
+    let pinnedList = [];
+    if (db) {
+      try {
+        const raw = await kvGet(db, 'pinned_feedbacks', '[]');
+        pinnedList = JSON.parse(raw);
+      } catch {}
+    } else {
+      pinnedList = GLOBAL_CACHE.pinned_feedbacks || [];
+    }
+
     // Merge with in-memory cache to guarantee persistence
     if (GLOBAL_CACHE.feedback.length > 0) {
       const seenComments = new Set(items.map(f => (f.comment || '').trim()));
@@ -998,9 +1010,26 @@ export async function onRequest(ctx) {
           seenComments.add(c);
         }
       }
-      items.sort((a, b) => b.ts - a.ts);
       total = Math.max(total, items.length);
     }
+
+    // Apply pinned flag from persistent kv store and sort pinned first
+    for (const item of items) {
+      const c = String(item.comment || '').trim();
+      const i = String(item.id || '');
+      if (pinnedList.includes(c) || pinnedList.includes(i)) {
+        item.pinned = 1;
+      } else {
+        item.pinned = Number(item.pinned || 0);
+      }
+    }
+
+    items.sort((a, b) => {
+      const pinA = Number(a.pinned || 0);
+      const pinB = Number(b.pinned || 0);
+      if (pinA !== pinB) return pinB - pinA;
+      return (Number(b.ts) || 0) - (Number(a.ts) || 0);
+    });
 
     if (items.length > 0) {
       const sum = items.reduce((s, it) => s + Math.max(1, Math.min(5, Number(it.r_useful || it.useful || 5))), 0);
@@ -2152,29 +2181,62 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    const { id, pinned } = body;
-    if (!id) return err('Missing feedback id');
+    const { id, comment, pinned } = body;
+    if (!id && !comment) return err('Missing feedback id or comment');
 
     const isPinned = pinned ? 1 : 0;
+    const cleanComment = (comment || '').trim();
+
     if (db) {
       try {
         await db.prepare('ALTER TABLE feedback ADD COLUMN pinned INTEGER DEFAULT 0').run();
       } catch {}
+
       try {
-        await db.prepare('UPDATE feedback SET pinned = ? WHERE id = ?').bind(isPinned, id).run();
+        if (id && cleanComment) {
+          await db.prepare('UPDATE feedback SET pinned = ? WHERE id = ? OR comment = ?').bind(isPinned, id, cleanComment).run();
+        } else if (id) {
+          await db.prepare('UPDATE feedback SET pinned = ? WHERE id = ?').bind(isPinned, id).run();
+        } else {
+          await db.prepare('UPDATE feedback SET pinned = ? WHERE comment = ?').bind(isPinned, cleanComment).run();
+        }
       } catch (e) {
         console.warn('D1 pin feedback error:', e);
+      }
+
+      // Maintain persistent list in kv store
+      try {
+        const raw = await kvGet(db, 'pinned_feedbacks', '[]');
+        let pinnedList = JSON.parse(raw);
+        const ident = cleanComment || String(id);
+        if (isPinned) {
+          if (!pinnedList.includes(ident)) pinnedList.push(ident);
+          if (id && !pinnedList.includes(String(id))) pinnedList.push(String(id));
+        } else {
+          pinnedList = pinnedList.filter(x => x !== ident && x !== String(id) && x !== cleanComment);
+        }
+        await kvSet(db, 'pinned_feedbacks', JSON.stringify(pinnedList));
+      } catch (e) {
+        console.warn('kvSet pinned_feedbacks error:', e);
       }
     }
 
     // Update in-memory cache
-    const cached = GLOBAL_CACHE.feedback.find(f => String(f.id) === String(id));
+    if (!GLOBAL_CACHE.pinned_feedbacks) GLOBAL_CACHE.pinned_feedbacks = [];
+    const ident = cleanComment || String(id);
+    if (isPinned) {
+      if (!GLOBAL_CACHE.pinned_feedbacks.includes(ident)) GLOBAL_CACHE.pinned_feedbacks.push(ident);
+      if (id && !GLOBAL_CACHE.pinned_feedbacks.includes(String(id))) GLOBAL_CACHE.pinned_feedbacks.push(String(id));
+    } else {
+      GLOBAL_CACHE.pinned_feedbacks = GLOBAL_CACHE.pinned_feedbacks.filter(x => x !== ident && x !== String(id) && x !== cleanComment);
+    }
+
+    const cached = GLOBAL_CACHE.feedback.find(f => (id && String(f.id) === String(id)) || (cleanComment && (f.comment || '').trim() === cleanComment));
     if (cached) cached.pinned = isPinned;
 
     return json({ ok: true, id, pinned: isPinned });
   }
 
-  // ── ADMIN: ASSIGN TITLE TO USER (e.g. Shriya Limaye - Vice-Principal) ───────
   if (path === '/admin/user-title') {
     if (method === 'GET') {
       let map = {};
