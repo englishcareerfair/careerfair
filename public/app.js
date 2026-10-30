@@ -1398,6 +1398,11 @@ function setTheme(themeName, silent = false) {
   $$('.theme-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.themeVal === mode);
   });
+
+  // Dynamically synchronize ambient background particles to the mode
+  if (typeof window.syncBackgroundParticlesTheme === 'function') {
+    window.syncBackgroundParticlesTheme();
+  }
 }
 
 // ─── 4. SECTION RENDERERS ─────────────────────────────────────────────────────
