@@ -5912,8 +5912,48 @@ const semantrisAudio = (() => {
   };
 })();
 
-// Active instance of Jobtris Semantris Game
+// Active instance of Jobtris Semantris Game with Google Universal Sentence Encoder & Live Voice Recognition
 let jobtrisInstance = null;
+
+// Global Universal Sentence Encoder singleton cache & vector cache
+let globalUSEModel = null;
+let globalUSELoadingPromise = null;
+const globalUSEEmbeddingCache = new Map();
+
+async function getOrLoadUSEModel() {
+  if (globalUSEModel) return globalUSEModel;
+  if (globalUSELoadingPromise) return globalUSELoadingPromise;
+
+  globalUSELoadingPromise = (async () => {
+    try {
+      if (typeof use !== 'undefined' && typeof use.load === 'function') {
+        const model = await use.load();
+        globalUSEModel = model;
+        return model;
+      }
+    } catch (e) {
+      console.warn('Google Universal Sentence Encoder load warning (fallback active):', e);
+    }
+    return null;
+  })();
+
+  return globalUSELoadingPromise;
+}
+
+// Compute cosine similarity between two 1D float arrays
+function computeCosineSimilarity(vecA, vecB) {
+  if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
 
 function renderJobtris(mount) {
   if (jobtrisInstance) {
@@ -5925,8 +5965,15 @@ function renderJobtris(mount) {
     <div class="semantris-container">
       <div class="semantris-header">
         <div class="semantris-header-title">
-          <h3><span>🎮</span> Jobtris · Semantic Word Arcade</h3>
-          <span>Type any clue or tool related to a job in the stack to blast it and trigger color combos!</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 style="margin:0;"><span>🎮</span> Jobtris · Semantic Word Arcade</h3>
+            <span class="semantris-ai-engine-badge loading" id="semantris-use-badge">
+              <span>🧠</span> <span>Google USE: Loading...</span>
+            </span>
+          </div>
+          <span style="font-size:13px;color:var(--text-dim);">
+            Type or speak any clue or tool related to a job in the stack. AI tests similarity and bursts matches instantly!
+          </span>
         </div>
         <div class="semantris-stats-row">
           <div class="semantris-stat-badge">
@@ -5949,32 +5996,30 @@ function renderJobtris(mount) {
 
           <div class="semantris-well" id="semantris-well"></div>
 
-          <!-- Start Game Modal Overlay -->
-          <div class="semantris-gameover-overlay" id="semantris-start-screen" style="display:flex;">
-            <div style="font-size:48px;margin-bottom:8px;">🎮</div>
-            <h2 style="font-size:24px;margin-bottom:6px;color:#fff;">Jobtris · Semantic Word Arcade</h2>
-            <p style="font-size:13.5px;color:var(--text-muted);max-width:320px;line-height:1.45;margin-bottom:14px;">
-              Type any word, tool, or concept related to a job in the stack to blast it. Connected same-color blocks chain-pop together!
+          <!-- Start Screen Overlay -->
+          <div class="semantris-overlay-screen" id="semantris-start-screen">
+            <div style="font-size:48px;margin-bottom:12px;animation:floatGentle 3s ease-in-out infinite;">🎮</div>
+            <h2 style="font-size:24px;font-weight:800;margin:0 0 6px 0;">Welcome to Jobtris!</h2>
+            <p style="font-size:13.5px;color:var(--text-muted);max-width:340px;margin:0 auto 16px auto;line-height:1.5;">
+              Inspired by <strong>Google Semantris</strong>. Type or speak semantic associations (tools, concepts, verbs) to vaporize falling career blocks before they hit the danger threshold!
             </p>
-            <div style="margin-bottom:18px;display:inline-flex;align-items:center;gap:8px;" class="semantris-stat-badge">
-              <span style="color:var(--text-dim);">Best Score:</span>
-              <strong style="color:var(--accent-gold);" id="semantris-start-highscore">0</strong>
+            <div style="font-size:12px;color:var(--accent-cyan);margin-bottom:18px;font-family:var(--font-mono);">
+              Personal Best: <strong id="semantris-start-highscore">0</strong> pts
             </div>
-            <button class="btn btn-primary" id="btn-semantris-start" style="padding:14px 38px;font-size:16px;font-weight:800;box-shadow:0 0 24px rgba(0,240,255,0.45);cursor:pointer;">
-              <span>▶️</span> <span>Start Game</span>
+            <button class="btn btn-primary btn-lg" id="btn-semantris-start" type="button" style="padding:12px 28px;font-size:15px;box-shadow:0 0 25px rgba(0,240,255,0.4);">
+              <span>⚡</span> <span>Start Game</span>
             </button>
           </div>
 
-          <!-- Game Over Modal Overlay -->
-          <div class="semantris-gameover-overlay" id="semantris-gameover" style="display:none;">
-            <div style="font-size:42px;margin-bottom:8px;">💥</div>
-            <h2 style="font-size:24px;margin-bottom:6px;color:#fff;">STACK OVERFLOW!</h2>
-            <p style="font-size:14px;color:var(--text-muted);margin-bottom:16px;">The career stack reached the danger line.</p>
-            <div style="display:flex;gap:16px;margin-bottom:20px;font-family:var(--font-mono);">
-              <div class="semantris-stat-badge">Score: <strong style="color:var(--accent-cyan);margin-left:4px;" id="gameover-final-score">0</strong></div>
-              <div class="semantris-stat-badge">Top Combo: <strong style="color:#ff2a85;margin-left:4px;" id="gameover-max-combo">1x</strong></div>
+          <!-- Game Over Overlay -->
+          <div class="semantris-overlay-screen" id="semantris-gameover" style="display:none;">
+            <div style="font-size:44px;margin-bottom:10px;">💥</div>
+            <h2 style="font-size:24px;font-weight:800;color:var(--accent-magenta);margin:0 0 6px 0;">Stack Overflow!</h2>
+            <div style="font-size:14px;color:var(--text-dim);margin-bottom:14px;">The careers reached the danger ceiling.</div>
+            <div class="semantris-score-pill" style="font-size:16px;padding:8px 18px;margin-bottom:16px;">
+              Final Score: <strong id="semantris-final-score" style="color:var(--accent-cyan);margin-left:4px;">0</strong>
             </div>
-            <button class="btn btn-primary" id="btn-semantris-restart" style="padding:12px 28px;font-size:15px;font-weight:800;">
+            <button class="btn btn-primary" id="btn-semantris-restart" type="button">
               <span>🔄</span> <span>Play Again</span>
             </button>
           </div>
@@ -5983,39 +6028,57 @@ function renderJobtris(mount) {
         <!-- Clue Entry Console & Quick Hints -->
         <div class="semantris-console">
           <div class="semantris-input-box-wrapper" id="semantris-input-box-wrap">
-            <label for="semantris-input" style="font-size:13.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;">
-              <span>Type Related Clue or Tool:</span>
-              <span style="font-size:11.5px;color:var(--text-dim);font-weight:500;">Press Enter ↵</span>
-            </label>
-            <input type="text" id="semantris-input" placeholder="e.g. flight, surgery, courtroom, code..." autocomplete="off" autocapitalize="none" spellcheck="false" autofocus>
-            
-            <button class="semantris-submit-btn" id="btn-semantris-submit" type="button">
-              <span>Blast Matching Block</span> <span>💥</span>
-            </button>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <label for="semantris-input" style="font-size:13.5px;font-weight:700;margin:0;">
+                Type or Speak Related Clue / Tool:
+              </label>
+              <div id="semantris-voice-status" style="display:none;" class="semantris-voice-live-badge">
+                <span>🔴</span> <span>LIVE MIC ACTIVE</span>
+              </div>
+            </div>
+
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="text" id="semantris-input" placeholder="e.g. flight, stethoscope, court, code..." autocomplete="off" autocapitalize="none" spellcheck="false" autofocus style="padding-right:45px;">
+              <span id="semantris-eval-spinner" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);display:none;color:var(--accent-cyan);">
+                <span class="spinner-sm"></span>
+              </span>
+            </div>
+
+            <div class="semantris-action-row">
+              <button class="semantris-submit-btn" id="btn-semantris-submit" type="button" style="flex:1;">
+                <span>Blast Matching Block</span> <span>💥</span>
+              </button>
+
+              <button class="semantris-voice-btn" id="btn-semantris-voice" type="button" title="Speak any word: AI automatically listens and bursts matches without pressing Enter">
+                <span id="semantris-voice-icon">🎙️</span>
+                <span id="semantris-voice-text">Voice Mode</span>
+              </button>
+            </div>
+
+            <div style="font-size:11.5px;color:var(--text-dim);margin-top:6px;display:flex;align-items:center;justify-content:space-between;">
+              <span>💡 Voice mode auto-evaluates your speech with zero clicks</span>
+              <span id="semantris-last-voice-heard" style="color:#38bdf8;font-family:var(--font-mono);max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+            </div>
           </div>
 
           <!-- Quick Clue Suggestions -->
           <div class="card" style="padding:14px;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-              <span style="font-size:12.5px;font-weight:700;color:var(--text-main);">Quick Clue Ideas:</span>
-              <div style="display:flex;gap:6px;"><button class="btn btn-primary btn-sm" id="btn-semantris-quick-start" type="button" style="padding:2px 10px;font-size:11.5px;">▶️ Start</button><button class="btn btn-secondary btn-sm" id="btn-semantris-pause" type="button" style="padding:2px 8px;font-size:11.5px;">⏸️ Pause</button></div>
+              <span style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;">Quick Clue Sparks</span>
+              <button class="btn btn-ghost btn-sm" id="btn-semantris-quick-start" style="padding:2px 8px;font-size:11.5px;" type="button">Restart</button>
             </div>
-            <div class="semantris-clues-shelf" id="semantris-chips">
-              <span class="semantris-clue-chip">flight</span>
-              <span class="semantris-clue-chip">scalpel</span>
-              <span class="semantris-clue-chip">cloud</span>
-              <span class="semantris-clue-chip">contract</span>
-              <span class="semantris-clue-chip">stocks</span>
-              <span class="semantris-clue-chip">broadcast</span>
-              <span class="semantris-clue-chip">submersible</span>
-              <span class="semantris-clue-chip">heart</span>
-              <span class="semantris-clue-chip">radar</span>
-              <span class="semantris-clue-chip">firewall</span>
-              <span class="semantris-clue-chip">treaty</span>
-              <span class="semantris-clue-chip">magma</span>
+            <div class="semantris-clue-shelf" id="semantris-clue-shelf">
+              <button class="semantris-clue-chip" type="button">Cockpit</button>
+              <button class="semantris-clue-chip" type="button">Scalpel</button>
+              <button class="semantris-clue-chip" type="button">Constitution</button>
+              <button class="semantris-clue-chip" type="button">Algorithm</button>
+              <button class="semantris-clue-chip" type="button">Telescope</button>
+              <button class="semantris-clue-chip" type="button">Microphone</button>
+              <button class="semantris-clue-chip" type="button">Ballet</button>
+              <button class="semantris-clue-chip" type="button">Blueprint</button>
             </div>
-            <div style="margin-top:12px;font-size:12px;color:var(--text-dim);line-height:1.4;">
-              💡 <strong>Semantris Pro-tip:</strong> Connected same-color blocks chain-pop together for massive combo multipliers!
+            <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;color:var(--text-dim);line-height:1.4;">
+              💡 <strong>Google USE Engine:</strong> Calculates deep 512-dimensional semantic vector embeddings to understand concepts even if words aren't exact matches!
             </div>
           </div>
         </div>
@@ -6049,9 +6112,195 @@ function renderJobtris(mount) {
       this.gameOverScreen = $('#semantris-gameover');
       this.startScreen = $('#semantris-start-screen');
 
+      // Voice recognition state
+      this.recognition = null;
+      this.isListening = false;
+      this.voiceBtn = $('#btn-semantris-voice');
+      this.voiceStatus = $('#semantris-voice-status');
+      this.voiceText = $('#semantris-voice-text');
+      this.voiceIcon = $('#semantris-voice-icon');
+      this.lastVoiceHeard = $('#semantris-last-voice-heard');
+      this.evalSpinner = $('#semantris-eval-spinner');
+      this.isEvaluating = false;
+
+      // Google Universal Sentence Encoder model instance
+      this.useModel = null;
+      this.useBadge = $('#semantris-use-badge');
+
+      this.initUSE();
+      this.initVoiceRecognition();
       this.initDeck();
       this.initEvents();
       this.showStartScreen();
+    }
+
+    async initUSE() {
+      try {
+        const model = await getOrLoadUSEModel();
+        if (model) {
+          this.useModel = model;
+          if (this.useBadge) {
+            this.useBadge.className = 'semantris-ai-engine-badge ready';
+            this.useBadge.innerHTML = '<span>⚡</span> <span>Google USE: Active</span>';
+          }
+          // Pre-cache embeddings for current careers
+          this.warmupEmbeddings();
+        } else {
+          if (this.useBadge) {
+            this.useBadge.className = 'semantris-ai-engine-badge ready';
+            this.useBadge.innerHTML = '<span>⚡</span> <span>Semantic Engine: Active</span>';
+          }
+        }
+      } catch (err) {
+        if (this.useBadge) {
+          this.useBadge.className = 'semantris-ai-engine-badge ready';
+          this.useBadge.innerHTML = '<span>⚡</span> <span>Semantic Engine: Active</span>';
+        }
+      }
+    }
+
+    async warmupEmbeddings() {
+      if (!this.useModel) return;
+      try {
+        const uncached = [];
+        for (const career of SEMANTRIS_CAREERS) {
+          const phrase = `${career.title}. ${career.sector}. ${career.match.slice(0, 8).join(', ')}`;
+          if (!globalUSEEmbeddingCache.has(phrase)) {
+            uncached.push({ career, phrase });
+          }
+        }
+        if (uncached.length > 0) {
+          const phrases = uncached.map(u => u.phrase);
+          const embeddings = await this.useModel.embed(phrases);
+          const values = await embeddings.array();
+          embeddings.dispose();
+          for (let i = 0; i < uncached.length; i++) {
+            globalUSEEmbeddingCache.set(uncached[i].phrase, values[i]);
+          }
+        }
+      } catch (e) {
+        console.warn('Embedding warmup notice:', e);
+      }
+    }
+
+    async getEmbeddingForText(text) {
+      if (!this.useModel) return null;
+      const clean = text.trim().toLowerCase();
+      if (globalUSEEmbeddingCache.has(clean)) {
+        return globalUSEEmbeddingCache.get(clean);
+      }
+      try {
+        const tensor = await this.useModel.embed([clean]);
+        const arr = await tensor.array();
+        tensor.dispose();
+        const vec = arr[0];
+        globalUSEEmbeddingCache.set(clean, vec);
+        return vec;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    initVoiceRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        if (this.voiceBtn) {
+          this.voiceBtn.title = 'Voice recognition not supported in this browser (use Chrome or Edge)';
+        }
+        return;
+      }
+
+      try {
+        this.recognition = new SpeechRecognition();
+        this.recognition.continuous = true;
+        this.recognition.interimResults = false;
+        this.recognition.lang = 'en-US';
+
+        this.recognition.onstart = () => {
+          this.isListening = true;
+          this.updateVoiceUI(true);
+        };
+
+        this.recognition.onresult = (event) => {
+          const last = event.results.length - 1;
+          const transcript = event.results[last][0].transcript.trim();
+          if (transcript) {
+            if (this.lastVoiceHeard) {
+              this.lastVoiceHeard.textContent = `"${transcript}"`;
+            }
+            if (this.input) {
+              this.input.value = transcript;
+            }
+            // Auto evaluate voice input without pressing Enter!
+            this.submitClue(transcript, true);
+          }
+        };
+
+        this.recognition.onerror = (event) => {
+          if (event.error !== 'no-speech') {
+            console.warn('Speech recognition error:', event.error);
+          }
+        };
+
+        this.recognition.onend = () => {
+          // If the game is still active and listening was intended, auto-restart mic
+          if (this.isListening && this.isStarted && !this.isGameOver && !this.isPaused) {
+            try {
+              this.recognition.start();
+            } catch (e) {}
+          } else {
+            this.isListening = false;
+            this.updateVoiceUI(false);
+          }
+        };
+      } catch (e) {
+        console.warn('SpeechRecognition setup notice:', e);
+      }
+    }
+
+    toggleVoiceMode() {
+      if (!this.recognition) {
+        alert('Live Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+        return;
+      }
+
+      if (!this.isStarted) {
+        this.start();
+      }
+
+      if (this.isListening) {
+        this.isListening = false;
+        try { this.recognition.stop(); } catch (e) {}
+        this.updateVoiceUI(false);
+        showToast('Voice Mode Paused 🎙️');
+      } else {
+        try {
+          this.recognition.start();
+          this.isListening = true;
+          this.updateVoiceUI(true);
+          showToast('Voice Mode Active! Speak any word 🎙️✨');
+        } catch (e) {
+          try {
+            this.recognition.stop();
+            setTimeout(() => {
+              this.recognition.start();
+              this.isListening = true;
+              this.updateVoiceUI(true);
+            }, 200);
+          } catch (err) {}
+        }
+      }
+    }
+
+    updateVoiceUI(active) {
+      if (this.voiceBtn) {
+        this.voiceBtn.classList.toggle('listening', active);
+        if (this.voiceIcon) this.voiceIcon.textContent = active ? '🔴' : '🎙️';
+        if (this.voiceText) this.voiceText.textContent = active ? 'Listening...' : 'Voice Mode';
+      }
+      if (this.voiceStatus) {
+        this.voiceStatus.style.display = active ? 'inline-flex' : 'none';
+      }
     }
 
     showStartScreen() {
@@ -6067,7 +6316,7 @@ function renderJobtris(mount) {
       if (this.startScreen) this.startScreen.style.display = 'flex';
       if (this.gameOverScreen) this.gameOverScreen.style.display = 'none';
 
-      // Render 4 preview blocks in the background so the board looks ready
+      // Prefill initial 4 blocks
       this.stack = [];
       for (let i = 0; i < 4; i++) {
         this.stack.push(this.drawUniqueCareer());
@@ -6108,57 +6357,49 @@ function renderJobtris(mount) {
       if (this.startScreen) this.startScreen.style.display = 'none';
       if (this.gameOverScreen) this.gameOverScreen.style.display = 'none';
 
-      const quickBtn = $('#btn-semantris-quick-start');
-      if (quickBtn) quickBtn.textContent = '🔄 Restart';
-
-      // Seed initial stack with 5 diverse, non-repeating blocks
-      for (let i = 0; i < 5; i++) {
+      // Start with 4 blocks
+      for (let i = 0; i < 4; i++) {
         this.stack.push(this.drawUniqueCareer());
       }
-
       this.renderStack();
       this.updateHUD();
       this.startDropTimer();
-      semantrisAudio.playDrop();
-      if (this.input) this.input.focus();
+
+      if (this.input) {
+        this.input.value = '';
+        this.input.focus();
+      }
     }
 
     startDropTimer() {
       if (this.dropTimer) clearInterval(this.dropTimer);
       this.dropTimer = setInterval(() => {
-        if (!this.isPaused && !this.isGameOver) {
+        if (!this.isPaused && !this.isGameOver && this.isStarted) {
           this.dropNewBlock();
         }
       }, this.dropInterval);
     }
 
     dropNewBlock() {
-      if (this.isGameOver || this.isPaused) return;
-
       if (this.stack.length >= this.maxStack) {
         this.triggerGameOver();
         return;
       }
 
-      const newCareer = this.drawUniqueCareer();
-      this.stack.push(newCareer);
-      semantrisAudio.playDrop();
-
-      this.renderStack(newCareer.id);
-      this.updateHUD();
+      const newBlock = this.drawUniqueCareer();
+      this.stack.push(newBlock);
+      this.renderStack(newBlock.id);
 
       if (this.stack.length >= this.dangerThreshold) {
-        this.dangerLine.classList.add('active');
-        this.dangerBadge.classList.add('active');
-        semantrisAudio.playDanger();
+        if (this.dangerLine) this.dangerLine.classList.add('active');
+        if (this.dangerBadge) this.dangerBadge.classList.add('active');
+      } else {
+        if (this.dangerLine) this.dangerLine.classList.remove('active');
+        if (this.dangerBadge) this.dangerBadge.classList.remove('active');
       }
 
       if (this.stack.length >= this.maxStack) {
-        setTimeout(() => {
-          if (this.stack.length >= this.maxStack) {
-            this.triggerGameOver();
-          }
-        }, 1200);
+        this.triggerGameOver();
       }
     }
 
@@ -6166,61 +6407,101 @@ function renderJobtris(mount) {
       if (!this.well) return;
       this.well.innerHTML = '';
 
-      this.stack.forEach((career, index) => {
-        const blockEl = document.createElement('div');
-        blockEl.className = `semantris-block semantris-color-${career.color}`;
-        blockEl.dataset.id = career.id;
-        blockEl.dataset.index = index;
-
-        if (career.id === droppingId) {
-          blockEl.classList.add('dropping');
+      this.stack.forEach((block, idx) => {
+        const el = document.createElement('div');
+        el.className = `semantris-block semantris-block-${block.color}`;
+        el.dataset.id = block.id;
+        el.dataset.index = idx;
+        if (droppingId === block.id) {
+          el.classList.add('dropping');
         }
 
-        blockEl.innerHTML = `
+        el.innerHTML = `
           <div class="semantris-block-left">
-            <span style="font-size:18px;">${career.icon}</span>
-            <span class="semantris-block-title">${escapeHtml(career.title)}</span>
+            <span class="semantris-block-icon">${block.icon}</span>
+            <div style="min-width:0;">
+              <div class="semantris-block-title">${escapeHtml(block.title)}</div>
+              <div class="semantris-block-sector">${escapeHtml(block.sector)}</div>
+            </div>
           </div>
-          <span class="semantris-badge">${escapeHtml(career.sector)}</span>
+          <span class="semantris-block-tag">#${escapeHtml(block.match[0] || 'career')}</span>
         `;
-
-        // Click block to pre-fill input with a sample clue
-        blockEl.addEventListener('click', () => {
-          if (this.input) {
-            this.input.value = career.match[0] || 'skill';
-            this.input.focus();
-          }
-        });
-
-        this.well.appendChild(blockEl);
+        this.well.appendChild(el);
       });
     }
 
-    submitClue() {
+    async submitClue(overrideText = null, isVoice = false) {
       if (!this.isStarted) {
         this.start();
         return;
       }
-      if (this.isGameOver || this.isPaused) return;
-      const raw = this.input.value.trim().toLowerCase();
+      if (this.isGameOver || this.isPaused || this.isEvaluating) return;
+
+      const raw = (overrideText !== null ? overrideText : (this.input?.value || '')).trim().toLowerCase();
       if (!raw) return;
 
-      const scored = this.stack.map((block, index) => ({
-        block,
-        index,
-        score: this.calculateMatchScore(block, raw)
-      }));
+      this.isEvaluating = true;
+      if (this.evalSpinner) this.evalSpinner.style.display = 'inline-block';
 
-      scored.sort((a, b) => b.score - a.score);
-      const topMatch = scored[0];
+      try {
+        let scored = [];
 
-      if (topMatch && topMatch.score >= 60) {
-        this.handleHit(topMatch.block, topMatch.index);
-      } else {
-        this.handleMiss();
+        // 1. If Google USE model is active, evaluate with 512-dim cosine similarity
+        if (this.useModel) {
+          const clueVec = await this.getEmbeddingForText(raw);
+          if (clueVec) {
+            for (let i = 0; i < this.stack.length; i++) {
+              const block = this.stack[i];
+              const blockPhrase = `${block.title}. ${block.sector}. ${block.match.slice(0, 8).join(', ')}`;
+              let blockVec = globalUSEEmbeddingCache.get(blockPhrase);
+              if (!blockVec) {
+                blockVec = await this.getEmbeddingForText(blockPhrase);
+              }
+              const cosineSim = computeCosineSimilarity(clueVec, blockVec);
+              // Cosine similarity for USE ranges roughly from -0.2 to 0.85
+              // Scale to 0-100 range:
+              const useScore = Math.max(0, Math.min(100, Math.round(((cosineSim - 0.15) / 0.6) * 100)));
+              const ruleScore = this.calculateMatchScore(block, raw);
+              const combinedScore = Math.max(ruleScore, useScore);
+
+              scored.push({
+                block,
+                index: i,
+                score: combinedScore,
+                isUse: useScore > ruleScore
+              });
+            }
+          }
+        }
+
+        // 2. Fallback / lexical scoring if USE wasn't ready
+        if (scored.length === 0) {
+          scored = this.stack.map((block, index) => ({
+            block,
+            index,
+            score: this.calculateMatchScore(block, raw),
+            isUse: false
+          }));
+        }
+
+        scored.sort((a, b) => b.score - a.score);
+        const topMatch = scored[0];
+
+        // Burst match if score threshold is reached (55+ for deep semantic USE matches)
+        if (topMatch && topMatch.score >= 55) {
+          this.handleHit(topMatch.block, topMatch.index, topMatch.isUse);
+        } else {
+          this.handleMiss();
+        }
+      } catch (err) {
+        console.warn('Evaluation notice:', err);
+      } finally {
+        this.isEvaluating = false;
+        if (this.evalSpinner) this.evalSpinner.style.display = 'none';
+        if (!isVoice && this.input) {
+          this.input.value = '';
+        }
       }
-
-      this.input.value = '';
     }
 
     calculateMatchScore(block, clue) {
@@ -6253,69 +6534,56 @@ function renderJobtris(mount) {
       return maxScore;
     }
 
-    handleHit(targetBlock, targetIndex) {
-      // Semantris Arcade contiguous color chain popping
+    handleHit(targetBlock, targetIndex, isUse = false) {
+      // Find connected same-color blocks for combo chaining
+      const toClearIndices = new Set([targetIndex]);
       const targetColor = targetBlock.color;
-      const poppingIndices = new Set([targetIndex]);
 
-      // Expand contiguous neighbors upwards
-      for (let i = targetIndex - 1; i >= 0; i--) {
-        if (this.stack[i] && this.stack[i].color === targetColor) {
-          poppingIndices.add(i);
-        } else {
-          break;
-        }
-      }
-      // Expand contiguous neighbors downwards
+      // Upwards contiguous chain
       for (let i = targetIndex + 1; i < this.stack.length; i++) {
-        if (this.stack[i] && this.stack[i].color === targetColor) {
-          poppingIndices.add(i);
-        } else {
-          break;
-        }
+        if (this.stack[i].color === targetColor) toClearIndices.add(i);
+        else break;
+      }
+      // Downwards contiguous chain
+      for (let i = targetIndex - 1; i >= 0; i--) {
+        if (this.stack[i].color === targetColor) toClearIndices.add(i);
+        else break;
       }
 
-      const poppedCount = poppingIndices.size;
-      const pointsEarned = 150 * this.combo * poppedCount;
-      this.score += pointsEarned;
-      this.clearedCount += poppedCount;
+      const clearedCount = toClearIndices.size;
+      const basePoints = 150 * clearedCount;
+      const comboMult = this.combo;
+      const earned = basePoints * comboMult;
+
+      this.score += earned;
+      this.clearedCount += clearedCount;
       this.combo = Math.min(this.combo + 1, 8);
-      if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+      this.maxCombo = Math.max(this.maxCombo, this.combo);
 
-      semantrisAudio.playPop(this.combo);
+      // Play audio effect & blast animation
+      playRetroPop();
+      if (this.combo >= 3) {
+        playRetroLaser();
+      }
 
-      // Add popping animation to DOM elements
-      const blockEls = this.well.querySelectorAll('.semantris-block');
-      poppingIndices.forEach(idx => {
-        const el = blockEls[idx];
-        if (el) {
-          el.classList.add('popping');
-          this.spawnFloatingScore(el, `+${pointsEarned / poppedCount}`);
+      // DOM blast animation
+      toClearIndices.forEach(idx => {
+        const blockEl = this.well?.querySelector(`.semantris-block[data-index="${idx}"]`);
+        if (blockEl) {
+          blockEl.classList.add('exploding');
+          this.spawnFloatingScore(blockEl, `+${earned} ${isUse ? '⚡ USE' : ''}`);
         }
       });
 
-      // Accelerate drop speed slightly every 5 cleared words
-      if (this.clearedCount % 5 === 0) {
-        this.dropInterval = Math.max(3400, this.dropInterval - 300);
-        this.startDropTimer();
-      }
-
+      // Filter cleared blocks from state
       setTimeout(() => {
-        // Filter out popped blocks from stack
-        this.stack = this.stack.filter((_, idx) => !poppingIndices.has(idx));
-
-        // If stack is critically low (< 3), immediately drop 1 new block to keep game active
-        if (this.stack.length < 3) {
-          this.stack.push(this.drawUniqueCareer());
-        }
-
-        if (this.stack.length < this.dangerThreshold) {
-          this.dangerLine.classList.remove('active');
-          this.dangerBadge.classList.remove('active');
-        }
-
+        this.stack = this.stack.filter((_, idx) => !toClearIndices.has(idx));
         this.renderStack();
         this.updateHUD();
+
+        // Speed up slightly as score rises
+        if (this.score > 2000) this.dropInterval = Math.max(2800, 6200 - Math.floor(this.score / 500) * 350);
+        this.startDropTimer();
       }, 350);
     }
 
@@ -6323,65 +6591,74 @@ function renderJobtris(mount) {
       if (!anchorEl || !this.well) return;
       const rect = anchorEl.getBoundingClientRect();
       const wellRect = this.well.getBoundingClientRect();
-      const floatEl = document.createElement('div');
-      floatEl.className = 'semantris-floating-score';
-      floatEl.textContent = text;
-      floatEl.style.top = `${rect.top - wellRect.top + 6}px`;
-      floatEl.style.left = `${rect.left - wellRect.left + rect.width / 2 - 30}px`;
-      this.well.appendChild(floatEl);
-      setTimeout(() => floatEl.remove(), 850);
+      const popup = document.createElement('div');
+      popup.className = 'semantris-popup-score';
+      popup.textContent = text;
+      popup.style.left = `${rect.left - wellRect.left + rect.width / 2}px`;
+      popup.style.top = `${rect.top - wellRect.top}px`;
+      this.well.appendChild(popup);
+      setTimeout(() => popup.remove(), 800);
     }
 
     handleMiss() {
       this.combo = 1;
       this.updateHUD();
-      semantrisAudio.playMiss();
-
+      playRetroBuzz();
       if (this.inputWrap) {
-        this.inputWrap.classList.add('shake');
-        setTimeout(() => this.inputWrap.classList.remove('shake'), 400);
-      }
-
-      const randomTarget = this.stack[Math.floor(Math.random() * this.stack.length)];
-      if (randomTarget) {
-        showToast(`No match! Try a clue related to ${randomTarget.title} (e.g. "${randomTarget.match[0]}")`);
+        this.inputWrap.classList.remove('miss-shake');
+        void this.inputWrap.offsetWidth;
+        this.inputWrap.classList.add('miss-shake');
       }
     }
 
     updateHUD() {
       if (this.scoreDisplay) this.scoreDisplay.textContent = this.score.toLocaleString();
-      if (this.clearedDisplay) this.clearedDisplay.textContent = this.clearedCount;
+      if (this.clearedDisplay) this.clearedDisplay.textContent = this.clearedCount.toLocaleString();
       if (this.comboPill) {
         this.comboPill.textContent = `Combo ${this.combo}x`;
-        this.comboPill.style.color = this.combo > 1 ? '#00f0ff' : '#ff2a85';
+        this.comboPill.classList.toggle('active', this.combo > 1);
+      }
+
+      if (this.stack.length >= this.dangerThreshold) {
+        if (this.dangerLine) this.dangerLine.classList.add('active');
+        if (this.dangerBadge) this.dangerBadge.classList.add('active');
+      } else {
+        if (this.dangerLine) this.dangerLine.classList.remove('active');
+        if (this.dangerBadge) this.dangerBadge.classList.remove('active');
       }
     }
 
     triggerGameOver() {
       this.isGameOver = true;
       if (this.dropTimer) clearInterval(this.dropTimer);
-      semantrisAudio.playGameOver();
+      if (this.isListening && this.recognition) {
+        try { this.recognition.stop(); } catch (e) {}
+        this.isListening = false;
+        this.updateVoiceUI(false);
+      }
 
-      $('#gameover-final-score').textContent = this.score.toLocaleString();
-      $('#gameover-max-combo').textContent = `${this.maxCombo}x`;
-      this.gameOverScreen.style.display = 'flex';
+      playRetroGameOver();
 
       const prevHigh = parseInt(localStorage.getItem('cf_jobtris_highscore') || '0', 10);
       if (this.score > prevHigh) {
-        localStorage.setItem('cf_jobtris_highscore', String(this.score));
-        showToast(`🏆 NEW HIGH SCORE: ${this.score.toLocaleString()} points!`);
+        localStorage.setItem('cf_jobtris_highscore', this.score.toString());
+        showToast('🎉 NEW JOBTRIS HIGH SCORE!');
+      }
+
+      if (this.gameOverScreen) {
+        const finalScoreEl = $('#semantris-final-score');
+        if (finalScoreEl) finalScoreEl.textContent = this.score.toLocaleString();
+        this.gameOverScreen.style.display = 'flex';
       }
     }
 
     togglePause() {
+      if (!this.isStarted || this.isGameOver) return;
       this.isPaused = !this.isPaused;
-      const btn = $('#btn-semantris-pause');
-      if (btn) btn.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
-      if (this.isPaused) {
-        showToast('Jobtris paused ⏸️');
-      } else {
-        showToast('Resumed ▶️');
-        this.input.focus();
+      if (this.isPaused && this.dropTimer) {
+        clearInterval(this.dropTimer);
+      } else if (!this.isPaused) {
+        this.startDropTimer();
       }
     }
 
@@ -6404,6 +6681,9 @@ function renderJobtris(mount) {
         }
       });
 
+      // Voice Mode toggle listener
+      this.voiceBtn?.addEventListener('click', () => this.toggleVoiceMode());
+
       $('#btn-semantris-pause')?.addEventListener('click', () => this.togglePause());
       $('#btn-semantris-restart')?.addEventListener('click', () => this.start());
 
@@ -6420,13 +6700,15 @@ function renderJobtris(mount) {
 
     destroy() {
       if (this.dropTimer) clearInterval(this.dropTimer);
+      if (this.recognition && this.isListening) {
+        try { this.recognition.stop(); } catch (e) {}
+        this.isListening = false;
+      }
     }
   }
 
   jobtrisInstance = new JobtrisGame();
 }
-
-
 // GAME 2: Wordle / Wordless (6-Guess Vocabulary)
 function renderWordle(mount) {
   const SECRET_WORDS = ["PILOT", "LEGAL", "BRIEF", "STAGE", "SPEECH", "CADRE", "ORBIT", "COURT", "AUDIT", "MEDIA"];

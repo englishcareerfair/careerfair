@@ -4248,3 +4248,90 @@ select.form-select option:checked {
   color: #ffffff;
   transform: translateY(-1px);
 }
+
+
+/* ── JOBTRIS VOICE & GOOGLE UNIVERSAL SENTENCE ENCODER CONTROLS ── */
+.semantris-action-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.semantris-voice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  min-width: 140px;
+  font-weight: 700;
+  font-size: 13.5px;
+  border-radius: var(--radius-md, 10px);
+  cursor: pointer;
+  background: rgba(0, 240, 255, 0.08);
+  color: #38bdf8;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.semantris-voice-btn:hover {
+  background: rgba(0, 240, 255, 0.18);
+  border-color: #00f0ff;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.semantris-voice-btn.listening {
+  background: linear-gradient(135deg, rgba(255, 42, 133, 0.3), rgba(239, 68, 68, 0.4));
+  border-color: #ff2a85;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(255, 42, 133, 0.6);
+  animation: pulseVoiceListening 1s infinite alternate ease-in-out;
+}
+
+@keyframes pulseVoiceListening {
+  0% { transform: scale(1); box-shadow: 0 0 10px rgba(255, 42, 133, 0.4); }
+  100% { transform: scale(1.03); box-shadow: 0 0 22px rgba(255, 42, 133, 0.85); }
+}
+
+.semantris-voice-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: #f43f5e;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 7px;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: var(--radius-full, 9999px);
+}
+
+.semantris-ai-engine-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(0, 240, 255, 0.09);
+  color: #38bdf8;
+  border: 1px solid rgba(0, 240, 255, 0.25);
+}
+
+.semantris-ai-engine-badge.ready {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.35);
+}
+
+.semantris-ai-engine-badge.loading {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
