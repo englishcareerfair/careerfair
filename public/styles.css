@@ -4335,3 +4335,129 @@ select.form-select option:checked {
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.35);
 }
+
+
+/* ─── ADMIN PINNED FEEDBACK, IP BAN, TITLE BADGE & API POOL STYLES ─── */
+.feedback-item.pinned {
+  border: 2px solid var(--accent-gold, #f59e0b) !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.18) !important;
+  position: relative;
+}
+
+.feedback-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-gold, #f59e0b);
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 2px 7px;
+  border-radius: var(--radius-full, 9999px);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.user-title-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.api-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.api-key-input {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+  font-size: 12.5px;
+  padding: 8px 12px;
+}
+
+.api-key-label-pill {
+  min-width: 90px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 700;
+  padding: 4px 8px;
+  text-align: center;
+  border-radius: var(--radius-sm, 6px);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+}
+.api-key-label-pill.main {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.35);
+}
+.api-key-label-pill.backup {
+  color: #38bdf8;
+  background: rgba(0, 240, 255, 0.1);
+  border-color: rgba(0, 240, 255, 0.25);
+}
+
+.btn-remove-api-row {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-remove-api-row:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-add-api-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 240, 255, 0.08);
+  color: #38bdf8;
+  border: 1px dashed rgba(0, 240, 255, 0.4);
+  border-radius: var(--radius-sm, 6px);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+.btn-add-api-row:hover {
+  background: rgba(0, 240, 255, 0.18);
+  border-color: #00f0ff;
+  color: #ffffff;
+}
+
+.banned-ip-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+}

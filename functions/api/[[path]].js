@@ -345,6 +345,21 @@ export async function onRequest(ctx) {
   const db = env.DB || env.db || env.DATABASE || env.database || env.D1 || env.d1 || env["careerfair-db"] || env.careerfair || env.careerfair_db || env.CAREERFAIR_DB || env.CF_DB;
   await ensureDbSchema(db);
 
+  // ── IP Ban Enforcement ──
+  const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
+  if (clientIp) {
+    let bannedIps = [];
+    try {
+      if (db) {
+        const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
+        if (row && row.v) bannedIps = JSON.parse(row.v);
+      }
+    } catch {}
+    if (Array.isArray(bannedIps) && bannedIps.includes(clientIp)) {
+      return json({ error: 'Access Denied: Your IP address has been banned by exhibition administrators.', banned: true }, 403);
+    }
+  }
+
   // ── 1. GET /config ─────────────────────────────────────────────────────────
   if (path === '/config' && method === 'GET') {
     const pass = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
@@ -951,8 +966,17 @@ export async function onRequest(ctx) {
 
     if (db) {
       try {
-        const { results } = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY ts DESC LIMIT ? OFFSET ?')
-          .bind(limit, offset).all();
+        // Check if pinned column exists, order by pinned DESC, ts DESC
+        let results;
+        try {
+          const q = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY pinned DESC, ts DESC LIMIT ? OFFSET ?')
+            .bind(limit, offset).all();
+          results = q.results;
+        } catch {
+          const q = await db.prepare('SELECT * FROM feedback WHERE approved=1 ORDER BY ts DESC LIMIT ? OFFSET ?')
+            .bind(limit, offset).all();
+          results = q.results;
+        }
         const statRow = await db.prepare('SELECT COUNT(*) as c, AVG(r_useful) as avg_rating FROM feedback WHERE approved=1').first();
         if (results && results.length > 0) {
           items = results;
@@ -2119,6 +2143,127 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       feedback: feedbackRows,
       scores: scoreRows
     });
+  }
+
+  // ── ADMIN: PIN / UNPIN FEEDBACK ──────────────────────────────────────────────
+  if (path === '/admin/pin-feedback' && method === 'POST') {
+    const auth = await verifyAuth(request, env, db, 'write:admin', url);
+    if (!auth.ok) return err(auth.error, auth.status);
+
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const { id, pinned } = body;
+    if (!id) return err('Missing feedback id');
+
+    const isPinned = pinned ? 1 : 0;
+    if (db) {
+      try {
+        await db.prepare('ALTER TABLE feedback ADD COLUMN pinned INTEGER DEFAULT 0').run();
+      } catch {}
+      try {
+        await db.prepare('UPDATE feedback SET pinned = ? WHERE id = ?').bind(isPinned, id).run();
+      } catch (e) {
+        console.warn('D1 pin feedback error:', e);
+      }
+    }
+
+    // Update in-memory cache
+    const cached = GLOBAL_CACHE.feedback.find(f => String(f.id) === String(id));
+    if (cached) cached.pinned = isPinned;
+
+    return json({ ok: true, id, pinned: isPinned });
+  }
+
+  // ── ADMIN: ASSIGN TITLE TO USER (e.g. Shriya Limaye - Vice-Principal) ───────
+  if (path === '/admin/user-title') {
+    if (method === 'GET') {
+      let map = {};
+      if (db) {
+        try {
+          const row = await db.prepare("SELECT v FROM kv WHERE k = 'user_titles'").first();
+          if (row && row.v) map = JSON.parse(row.v);
+        } catch {}
+      }
+      return json({ ok: true, titles: map });
+    }
+
+    if (method === 'POST') {
+      const auth = await verifyAuth(request, env, db, 'write:admin', url);
+      if (!auth.ok) return err(auth.error, auth.status);
+
+      let body;
+      try { body = await request.json(); } catch { return err('Invalid JSON'); }
+      const { name, title } = body;
+      if (!name) return err('Missing user name');
+
+      const cleanTitle = (title || '').trim();
+      let map = {};
+      if (db) {
+        try {
+          const row = await db.prepare("SELECT v FROM kv WHERE k = 'user_titles'").first();
+          if (row && row.v) {
+            try { map = JSON.parse(row.v); } catch {}
+          }
+          if (cleanTitle) {
+            map[name] = cleanTitle;
+          } else {
+            delete map[name];
+          }
+          await db.prepare("INSERT OR REPLACE INTO kv (k, v) VALUES ('user_titles', ?)").bind(JSON.stringify(map)).run();
+        } catch (e) {
+          console.warn('D1 user title error:', e);
+        }
+      }
+
+      return json({ ok: true, name, title: cleanTitle, titles: map });
+    }
+  }
+
+  // ── ADMIN: BAN / UNBAN IP ADDRESS ──────────────────────────────────────────
+  if (path === '/admin/ban-ip') {
+    if (method === 'GET') {
+      let banned = [];
+      if (db) {
+        try {
+          const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
+          if (row && row.v) banned = JSON.parse(row.v);
+        } catch {}
+      }
+      return json({ ok: true, banned_ips: banned });
+    }
+
+    if (method === 'POST') {
+      const auth = await verifyAuth(request, env, db, 'write:admin', url);
+      if (!auth.ok) return err(auth.error, auth.status);
+
+      let body;
+      try { body = await request.json(); } catch { return err('Invalid JSON'); }
+      const { ip, action = 'ban' } = body;
+      if (!ip) return err('Missing IP address');
+
+      let banned = [];
+      if (db) {
+        try {
+          const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
+          if (row && row.v) banned = JSON.parse(row.v);
+        } catch {}
+      }
+
+      const cleanIp = ip.trim();
+      if (action === 'ban') {
+        if (!banned.includes(cleanIp)) banned.push(cleanIp);
+      } else {
+        banned = banned.filter(item => item !== cleanIp);
+      }
+
+      if (db) {
+        try {
+          await db.prepare("INSERT OR REPLACE INTO kv (k, v) VALUES ('banned_ips', ?)").bind(JSON.stringify(banned)).run();
+        } catch {}
+      }
+
+      return json({ ok: true, ip: cleanIp, action, banned_ips: banned });
+    }
   }
 
   return err('Route not found', 404);

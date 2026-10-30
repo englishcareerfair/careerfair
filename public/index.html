@@ -1488,23 +1488,40 @@
             Configure AI LLM &amp; STT failover parameters. If keys are not set, platform automatically uses on-device deterministic heuristics.
           </p>
 
-          <div style="margin-bottom:14px;">
-            <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px;">
-              Google Gemini API Keys Pool (Active &amp; Backup Keys):
-            </label>
-            <p style="font-size:12px;color:var(--text-muted);margin:0 0 6px 0;">
-              Enter 1 or more Gemini API keys (one per line or comma-separated). When a key's quota is exhausted (429/403/ResourceExhausted), the system automatically fails over to the next backup key and discards the used one.
+          <!-- Google Gemini API Keys Pool with Infinite Backup Boxes -->
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <label style="font-size:13px;font-weight:700;margin:0;">
+                Google Gemini API Keys Pool (Main &amp; Backups):
+              </label>
+              <button type="button" class="btn-add-api-row" id="btn-add-gemini-key">
+                <span>➕</span> <span>Add Backup Key</span>
+              </button>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px 0;">
+              Separate textboxes for Main and Backup keys. When any key's quota is exhausted (429/ResourceExhausted), it is automatically removed and the next backup becomes the new Main key.
             </p>
-            <textarea id="admin-gemini-key" rows="3" placeholder="AIzaSy... (Primary Key)&#10;AIzaSy... (Backup Key 1)&#10;AIzaSy... (Backup Key 2)" style="font-family:var(--font-mono);font-size:12px;width:100%;box-sizing:border-box;"></textarea>
+            <div id="gemini-keys-container"></div>
             <div id="admin-gemini-key-status" style="font-size:11.5px;color:var(--accent-cyan);margin-top:4px;"></div>
           </div>
 
-          <div style="margin-bottom:14px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-wrap:wrap;gap:6px;">
-              <label style="font-size:13px;font-weight:700;">ElevenLabs Humanoid Voice API Key (XI-API-KEY):</label>
-              <button class="btn btn-secondary btn-xs" id="btn-verify-eleven" type="button" style="font-size:11px;padding:3px 8px;">Verify &amp; Load Voices 🔄</button>
+          <!-- ElevenLabs API Keys Pool with Infinite Backup Boxes -->
+          <div style="margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:6px;">
+              <label style="font-size:13px;font-weight:700;margin:0;">
+                ElevenLabs Voice API Keys Pool (Main &amp; Backups):
+              </label>
+              <div style="display:flex;gap:6px;">
+                <button type="button" class="btn-add-api-row" id="btn-add-eleven-key">
+                  <span>➕</span> <span>Add Backup Key</span>
+                </button>
+                <button class="btn btn-secondary btn-xs" id="btn-verify-eleven" type="button" style="font-size:11px;padding:3px 8px;">Verify &amp; Load Voices 🔄</button>
+              </div>
             </div>
-            <input type="password" id="admin-eleven-key" placeholder="Enter ElevenLabs API key (or set ELEVEN_KEY in Cloudflare)">
+            <p style="font-size:12px;color:var(--text-muted);margin:0 0 8px 0;">
+              Separate textboxes for ElevenLabs API keys. When an API key hits quota/credit expiration, it is purged and the next backup becomes Main. The selected voice model remains preserved across all key rotations!
+            </p>
+            <div id="eleven-keys-container"></div>
             <div id="admin-eleven-status" style="font-size:11.5px;color:var(--text-dim);margin-top:4px;"></div>
             <div style="font-size:12px;color:var(--text-dim);margin-top:4px;">
               Powers studio-grade Indian accent text-to-speech across the entire website. <strong style="color:var(--accent-cyan);">Note:</strong> In ElevenLabs (Settings → API Keys), please copy the secret key (do not copy the Key ID column). On the ElevenLabs Free Plan, community voices (e.g. Aditi) are restricted by ElevenLabs via API; our platform smoothly runs our high-fidelity Indian English (en-IN) neural voice!
@@ -1640,6 +1657,33 @@
                   <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-muted);">Loading scores...</td></tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          <!-- 2.5 IP Ban & Firewall Management -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+              <div>
+                <h4 style="font-size:16px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+                  <span>🚫</span> <span>IP Ban &amp; Fair Firewall</span>
+                  <span class="badge-pill" id="admin-banned-ips-count" style="font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);">0 Banned IPs</span>
+                </h4>
+                <p style="font-size:12.5px;color:var(--text-muted);margin:0;">
+                  Ban malicious or disruptive visitors by IP address. Banned IPs are blocked from submitting scores, feedback, or accessing exhibition tests.
+                </p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+              <input type="text" id="admin-ban-ip-input" placeholder="Enter IP address (e.g. 192.168.1.45 or 203.0.113.19)..." style="flex:1;min-width:240px;font-family:var(--font-mono);font-size:13px;">
+              <button class="btn btn-primary btn-sm" id="btn-admin-ban-ip" type="button" style="background:#ef4444;border-color:#dc2626;">
+                <span>🚫</span> <span>Ban IP Address</span>
+              </button>
+            </div>
+
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Currently Banned IPs:</div>
+            <div id="admin-banned-ips-list" style="display:flex;flex-wrap:wrap;gap:8px;min-height:36px;padding:8px;background:var(--bg-subtle);border-radius:var(--radius-sm);border:1px solid var(--border);">
+              <span style="font-size:12px;color:var(--text-muted);align-self:center;">No IP addresses currently banned.</span>
             </div>
           </div>
 

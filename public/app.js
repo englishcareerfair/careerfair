@@ -230,25 +230,79 @@ async function speak(text, btn = null) {
     activeSpeechButton = targetBtn;
   }
 
-  const rawKey = ($('#admin-eleven-key')?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
-  const effectiveKey = (rawKey && rawKey !== 'configured') ? rawKey : '';
+  // Resolve ElevenLabs keys pool (Main & Backups)
+  let rawElevenKeys = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
+  let elevenKeyList = rawElevenKeys.split(/[
+
+,]+/).map(k => k.trim()).filter(Boolean);
   const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
-  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Indian Accent API
-  try {
-    const res = await fetch(getApiUrl('api/tts'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(effectiveKey ? { 'xi-api-key': effectiveKey } : {})
-      },
-      body: JSON.stringify({
-        text: text,
-        apiKey: effectiveKey,
-        voiceId: savedVoiceId,
-        accent: 'indian'
-      })
-    });
+  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs with Automatic Key Failover
+  let playedSuccessfully = false;
+  while (elevenKeyList.length > 0 && !playedSuccessfully) {
+    const currentKey = elevenKeyList[0];
+    const effectiveKey = (currentKey && currentKey !== 'configured') ? currentKey : '';
+    try {
+      const res = await fetch(getApiUrl('api/tts'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(effectiveKey ? { 'xi-api-key': effectiveKey } : {})
+        },
+        body: JSON.stringify({
+          text: text,
+          apiKey: effectiveKey,
+          voiceId: savedVoiceId, // Preserve the selected voice across all API keys!
+          accent: 'indian'
+        })
+      });
+
+      // If key is quota exhausted or invalid (401, 402, 429), remove it and promote next backup key to Main
+      if (res.status === 401 || res.status === 402 || res.status === 429) {
+        console.warn(`ElevenLabs key ${currentKey.slice(0, 6)}... quota exhausted or invalid (status ${res.status}). Removing key and failing over to next backup key.`);
+        elevenKeyList.shift();
+        const updatedPool = elevenKeyList.join('\n');
+        localStorage.setItem('cf_eleven_keys', updatedPool);
+        localStorage.setItem('cf_eleven_key', elevenKeyList[0] || '');
+        STATE.config.eleven_keys = updatedPool;
+        STATE.config.eleven_key = elevenKeyList[0] || '';
+        if (typeof window.syncAdminElevenKeyBoxes === 'function') {
+          window.syncAdminElevenKeyBoxes();
+        }
+        continue;
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('audio')) {
+        const audioBlob = await res.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        currentTtsAudio = new Audio(audioUrl);
+
+        currentTtsAudio.onended = () => {
+          stopAllVoice();
+        };
+
+        currentTtsAudio.onerror = () => {
+          fallbackIndianNeuralSpeech(text, targetBtn);
+        };
+
+        if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+          const testStatus = $('#admin-tts-test-status');
+          if (testStatus) {
+            const isHealed = res.headers.get('x-eleven-healed') === 'true';
+            testStatus.innerHTML = `✅ Audio stream verified! ${isHealed ? '<span style="color:#f59e0b;">(Healed from restricted tier)</span>' : ''}`;
+          }
+        }
+
+        await currentTtsAudio.play();
+        playedSuccessfully = true;
+        return;
+      }
+    } catch (e) {
+      console.warn('TTS attempt exception:', e);
+      break;
+    }
+  }
 
     const contentType = res.headers.get('content-type') || '';
     if (res.ok && contentType.includes('audio')) {
@@ -4712,61 +4766,91 @@ const GAMING_HALL_QUESTS = [
 ];
 
 async function callAiQuest(prompt, isJson = false) {
-  const geminiKeys = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').trim();
-  const primaryKey = geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '';
-
-  // 1. First attempt backend /api/ai with failover across key pool
-  try {
-    const res = await fetch(getApiUrl('api/ai'), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-gemini-key': primaryKey,
-        'x-goog-api-key': primaryKey
-      },
-      body: JSON.stringify({ task: 'quest', prompt, json: isJson, gemini_keys: geminiKeys })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.reply) return data.reply;
-      if (data && data.text) {
-        if (isJson) {
-          const m = data.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-          if (m) {
-            try { return JSON.parse(m[0]); } catch {}
-          }
-        }
-        return data.text;
-      }
-    }
-  } catch (e) {}
-
-  // 2. Direct client-side Gemini fallback
+  let geminiKeyList = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
   const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
-  for (const m of models) {
+
+  while (geminiKeyList.length > 0) {
+    const curKey = geminiKeyList[0];
+    let keyExhausted = false;
+
+    // 1. First attempt backend /api/ai
     try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(primaryKey)}`, {
+      const res = await fetch(getApiUrl('api/ai'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': primaryKey },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: isJson ? { responseMimeType: 'application/json' } : {}
-        })
+        headers: {
+          'Content-Type': 'application/json',
+          'x-gemini-key': curKey,
+          'x-goog-api-key': curKey
+        },
+        body: JSON.stringify({ task: 'quest', prompt, json: isJson, gemini_keys: curKey })
       });
-      if (res.ok) {
+
+      if (res.status === 429 || res.status === 403) {
+        keyExhausted = true;
+      } else if (res.ok) {
         const data = await res.json();
-        const t = data.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
-        if (t) {
+        if (data && data.reply) return data.reply;
+        if (data && data.text) {
           if (isJson) {
-            const match = t.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-            if (match) {
-              try { return JSON.parse(match[0]); } catch {}
+            const m = data.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (m) {
+              try { return JSON.parse(m[0]); } catch {}
             }
           }
-          return t;
+          return data.text;
         }
       }
     } catch (e) {}
+
+    // 2. Direct client-side Gemini fallback
+    if (!keyExhausted) {
+      for (const m of models) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(curKey)}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': curKey },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              ...(isJson ? { generationConfig: { responseMimeType: 'application/json' } } : {})
+            })
+          });
+
+          if (res.status === 429 || res.status === 403) {
+            keyExhausted = true;
+            break;
+          }
+
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              if (isJson) {
+                const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+                if (match) {
+                  try { return JSON.parse(match[0]); } catch {}
+                }
+              }
+              return text;
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (keyExhausted) {
+      console.warn(`Gemini API key ${curKey.slice(0, 6)}... quota exhausted. Purging key and promoting next backup key to Main.`);
+      geminiKeyList.shift();
+      const updatedPool = geminiKeyList.join('\n');
+      localStorage.setItem('cf_gemini_keys', updatedPool);
+      localStorage.setItem('cf_gemini_key', geminiKeyList[0] || '');
+      STATE.config.gemini_keys = updatedPool;
+      STATE.config.gemini_key = geminiKeyList[0] || '';
+      if (typeof window.syncAdminGeminiKeyBoxes === 'function') {
+        window.syncAdminGeminiKeyBoxes();
+      }
+    } else {
+      break;
+    }
   }
 
   // Graceful signal: return null so offline dual-engine seamlessly activates
@@ -8736,9 +8820,22 @@ async function loadLeaderboard(filterPack = 'All') {
       ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:8px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️</button>`
       : '';
 
+    let userTitlesMap = {};
+    try {
+      const storedTitles = localStorage.getItem('cf_user_titles');
+      if (storedTitles) userTitlesMap = JSON.parse(storedTitles);
+    } catch {}
+    const customTitle = userTitlesMap[sc.name] || '';
+    const titleBadgeHtml = customTitle
+      ? `<span class="user-title-badge" title="Official Honor Title">👑 ${escapeHtml(customTitle)}</span>`
+      : '';
+    const titleBtnHtml = isAdmin
+      ? `<button type="button" class="btn btn-sm" title="Assign Honor Title" style="margin-left:6px;padding:2px 6px;font-size:10.5px;background:rgba(0,240,255,0.1);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:4px;cursor:pointer;" onclick="window.adminAssignUserTitle('${encodeURIComponent(sc.name || '')}')">🏷️ Title</button>`
+      : '';
+
     tr.innerHTML = `
       <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
-      <td><strong>${escapeHtml(sc.name)}</strong>${delBtnHtml}</td>
+      <td><strong>${escapeHtml(sc.name)}</strong>${titleBadgeHtml}${titleBtnHtml}${delBtnHtml}</td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'Everyday')}</span></td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
@@ -8889,6 +8986,21 @@ async function loadFeedbackWall() {
       return;
     }
 
+    // Get admin custom titles map
+    let userTitlesMap = {};
+    try {
+      const storedTitles = localStorage.getItem('cf_user_titles');
+      if (storedTitles) userTitlesMap = JSON.parse(storedTitles);
+    } catch {}
+
+    // Sort pinned feedbacks to the top
+    feedbacks.sort((a, b) => {
+      const pinA = Number(a.pinned || 0);
+      const pinB = Number(b.pinned || 0);
+      if (pinA !== pinB) return pinB - pinA;
+      return (Number(b.ts) || 0) - (Number(a.ts) || 0);
+    });
+
     list.innerHTML = feedbacks.map(f => {
       const starCount = Math.max(1, Math.min(5, Number(f.useful ?? f.r_useful ?? 5)));
       const stars = '⭐'.repeat(starCount) + (starCount === 1 ? '☆☆☆☆' : starCount === 2 ? '☆☆☆' : starCount === 3 ? '☆☆' : starCount === 4 ? '☆' : '');
@@ -8897,21 +9009,39 @@ async function loadFeedbackWall() {
         ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
         : escapeHtml(f.role || 'Visitor');
 
+      const isPinned = Number(f.pinned || 0) === 1;
+      const customTitle = userTitlesMap[f.name] || '';
+      const titleBadgeHtml = customTitle
+        ? `<span class="user-title-badge" title="Official Honor Title">👑 ${escapeHtml(customTitle)}</span>`
+        : '';
+
       const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
-      const delBtnHtml = isAdmin
-        ? `<button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="margin-left:auto;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11.5px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">🗑️ Delete (Admin)</button>`
+      const adminActionsHtml = isAdmin
+        ? `<div style="display:inline-flex;gap:6px;align-items:center;">
+             <button type="button" class="btn btn-sm" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="window.adminTogglePinFeedback('${escapeHtml(String(f.id || ''))}', ${isPinned ? 0 : 1})">
+               ${isPinned ? '📌 Pinned' : '📍 Pin'}
+             </button>
+             <button type="button" class="btn btn-sm" title="Assign Official Title (e.g. Vice-Principal)" style="background:rgba(0,240,255,0.1);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="window.adminAssignUserTitle('${encodeURIComponent(f.name || '')}')">
+               🏷️ Title
+             </button>
+             <button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">
+               🗑️
+             </button>
+           </div>`
         : '';
 
       return `
-        <div class="feedback-item">
+        <div class="feedback-item ${isPinned ? 'pinned' : ''}">
           <div class="feedback-item-header">
-            <div class="feedback-item-author">
+            <div class="feedback-item-author" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
               <strong style="font-size:14.5px;">${escapeHtml(f.name || 'Anonymous')}</strong>
+              ${titleBadgeHtml}
               <span class="feedback-item-badge">${roleBadge}</span>
+              ${isPinned ? '<span class="feedback-pin-badge">📌 Pinned Review</span>' : ''}
             </div>
-            <div style="display:flex;align-items:center;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
-              ${delBtnHtml}
+              ${adminActionsHtml}
             </div>
           </div>
           <p class="feedback-item-comment">"${escapeHtml(f.comment || '')}"</p>
@@ -9596,6 +9726,7 @@ function applyFeatureFlags() {
 }
 
 function initAdminWorkspace() {
+  if (typeof window.initDynamicApiPools === 'function') window.initDynamicApiPools();
   const dbStatusWrap = $('#admin-db-status-pill');
   if (dbStatusWrap && STATE.config) {
     if (STATE.config.db_connected) {
@@ -10553,3 +10684,337 @@ function startGlobalD1SyncPoller() {
     }
   }, 12000);
 }
+
+
+// ─── ADMIN EXPANDED CONTROLS: PINNING, TITLES, IP BAN, DYNAMIC API POOLS ──────
+window.adminTogglePinFeedback = async function(id, pinnedVal) {
+  try {
+    await fetchApi('admin/pin-feedback', {
+      method: 'POST',
+      body: JSON.stringify({ id, pinned: pinnedVal })
+    });
+  } catch (e) {
+    console.warn('Pin feedback API note:', e);
+  }
+
+  // Update local cache
+  try {
+    const raw = localStorage.getItem('cf_user_feedbacks');
+    if (raw) {
+      const items = JSON.parse(raw);
+      const target = items.find(f => String(f.id) === String(id));
+      if (target) {
+        target.pinned = pinnedVal;
+        localStorage.setItem('cf_user_feedbacks', JSON.stringify(items));
+      }
+    }
+  } catch {}
+
+  showToast(pinnedVal ? 'Feedback pinned to top! 📌' : 'Feedback unpinned');
+  await loadFeedbackWall();
+  if (typeof renderAdminModeration === 'function') {
+    await renderAdminModeration();
+  }
+};
+
+window.adminAssignUserTitle = async function(encodedName) {
+  const name = decodeURIComponent(encodedName || '');
+  if (!name) return;
+
+  let userTitlesMap = {};
+  try {
+    const stored = localStorage.getItem('cf_user_titles');
+    if (stored) userTitlesMap = JSON.parse(stored);
+  } catch {}
+
+  const currentTitle = userTitlesMap[name] || '';
+  const newTitle = prompt(`Assign official title for "${name}" (e.g. Vice-Principal, Head of English, Student Council President):`, currentTitle);
+  if (newTitle === null) return; // cancelled
+
+  const clean = newTitle.trim();
+  if (clean) {
+    userTitlesMap[name] = clean;
+  } else {
+    delete userTitlesMap[name];
+  }
+  localStorage.setItem('cf_user_titles', JSON.stringify(userTitlesMap));
+
+  try {
+    await fetchApi('admin/user-title', {
+      method: 'POST',
+      body: JSON.stringify({ name, title: clean })
+    });
+  } catch (e) {
+    console.warn('User title sync note:', e);
+  }
+
+  showToast(clean ? `Title "${clean}" assigned to ${name} 👑` : `Title removed from ${name}`);
+  await loadFeedbackWall();
+  await loadLeaderboard();
+  if (typeof renderAdminModeration === 'function') {
+    await renderAdminModeration();
+  }
+};
+
+window.adminBanIp = async function(ipToBan) {
+  const ip = (ipToBan || $('#admin-ban-ip-input')?.value || '').trim();
+  if (!ip) {
+    showToast('Please enter an IP address to ban.');
+    return;
+  }
+  if (!confirm(`Are you sure you want to ban IP "${ip}"? This will restrict their access across the fair.`)) return;
+
+  let banned = [];
+  try {
+    const raw = localStorage.getItem('cf_banned_ips');
+    if (raw) banned = JSON.parse(raw);
+  } catch {}
+  if (!banned.includes(ip)) banned.push(ip);
+  localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
+
+  try {
+    await fetchApi('admin/ban-ip', {
+      method: 'POST',
+      body: JSON.stringify({ ip, action: 'ban' })
+    });
+  } catch (e) {
+    console.warn('Ban IP note:', e);
+  }
+
+  showToast(`IP "${ip}" has been banned 🚫`);
+  const input = $('#admin-ban-ip-input');
+  if (input) input.value = '';
+  window.renderAdminBannedIps();
+};
+
+window.adminUnbanIp = async function(ip) {
+  if (!confirm(`Unban IP address "${ip}"?`)) return;
+
+  let banned = [];
+  try {
+    const raw = localStorage.getItem('cf_banned_ips');
+    if (raw) banned = JSON.parse(raw);
+  } catch {}
+  banned = banned.filter(i => i !== ip);
+  localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
+
+  try {
+    await fetchApi('admin/ban-ip', {
+      method: 'POST',
+      body: JSON.stringify({ ip, action: 'unban' })
+    });
+  } catch (e) {
+    console.warn('Unban IP note:', e);
+  }
+
+  showToast(`IP "${ip}" unbanned ✅`);
+  window.renderAdminBannedIps();
+};
+
+window.renderAdminBannedIps = async function() {
+  const container = $('#admin-banned-ips-list');
+  const countBadge = $('#admin-banned-ips-count');
+  if (!container) return;
+
+  let banned = [];
+  try {
+    const res = await fetchApi('admin/ban-ip');
+    if (res && Array.isArray(res.banned_ips)) {
+      banned = res.banned_ips;
+      localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
+    }
+  } catch {
+    try {
+      const raw = localStorage.getItem('cf_banned_ips');
+      if (raw) banned = JSON.parse(raw);
+    } catch {}
+  }
+
+  if (countBadge) {
+    countBadge.textContent = `${banned.length} Banned IP${banned.length === 1 ? '' : 's'}`;
+  }
+
+  if (!banned.length) {
+    container.innerHTML = `<span style="font-size:12px;color:var(--text-muted);align-self:center;">No IP addresses currently banned.</span>`;
+  } else {
+    container.innerHTML = banned.map(ip => `
+      <div class="banned-ip-pill">
+        <span>🚫 ${escapeHtml(ip)}</span>
+        <button type="button" style="background:none;border:none;color:#f87171;cursor:pointer;padding:0 2px;font-weight:bold;" title="Unban this IP" onclick="window.adminUnbanIp('${escapeHtml(ip)}')">✕</button>
+      </div>
+    `).join('');
+  }
+};
+
+// ─── DYNAMIC API KEYS POOLS (INFINITE MAIN & BACKUP BOXES) ────────────────────
+window.initDynamicApiPools = function() {
+  // 1. Google Gemini Keys Setup
+  const geminiContainer = $('#gemini-keys-container');
+  const addGeminiBtn = $('#btn-add-gemini-key');
+
+  const getGeminiKeysArray = () => {
+    const raw = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || STATE.config.gemini_key || '').trim();
+    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    while (keys.length < 3) {
+      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
+    }
+    return keys;
+  };
+
+  const renderGeminiBoxes = (keys) => {
+    if (!geminiContainer) return;
+    geminiContainer.innerHTML = keys.map((key, i) => {
+      const label = i === 0 ? 'Main' : `Backup ${i}`;
+      const pillClass = i === 0 ? 'main' : 'backup';
+      const canRemove = keys.length > 3 || (i >= 3 && keys.length > 3);
+      const removeBtn = i >= 3
+        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeGeminiKeyRow(${i})" title="Remove this backup box">✕</button>`
+        : '';
+
+      return `
+        <div class="api-key-row" data-index="${i}">
+          <span class="api-key-label-pill ${pillClass}">${label}</span>
+          <input type="password" class="api-key-input gemini-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'AIzaSy... (Main Gemini Key)' : 'AIzaSy... (Backup Key ' + i + ')'}">
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+
+    // Wire real-time input change
+    geminiContainer.querySelectorAll('.gemini-key-field').forEach(input => {
+      const save = () => {
+        const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
+        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        const joined = newKeys.join('\n');
+        localStorage.setItem('cf_gemini_keys', joined);
+        localStorage.setItem('cf_gemini_key', newKeys[0] || '');
+        STATE.config.gemini_keys = joined;
+        STATE.config.gemini_key = newKeys[0] || '';
+        updateGeminiStatusBadge(newKeys.length);
+      };
+      input.addEventListener('input', save);
+      input.addEventListener('change', save);
+    });
+
+    const activeCount = keys.filter(Boolean).length;
+    updateGeminiStatusBadge(activeCount);
+  };
+
+  const updateGeminiStatusBadge = (count) => {
+    const badge = $('#admin-gemini-key-status');
+    if (!badge) return;
+    if (count > 0) {
+      badge.innerHTML = `✅ <strong>${count} Gemini API Key${count > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active!`;
+    } else {
+      badge.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
+    }
+  };
+
+  window.syncAdminGeminiKeyBoxes = () => {
+    renderGeminiBoxes(getGeminiKeysArray());
+  };
+
+  window.removeGeminiKeyRow = (idx) => {
+    const current = getGeminiKeysArray();
+    current.splice(idx, 1);
+    const joined = current.filter(Boolean).join('\n');
+    localStorage.setItem('cf_gemini_keys', joined);
+    localStorage.setItem('cf_gemini_key', current.filter(Boolean)[0] || '');
+    renderGeminiBoxes(current);
+  };
+
+  addGeminiBtn?.addEventListener('click', () => {
+    const current = getGeminiKeysArray();
+    current.push('');
+    renderGeminiBoxes(current);
+  });
+
+  renderGeminiBoxes(getGeminiKeysArray());
+
+  // 2. ElevenLabs Keys Setup
+  const elevenContainer = $('#eleven-keys-container');
+  const addElevenBtn = $('#btn-add-eleven-key');
+
+  const getElevenKeysArray = () => {
+    const raw = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
+    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    while (keys.length < 3) {
+      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
+    }
+    return keys;
+  };
+
+  const renderElevenBoxes = (keys) => {
+    if (!elevenContainer) return;
+    elevenContainer.innerHTML = keys.map((key, i) => {
+      const label = i === 0 ? 'Main' : `Backup ${i}`;
+      const pillClass = i === 0 ? 'main' : 'backup';
+      const removeBtn = i >= 3
+        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeElevenKeyRow(${i})" title="Remove this backup box">✕</button>`
+        : '';
+
+      return `
+        <div class="api-key-row" data-index="${i}">
+          <span class="api-key-label-pill ${pillClass}">${label}</span>
+          <input type="password" class="api-key-input eleven-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'xi-... (Main ElevenLabs Key)' : 'xi-... (Backup Key ' + i + ')'}">
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+
+    elevenContainer.querySelectorAll('.eleven-key-field').forEach(input => {
+      const save = () => {
+        const currentInputs = Array.from(elevenContainer.querySelectorAll('.eleven-key-field'));
+        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        const joined = newKeys.join('\n');
+        localStorage.setItem('cf_eleven_keys', joined);
+        localStorage.setItem('cf_eleven_key', newKeys[0] || '');
+        STATE.config.eleven_keys = joined;
+        STATE.config.eleven_key = newKeys[0] || '';
+        updateElevenStatusBadge(newKeys.length);
+      };
+      input.addEventListener('input', save);
+      input.addEventListener('change', save);
+    });
+
+    const activeCount = keys.filter(Boolean).length;
+    updateElevenStatusBadge(activeCount);
+  };
+
+  const updateElevenStatusBadge = (count) => {
+    const badge = $('#admin-eleven-status');
+    if (!badge) return;
+    if (count > 0) {
+      badge.innerHTML = `✅ <strong>${count} ElevenLabs Key${count > 1 ? 's' : ''}</strong> active. Studio Indian accent voice model will stay persistent across all key rotations!`;
+    } else {
+      badge.innerHTML = `⚠️ No ElevenLabs key entered. Studio voice synthesizes via high-fidelity Indian English (en-IN) neural voice!`;
+    }
+  };
+
+  window.syncAdminElevenKeyBoxes = () => {
+    renderElevenBoxes(getElevenKeysArray());
+  };
+
+  window.removeElevenKeyRow = (idx) => {
+    const current = getElevenKeysArray();
+    current.splice(idx, 1);
+    const joined = current.filter(Boolean).join('\n');
+    localStorage.setItem('cf_eleven_keys', joined);
+    localStorage.setItem('cf_eleven_key', current.filter(Boolean)[0] || '');
+    renderElevenBoxes(current);
+  };
+
+  addElevenBtn?.addEventListener('click', () => {
+    const current = getElevenKeysArray();
+    current.push('');
+    renderElevenBoxes(current);
+  });
+
+  renderElevenBoxes(getElevenKeysArray());
+
+  // 3. Initialize Ban IP Button Listener
+  $('#btn-admin-ban-ip')?.addEventListener('click', () => {
+    window.adminBanIp();
+  });
+  window.renderAdminBannedIps();
+};
