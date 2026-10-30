@@ -2864,6 +2864,30 @@ let speechLabTargetWords = [];
 let speechLabPassedIndices = new Set();
 let speechLabUsedSentences = new Set();
 let isSpeechLabPassed = false;
+let speechLabPrefetchedSentence = null;
+let speechLabPrefetching = false;
+
+async function prefetchNextSpeechLabSentence() {
+  if (speechLabPrefetchedSentence || speechLabPrefetching) return;
+  speechLabPrefetching = true;
+  try {
+    const aiPromise = fetchApi('ai', 'POST', {
+      task: 'generate-sentence',
+      pack: 'Executive'
+    });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500));
+    const res = await Promise.race([aiPromise, timeoutPromise]);
+    if (res && res.sentence && typeof res.sentence === 'string') {
+      const candidate = res.sentence.trim().replace(/^["']|["']$/g, '');
+      if (candidate.length > 20 && !speechLabUsedSentences.has(candidate)) {
+        speechLabPrefetchedSentence = { sentence: candidate, source: 'gemini' };
+      }
+    }
+  } catch {} finally {
+    speechLabPrefetching = false;
+  }
+}
+
 let isPassingSentence = false;
 let speechLabSentencesPassedCount = 0;
 let currentCoachTipIndex = -1;
@@ -2976,7 +3000,7 @@ function isWordMatch(spoken, target) {
   return false;
 }
 
-async function changeSpeechLabSentence(userTriggered = false) {
+function changeSpeechLabSentence(userTriggered = false) {
   stopAllVoice();
   isSpeechLabPassed = false;
 
@@ -2987,7 +3011,7 @@ async function changeSpeechLabSentence(userTriggered = false) {
   const aiBadge = $('#speech-lab-ai-badge');
   const liveHeard = $('#speech-lab-live-heard');
 
-  if (liveHeard) liveHeard.textContent = '🎙️ Speak sentence into mic to pass...';
+  if (liveHeard) liveHeard.textContent = '🎤 Speak sentence into mic to pass...';
 
   // Load from session storage to avoid repeats
   try {
@@ -2996,25 +3020,18 @@ async function changeSpeechLabSentence(userTriggered = false) {
   } catch {}
 
   let selectedSentence = '';
+  let sourceBadge = '⚡ Adaptive AI Prompter';
 
-  // 1. Attempt Gemini AI API generation
-  try {
-    const aiPromise = fetchApi('ai', 'POST', {
-      task: 'generate-sentence',
-      pack: 'Executive'
-    });
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000));
-    const res = await Promise.race([aiPromise, timeoutPromise]);
-    if (res && res.sentence && typeof res.sentence === 'string') {
-      const candidate = res.sentence.trim().replace(/^["']|["']$/g, '');
-      if (candidate.length > 20 && !speechLabUsedSentences.has(candidate)) {
-        selectedSentence = candidate;
-        if (aiBadge) aiBadge.textContent = '⚡ Gemini AI Generated';
-      }
+  // 1. Instant zero-latency swap: Use prefetched Gemini sentence if ready
+  if (speechLabPrefetchedSentence && speechLabPrefetchedSentence.sentence) {
+    selectedSentence = speechLabPrefetchedSentence.sentence;
+    if (speechLabPrefetchedSentence.source === 'gemini') {
+      sourceBadge = '⚡ Gemini AI Generated';
     }
-  } catch {}
+    speechLabPrefetchedSentence = null;
+  }
 
-  // 2. Fallback to adaptive zero-repeat sentence pool
+  // 2. Instant fallback to adaptive zero-repeat sentence pool (0 ms latency)
   if (!selectedSentence) {
     const pools = [
       ...(AI_SENTENCE_LIBRARY.Everyday || []),
@@ -3029,8 +3046,9 @@ async function changeSpeechLabSentence(userTriggered = false) {
       speechLabUsedSentences.clear();
       selectedSentence = pools[Math.floor(Math.random() * pools.length)];
     }
-    if (aiBadge) aiBadge.textContent = '⚡ Adaptive AI Prompter';
   }
+
+  if (aiBadge) aiBadge.textContent = sourceBadge;
 
   speechLabUsedSentences.add(selectedSentence);
   try {
@@ -3062,9 +3080,12 @@ async function changeSpeechLabSentence(userTriggered = false) {
   if (userTriggered) {
     showToast('New practice sentence ready! 🎲');
   }
+
+  // Background non-blocking prefetch for next cue so next sentence is always pre-warmed
+  prefetchNextSpeechLabSentence();
 }
 
-async function passAwaySpeechLabSentence(manualSkip = false) {
+function passAwaySpeechLabSentence(manualSkip = false) {
   if (isPassingSentence) return;
   isPassingSentence = true;
 
@@ -3084,33 +3105,12 @@ async function passAwaySpeechLabSentence(manualSkip = false) {
     }
     if (percentLabel) percentLabel.textContent = '100% Passed';
     if (screen) screen.classList.add('speech-lab-screen-complete');
-    showToast('Sentence Passed! 🚀 Next cue rolling in...');
+    showToast('Sentence Passed! 🚀');
   }
 
-  // 1. Trigger the upward 'pass away' animation
-  if (textContainer) {
-    textContainer.classList.add('passing-away');
-  }
-
-  // 2. Wait for pass-away animation duration (400ms)
-  await new Promise(resolve => setTimeout(resolve, 400));
-
-  // 3. Load next cue
-  await changeSpeechLabSentence(false);
-
-  // 4. Slide up smoothly from bottom into viewport
-  if (textContainer) {
-    textContainer.classList.remove('passing-away');
-    textContainer.classList.add('entering');
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        textContainer.classList.remove('entering');
-        isPassingSentence = false;
-      });
-    });
-  } else {
-    isPassingSentence = false;
-  }
+  // Instantaneous zero-delay cue swap: new sentence renders immediately without even 1ms delay
+  changeSpeechLabSentence(false);
+  isPassingSentence = false;
 }
 
 function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
@@ -3119,28 +3119,33 @@ function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
   STATE.speechLabTranscript = ((STATE.speechLabTranscript || '') + ' ' + spokenFullText).trim();
   const spokenTokens = spokenFullText.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
 
+  // In-line sequential advancement: words MUST be completed sequentially in a line.
+  // Never jump ahead into the middle of the sentence when previous words have not been spoken.
   let targetPointer = 0;
   while (targetPointer < speechLabTargetWords.length && speechLabPassedIndices.has(targetPointer)) {
     targetPointer++;
   }
 
   for (const spoken of spokenTokens) {
-    for (let i = targetPointer; i < speechLabTargetWords.length; i++) {
-      if (speechLabPassedIndices.has(i)) continue;
-      const targetClean = cleanSpeechWord(speechLabTargetWords[i]);
-      if (isWordMatch(spoken, targetClean)) {
-        speechLabPassedIndices.add(i);
-        if (i === targetPointer) {
-          while (targetPointer < speechLabTargetWords.length && speechLabPassedIndices.has(targetPointer)) {
-            targetPointer++;
-          }
-        }
-        break;
+    if (targetPointer >= speechLabTargetWords.length) break;
+
+    // Check exact current expected target word
+    const currentClean = cleanSpeechWord(speechLabTargetWords[targetPointer]);
+    if (isWordMatch(spoken, currentClean)) {
+      speechLabPassedIndices.add(targetPointer);
+      targetPointer++;
+    } else if (targetPointer + 1 < speechLabTargetWords.length) {
+      // Natural speech forgiveness: allow at most a 1-word lookahead (e.g. if a tiny connector like "a" or "to" was softly whispered)
+      const nextClean = cleanSpeechWord(speechLabTargetWords[targetPointer + 1]);
+      if (isWordMatch(spoken, nextClean)) {
+        speechLabPassedIndices.add(targetPointer);     // Count skipped connector as satisfied
+        speechLabPassedIndices.add(targetPointer + 1); // Mark current matched word
+        targetPointer += 2;
       }
     }
   }
 
-  // Update DOM word spans
+  // Update DOM word spans in strict line order
   speechLabTargetWords.forEach((_, idx) => {
     const wordEl = $(`#sl-word-${idx}`);
     if (wordEl) {
@@ -3149,8 +3154,9 @@ function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
         wordEl.classList.remove('target', 'current-target');
       } else if (idx === targetPointer) {
         wordEl.classList.add('target', 'current-target');
+        wordEl.classList.remove('spoken', 'passed');
       } else {
-        wordEl.classList.remove('target', 'current-target');
+        wordEl.classList.remove('target', 'current-target', 'spoken', 'passed');
       }
     }
   });
@@ -3173,13 +3179,12 @@ function checkSpeechLabWordsProgress(spokenFullText, source = 'local') {
 
   if (heardLabel && spokenTokens.length) {
     const recent = spokenTokens.slice(-4).join(' ');
-    const tag = source === 'elevenlabs' ? '⚡ ElevenLabs' : '🎙️ Heard';
+    const tag = source === 'elevenlabs' ? '⚡ ElevenLabs' : '🎤 Heard';
     heardLabel.textContent = `${tag}: "${recent}"`;
   }
 
-  // Passing threshold: 75% or full completion triggers passing away!
-  const passThreshold = Math.max(1, Math.ceil(total * 0.75));
-  if ((passed >= passThreshold || targetPointer >= total || passed === total) && total > 0 && !isPassingSentence && !isSpeechLabPassed) {
+  // Completion: When the sentence has been completed in line, transition immediately without delay
+  if (targetPointer >= total && total > 0 && !isPassingSentence && !isSpeechLabPassed) {
     isSpeechLabPassed = true;
     passAwaySpeechLabSentence(false);
   }
