@@ -3988,3 +3988,98 @@ select.form-select option:checked {
   font-family: var(--font-mono, monospace);
   font-size: 12px;
 }
+
+
+/* ==========================================================================
+   OBS Studio Integration & Transparent Browser Source Overlay Mode
+   ========================================================================== */
+
+#obs-badge {
+  transition: all 0.3s ease;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+body.obs-overlay-mode {
+  background: transparent !important;
+  background-color: transparent !important;
+  overflow: hidden !important;
+}
+
+body.obs-overlay-mode #top-bar,
+body.obs-overlay-mode #main-nav,
+body.obs-overlay-mode #hero-section,
+body.obs-overlay-mode #school-banner-area,
+body.obs-overlay-mode .section-shell:not(#sec-teleprompter),
+body.obs-overlay-mode #sec-teleprompter .section-head,
+body.obs-overlay-mode #sec-teleprompter .card,
+body.obs-overlay-mode #footer,
+body.obs-overlay-mode #bg-particles-canvas,
+body.obs-overlay-mode #ambient-blobs,
+body.obs-overlay-mode .shelf-scroll-wrapper,
+body.obs-overlay-mode .mystery-modal-backdrop,
+body.obs-overlay-mode #toast-container {
+  display: none !important;
+}
+
+body.obs-overlay-mode #sec-teleprompter {
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+body.obs-overlay-mode .broadcast-stage-grid {
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  position: relative !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body.obs-overlay-mode #video-stage-wrapper {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+body.obs-overlay-mode #anchor-idle-canvas,
+body.obs-overlay-mode #anchor-video {
+  display: none !important;
+}
+
+body.obs-overlay-mode .teleprompter-ticker-container {
+  top: 36px !important;
+  left: 48px !important;
+  right: 48px !important;
+  height: 62px !important;
+  background: rgba(10, 16, 32, 0.88) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1.5px solid rgba(0, 240, 255, 0.45) !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 240, 255, 0.2) !important;
+  border-radius: var(--radius-md) !important;
+  pointer-events: auto;
+}
+
+body.obs-overlay-mode .news-lower-third {
+  bottom: 44px !important;
+  left: 48px !important;
+  right: 48px !important;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(239, 68, 68, 0.25) !important;
+  border-radius: var(--radius-md) !important;
+  pointer-events: auto;
+}

@@ -4284,7 +4284,128 @@ function initTeleprompter() {
     applyScript(scriptKey);
   });
 
-  // 7. Camera Toggle Button (Launch Camera <-> Turn Off Camera)
+  // 7. Video Input Device Selection & OBS Studio Detection
+  const cameraSelect = $('#anchor-camera-select');
+  const obsBadge = $('#obs-badge');
+  const obsModal = $('#obs-guide-modal');
+  const btnObsGuide = $('#btn-obs-guide');
+  const btnCloseObsModal = $('#btn-close-obs-modal');
+  const btnObsOverlay = $('#btn-obs-overlay');
+  const obsUrlInput = $('#obs-overlay-url-input');
+  const btnCopyObsUrl = $('#btn-copy-obs-overlay-url');
+  const btnPopoutObs = $('#btn-open-obs-overlay-popout');
+  const btnJumpAdmin = $('#btn-jump-to-admin-stream');
+
+  const populateCameras = async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter(d => d.kind === 'videoinput');
+      const prevVal = cameraSelect?.value || teleprompterState.selectedCameraId || 'default';
+
+      if (cameraSelect) {
+        cameraSelect.innerHTML = '<option value="default">Default Camera / Auto</option>';
+        let foundObs = false;
+        let obsId = null;
+
+        videoInputs.forEach((dev, idx) => {
+          const opt = document.createElement('option');
+          opt.value = dev.deviceId;
+          const label = dev.label || `Camera ${idx + 1}`;
+          const isObs = /obs|virtual/i.test(label);
+          if (isObs) {
+            foundObs = true;
+            obsId = dev.deviceId;
+            opt.textContent = `🎥 ${label} (OBS Studio)`;
+          } else {
+            opt.textContent = `📹 ${label}`;
+          }
+          cameraSelect.appendChild(opt);
+        });
+
+        if (obsBadge) {
+          if (foundObs) {
+            obsBadge.textContent = '🟢 OBS Virtual Cam Ready';
+            obsBadge.style.color = '#10b981';
+            obsBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+          } else {
+            obsBadge.textContent = '⚪ Virtual Cam Offline';
+            obsBadge.style.color = 'var(--text-dim)';
+            obsBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+          }
+        }
+
+        if (prevVal && Array.from(cameraSelect.options).some(o => o.value === prevVal)) {
+          cameraSelect.value = prevVal;
+        } else if (foundObs && obsId && !teleprompterState.selectedCameraId) {
+          cameraSelect.value = obsId;
+          teleprompterState.selectedCameraId = obsId;
+        }
+      }
+    } catch (e) {
+      console.warn('enumerateDevices error:', e);
+    }
+  };
+
+  navigator.mediaDevices?.addEventListener('devicechange', () => {
+    populateCameras();
+  });
+  populateCameras();
+
+  const startCameraStream = async (deviceId) => {
+    const camText = $('#camera-btn-text');
+    if (teleprompterState.cameraStream) {
+      teleprompterState.cameraStream.getTracks().forEach(t => t.stop());
+      teleprompterState.cameraStream = null;
+    }
+
+    const videoConstraints = {
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    };
+    if (deviceId && deviceId !== 'default') {
+      videoConstraints.deviceId = { exact: deviceId };
+    } else {
+      videoConstraints.facingMode = 'user';
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: videoConstraints,
+        audio: true
+      });
+      teleprompterState.cameraStream = stream;
+      if (video) {
+        video.srcObject = stream;
+        video.style.display = 'block';
+      }
+      if (canvas) canvas.style.display = 'none';
+      if (teleprompterState.idleAnimId) {
+        cancelAnimationFrame(teleprompterState.idleAnimId);
+        teleprompterState.idleAnimId = null;
+      }
+      teleprompterState.isCameraOn = true;
+      if (camText) camText.textContent = 'Turn Off Camera';
+      cameraBtn.querySelector('span:first-child').textContent = '📷';
+
+      const activeTrack = stream.getVideoTracks()[0];
+      const trackLabel = activeTrack?.label || 'Camera';
+      showToast(`Active video feed: ${trackLabel}`);
+      populateCameras();
+    } catch (err) {
+      console.error(err);
+      showToast('Camera device not found or access denied. Using animated studio background.');
+    }
+  };
+
+  cameraSelect?.addEventListener('change', async (e) => {
+    teleprompterState.selectedCameraId = e.target.value;
+    if (teleprompterState.isCameraOn) {
+      await startCameraStream(e.target.value);
+    }
+  });
+
+  // Camera Toggle Button (Launch Camera <-> Turn Off Camera)
   cameraBtn?.addEventListener('click', async () => {
     const camText = $('#camera-btn-text');
     if (teleprompterState.isCameraOn) {
@@ -4306,34 +4427,85 @@ function initTeleprompter() {
       return;
     }
 
-    // Launch Camera
+    await startCameraStream(teleprompterState.selectedCameraId || cameraSelect?.value || 'default');
+  });
+
+  // OBS Studio Modal & Overlay Integrations
+  const getOverlayUrl = () => {
+    const script = scriptSelect?.value || 'breaking';
+    const name = encodeURIComponent(nameInput?.value.trim() || 'STUDENT');
+    const base = window.location.origin + window.location.pathname;
+    return `${base}?obs_overlay=1&script=${script}&name=${name}`;
+  };
+
+  const updateOverlayInput = () => {
+    if (obsUrlInput) {
+      obsUrlInput.value = getOverlayUrl();
+    }
+  };
+
+  btnObsGuide?.addEventListener('click', () => {
+    updateOverlayInput();
+    if (obsModal) obsModal.classList.add('active');
+  });
+
+  btnCloseObsModal?.addEventListener('click', () => {
+    if (obsModal) obsModal.classList.remove('active');
+  });
+
+  obsModal?.addEventListener('click', (e) => {
+    if (e.target === obsModal) obsModal.classList.remove('active');
+  });
+
+  btnCopyObsUrl?.addEventListener('click', async () => {
+    const url = getOverlayUrl();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: true
-      });
-      teleprompterState.cameraStream = stream;
-      if (video) {
-        video.srcObject = stream;
-        video.style.display = 'block';
-      }
-      if (canvas) canvas.style.display = 'none';
-      if (teleprompterState.idleAnimId) {
-        cancelAnimationFrame(teleprompterState.idleAnimId);
-        teleprompterState.idleAnimId = null;
-      }
-      teleprompterState.isCameraOn = true;
-      if (camText) camText.textContent = 'Turn Off Camera';
-      cameraBtn.querySelector('span:first-child').textContent = '📷';
-      showToast('Camera feed live! Ready to broadcast.');
+      await navigator.clipboard.writeText(url);
+      showToast('OBS Browser Source URL copied to clipboard! 📋');
     } catch {
-      showToast('Camera device not found or access denied. Using animated studio background.');
+      if (obsUrlInput) {
+        obsUrlInput.select();
+        document.execCommand('copy');
+        showToast('OBS URL copied! 📋');
+      }
     }
   });
+
+  const openOverlayWindow = () => {
+    const url = getOverlayUrl();
+    window.open(url, 'OBS_Overlay_Window', 'width=1280,height=720,menubar=no,toolbar=no,location=no,status=no');
+  };
+
+  btnObsOverlay?.addEventListener('click', openOverlayWindow);
+  btnPopoutObs?.addEventListener('click', openOverlayWindow);
+
+  btnJumpAdmin?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (obsModal) obsModal.classList.remove('active');
+    if (window.switchTab) window.switchTab('admin');
+  });
+
+  // Auto-detect OBS Browser Source mode (?obs_overlay=1)
+  const urlParams = new URLSearchParams(window.location.search);
+  const isObsOverlay = urlParams.get('obs_overlay') === '1' || window.location.hash.includes('obs-overlay');
+  if (isObsOverlay) {
+    document.body.classList.add('obs-overlay-mode');
+    const overlayScript = urlParams.get('script');
+    const overlayName = urlParams.get('name');
+    if (overlayScript && SCRIPTS[overlayScript] && scriptSelect) {
+      scriptSelect.value = overlayScript;
+    }
+    if (overlayName && nameInput) {
+      nameInput.value = decodeURIComponent(overlayName);
+    }
+    applyScript(scriptSelect?.value || 'breaking');
+    teleprompterState.prompterStarted = true;
+    teleprompterState.isPrompterPaused = false;
+    updatePrompterButtonUI();
+    if (window.switchTab) {
+      window.switchTab('teleprompter', { skipSubInit: true });
+    }
+  }
 
   // 8. Recording and Downloading (Toggle Record Clip <-> Stop Recording with Overlays)
   recordBtn?.addEventListener('click', async () => {
