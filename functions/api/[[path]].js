@@ -405,8 +405,7 @@ export async function onRequest(ctx) {
     const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
     const eleven_keys = (await kvGet(db, 'eleven_keys', '')) || (await kvGet(db, 'eleven_key', ''));
-    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (eleven_keys ? eleven_keys.split(/[
-,]+/)[0].trim() : '') || (env.ELEVEN_KEY ? 'configured' : '');
+    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (eleven_keys ? eleven_keys.split(/[\r\n,]+/)[0].trim() : '') || (env.ELEVEN_KEY ? 'configured' : '');
 
     let totalScores = 0;
     let totalFeedback = 0;
