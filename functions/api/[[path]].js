@@ -404,7 +404,9 @@ export async function onRequest(ctx) {
 
     const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
-    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (env.ELEVEN_KEY ? 'configured' : '');
+    const eleven_keys = (await kvGet(db, 'eleven_keys', '')) || (await kvGet(db, 'eleven_key', ''));
+    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (eleven_keys ? eleven_keys.split(/[
+,]+/)[0].trim() : '') || (env.ELEVEN_KEY ? 'configured' : '');
 
     let totalScores = 0;
     let totalFeedback = 0;
@@ -444,8 +446,9 @@ export async function onRequest(ctx) {
       gemini_keys,
       gemini_key: gemini_keys,
       eleven_voice,
+      eleven_keys,
       eleven_key,
-      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', ''))),
+      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', ''))),
       db_connected: Boolean(db),
       db_status: db ? 'connected' : 'unbound',
       total_scores: totalScores || GLOBAL_CACHE.scores.length,
@@ -493,6 +496,7 @@ export async function onRequest(ctx) {
     }
     if (body.gemini_keys !== undefined) await kvSet(db, 'gemini_keys', String(body.gemini_keys));
     if (body.gemini_key !== undefined) await kvSet(db, 'gemini_key', String(body.gemini_key));
+    if (body.eleven_keys !== undefined) await kvSet(db, 'eleven_keys', String(body.eleven_keys));
     if (body.eleven_key !== undefined) await kvSet(db, 'eleven_key', String(body.eleven_key));
     if (body.eleven_voice !== undefined) await kvSet(db, 'eleven_voice', String(body.eleven_voice));
 
@@ -1874,7 +1878,10 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (method === 'POST') {
       try { body = await request.json(); } catch { body = {}; }
     }
-    const elevenKey = (body.apiKey || request.headers.get('xi-api-key') || url.searchParams.get('key') || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || '').trim();
+    let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || url.searchParams.get('key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
+    if (elevenKey && elevenKey.includes('\n')) {
+      elevenKey = elevenKey.split(/[\r\n,]+/)[0].trim();
+    }
 
     if (!elevenKey) {
       return json({
@@ -1980,7 +1987,10 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const text = body.text || 'Welcome to the English Careers Forum 2026 at Kanakia International School. Good English is the universal language that unlocks thirty-two global career pathways.';
     
     // Resolve key from body, header, database KV, or env
-    const elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || '').trim();
+    let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
+    if (elevenKey && elevenKey.includes('\n')) {
+      elevenKey = elevenKey.split(/[\r\n,]+/)[0].trim();
+    }
     let requestedVoiceId = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
 
     if (!elevenKey) {

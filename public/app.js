@@ -9063,7 +9063,10 @@ function initAdminWorkspace() {
     const selectEl = $('#admin-eleven-voice-select');
     const hintEl = $('#admin-eleven-voice-hint');
     const customVoiceInput = $('#admin-eleven-voice');
-    const keyVal = (elevenInput?.value || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || '').trim();
+    // Gather active key from dynamic pool inputs -> localStorage -> STATE
+    const dynamicElevenInputs = Array.from(document.querySelectorAll('#eleven-keys-container .eleven-key-field'));
+    const dynamicKey = dynamicElevenInputs.map(i => i.value.trim()).filter(Boolean)[0] || '';
+    const keyVal = (dynamicKey || elevenInput?.value || localStorage.getItem('cf_eleven_key') || (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/)[0].trim() || STATE.config.eleven_key || '').trim();
     const effectiveKey = (keyVal && keyVal !== 'configured') ? keyVal : '';
 
     // Check if user entered a Key ID instead of the secret API key
@@ -9089,7 +9092,9 @@ function initAdminWorkspace() {
       if (data.ok) {
         const quotaStr = data.subscription ? ` · Quota: ${data.subscription.character_count?.toLocaleString() || 0} / ${data.subscription.character_limit?.toLocaleString() || 10000} chars` : '';
         if (statusEl) {
-          statusEl.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ ElevenLabs Connected (${data.total || 0} voices available${quotaStr})</span>`;
+          const keyCount = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean).length || (effectiveKey ? 1 : 0);
+          const poolStr = keyCount > 1 ? ` · Failover Pool: ${keyCount} keys active` : '';
+          statusEl.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ ElevenLabs Connected (${data.total || 0} voices available${quotaStr}${poolStr})</span>`;
         }
 
         if (selectEl && Array.isArray(data.voices)) {
@@ -9182,9 +9187,10 @@ function initAdminWorkspace() {
     // Select George (JBFqnCBsd6RMkjVDRZzb) or first premade studio voice
     const bestVoice = 'JBFqnCBsd6RMkjVDRZzb'; // George (Warm, Articulate)
     if (elevenVoiceInput) elevenVoiceInput.value = bestVoice;
-    if (selectEl) {
-      const opt = selectEl.querySelector(`option[value="${bestVoice}"]`);
-      if (opt) selectEl.value = bestVoice;
+    const voiceSelect = $('#admin-eleven-voice-select');
+    if (voiceSelect) {
+      const opt = voiceSelect.querySelector(`option[value="${bestVoice}"]`);
+      if (opt) voiceSelect.value = bestVoice;
     }
     localStorage.setItem('cf_eleven_voice', bestVoice);
     STATE.config.eleven_voice = bestVoice;
@@ -9193,39 +9199,101 @@ function initAdminWorkspace() {
 
   // Save AI Credentials, Backup Keys Pool & rclone Google Drive Settings
   $('#btn-save-ai')?.addEventListener('click', async () => {
-    const geminiKeys = ($('#admin-gemini-key')?.value || '').trim();
-    const elevenKey = ($('#admin-eleven-key')?.value || '').trim();
-    const elevenVoice = ($('#admin-eleven-voice')?.value || '').trim();
+    // 1. Gather Gemini keys from dynamic pool inputs, fallback to storage / config
+    const geminiInputs = Array.from(document.querySelectorAll('#gemini-keys-container .gemini-key-field'));
+    let geminiKeys = geminiInputs.map(i => i.value.trim()).filter(Boolean).join('\n');
+    if (!geminiKeys) {
+      geminiKeys = ($('#admin-gemini-key')?.value || localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || STATE.config.gemini_key || '').trim();
+    }
+    const geminiKey = geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '';
+
+    // 2. Gather ElevenLabs keys from dynamic pool inputs, fallback to storage / config
+    const elevenInputs = Array.from(document.querySelectorAll('#eleven-keys-container .eleven-key-field'));
+    let elevenKeys = elevenInputs.map(i => i.value.trim()).filter(Boolean).join('\n');
+    if (!elevenKeys) {
+      elevenKeys = ($('#admin-eleven-key')?.value || localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
+    }
+    const elevenKey = elevenKeys ? elevenKeys.split(/[\r\n,]+/)[0].trim() : '';
+
+    const elevenVoice = ($('#admin-eleven-voice')?.value || $('#admin-eleven-voice-select')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
     const rcloneRemote = ($('#admin-rclone-remote')?.value || 'gdrive:careerfair_telemetry').trim();
     const rcloneEndpoint = ($('#admin-rclone-endpoint')?.value || '').trim();
     
-    localStorage.setItem('cf_eleven_key', elevenKey);
-    STATE.config.eleven_key = elevenKey;
+    // Persist ElevenLabs pool & primary key
+    if (elevenKeys) {
+      localStorage.setItem('cf_eleven_keys', elevenKeys);
+      STATE.config.eleven_keys = elevenKeys;
+    } else {
+      localStorage.removeItem('cf_eleven_keys');
+      STATE.config.eleven_keys = '';
+    }
+    if (elevenKey) {
+      localStorage.setItem('cf_eleven_key', elevenKey);
+      STATE.config.eleven_key = elevenKey;
+    } else {
+      localStorage.removeItem('cf_eleven_key');
+      STATE.config.eleven_key = '';
+    }
     localStorage.setItem('cf_eleven_voice', elevenVoice);
     STATE.config.eleven_voice = elevenVoice;
+
+    // Persist Google Drive rclone settings
     localStorage.setItem('cf_rclone_remote', rcloneRemote);
     STATE.config.rclone_remote = rcloneRemote;
     localStorage.setItem('cf_rclone_endpoint', rcloneEndpoint);
     STATE.config.rclone_endpoint = rcloneEndpoint;
     
+    // Persist Gemini keys
     if (geminiKeys) {
       STATE.config.gemini_keys = geminiKeys;
-      STATE.config.gemini_key = geminiKeys;
+      STATE.config.gemini_key = geminiKey;
       localStorage.setItem('cf_gemini_keys', geminiKeys);
-      localStorage.setItem('cf_gemini_key', geminiKeys.split(/[\r\n,]+/)[0].trim());
+      localStorage.setItem('cf_gemini_key', geminiKey);
       sessionStorage.setItem('cf_gemini_keys', geminiKeys);
-      updateGeminiKeyStatus(geminiKeys);
+    } else {
+      STATE.config.gemini_keys = '';
+      STATE.config.gemini_key = '';
+      localStorage.removeItem('cf_gemini_keys');
+      localStorage.removeItem('cf_gemini_key');
+      sessionStorage.removeItem('cf_gemini_keys');
     }
+
+    // Update status badges
+    const geminiCount = geminiKeys ? geminiKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean).length : 0;
+    const gBadge = $('#admin-gemini-key-status');
+    if (gBadge) {
+      if (geminiCount > 0) {
+        gBadge.innerHTML = `✅ <strong>${geminiCount} Gemini API Key${geminiCount > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active!`;
+      } else {
+        gBadge.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
+      }
+    }
+
+    const elevenCount = elevenKeys ? elevenKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean).length : 0;
+    const eBadge = $('#admin-eleven-status');
+    if (eBadge) {
+      if (elevenCount > 0) {
+        eBadge.innerHTML = `✅ <strong>${elevenCount} ElevenLabs Key${elevenCount > 1 ? 's' : ''}</strong> active. Studio Indian accent voice model will stay persistent across all key rotations!`;
+      } else {
+        eBadge.innerHTML = `⚠️ No ElevenLabs key entered. Studio voice synthesizes via high-fidelity Indian English (en-IN) neural voice!`;
+      }
+    }
+
+    // Persist to Cloudflare D1 Backend
     await fetchApi('admin/config', 'PUT', {
       gemini_keys: geminiKeys,
-      gemini_key: geminiKeys ? geminiKeys.split(/[\r\n,]+/)[0].trim() : '',
+      gemini_key: geminiKey,
+      eleven_keys: elevenKeys,
       eleven_key: elevenKey,
       eleven_voice: elevenVoice,
       rclone_remote: rcloneRemote,
       rclone_endpoint: rcloneEndpoint
     });
+
     showToast('AI, Voice & Google Drive rclone settings saved successfully');
-    verifyAndLoadElevenVoices(true);
+    if (elevenKey) {
+      await verifyAndLoadElevenVoices(true);
+    }
   });
 
   // Test Humanoid Voice button in Admin - tests the EXACT configured Voice ID directly
@@ -9244,7 +9312,7 @@ function initAdminWorkspace() {
 
   // Auto-verify ElevenLabs voices on admin load if key exists
   setTimeout(() => {
-    if (localStorage.getItem('cf_eleven_key') || STATE.config.eleven_key || STATE.config.has_eleven_key) {
+    if (localStorage.getItem('cf_eleven_key') || localStorage.getItem('cf_eleven_keys') || STATE.config.eleven_key || STATE.config.has_eleven_key) {
       verifyAndLoadElevenVoices(true);
     }
   }, 400);
@@ -9643,14 +9711,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchApi('admin/config', 'PUT', { gemini_keys: localGemini, gemini_key: localGemini.split(/[\r\n,]+/)[0].trim() });
     }
 
-    if (cfg.eleven_key && cfg.eleven_key !== 'configured') {
+    const localElevenKeys = localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || '';
+    if (cfg.eleven_keys && cfg.eleven_keys !== 'configured') {
+      STATE.config.eleven_keys = cfg.eleven_keys;
+      localStorage.setItem('cf_eleven_keys', cfg.eleven_keys);
+      const firstK = cfg.eleven_keys.split(/[\r\n,]+/)[0].trim();
+      STATE.config.eleven_key = firstK;
+      localStorage.setItem('cf_eleven_key', firstK);
+    } else if (cfg.eleven_key && cfg.eleven_key !== 'configured') {
       STATE.config.eleven_key = cfg.eleven_key;
       localStorage.setItem('cf_eleven_key', cfg.eleven_key);
+      if (!localStorage.getItem('cf_eleven_keys')) {
+        localStorage.setItem('cf_eleven_keys', cfg.eleven_key);
+      }
+    } else if (localElevenKeys && localElevenKeys !== 'configured') {
+      STATE.config.eleven_keys = localElevenKeys;
+      const firstK = localElevenKeys.split(/[\r\n,]+/)[0].trim();
+      STATE.config.eleven_key = firstK;
+      localStorage.setItem('cf_eleven_key', firstK);
     } else if (localElevenKey && localElevenKey !== 'configured') {
       STATE.config.eleven_key = localElevenKey;
     } else if (cfg.has_eleven_key) {
       STATE.config.has_eleven_key = true;
     }
+    if (typeof window.syncAdminGeminiKeyBoxes === 'function') window.syncAdminGeminiKeyBoxes();
+    if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
 
     if (cfg.eleven_voice) {
       STATE.config.eleven_voice = cfg.eleven_voice;
