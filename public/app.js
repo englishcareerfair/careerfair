@@ -36,12 +36,17 @@ const STATE = {
       guide_presentation_mode: 'floating',
       guide_ml_engine: 'client',
       ocr_enabled: true,
-      gdrive_sync: true,
       pdf_export: true,
       dopamine_fx: true,
-      speechLab: true, mockInterview: true, anchorMode: true, roleplay: true,
-      debate: true, careers: true, colleges: true, exams: true,
-      games: true, roadmap: true, quiz: true, leaderboard: true, feedback: true
+      speechLab: true,
+      anchorMode: true,
+      careers: true,
+      colleges: true,
+      exams: true,
+      games: true,
+      roadmap: true,
+      leaderboard: true,
+      feedback: true
     }
   },
   audioContext: null,
@@ -9700,30 +9705,129 @@ function renderAdminFeatureFlags() {
   if (!flagsMount) return;
 
   const flags = STATE.config?.flags || {};
-  const flagDescriptions = {
-    guide_enabled: { label: 'AI Digital Guide & Presence Detection', desc: 'Activates camera presence detector and conversational digital avatar guide.' },
-    ocr_enabled: { label: 'Game Completion Tesseract.js OCR Detection', desc: 'Runs hybrid state hooks and OCR canvas scanner to auto-detect game over screens.' },
-    gdrive_sync: { label: 'Pure Google Drive rclone Telemetry Sync', desc: 'Indefinitely archives camera, mic, screen states, and transcripts to Google Drive.' },
-    pdf_export: { label: '2-Page Student Dossier & Cut-Out Card', desc: 'Enables high-resolution vector PDF export with scissors cutting line.' },
-    dopamine_fx: { label: 'Reels-Style Dopamine Loop & Mystery Unlocks', desc: 'Enables Gacha mystery reveals, social proof toast pulses, and micro-chimes.' },
-    careers: { label: '32+ Global Careers Explorer', desc: 'Careers showcase, required English superpowers, and salary scales.' },
-    colleges: { label: 'Accredited Colleges & Institutes', desc: 'NAAC A++, NIRF top-tier colleges in Mumbai, Pune, and India.' },
-    exams: { label: 'Competitive Entrance Exams', desc: 'CUET, NEET, CLAT, DGCA ICAO aviation benchmarks.' },
-    speechLab: { label: 'Speech Ladder & 6D AI Coach', desc: 'Real-time studio spoken English evaluation and phonetics ladder.' },
-    anchorMode: { label: 'News Anchor Studio & Teleprompter', desc: 'Broadcast teleprompter scenarios and interview practice.' },
-    games: { label: 'Language Arcade Games Suite', desc: 'Jobtris, Wordle, Hangman, and Gemini AI Quests.' },
-    roadmap: { label: 'My Plan Roadmap & Quiz', desc: 'Personalized career roadmap planner and stream discovery quiz.' },
-    leaderboard: { label: 'Exhibition Leaderboards', desc: 'Live top 10 rankings and performance metrics.' },
-    feedback: { label: 'Visitor Reflections Wall', desc: 'Attendee reviews and feedback reflections.' }
-  };
+
+  // Clean obsolete flags
+  delete flags.gdrive_sync;
+  delete flags.mockInterview;
+  delete flags.roleplay;
+  delete flags.debate;
+  delete flags.quiz;
+
+  const flagCategories = [
+    {
+      category: 'Core Exhibition Suites',
+      icon: '🏛️',
+      items: [
+        {
+          key: 'careers',
+          label: '32+ Global Careers Explorer',
+          desc: 'High-earning career pathways, required English superpowers, and global industry salary scales.',
+          badge: 'Explorer'
+        },
+        {
+          key: 'colleges',
+          label: 'Accredited Colleges & Institutes',
+          desc: 'Top-tier NAAC Grade A++ and NIRF ranked universities, government institutes, and global colleges.',
+          badge: 'Academic'
+        },
+        {
+          key: 'exams',
+          label: 'Competitive Entrance Exams',
+          desc: 'National & international exam guides (CUET, CLAT, NEET, DGCA ICAO Aviation, etc.).',
+          badge: 'Assessment'
+        },
+        {
+          key: 'roadmap',
+          label: 'Personalized Career Roadmap & Stream Quiz',
+          desc: 'Class 9–12 & UG step-by-step career milestones and aptitude stream discovery engine.',
+          badge: 'Guidance'
+        }
+      ]
+    },
+    {
+      category: 'Interactive Speech & Studio',
+      icon: '🎙️',
+      items: [
+        {
+          key: 'speechLab',
+          label: 'AI Speech Lab & 6D Voice Coach',
+          desc: 'Real-time studio speech evaluation, phonetics pronunciation ladder, and articulation feedback.',
+          badge: 'AI Speech'
+        },
+        {
+          key: 'anchorMode',
+          label: 'News Anchor Studio & Roleplay Prompter',
+          desc: 'Professional broadcast teleprompter with video feed, multi-industry roleplays, and recording.',
+          badge: 'Broadcast'
+        }
+      ]
+    },
+    {
+      category: 'Gamification & Arcade Suite',
+      icon: '🎮',
+      items: [
+        {
+          key: 'games',
+          label: 'Language Arcade Games Suite',
+          desc: 'All 11 interactive games: Wordle, Jobtris, Crossword, Hangman, Spelling Bee, and Gemini AI Quests.',
+          badge: '11 Games'
+        },
+        {
+          key: 'ocr_enabled',
+          label: 'Game Completion Detection Engine',
+          desc: 'Hybrid state hooks and OCR canvas scanner to auto-detect game over screens and score victories.',
+          badge: 'Detection'
+        },
+        {
+          key: 'dopamine_fx',
+          label: 'Dopamine Rewards & Mystery Unlocks',
+          desc: 'Gacha reward reveals, celebratory particle confetti, audio chimes, and micro-achievement badges.',
+          badge: 'Rewards'
+        }
+      ]
+    },
+    {
+      category: 'Student Utilities & Community',
+      icon: '🌟',
+      items: [
+        {
+          key: 'pdf_export',
+          label: '2-Page Student Dossier PDF Export',
+          desc: 'Vector student report card export with scissors cutting-line, QR verification, and skills profile.',
+          badge: 'Export'
+        },
+        {
+          key: 'leaderboard',
+          label: 'Exhibition Hall Leaderboards',
+          desc: 'Real-time top 10 attendee rankings, achievement streaks, and competitive fair scores.',
+          badge: 'Live Rank'
+        },
+        {
+          key: 'feedback',
+          label: 'Visitor Reflections Wall',
+          desc: 'Attendee live reflections wall, verified star ratings, and community exhibition reviews.',
+          badge: 'Reviews'
+        },
+        {
+          key: 'guide_enabled',
+          label: 'AI Digital Guide & Presence Detection',
+          desc: 'Presence-sensing AI avatar guide with conversational speech synthesis and fair assistance.',
+          badge: 'Virtual AI'
+        }
+      ]
+    }
+  ];
 
   let html = `
-    <!-- Guide Presentation & ML Engine Selectors -->
+    <!-- Digital Guide Architecture Config -->
     <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;">
-      <h5 style="font-size:13.5px;font-weight:700;margin:0 0 10px 0;color:var(--text-main);">Digital Guide Architecture Config</h5>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:16px;">🤖</span>
+        <h5 style="font-size:13.5px;font-weight:700;margin:0;color:var(--text-main);">Digital Guide Architecture Config</h5>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div>
-          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Guide Presentation Style:</label>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;color:var(--text-dim);">Guide Presentation Style:</label>
           <select id="admin-guide-presentation" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text-main);font-size:12.5px;">
             <option value="floating" ${flags.guide_presentation_mode === 'floating' ? 'selected' : ''}>🌟 Floating Holographic HUD (Default)</option>
             <option value="studio" ${flags.guide_presentation_mode === 'studio' ? 'selected' : ''}>📺 Fullscreen Broadcast Studio</option>
@@ -9731,7 +9835,7 @@ function renderAdminFeatureFlags() {
           </select>
         </div>
         <div>
-          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Presence Detection ML Engine:</label>
+          <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;color:var(--text-dim);">Presence Detection ML Engine:</label>
           <select id="admin-guide-ml-engine" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text-main);font-size:12.5px;">
             <option value="client" ${flags.guide_ml_engine === 'client' ? 'selected' : ''}>⚡ Client Browser FaceDetector (Lightweight)</option>
             <option value="server" ${flags.guide_ml_engine === 'server' ? 'selected' : ''}>🧠 Server YOLO / OpenCV Heuristic</option>
@@ -9742,20 +9846,47 @@ function renderAdminFeatureFlags() {
     </div>
   `;
 
-  html += Object.entries(flags).filter(([k]) => k !== 'guide_presentation_mode' && k !== 'guide_ml_engine').map(([k, v]) => {
-    const info = flagDescriptions[k] || { label: k, desc: 'Dynamic platform module toggle.' };
-    return `
-      <div class="toggle-switch-row" style="margin-bottom:10px;padding:10px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);">
-        <div>
-          <strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(info.label)}</strong>
-          <div style="font-size:11.5px;color:var(--text-dim);margin-top:2px;">${escapeHtml(info.desc)}</div>
+  // Render categorized feature flag groups
+  flagCategories.forEach(cat => {
+    html += `
+      <div style="margin-bottom:18px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <span style="font-size:14px;">${cat.icon}</span>
+          <h6 style="font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent-cyan);margin:0;">
+            ${escapeHtml(cat.category)}
+          </h6>
         </div>
-        <input type="checkbox" id="flag-${k}" ${v ? 'checked' : ''} onchange="toggleFeatureFlag('${k}', this.checked)" style="width:20px;height:20px;accent-color:var(--accent-cyan);cursor:pointer;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+    `;
+
+    cat.items.forEach(item => {
+      const isEnabled = flags[item.key] !== false;
+      html += `
+        <div class="toggle-switch-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);transition:border-color 0.2s ease;">
+          <div style="padding-right:14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <strong style="color:var(--text-main);font-size:13.5px;">${escapeHtml(item.label)}</strong>
+              <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(59,130,246,0.15);color:var(--accent-cyan);border:1px solid rgba(59,130,246,0.3);">
+                ${escapeHtml(item.badge)}
+              </span>
+            </div>
+            <div style="font-size:11.5px;color:var(--text-dim);margin-top:3px;line-height:1.4;">
+              ${escapeHtml(item.desc)}
+            </div>
+          </div>
+          <input type="checkbox" id="flag-${item.key}" ${isEnabled ? 'checked' : ''} onchange="toggleFeatureFlag('${item.key}', this.checked)" style="width:20px;height:20px;min-width:20px;accent-color:var(--accent-cyan);cursor:pointer;">
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
       </div>
     `;
-  }).join('');
+  });
 
   flagsMount.innerHTML = html;
+
 
   // Wire dropdown changes
   $('#admin-guide-presentation')?.addEventListener('change', (e) => {

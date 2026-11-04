@@ -314,20 +314,15 @@ const DEFAULT_FLAGS = {
   guide_presentation_mode: 'floating', // 'floating' | 'studio' | 'drawer'
   guide_ml_engine: 'client', // 'client' | 'server' | 'hybrid'
   ocr_enabled: true,
-  gdrive_sync: true,
   pdf_export: true,
   dopamine_fx: true,
   speechLab: true,
-  mockInterview: true,
   anchorMode: true,
-  roleplay: true,
-  debate: true,
   careers: true,
   colleges: true,
   exams: true,
   games: true,
   roadmap: true,
-  quiz: true,
   leaderboard: true,
   feedback: true
 };
