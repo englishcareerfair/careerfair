@@ -31,7 +31,7 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.7" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="app.js?v=8.3" defer></script>
+  <script src="app.js?v=8.4" defer></script>
 </head>
 <body>
 
@@ -599,7 +599,7 @@
           <div style="margin-bottom:12px;" id="camera-device-container">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
               <label for="anchor-camera-select" style="font-size:13px;font-weight:600;">Video Input Source:</label>
-              <span id="obs-badge" style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,0.08);color:var(--text-dim);font-weight:600;">Detecting Devices...</span>
+              
             </div>
             <select id="anchor-camera-select">
               <option value="default">Default Camera / Auto</option>
@@ -629,13 +629,7 @@
               <span>▶️</span> <span id="prompter-scroll-btn-text">Start Teleprompter</span>
             </button>
 
-            <!-- OBS Studio Direct Integration Buttons -->
-            <div style="display:flex;gap:8px;margin-top:2px;">
-              <button class="btn btn-secondary btn-sm" id="btn-obs-guide" type="button" style="flex:1;font-size:12px;padding:8px 8px;display:flex;align-items:center;justify-content:center;gap:6px;" title="Instructions to connect OBS Studio Virtual Camera or YouTube Live">
-                <span>📡</span> <span>OBS Studio Guide</span>
-              </button>
-              
-            </div>
+            
           </div>
         </div>
       </div>
@@ -1473,84 +1467,7 @@
     </div>
   </div>
 
-    <!-- Modal: OBS Studio Integration & Browser Source Guide -->
-  <div id="obs-guide-modal" class="mystery-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="obs-modal-title">
-    <div class="card" style="max-width:620px;width:100%;max-height:85vh;overflow-y:auto;background:var(--surface-card);border:2px solid var(--accent-cyan);border-radius:var(--radius-lg);padding:24px;position:relative;text-align:left;">
-      <button class="mystery-modal-close" id="btn-close-obs-modal" aria-label="Close OBS Guide modal">✕</button>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-        <span style="font-size:24px;">📡</span>
-        <h3 id="obs-modal-title" style="font-size:18px;font-weight:800;color:var(--text-main);margin:0;">OBS Studio Integration Hub</h3>
-      </div>
-      <div style="font-size:11px;color:var(--accent-cyan);margin-bottom:16px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">
-        Kanakia International School · English Careers Forum 2026
-      </div>
-
-      <div style="display:flex;flex-direction:column;gap:16px;font-size:13px;line-height:1.55;color:var(--text-muted);">
-        <!-- Mode 1: OBS Virtual Camera -->
-        <div style="background:rgba(0, 240, 255, 0.05);border:1px solid rgba(0, 240, 255, 0.2);border-radius:var(--radius-md);padding:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:var(--accent-cyan);font-size:14px;">Option 1: Feed OBS into Web Studio (Virtual Camera)</strong>
-            <span class="badge-tag" style="background:#00f0ff22;color:#00f0ff;border:1px solid #00f0ff44;font-size:11px;padding:2px 8px;border-radius:6px;">OBS → Web Studio</span>
-          </div>
-          <p style="margin-bottom:8px;">Stream your green screen studio, slides, or multi-camera scene from OBS directly into the News Anchor Studio:</p>
-          <ol style="margin-left:20px;display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-            <li>In OBS Studio, set up your desired scene (cameras, overlays, mics).</li>
-            <li>In the bottom-right <strong>Controls Dock</strong> in OBS, click <strong>"Start Virtual Camera"</strong>.</li>
-            <li>In this web app's Studio Controls, select <strong>"🎥 OBS Virtual Camera"</strong> in the Video Source dropdown.</li>
-            <li>Click <strong>"Launch Camera / OBS Feed"</strong>.</li>
-          </ol>
-          <div style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;">
-            <span>💡</span> <em>Tip: If OBS Virtual Camera was just started, the dropdown auto-detects it via device listeners.</em>
-          </div>
-        </div>
-
-        <!-- Mode 2: OBS Browser Source Overlay -->
-        <div style="background:rgba(181, 23, 158, 0.05);border:1px solid rgba(181, 23, 158, 0.25);border-radius:var(--radius-md);padding:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:#f472b6;font-size:14px;">Option 2: Feed Web Graphics into OBS (Browser Source Overlay)</strong>
-            <span class="badge-tag" style="background:#f472b622;color:#f472b6;border:1px solid #f472b644;font-size:11px;padding:2px 8px;border-radius:6px;">Web Studio → OBS</span>
-          </div>
-          <p style="margin-bottom:8px;">Add the dynamic moving teleprompter ticker and broadcast lower-third banner cleanly over your OBS scene:</p>
-          <ol style="margin-left:20px;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
-            <li>In OBS Studio, under <strong>Sources</strong>, click <strong>+</strong> and select <strong>Browser</strong>.</li>
-            <li>Name it <code>Kanakia Lower Third & Prompter</code> and click OK.</li>
-            <li>Paste the URL below into the <strong>URL</strong> field.</li>
-            <li>Set <strong>Width: 1920</strong> and <strong>Height: 1080</strong>, and check <strong>"Shutdown source when not visible"</strong>.</li>
-            <li>Click OK. The graphics will render with a 100% transparent background over your camera feed!</li>
-          </ol>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <input type="text" id="obs-overlay-url-input" readonly style="flex:1;min-width:260px;font-family:var(--font-mono);font-size:11.5px;padding:8px 10px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:6px;color:var(--text-main);">
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-copy-obs-overlay-url" style="padding:8px 12px;font-size:12px;white-space:nowrap;">
-              <span>📋</span> Copy URL
-            </button>
-            <button type="button" class="btn btn-accent btn-sm" id="btn-open-obs-overlay-popout" style="padding:8px 12px;font-size:12px;white-space:nowrap;">
-              <span>↗️</span> Test Overlay
-            </button>
-          </div>
-        </div>
-
-        <!-- Mode 3: OBS Live Streaming to Auditorium Stage -->
-        <div style="background:rgba(16, 185, 129, 0.05);border:1px solid rgba(16, 185, 129, 0.25);border-radius:var(--radius-md);padding:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <strong style="color:#34d399;font-size:14px;">Option 3: Broadcast OBS Live to the Career Fair Stage</strong>
-            <span class="badge-tag" style="background:#10b98122;color:#34d399;border:1px solid #10b98144;font-size:11px;padding:2px 8px;border-radius:6px;">OBS → YouTube → Stage</span>
-          </div>
-          <p style="margin-bottom:8px;">Broadcast your auditorium stage or main presentation directly to the homepage hero video player:</p>
-          <ol style="margin-left:20px;display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">
-            <li>In OBS Studio, click <strong>"Start Streaming"</strong> to broadcast to your configured YouTube channel (<em>English Career Fair</em>).</li>
-            <li>Copy your public YouTube stream link (e.g. <code>https://youtube.com/live/...</code>).</li>
-            <li>Open this portal's <strong>Admin Dashboard</strong> (Nav Bar → Admin) and select <strong>Live Stream Settings</strong>.</li>
-            <li>Paste your YouTube stream URL and click <strong>"Save & Publish Stream"</strong>.</li>
-          </ol>
-          <div style="display:flex;gap:8px;">
-            <a href="#view-admin" id="btn-jump-to-admin-stream" class="btn btn-secondary btn-sm" style="font-size:12px;text-decoration:none;padding:6px 14px;">
-              <span>⚙️</span> Go to Admin Stream Settings
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+    
 
   <!-- Toast Container -->
   <div id="toast-container" aria-live="polite"></div>
