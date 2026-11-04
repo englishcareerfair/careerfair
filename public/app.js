@@ -5952,31 +5952,146 @@ function launchQuestCipher(mount) {
   initCase();
 }
 
-// GAME 2: Wordle / Wordless (6-Guess Vocabulary)
+// ─── OFFLINE ENGLISH LEXICON & TRIPLE-CHECK WORD VERIFIER ────────────────────
+const OFFLINE_5_LETTER_STR = "aaron aback abade abaft aband abase abash abate abbey abbot abeam abend abhor abide abode abood abord about above abrim abuse abyme abysm abyss acerb achoo acies acold acorn acres acrid acter acton actor acute adage adapt adays added adder addio addle adept adieu admit admix adobe adobo adopt adore adorn adown adret adrip adult adust aeaea aeger aegir aegis aerie aesir aevum afanc affix affor afire afore after again agama agape agasp agast agate agaze agent agger aggie aggro agile aging agita aglee aglet aglow agone agony agora agree agrin agued ahead aider aiger aigre aisle akasa akuma alamo aland alarm album alder alert algid alias alibi alief alien align alike alita alive alkie allay allee allen alley allot allow alloy aloft aloha alone along aloof aloud alpha altar alter alula amain amaru amass amate amaze amber ambit amble ambry amend amene ament amiss amity among amort amour amped ample amply ampul amuck amuse anear anele angel anger angle anglo angry angst anile anima anise ankle annex annoy annul anoia anomy anoon antic antre antsy anvil aorta apace apart apery apian appal apple apply appui apron apsis aptly arace arage arbit arbor arced arche arcus arden ardor arena arete argal argos argot argue argus arhat arian ariel ariki arion arise arist armor aroar aroma arose arras array arrha arris arrow arsis arson artha ascot ashen asher ashet asian aside asked askew askey aspen asper aspic aspis assay asset assur astar aster astir aston asura asway atene athel athos atilt atimy atlas atman atoll atomy atone attar atter attle audio audit auger aught augle augur aulic aural auric aurum avail avale avant avers avert avian avile avine aviso avoid await awake award aware awash awful awing awkly awoke axial axiom azoic azoth azure baaad babel babes babka bache bacon badge badly bagel bahut bairn baize baker balas balks balls bally balmy balsa balut banal banco bandy bantu bantz barbs bardo barge barmy baron barre barse barut basal based basen bases basic basil basin basis basso baste batak batch bated bathe batik baton batty baulk bavin bawdy bayou bazar beach beams beamy beano beast beath beats beaut bedim beech beefy befit befog began beget begin begod begot begun beige being beken belay belch belie belle belly below bench benny beret berme berry berth beryl beset besom betel betta betty bevel bever bezel bhakt bible biddy bidon bield bifid bight bigot bijou bilge billy bimbo bingo biome biota biped birds birdy birth bitch bitty bivvy bixie black blade blame bland blank blare blase blast blasé blate blaze blead bleak blear bleat blech bleck bleed bleep blend blenk blerd blesh bless blest blewe blick blike blimp blind blink bliss blitz blive bloat block bloke blond blood bloom blore blort blown bluff blunt blurb blurt blush board boast bodge boffo bogey boggy bogie bogus boink bolis bolts bolus boned boner bongo bonne bonny bonze booby boong boost booth booty booze boozy bored borer borne bosky bosom bossy botch botox botty bough boule bound bouse bovid bowed bowel bower boxer bozon brace brach brack bract braid brail brain brake braky brame brand brank brash brass brath brave bravo brawl brawn bread break bream breed brest breve brian briar bribe brick bride brief brier brill brine bring brink briny brisk broad broil broke broma brood brook brool broth brown bruin bruit brume brunt brush brusk brute bubba buddy budge buffa buffy buggy bugle build built bulge bulky bulla bully bumps bumpy bunch bunco bunko bunny burke burly burma burnt burro burry bursa burse burst bussy busty butch butte buxom buyer bylaw byway cabal cabin cable cache caddy caded cadet cadge cadgy cadre caged cager cagey cairn calid calme calve camel cameo canal candy canid canna canny canoe canon canto canty caper capri caput carat cards cared caret cargo carny carol carom carry carve casco caste casts catch cater catly catso catty caulk causa cause cavea cavel cavil cavum cavus cease cecum cedar ceded cella cello ceres chace chafe chaff chain chair chalk champ chank chant chaos chare chark charm chart chary chase chasm chaun chaus cheap cheat check cheek cheep cheer chela chert chest chevy chick chico chide chief child chile chill chime chimo chimp china chine ching chink chirk chirl chirm chirp chirr chock choda choir choke cholo chomo chomp choom chord chore chose chuck chuff chuke chump chunk churl churn churr chute cigar cinch cinct circo cirro cissy cited civet civic civil clack clade claim clamp clang clank clart clash clasp class clean clear cleat cleft clepe clerk cleve click cliff clift climb clime cline cling clink cloak clock clomp clone clonk close cloth cloud clout clove clown cluck clump clung clunk coach coact coast cobby cocky codex coily colly color combe combo comer comfy comic conch conde condo coney conge conic cooch cooed cooze coper coppy copse coral cords corny corps cotta couch cough could count court couth coven cover covet covey cowan cowed cower cowld coyly cozen crabs crack craft crake cramp crane crank crash crass crate crave crawk crawl craze crazy creak cream creat credo creed creek creel creep crepe crest crick cried crill crime crimp crisp croak crock croft crone cronk crony crook crool croon cross croud crowd crowl crown crude cruel cruet crumb crump cruor crush crust crypt cubby cummy cunny cunty cupid curia curio curly curry curse curst curve curvy cushy cutis cwtch cycle cynic daddy daeva daffo dagga daily daint dairy daisy daiva dalek dalle dally daman dampy dance dandy dange danna danse darke darts dashy dated datum dauby daunt david daynt dazed deade dealt deare dearn deary death debar debut decan decay decim decor decoy decry deech deeds deere defer deffo defix defog degas deice deify deign deism deity delay delta delve deman demic demit demob demon demos demur demux denay dench denim dense depot depth deque deray derry deshi despo deter detre detur deuce devan devel devil dewan dewar dhoti diamb diary diata diazo dicey dicky dicta didie didst dieth diety dight digit digne dildo dilly dimly dimmy dinar diner dingo dingy dinic dinka dinky diode dione diota dipod dippy dirae dirge dirty disch disco dishy ditch ditsy ditto ditty ditzy divan divas divel dives divet divot diwan dizzy djinn dobby dodge dodgy doesn dogan doggo doggy dogma dogon dogue doing doksa dolce dolly dolor dolos dolts dolus domal domme dompt domus donat donee donna donor donut doobt doody doole doomy doors dooty doozy doped dopey doren doric doris dorky dorms dorty doseh doted dotty doubt douce dough doune douse douth dover dowdy dowel dower downy dowry dowse dowty doxie doyen dozen draco draft drail drain drait drake drama drank drape drawl drawn draws dread dream drear dreck dreed dregs dress drest dreve dried drift drill drily dring drink drive droid droil droit droll drone drong drony droog drool droop drops dross drove drown druid drung drunk drupe drury dryad dryly duang dubby ducal duchy ducky dufus dugan dulce dulia dully dulux dumka dummy dumps dumpy dunal dunce dunes dunga dungy dunno dunny duomo duong duped duple duppy durag duras durga durin dusky dusty dutch dutie duvet dwale dwarf dweeb dwell dwine dying dyked dykon dylan dæmon eager eagle eagre ealey earal eared earle early earth eased easel easer easie easte easts easty eater eaved eaves ebbed ebery ebola ebone ebony ebook ecchi eccho eccle eckle eclat ecole ectal ectel ector edder eddic edema edens edged edges edick edict edify edile edith edits ednos educe educt eejit eensy eerie effed effet effie efter egall egean egest eggar egged egger egges eggie egnos egoic egret egypt eider eidos eigen eight eigne eikon eilat eisel eitan eject eking ekker eland elara elate elbow elden elder elect elegy elemi elene eleni eleve elfin elgar elian elias elide elihu elint eliot elise elite ellen eller ellet ellie ellis elmen eloge elogy eloin elong elope elpis elrod elsen elsie elton elude elute elvan elven elver elves elvin email embar embay embed ember embow embox embue embus emcee emeer ememe emend emery emits emmet emmew emote emove empey empty emule enact enate ender endow endue enema enemy enfin engle enjoy enlay enlil ennew ennui enoch enode enoki enorm enrol ensce ensky ensor ensue enter entia entre entry enure envie envir envoi envoy eolic eonic eoten epeus ephah ephor epics epist epoch epode epopt epoxy eppes eppie epson epure equal equid equip equiv erase erato ereco erect erema eremo ergat ergot erica erick erika ermin ernst erode erose erred error eruca eruct erupt eshay esker eskew espen esper espie espoo essay essen esses essex essie estee ester estoc estop estre estro etang etern ethan ethel ether ethic ethno ethos ethyl etten etter ettes ettin ettle etude euche eurus evade evans evatt evene evens event evert every evian evict evils evite evoke ewery exact exalt excel excur exeat exect exert exfil exile exist exode exord expat expel extol extra exude exult exurb eyass eyght eying eyrie eyrir fabbo fabby fable faced facet facts facty faddy faded fades fadge fagot fagus faine faint faire fairy faith fakir falls false famed fanal fancy fango fanny fanon fanti faqir farce faroe farro farsi farty fasiq fasti fatah fatal fated fatty faule fault fauna faust favor favus fawny fayre fazed feare fease feast feaze fecal fedai feeds feely feere feese feeze feign feild feint feist felid felix fella felon femme femur fence fenne feral feria ferny ferro ferry fetal fetch feted fetid fetis fetor feuds fever fiard fiber fibre fichu field fiend fiery fifth fifty fight filch files filet fille filly filmy filth final finch finds findy finer fines finis fiord fired firer firie first fitch fitly fiver fixed fixer fjeld fjord flack flail flair flake flaky flame flamy flank flare flash flask flats flawy fleak fleam fleck fleer flees fleet flesh flick flies fling flink flinn flint flirt flite float flock flood flook floor flops flora flory flosh floss floud flout flowe flowy flues fluey fluff fluid fluke fluky flume flump flung flunk fluor flurr flurt flury flush flute fluty flyer flyte foamy focal focas focus foehn fogey foggy fogle foine foist foley folio folks folly folwe fomes foods foray forby force fordo forex forge forgo forms forte forth forty forum fossa fosse fossé found fount fouth fouty fovea foxes foxly foyer fract frail frain frame frank fraud freak fream freck freed freep freer freke fremd fresh frets friar frick fried frigg frill frind frisk frist frith fritz frizz frock frond frons front frood frore frory frost froth frown frowy fruit frump frush fuage fubar fubby fucks fudge fuggy fugly fugue fulks fully fumed fumes fumet fumid funct fundi funds funge funky funny fuqua furor furry fused fusee fussy fusty futch futon fuzee fuzzy fynde fyrst fytte gabby gable gaffe gafia gaily galax galea gales galet galle gallu gamer gamey gamin gamut ganja ganza gaped garda garde garth gasps gassy gatch gatta gaudy gauge gault gaunt gause gauze gauzy gavel gawky gaybo gayle gayne gazed gazer gazes gazon gecko gedge geese geige geist gelee gelid genco gener genet genia genie genio genki genre genro genus geode geoid gerbe geshe gesso geste getup ghast ghaut ghole ghost ghoul giant gibby gibed gibes giddy gigue gihon gilet gimel gimpy ginch ginge ginzo gippo girls girly girth given giver gives gizmo glace glade glair glans glare glary glass glaum glaur glave glaze gleam glean glebe glede gleek gleet glide gliff glike glint gliss glist glitz gloam gloar gloat globe glock glome glomp gloom gloop glope glore glory gloss glost glout glove gloze gluck glued glump glute glyph gnarl gnash gnoff gnoll gnome goals gobbo godet godly goety gofer going golem golly goman gombo gomer gonad gondi gonna gonzo gooch goods goody gooey goofy goons goony goopy goose gored gorey gorge gorno gorsy gouge gound gourd gouts gowan gowns goyle grace grade grady graft grail grain grame grand grant grape graph grasp grass grate grave graze great grebe grebo greed greek green greet greta gride grief griff grift grike grill grime grimy grind grins griot gripe grise grist grisy grith grito grits grize groan groat groid groin grond grool groom grope gross grote groth group grout grove growl grown gruel gruff grump grunt grype guage guano guara guard guava guess guest guide guido guige guild guile guilt guise gulag gular gulch gully gulph gulpy gumbo gummy gumph gunge gunky gunny guppy gurge gurus gushy gusto gusts gusty gutsy gutty guyed guyot gyani gyaru gyppo gypsy gyral habit hacek hacks hacky hadal hadar hades hadji hadnt haemo hafiz hague haida haifa haiku haint hairy hajib hajji hakea hakim halal haler haley halle hallo halls halma halon haloo halse halts halva halve hamel hames hammy hamza hanai hanan hanap hance hands handy hangs hanja hanky hanna hanse haole haoma haply happi happy haram hardy harem harms harnt harpy harry harse harsh harte harth hasan hasta haste hasty hatch hated hater hates hatty haugh haulm hault haunt haute haven haver haves havoc havok hawse hayes hazan hazed hazel hazen heads heady heald heaps heard heare hears heart heast heate heath heats heauy heave heavy hebei heben hecht hedge hedgy heeds heels hefei hefts hefty hegel heine heist heith heitz helen helix hella helle hello helly helot helpe helps helve hemal hemic henan hence hench hende henny henri henry hepar herat herbs herma heroe heron herse hertz hesse hetty hevea hewer hexad hexed hexer heyre hided hidle hield hight hijab hijaz hiked hilar hills hilly hilsa hilum himbo hindu hiney hinge hinky hinny hints hippo hiram hired hirer hires hissy hitch hithe hives hizzy hoagy hoard hoary hoast hobby hobit hocus hogan hoise hoist hokey hokum holds holes holey holie holla hollo holly holme holon homel homer homey homie honda honed honey honky honor hooch hooke hooks hooky hoosh hoped hopei hopes hoppy horae horal horde horny horry horse horst horsy horus hosea hosed hosen hoser hosta hosts hotel hotly hough hoult houma hound houri hours house hovel hover howdy howls hubby hudna huffy huggy hulch hulky hullo human humic humid humor humph humpy humus hunch hunks hunky hunny hupia hurly hurra hurry husky hussy hutch huzza hwair hydra hygge hying hylic hymen hymie hymns hyoid hyped hyper hypha hyphy hyrax hythe ideal image imply index inner input irony issue japan joint judge juice knife knock known label labor large laser later laugh layer learn lease least leave legal lemon level lever light limit links liver lives local logic loose lower loyal lucky lunch mable macao macaw maced mache macho macro madam madge madid madly mafia magic magma magna magus maiko maine maize major maker makes malak malik malls malum malus maman mamil mamma mammy manas mando manes manet manga mango mangy mania manic manky manly manna manny manor mansa manse manta manto manus maqui marai maram march marco mardy marge marie marin marks marla marle marne marra marse marsh maser masks mason masse match mated mater matey maths matte maumy maund mauve maven mavin maxim maybe mayor mazed meach mealy means meant meany meare meaty mebbe mecca mecha medal medea media medic meech meets meido meiny melba melee melic melos memba memor memos menat mensa mense merck mercy merge merit merry mesel mesic mesne meson messy mesto metal meter metis metoo metra metre metro metta mewed mezzo miami miasm miaul micah micro midge midst miffy might milky milpa mimas mimbo mimeo mimic mince minde minge mingy minim minny minor minow minus mired mirid mirky mirth miser misle missy misty mitch miter mites mitis mitra mitre mitzi mixed mixer mizzy mneme moans moats mocha modal moded model modem moder modus moggy mogul moire moiré moist moldy moley molly moloc momma mommy momsy monad monde mondo money mongo monks monte month mooch moody moola moone moony moore moory moose moosh moped morae moral morbs morel mores moria mormo morne moron moros morph morse moser mosey mossy moted motel motet mothe mothy motif motor motte motto mould moult mound mount mourn mouse mousy mouth moved mover movie moxie msnbc mucid mucky mucor mucus muddy muder mudge mufti muggy mulch mulct mulet muley mulls multi mumak mummy munch munge mungo munro mural murid murky murth musal mused muser mushy music musky mussy musth musty muted mutex muton muzzy mynah mynde myrrh mythe mythy myton naked named naval needs nerve never newly night noble noise north noted novel nurse occur ocean offer often order organ other ought pacey paddy paean paeon pagan pagus paich paint palau paleo palmy palsy palus panda pandy panel panga pangs panic panin panne pansy panto pants papal papaw paper pappy parch pareo parka parky parle parly parol parry parse parsi party paseo passe passé pasta paste pasty patch paten pater patio patsy patte patty pauce pause paved pawky payne peace peach pearl pedal peeps peers peery peeve peice pekoe penal penis penny pensy peony peple peppy pepsi perch perdu peril perks perky peron perse pervy pesky petal peter petit petty pewit phase phasm phats pheer phial phlox phone phono phony photo phren phyle piano picky picot piece piety piggy piker pikey pilar piled piles pilot pinch piney pingo pinko pinky pinna pinny pious piper pique pirai pirot pissy piste pitch pithy pitty pivot pixie pizza place plage plain plait plane plank plans plant plash plasm plate plato platt platy playa plaza plead pleas pleat plebe plene plica plier pling plink ploce plonk plops plotz ploys pluck pluff plumb plume plump plunk plush pluto poach pocho podge podgy poesy pogue point poise poker pokey polar polis polka polly polyp pommy ponce poncy pongo pooch poofy pooja poopy poppy porch porno porny ports posed poser posit posse potch potty pouch pound power prang prank prase prate preed preen preso press prest prett preve price prick pride pried prill prima prime primo primp prink print prior prise prism privy prize probe prods proem prole prone prong proof props prose pross prosy proto proud prove provo prowl proxy prude prune psalm pseud pshaw psion psoas psyop pubes pubis pudge pudgy pudic pudor pudsy puffy puker pukka pulpy pulse punch punic punny punty pupil puppy puree purge purrs purse pursy purty pushy pusil pussy puswa putid putty pygmy pylon pyral pyxis pzazz queen query quest quick quiet quite quote radar radio raise range rapid ratio reach react ready realm refer relax relay renal renew reply reset rhyme rider ridge rifle right rigid rival river robot rocky roman rough round route royal rugby rural sable salad sally salve salvo sapid sappy sassy sated satin satyr saucy savor savvy scald scale scamp scant scape scarf scary scend scene scent scion scoff scold scoop scoot scope score scorn scour scout scowl scrag scrap scree screw scrim scrip scrub seamy sebek seedy segue seity seize semen sense sepia serve seven shack shade shady shaft shake shaky shall shame shank shape shard share sharp shawl sheaf shear sheen sheer sheet shelf shell shift shine shirk shirt shoal shoat shock shoot shore short shout shove shown showy shred shrew shrub shuck shunt sidle siege sieve sight sigil sigma silky silly since sinew singe sipid siren sissy sithe sixth sixty sized skank skeet skein skiff skill skirt skive skulk skull slack slake slang slant slash slate slave sleek sleep sleer sleet slice slick slide slike slime slink sloom slope slosh sloth slump slung slush slyly smack small smarm smart smash smaze smear smell smile smirk smite smoke smoky smolt snafu snake snare snark snarl sneak sneer snerk snide snipe snirt snoop snort snout snuff sober solar solid solve sonar sonsy soppy sorry sough sound souse south space spare spark spasm spate spawn speak spear speck speed speel spell spend spent spica spicy spiel spike spile spill spine spiny spire spirt spiry spite splay split spoil spoke spoof spook sport spout spray sprig sprog spume spunk spurn spurt squab squad squat squib stack stade staff stage staid stain stake stale stalk stall stamp stand stare stark start stash state stave stead steam steel steep steer stele steps stern stick stiff still stilt stime sting stock stoic stomp stone stony stood stoop stops store storm story stour stout strap straw stray strew stria strip strut stuck study stuff style stymy suave sudor sugar suite sully sunny super supra surge surly swack swain swamp swank sward swarm swart swash swath sweep sweet swell swift swill swing swink swipe swish swith swoon swoop sworn sylph synod tabby tabid table taboo tabor tachy tacit tacky tagus taiga tails taint taira taken takes talar talea tales talik talky tally talon talus tamed tamil tammy tango tangy tanka tansy tanto taper tapis tardy targe tarry tasis tasks tasse tasso taste tasto tasty tatar tater tatty taunt taupe tawny tawse taxes taxon teach teare tears teary tease techy teddy teeny teeth telex telic telos tempo tempt tenet tengu tenno tenon tenor tense tenth tenue tepid tepor terce terms terne terra terse terve testy tetra tetty texas thack thane thank tharm theca theft their thema theme there these thesp theta thich thick thill thine thing think third thirl thole thong thonk thorn thort those thoth thowt thred three threw throb throe throw thrum thugs thumb thump thunk thwap thwip thyme tiber tibia tidal tides tiger tight tigon tiler tilth timed times timid tinct tinea tinge tings tinny tipsy tired tisan titan titer tithe title titsy titty titup tizzy toady toast tober tobit today toile tokay token tokyo tommy tonal tondo toned toner tonic tonus tooth topaz topic topos toppo toppy toque torah torat torch torso torte torus total totem totty touch tough tours touse tower toxic toxin trace track tract trade trail train trait trama tramp trans trant traps trash traum trave trawl tread treat treed treen trend tress trews triad trial tribe trice trick tried trier trife triff trike trill trine tripe trist trite troad troat trode troid troll tromp trone troon troop trope troth trots trout trove truce truck trull truly trump trunk truss trust truth tryst tubby tufty tuhon tulip tulpa tumid tummy tuned tuner tunic turbo turio turul tutee tutor tutti twain twang twank tweak tweed tween tweet twerk twerp twice twill twine twink twire twirl twirp twist twixt twock twonk twunt tyger typic tyrol tythe uncle under undue union unity until upper upset urban usage usual valid value vapor vault venue verse video vigor viral virus visit vital vivid vocal voice voter wagon waste watch water wheel where which while white whole whose widen wider widow width windy woman women world worry worse worst worth would wound wrist write wrong wrote yield young youth zebra zones";
+const OFFLINE_5_LETTER_SET = new Set(OFFLINE_5_LETTER_STR.split(' '));
+const OFFLINE_COMMON_WORDS_SET = new Set(["the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", "on", "with", "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "think", "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", "us", "word", "hello", "check"]);
+window._verifiedWordsCache = window._verifiedWordsCache || new Set();
+
+/**
+ * Verify if a word exists in the English dictionary.
+ * 1. Checks extensive offline lexicon (0ms latency, 100% offline support).
+ * 2. Checks local storage verified cache.
+ * 3. Triple verification online (backend / Free Dict API / Datamuse API) to ensure
+ *    temporary network/API errors do not reject valid words.
+ */
+window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
+  const word = String(rawWord || '').trim().toLowerCase();
+  if (!word || !/^[a-z]+$/.test(word)) {
+    return { valid: false, reason: 'Please use only English letters.' };
+  }
+  if (requiredLength > 0 && word.length !== requiredLength) {
+    return { valid: false, reason: `Word must be exactly ${requiredLength} letters long.` };
+  }
+
+  // 1. Instant Offline Lexicon Check
+  if (OFFLINE_5_LETTER_SET.has(word) || OFFLINE_COMMON_WORDS_SET.has(word)) {
+    return { valid: true, source: 'offline_lexicon', word };
+  }
+
+  // 1b. Memory / LocalStorage Cache Check
+  if (window._verifiedWordsCache.has(word)) {
+    return { valid: true, source: 'memory_cache', word };
+  }
+  try {
+    const cached = JSON.parse(localStorage.getItem('cf_verified_words') || '{}');
+    if (cached[word] === true) {
+      window._verifiedWordsCache.add(word);
+      return { valid: true, source: 'local_cache', word };
+    } else if (cached[word] === false) {
+      return { valid: false, reason: 'Word not found in English dictionary.', word };
+    }
+  } catch {}
+
+  // 2. Triple Verification across online endpoints (Check Thrice)
+  let isVerified = false;
+  let attempts = 0;
+
+  // Attempt 1: Cloudflare backend / D1 KV dictionary endpoint
+  try {
+    attempts++;
+    const res1 = await fetchApi(`dict/${encodeURIComponent(word)}`);
+    if (Array.isArray(res1) && res1.length > 0 && !res1[0]?.not_found) {
+      isVerified = true;
+    } else if (res1 && res1.word) {
+      isVerified = true;
+    }
+  } catch (e) {
+    // Network / API error on Attempt 1 -> continue to next attempt
+  }
+
+  // Attempt 2: Direct Free Dictionary API
+  if (!isVerified) {
+    try {
+      attempts++;
+      const res2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+      if (res2.ok) {
+        const data2 = await res2.json();
+        if (Array.isArray(data2) && data2.length > 0) {
+          isVerified = true;
+        }
+      }
+    } catch (e) {
+      // Network / API error on Attempt 2 -> continue to next attempt
+    }
+  }
+
+  // Attempt 3: Datamuse API (100k+ words ultra-reliable dictionary fallback)
+  if (!isVerified) {
+    try {
+      attempts++;
+      const res3 = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&max=1`);
+      if (res3.ok) {
+        const data3 = await res3.json();
+        if (Array.isArray(data3) && data3.length > 0 && data3[0]?.word?.toLowerCase() === word) {
+          isVerified = true;
+        }
+      }
+    } catch (e) {
+      // Network / API error on Attempt 3
+    }
+  }
+
+  // Save to local cache
+  try {
+    const cached = JSON.parse(localStorage.getItem('cf_verified_words') || '{}');
+    cached[word] = isVerified;
+    const keys = Object.keys(cached);
+    if (keys.length > 600) delete cached[keys[0]];
+    localStorage.setItem('cf_verified_words', JSON.stringify(cached));
+  } catch {}
+
+  if (isVerified) {
+    window._verifiedWordsCache.add(word);
+    OFFLINE_5_LETTER_SET.add(word);
+    return { valid: true, source: 'online_verified', attempts, word };
+  }
+
+  return { valid: false, reason: 'Word not found in English dictionary.', attempts, word };
+};
+
+// GAME 2: Wordle (5-Letter Random English Vocabulary)
 function renderWordle(mount) {
-  const SECRET_WORDS = ["PILOT", "LEGAL", "BRIEF", "STAGE", "SPEECH", "CADRE", "ORBIT", "COURT", "AUDIT", "MEDIA"];
-  const secret = SECRET_WORDS[Math.floor(Math.random() * SECRET_WORDS.length)];
-  let currentGuess = "";
+  const SECRET_WORDS = ["about", "above", "actor", "acute", "admit", "adopt", "adult", "after", "again", "agent", "agree", "ahead", "alarm", "album", "alert", "alike", "alive", "allow", "alone", "along", "alter", "among", "anger", "angle", "angry", "apart", "apple", "apply", "arena", "argue", "arise", "armor", "arrow", "asset", "audio", "audit", "avoid", "award", "aware", "badly", "baker", "bases", "basic", "basis", "beach", "began", "begin", "begun", "being", "below", "bench", "birth", "black", "blame", "blind", "block", "blood", "board", "boost", "booth", "bound", "brain", "brand", "bread", "break", "breed", "brief", "bring", "broad", "broke", "brown", "build", "built", "buyer", "cable", "calm", "cameo", "canal", "candy", "canoe", "cargo", "carry", "catch", "cause", "chain", "chair", "chalk", "champ", "chart", "chase", "cheap", "check", "chest", "chief", "child", "china", "chose", "civil", "claim", "class", "clean", "clear", "click", "clock", "close", "coach", "coast", "could", "count", "court", "cover", "craft", "crash", "cream", "crime", "cross", "crowd", "crown", "curve", "cycle", "daily", "dance", "dated", "dealt", "death", "debut", "delay", "depth", "doing", "doubt", "dozen", "draft", "drama", "drank", "draw", "drawn", "dream", "dress", "drill", "drink", "drive", "drove", "dying", "eager", "early", "earth", "eight", "elite", "empty", "enemy", "enjoy", "enter", "entry", "equal", "error", "event", "every", "exact", "exist", "extra", "faith", "false", "fault", "fiber", "field", "fifth", "fifty", "fight", "final", "first", "fixed", "flame", "flash", "fleet", "floor", "fluid", "focus", "force", "forth", "forty", "forum", "found", "frame", "frank", "fraud", "fresh", "front", "fruit", "fully", "funny", "giant", "given", "glass", "globe", "glory", "going", "grace", "grade", "grand", "grant", "grass", "great", "green", "gross", "group", "grown", "guard", "guess", "guest", "guide", "habit", "happy", "harsh", "heart", "heavy", "hello", "hence", "hobby", "horse", "hotel", "house", "human", "ideal", "image", "imply", "index", "inner", "input", "issue", "irony", "joint", "judge", "juice", "knife", "knock", "known", "label", "labor", "large", "laser", "later", "laugh", "layer", "learn", "lease", "least", "leave", "legal", "lemon", "level", "lever", "light", "limit", "links", "liver", "lives", "local", "logic", "loose", "lower", "loyal", "lucky", "lunch", "magic", "major", "maker", "mango", "march", "match", "maybe", "mayor", "meant", "media", "metal", "might", "minor", "minus", "mixed", "model", "money", "month", "moral", "motor", "mount", "mouse", "mouth", "movie", "music", "naked", "named", "naval", "needs", "nerve", "never", "newly", "night", "noble", "noise", "north", "noted", "novel", "nurse", "occur", "ocean", "offer", "often", "order", "organ", "other", "ought", "paint", "panel", "paper", "party", "peace", "pearl", "phase", "phone", "photo", "piano", "piece", "pilot", "pitch", "pizza", "place", "plain", "plane", "plant", "plate", "plaza", "point", "polar", "pound", "power", "press", "price", "pride", "prime", "print", "prior", "prize", "proof", "proud", "prove", "pulse", "punch", "pupil", "queen", "query", "quest", "quick", "quiet", "quite", "quote", "radar", "radio", "raise", "range", "rapid", "ratio", "reach", "react", "ready", "realm", "refer", "relax", "relay", "renal", "renew", "reply", "reset", "rhyme", "rider", "ridge", "rifle", "right", "rigid", "rival", "river", "robot", "rocky", "roman", "rough", "round", "route", "royal", "rugby", "rural", "salad", "scale", "scene", "scope", "score", "sense", "serve", "seven", "shade", "shaft", "shake", "shall", "shame", "shape", "share", "sharp", "sheet", "shelf", "shell", "shift", "shine", "shirt", "shock", "shoot", "shore", "short", "shout", "shown", "sight", "sigma", "since", "sixth", "sixty", "sized", "skill", "skull", "slave", "sleep", "slide", "slope", "small", "smart", "smile", "smoke", "snake", "solid", "solve", "sonar", "sorry", "sound", "south", "space", "spare", "spark", "speak", "speed", "spend", "spent", "split", "spoke", "sport", "squad", "staff", "stage", "stake", "stand", "stare", "start", "state", "steam", "steel", "steep", "steer", "stick", "still", "stock", "stone", "stood", "stops", "store", "storm", "story", "strip", "stuck", "study", "stuff", "style", "sugar", "suite", "super", "sweet", "table", "taken", "taste", "taxes", "teach", "teeth", "tempo", "tenth", "terms", "thank", "theft", "their", "theme", "there", "these", "thick", "thing", "think", "third", "those", "three", "threw", "throw", "thumb", "tiger", "tight", "times", "tired", "title", "today", "token", "topic", "total", "touch", "tough", "tower", "track", "trade", "trail", "train", "treat", "trend", "trial", "tribe", "trick", "tried", "truck", "truly", "trunk", "trust", "truth", "twice", "twist", "uncle", "under", "undue", "union", "unity", "until", "upper", "upset", "urban", "usage", "usual", "valid", "value", "vapor", "vault", "venue", "verse", "video", "vigor", "viral", "virus", "visit", "vital", "vivid", "vocal", "voice", "voter", "wagon", "waste", "watch", "water", "wheel", "where", "which", "while", "white", "whole", "whose", "widen", "wider", "widow", "width", "windy", "woman", "women", "world", "worry", "worse", "worst", "worth", "would", "wound", "wrist", "write", "wrong", "wrote", "yield", "young", "youth", "zebra", "zones"];
+  // Random English word for secret answer
+  const rawSecret = SECRET_WORDS[Math.floor(Math.random() * SECRET_WORDS.length)] || "world";
+  const secret = rawSecret.toUpperCase();
   let row = 0;
+  let isGameOver = false;
 
   mount.innerHTML = `
     <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🟩 Wordle · Career Vocabulary</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Guess the 5-letter career word in 6 tries. Green = right spot, Yellow = wrong spot.</span>
+      <h3 style="font-size:20px;">🟩 Wordle · 5-Letter English Vocabulary</h3>
+      <span style="font-size:13px;color:var(--text-dim);">Guess the 5-letter English word in 6 tries. Green = right spot, Yellow = wrong spot, Gray = absent.</span>
     </div>
 
     <div class="wordle-board" id="wordle-board"></div>
 
-    <div style="max-width:360px;margin:16px auto;display:flex;gap:8px;">
-      <input type="text" id="wordle-input" maxlength="5" placeholder="TYPE 5 LETTERS..." style="text-transform:uppercase;font-family:var(--font-mono);text-align:center;font-size:18px;letter-spacing:0.2em;">
-      <button class="btn btn-primary" id="btn-wordle-guess">Enter</button>
+    <div id="wordle-msg" style="text-align:center;font-size:13.5px;min-height:22px;margin:8px 0;transition:all 0.2s;"></div>
+
+    <div id="wordle-controls" style="max-width:380px;margin:12px auto;display:flex;gap:8px;">
+      <input type="text" id="wordle-input" maxlength="5" placeholder="TYPE 5 LETTERS..." autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-family:var(--font-mono);text-align:center;font-size:18px;letter-spacing:0.2em;flex:1;">
+      <button class="btn btn-primary" id="btn-wordle-guess" type="button" style="min-width:90px;">Enter</button>
     </div>
+
+    <div id="wordle-result-mount" style="max-width:440px;margin:0 auto;"></div>
   `;
 
   const board = $('#wordle-board');
   for (let r = 0; r < 6; r++) {
     const rowEl = document.createElement('div');
     rowEl.className = 'wordle-row';
+    rowEl.id = `w-row-${r}`;
     for (let c = 0; c < 5; c++) {
       const tile = document.createElement('div');
       tile.className = 'wordle-tile';
@@ -5986,42 +6101,172 @@ function renderWordle(mount) {
     board.appendChild(rowEl);
   }
 
-  const guess = () => {
+  const showWordleMsg = (msg, isError = true) => {
+    const msgEl = $('#wordle-msg');
+    if (!msgEl) return;
+    msgEl.innerHTML = isError
+      ? `<span style="color:var(--accent-magenta);font-weight:600;">${msg}</span>`
+      : `<span style="color:var(--accent-emerald);font-weight:600;">${msg}</span>`;
+  };
+
+  const clearWordleMsg = () => {
+    const msgEl = $('#wordle-msg');
+    if (msgEl) msgEl.innerHTML = '';
+  };
+
+  const guess = async () => {
+    if (isGameOver) return;
     const input = $('#wordle-input');
-    const word = input.value.trim().toUpperCase();
+    const guessBtn = $('#btn-wordle-guess');
+    const word = (input.value || '').trim().toUpperCase();
+
     if (word.length !== 5) {
-      showToast('Enter exactly 5 letters!');
+      showWordleMsg('⚠️ Please enter exactly 5 letters!');
+      input.classList.add('wordle-shake');
+      setTimeout(() => input.classList.remove('wordle-shake'), 400);
       return;
     }
 
-    for (let c = 0; c < 5; c++) {
-      const tile = $(`#w-tile-${row}-${c}`);
-      tile.textContent = word[c];
-      if (word[c] === secret[c]) {
-        tile.className = 'wordle-tile correct';
-      } else if (secret.includes(word[c])) {
-        tile.className = 'wordle-tile present';
-      } else {
-        tile.className = 'wordle-tile absent';
+    // Check word verification with triple-check & offline lexicon
+    guessBtn.disabled = true;
+    guessBtn.textContent = 'Checking...';
+    clearWordleMsg();
+
+    const verifyResult = await window.verifyEnglishWord(word, 5);
+
+    guessBtn.disabled = false;
+    guessBtn.textContent = 'Enter';
+
+    if (!verifyResult.valid) {
+      showWordleMsg(`⚠️ "${word}" is not in the English dictionary! Please enter a real word.`);
+      input.classList.add('wordle-shake');
+      const currentRowEl = $(`#w-row-${row}`);
+      if (currentRowEl) currentRowEl.classList.add('wordle-shake');
+      setTimeout(() => {
+        input.classList.remove('wordle-shake');
+        if (currentRowEl) currentRowEl.classList.remove('wordle-shake');
+      }, 400);
+      return;
+    }
+
+    // Standard 2-pass Wordle letter coloring
+    const colors = new Array(5).fill('absent');
+    const secretCounts = {};
+    for (let i = 0; i < 5; i++) {
+      const char = secret[i];
+      secretCounts[char] = (secretCounts[char] || 0) + 1;
+    }
+
+    // Pass 1: exact matches (green)
+    for (let i = 0; i < 5; i++) {
+      if (word[i] === secret[i]) {
+        colors[i] = 'correct';
+        secretCounts[word[i]]--;
       }
     }
 
+    // Pass 2: misplaced matches (yellow)
+    for (let i = 0; i < 5; i++) {
+      if (colors[i] !== 'correct') {
+        const char = word[i];
+        if (secretCounts[char] && secretCounts[char] > 0) {
+          colors[i] = 'present';
+          secretCounts[char]--;
+        }
+      }
+    }
+
+    // Apply colors to board
+    for (let c = 0; c < 5; c++) {
+      const tile = $(`#w-tile-${row}-${c}`);
+      tile.textContent = word[c];
+      tile.className = `wordle-tile ${colors[c]}`;
+    }
+
+    // 1. Victory condition
     if (word === secret) {
-      showToast(`🎉 Brilliant! You guessed ${secret}!`);
+      isGameOver = true;
       input.disabled = true;
+      guessBtn.disabled = true;
+      clearWordleMsg();
+
+      const resultMount = $('#wordle-result-mount');
+      if (resultMount) {
+        resultMount.innerHTML = `
+          <div class="game-result-box" style="border:2px solid var(--accent-emerald);">
+            <div style="font-size:32px;margin-bottom:6px;">🎉</div>
+            <h4 style="font-size:20px;color:var(--accent-emerald);margin:0 0 6px 0;font-weight:700;">
+              Brilliant Victory!
+            </h4>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 16px 0;">
+              You deduced the English word in <strong>${row + 1} / 6</strong> tries!
+            </p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Target Word</div>
+              <div style="font-family:var(--font-mono);font-size:32px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(secret)}
+              </div>
+              <div style="margin-top:10px;display:flex;justify-content:center;gap:10px;">
+                <button class="btn btn-secondary btn-sm" id="btn-wordle-speak-ans" type="button">🔊 Hear Pronunciation</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-wordle-new-game" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
+              🔄 Play New Game
+            </button>
+          </div>
+        `;
+        $('#btn-wordle-speak-ans')?.addEventListener('click', function() { speak(secret, this); });
+        $('#btn-wordle-new-game')?.addEventListener('click', () => { renderWordle(mount); });
+      }
       return;
     }
 
+    // Advance row
     row++;
     input.value = '';
+
+    // 2. Game Over condition (Out of Guesses)
     if (row >= 6) {
-      showToast(`Game Over! The word was ${secret}`);
+      isGameOver = true;
       input.disabled = true;
+      guessBtn.disabled = true;
+      clearWordleMsg();
+
+      // Dedicated Game Over Box (No notification toast!)
+      const resultMount = $('#wordle-result-mount');
+      if (resultMount) {
+        resultMount.innerHTML = `
+          <div class="game-result-box" style="border:2px solid var(--accent-magenta);">
+            <div style="font-size:32px;margin-bottom:6px;">💀</div>
+            <h4 style="font-size:20px;color:var(--accent-magenta);margin:0 0 6px 0;font-weight:700;">
+              Game Over · Out of Guesses
+            </h4>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 16px 0;">
+              Valiant effort! Here is the correct solution for this round:
+            </p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Correct Answer</div>
+              <div style="font-family:var(--font-mono);font-size:32px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(secret)}
+              </div>
+              <div style="margin-top:10px;display:flex;justify-content:center;gap:10px;">
+                <button class="btn btn-secondary btn-sm" id="btn-wordle-speak-ans" type="button">🔊 Hear Pronunciation</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-wordle-new-game" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
+              🔄 Play New Game
+            </button>
+          </div>
+        `;
+        $('#btn-wordle-speak-ans')?.addEventListener('click', function() { speak(secret, this); });
+        $('#btn-wordle-new-game')?.addEventListener('click', () => { renderWordle(mount); });
+      }
     }
   };
 
   $('#btn-wordle-guess')?.addEventListener('click', guess);
   $('#wordle-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') guess(); });
+  setTimeout(() => $('#wordle-input')?.focus(), 100);
 }
 
 // GAME 3: Flash Cards Studio (AI Dynamic Generation & Extensive Offline Dataset)
@@ -6347,61 +6592,132 @@ function renderDictionaryLookup(mount) {
   $('#dict-search-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
 }
 
-// GAME 5: Spelling Bee Challenge
+// GAME 5: Spelling Bee Challenge (Random English Vocabulary)
 function renderSpellingBee(mount) {
-  const WORDS = ["articulate", "eloquence", "jurisprudence", "soliloquy", "brevity", "meticulous", "tenacious", "empirical"];
-  let curWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const WORDS = [{"word": "adventure", "pos": "noun", "def": "An unusual and exciting, typically hazardous experience or undertaking."}, {"word": "beautiful", "pos": "adjective", "def": "Pleasing the senses or mind aesthetically with grace and charm."}, {"word": "calendar", "pos": "noun", "def": "A chart or system showing the days, weeks, and months of a given year."}, {"word": "celebrate", "pos": "verb", "def": "Acknowledge a significant day or event with festive gathering or joy."}, {"word": "curiosity", "pos": "noun", "def": "A strong desire to discover, explore, or learn something new."}, {"word": "delightful", "pos": "adjective", "def": "Causing immense pleasure, charm, warmth, and satisfaction."}, {"word": "education", "pos": "noun", "def": "The process of receiving or giving systematic instruction and knowledge."}, {"word": "fantastic", "pos": "adjective", "def": "Extraordinarily good, attractive, or delightfully imaginative."}, {"word": "generous", "pos": "adjective", "def": "Showing a noble readiness to give more than is strictly necessary."}, {"word": "happiness", "pos": "noun", "def": "The emotional state of feeling content, fulfilled, and joyous."}, {"word": "imagination", "pos": "noun", "def": "The creative ability to envision ideas or scenes not present to the senses."}, {"word": "knowledge", "pos": "noun", "def": "Facts, information, and skills acquired through education and experience."}, {"word": "magnificent", "pos": "adjective", "def": "Impressively beautiful, grand, elaborate, and striking to behold."}, {"word": "mysterious", "pos": "adjective", "def": "Difficult or impossible to fully explain, understand, or identify."}, {"word": "necessary", "pos": "adjective", "def": "Required to be done, achieved, or present; absolutely essential."}, {"word": "opportunity", "pos": "noun", "def": "A favorable set of circumstances that makes an achievement possible."}, {"word": "philosophy", "pos": "noun", "def": "The study of the fundamental nature of knowledge, reality, and values."}, {"word": "privilege", "pos": "noun", "def": "A special right, benefit, or honor granted to an individual or group."}, {"word": "remember", "pos": "verb", "def": "To bring an awareness, memory, or fact back into one's conscious mind."}, {"word": "serendipity", "pos": "noun", "def": "The occurrence of fortunate, valuable discoveries made by happy chance."}, {"word": "successful", "pos": "adjective", "def": "Accomplishing an intended aim, prosperous, or achieving high honor."}, {"word": "vocabulary", "pos": "noun", "def": "The entire body of words known and utilized in speaking or writing."}, {"word": "wonderful", "pos": "adjective", "def": "Inspiring profound delight, pleasure, or deep admiration; marvelous."}, {"word": "articulate", "pos": "adjective", "def": "Having or showing the ability to speak fluently and coherently."}, {"word": "eloquence", "pos": "noun", "def": "Fluent, graceful, or persuasive speaking or writing that moves minds."}, {"word": "soliloquy", "pos": "noun", "def": "An act of speaking one's innermost thoughts aloud when alone on stage."}, {"word": "brevity", "pos": "noun", "def": "Concise and exact use of words in writing or speech; succinctness."}, {"word": "meticulous", "pos": "adjective", "def": "Showing tremendous attention to detail; very careful, thorough, and precise."}, {"word": "tenacious", "pos": "adjective", "def": "Tending to hold fast to a goal or purpose; persistently determined."}, {"word": "empirical", "pos": "adjective", "def": "Based on verifiable observation, experiment, or experience rather than theory."}, {"word": "acoustic", "pos": "adjective", "def": "Relating to sound, hearing, or properties that determine sound quality."}, {"word": "brilliant", "pos": "adjective", "def": "Exceptionally clever, vivid, talented, or brilliantly shining."}, {"word": "diligence", "pos": "noun", "def": "Careful, continuous, and persistent effort dedicated to one's labor."}, {"word": "gratitude", "pos": "noun", "def": "The warm feeling of being deeply thankful and appreciative for kindness."}, {"word": "heritage", "pos": "noun", "def": "Valued historic traditions, cultures, and achievements handed down."}, {"word": "illuminate", "pos": "verb", "def": "To cast light upon something, or to clarify and make intellectually clear."}, {"word": "jubilant", "pos": "adjective", "def": "Feeling or expressing boundless happiness, exhilaration, and triumph."}, {"word": "luminous", "pos": "adjective", "def": "Radiating or reflecting bright light; glowing vividly in the dark."}, {"word": "melodious", "pos": "adjective", "def": "Pleasing and agreeable to the ear; producing a sweet tune or musicality."}, {"word": "optimistic", "pos": "adjective", "def": "Consistently hopeful and confident regarding future outcomes."}, {"word": "radiant", "pos": "adjective", "def": "Sending forth light rays, or clearly projecting health and joy."}, {"word": "tranquility", "pos": "noun", "def": "A serene, peaceful state of mind and environment free from disturbance."}, {"word": "vibrant", "pos": "adjective", "def": "Full of energetic life, dynamic vigor, and strikingly vivid brilliance."}, {"word": "harmony", "pos": "noun", "def": "Pleasing arrangement of chords, or peaceful coexistence between beings."}, {"word": "resilient", "pos": "adjective", "def": "Able to bounce back, adapt, or recover rapidly from challenges."}, {"word": "authentic", "pos": "adjective", "def": "Genuine, truthful to origin, and free from falsification or imitation."}, {"word": "integrity", "pos": "noun", "def": "Adherence to strong moral, ethical principles and uncompromising honesty."}, {"word": "versatile", "pos": "adjective", "def": "Capable of turning easily from one task, function, or skill to another."}, {"word": "benevolent", "pos": "adjective", "def": "Well-meaning, kindly disposed, and genuinely altruistic toward others."}, {"word": "fortitude", "pos": "noun", "def": "Courage in adversity, endurance, and quiet emotional resilience."}, {"word": "panoramic", "pos": "adjective", "def": "Offering an unbroken, expansive, and breathtaking wide view of a landscape."}, {"word": "effervescent", "pos": "adjective", "def": "Vivacious, sparkling with high enthusiasm, and bubbly in temperament."}];
+  let curWord = WORDS[Math.floor(Math.random() * WORDS.length)] || { word: "articulate", pos: "adjective", def: "Speaking fluently and coherently." };
   let streak = 0;
 
-  mount.innerHTML = `
-    <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🐝 Spelling Bee Challenge</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Listen to the voice pronounce the word and type the exact spelling. Current Streak: <strong id="bee-streak" style="color:var(--accent-gold);">0</strong></span>
-    </div>
+  function renderBeeView() {
+    mount.innerHTML = `
+      <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+        <h3 style="font-size:20px;">🐝 Spelling Bee Challenge</h3>
+        <span style="font-size:13px;color:var(--text-dim);">Listen to the native voice pronounce the word and type the exact spelling. Current Streak: <strong id="bee-streak" style="color:var(--accent-gold);">${streak}</strong></span>
+      </div>
 
-    <div style="max-width:420px;margin:24px auto;text-align:center;">
-      <button class="btn btn-accent" id="btn-bee-listen" style="padding:14px 24px;font-size:16px;margin-bottom:18px;">
-        🔊 Hear Word Aloud
-      </button>
+      <div style="max-width:440px;margin:20px auto;text-align:center;">
+        <button class="btn btn-accent" id="btn-bee-listen" style="padding:14px 28px;font-size:16px;margin-bottom:18px;box-shadow:0 4px 16px rgba(0,240,255,0.2);">
+          🔊 Hear Word Aloud
+        </button>
 
-      <input type="text" id="bee-input" placeholder="Type the spelling..." style="text-align:center;font-size:18px;">
-      <button class="btn btn-primary" id="btn-bee-submit" style="width:100%;margin-top:10px;">Submit Spelling</button>
-      <div id="bee-feedback" style="margin-top:14px;font-size:14px;"></div>
-    </div>
-  `;
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="bee-input" placeholder="Type the spelling..." autocomplete="off" spellcheck="false" style="text-align:center;font-size:18px;flex:1;">
+          <button class="btn btn-primary" id="btn-bee-submit" style="min-width:90px;">Submit</button>
+        </div>
 
-  $('#btn-bee-listen')?.addEventListener('click', function() { speak(curWord, this); });
+        <div id="bee-feedback"></div>
+      </div>
+    `;
 
-  $('#btn-bee-submit')?.addEventListener('click', () => {
-    const input = $('#bee-input');
-    const val = input.value.trim().toLowerCase();
-    const fb = $('#bee-feedback');
+    $('#btn-bee-listen')?.addEventListener('click', function() { speak(curWord.word, this); });
 
-    if (val === curWord) {
-      streak++;
-      $('#bee-streak').textContent = streak;
-      fb.innerHTML = `<span style="color:var(--accent-emerald);">🎉 Correct! "${curWord}" is spelled accurately!</span>`;
-      curWord = WORDS[Math.floor(Math.random() * WORDS.length)];
-      input.value = '';
-    } else {
-      streak = 0;
-      $('#bee-streak').textContent = streak;
-      fb.innerHTML = `<span style="color:var(--accent-magenta);">Incorrect. The correct spelling was <strong>${curWord}</strong>.</span>`;
-    }
-  });
+    const submitSpelling = () => {
+      const input = $('#bee-input');
+      const val = (input?.value || '').trim().toLowerCase();
+      const fb = $('#bee-feedback');
+      if (!val) return;
+
+      if (val === curWord.word.toLowerCase()) {
+        streak++;
+        $('#bee-streak').textContent = streak;
+        input.disabled = true;
+        $('#btn-bee-submit').disabled = true;
+
+        fb.innerHTML = `
+          <div class="game-result-box" style="margin-top:16px;padding:18px;border:2px solid var(--accent-emerald);">
+            <div style="font-size:28px;margin-bottom:6px;">🎉</div>
+            <h4 style="font-size:18px;color:var(--accent-emerald);margin:0 0 6px 0;font-weight:700;">
+              Spot On! Accurate Spelling!
+            </h4>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;">Winning Streak: <strong style="color:var(--accent-gold);">${streak}</strong></p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
+              <div style="font-family:var(--font-mono);font-size:26px;font-weight:800;letter-spacing:0.2em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(curWord.word)}
+              </div>
+              <div style="margin-top:4px;">
+                <span class="badge-pill badge-nirf" style="font-size:11px;">${escapeHtml(curWord.pos || 'word')}</span>
+              </div>
+              <p style="font-size:13px;color:var(--text-main);margin:8px 0 0 0;line-height:1.45;">
+                ${escapeHtml(curWord.def || '')}
+              </p>
+            </div>
+            <button class="btn btn-primary" id="btn-bee-next" style="width:100%;padding:10px;font-weight:700;font-size:14.5px;">
+              Next Word ➡️
+            </button>
+          </div>
+        `;
+        $('#btn-bee-next')?.addEventListener('click', () => {
+          curWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+          renderBeeView();
+          speak(curWord.word);
+        });
+      } else {
+        // Incorrect Spelling -> Game Over Result Box (No toast notification!)
+        streak = 0;
+        $('#bee-streak').textContent = streak;
+        input.disabled = true;
+        $('#btn-bee-submit').disabled = true;
+
+        fb.innerHTML = `
+          <div class="game-result-box" style="margin-top:16px;padding:18px;border:2px solid var(--accent-magenta);">
+            <div style="font-size:28px;margin-bottom:6px;">❌</div>
+            <h4 style="font-size:18px;color:var(--accent-magenta);margin:0 0 6px 0;font-weight:700;">
+              Incorrect Spelling · Game Over
+            </h4>
+            <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px 0;">
+              You entered: <strong style="color:var(--accent-magenta);text-decoration:line-through;">"${escapeHtml(val)}"</strong>
+            </p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:4px;">Correct Spelling</div>
+              <div style="font-family:var(--font-mono);font-size:26px;font-weight:800;letter-spacing:0.2em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(curWord.word)}
+              </div>
+              <div style="margin-top:4px;">
+                <span class="badge-pill badge-nirf" style="font-size:11px;">${escapeHtml(curWord.pos || 'word')}</span>
+              </div>
+              <p style="font-size:13px;color:var(--text-main);margin:8px 0 0 0;line-height:1.45;">
+                ${escapeHtml(curWord.def || '')}
+              </p>
+              <div style="margin-top:10px;display:flex;justify-content:center;">
+                <button class="btn btn-secondary btn-xs" id="btn-bee-speak-ans" type="button" style="padding:4px 10px;">🔊 Hear Correct Pronunciation</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-bee-next" style="width:100%;padding:10px;font-weight:700;font-size:14.5px;">
+              🔄 Play New Game / Next Word
+            </button>
+          </div>
+        `;
+        $('#btn-bee-speak-ans')?.addEventListener('click', function() { speak(curWord.word, this); });
+        $('#btn-bee-next')?.addEventListener('click', () => {
+          curWord = WORDS[Math.floor(Math.random() * WORDS.length)];
+          renderBeeView();
+          speak(curWord.word);
+        });
+      }
+    };
+
+    $('#btn-bee-submit')?.addEventListener('click', submitSpelling);
+    $('#bee-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') submitSpelling(); });
+    setTimeout(() => $('#bee-input')?.focus(), 100);
+  }
+
+  renderBeeView();
 }
 
-// GAME 6: Career Word Hangman / Letter Guess
+// GAME 6: English Word Hangman (Random English Vocabulary)
 function renderHangman(mount) {
-  const WORDS = [
-    { word: "ASTRONAUT", clue: "Space exploration & orbital research" },
-    { word: "SURGEON", clue: "Critical operating room surgical procedures" },
-    { word: "DIPLOMAT", clue: "International treaties and foreign embassy relations" },
-    { word: "ARCHITECT", clue: "Designing sustainable skyscrapers & urban masterplans" },
-    { word: "JOURNALIST", clue: "Investigative reporting & live news broadcasting" },
-    { word: "ADVOCATE", clue: "Courtroom litigation & constitutional rights defense" }
-  ];
-  let current = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const WORDS = [{"word": "BUTTERFLY", "clue": "Colorful winged insect that undergoes miraculous metamorphosis"}, {"word": "DOLPHIN", "clue": "Highly intelligent marine mammal celebrated for playful ocean navigation"}, {"word": "ASTRONOMY", "clue": "The scientific study of celestial bodies, space, and the cosmos"}, {"word": "SYMPHONY", "clue": "An elaborate orchestral composition usually consisting of four movements"}, {"word": "MOUNTAIN", "clue": "A towering natural elevation of earth's surface rising abruptly"}, {"word": "TELESCOPE", "clue": "An optical device used to observe distant planets and celestial wonders"}, {"word": "PYRAMID", "clue": "Monumental ancient triangular architecture built across millennia"}, {"word": "LABYRINTH", "clue": "A complex intricate network of winding paths, passages, and puzzles"}, {"word": "ADVENTURE", "clue": "An exciting, daring, or remarkable journey of exploration"}, {"word": "WATERFALL", "clue": "A cascade of fresh river water plunging over a steep cliff"}, {"word": "VOLCANO", "clue": "A geological rupture releasing lava, volcanic ash, and hot gases"}, {"word": "RENAISSANCE", "clue": "A momentous cultural, artistic, and intellectual rebirth in history"}, {"word": "KALEIDOSCOPE", "clue": "An optical cylinder showing shifting symmetrical forms and colors"}, {"word": "GALAXY", "clue": "A massive gravitationally bound system of stars, gas, and dark matter"}, {"word": "SUBMARINE", "clue": "A specialized vessel capable of independent long voyages underwater"}, {"word": "HORIZON", "clue": "The distant visual boundary where the earth surface meets the sky"}, {"word": "HURRICANE", "clue": "A fierce tropical storm characterized by powerful rotating winds"}, {"word": "ARCHIPELAGO", "clue": "An expansive group or chain of idyllic scattered islands"}, {"word": "LIGHTHOUSE", "clue": "A coastal tower with a powerful beam guiding marine navigators safely"}, {"word": "PHILOSOPHY", "clue": "The rigorous pursuit of wisdom, ethics, existence, and truth"}, {"word": "SANCTUARY", "clue": "A consecrated place of safety, protection, and peaceful refuge"}, {"word": "CHAMPION", "clue": "A person who triumphs over all challenges or ardently defends a cause"}, {"word": "RAINBOW", "clue": "A radiant multicolored meteorological arc caused by refraction of light"}, {"word": "TREASURE", "clue": "A rich accumulation of precious gems, artifacts, and historic gold"}, {"word": "WILDERNESS", "clue": "An untouched, untamed expanse of natural flora and fauna"}, {"word": "HARMONY", "clue": "A pleasing arrangement of melodious tones or peaceful coexistence"}, {"word": "VELOCITY", "clue": "The rapid speed of motion in a given definite direction"}, {"word": "QUANTUM", "clue": "The discrete fundamental unit of energy in modern physics"}, {"word": "UNIVERSE", "clue": "The totality of all known space, time, matter, and cosmic phenomena"}, {"word": "CAROUSEL", "clue": "A revolving fairground attraction with music and painted horses"}, {"word": "SERENDIPITY", "clue": "The joyful faculty of making fortunate discoveries by pure chance"}, {"word": "NAVIGATOR", "clue": "An expert voyager who charts and directs the route across continents"}, {"word": "PLATINUM", "clue": "A dense, precious, corrosion-resistant silvery-white metallic element"}, {"word": "GLACIER", "clue": "A slowly moving immense river of compacted ice carving valleys"}, {"word": "PARADISE", "clue": "An ideal realm of supreme beauty, joy, harmony, and peace"}, {"word": "OCTOPUS", "clue": "An eight-armed ocean mollusk known for clever camouflage and problem-solving"}, {"word": "SAFARI", "clue": "An overland expedition to observe majestic wildlife in natural habitats"}, {"word": "TSUNAMI", "clue": "A series of immense ocean waves triggered by underwater earthquakes"}, {"word": "FLAMINGO", "clue": "A graceful tall wading bird with vibrant pink plumage and curved beak"}, {"word": "ECLIPSE", "clue": "The cosmic obscuration of the light from one celestial body by another"}, {"word": "RHAPSODY", "clue": "An enthusiastic, ecstatic musical piece of free irregular form"}, {"word": "KANGAROO", "clue": "A marsupial native to Australia famed for powerful bounding leaps"}, {"word": "ILLUSION", "clue": "A deceptive perception or optical phenomenon that fools the senses"}, {"word": "QUARTZ", "clue": "A hard crystalline mineral composed of silicon and oxygen atoms"}, {"word": "MARATHON", "clue": "A celebrated long-distance athletic footrace of legendary heritage"}, {"word": "NIGHTINGALE", "clue": "A renowned songbird celebrated in classical poetry for exquisite melodies"}, {"word": "ISLAND", "clue": "A tract of land entirely surrounded by the waters of a lake or sea"}, {"word": "JOURNEY", "clue": "The act of traveling from one destination to another across distances"}, {"word": "VOYAGE", "clue": "A long and memorable journey involving travel by sea or outer space"}, {"word": "HERITAGE", "clue": "Valued traditions, monuments, and cultural wisdom passed down generations"}, {"word": "UMBRELLA", "clue": "A folding canopy designed to shelter a person from rain or sunlight"}];
+  let current = WORDS[Math.floor(Math.random() * WORDS.length)] || { word: "DISCOVERY", clue: "Uncovering new horizons" };
   let guessedLetters = new Set();
   let remainingMistakes = 6;
 
@@ -6412,8 +6728,8 @@ function renderHangman(mount) {
 
     mount.innerHTML = `
       <div style="border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-        <h3 style="font-size:20px;">🪢 Career Word Hangman</h3>
-        <p style="font-size:13.5px;color:var(--text-dim);">Guess the letters of high-impact professions. Clue: <strong>${current.clue}</strong></p>
+        <h3 style="font-size:20px;">🪢 English Word Hangman</h3>
+        <p style="font-size:13.5px;color:var(--text-dim);">Guess the letters of the English word before running out of chances. Clue: <strong>${current.clue}</strong></p>
       </div>
 
       <div style="text-align:center;max-width:540px;margin:20px auto;">
@@ -6426,15 +6742,54 @@ function renderHangman(mount) {
         </div>
 
         ${isWon ? `
-          <div style="background:rgba(0,245,155,0.15);border:1px solid var(--accent-emerald);color:var(--accent-emerald);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;">
-            🎉 Bravo! You deduced the profession: <strong>${current.word}</strong>!
+          <div class="game-result-box" style="border:2px solid var(--accent-emerald);">
+            <div style="font-size:32px;margin-bottom:6px;">🎉</div>
+            <h4 style="font-size:20px;color:var(--accent-emerald);margin:0 0 6px 0;font-weight:700;">
+              Bravo! Target Word Solved!
+            </h4>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 14px 0;">
+              You deduced the English word with <strong>${remainingMistakes}</strong> chances remaining!
+            </p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
+              <div style="font-family:var(--font-mono);font-size:30px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(current.word)}
+              </div>
+              <p style="font-size:13.5px;color:var(--text-main);margin:10px 0 0 0;line-height:1.45;">
+                <strong>Clue:</strong> ${escapeHtml(current.clue)}
+              </p>
+              <div style="margin-top:12px;display:flex;justify-content:center;gap:10px;">
+                <button class="btn btn-secondary btn-sm" id="btn-hangman-speak-ans" type="button">🔊 Hear Pronunciation</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-hangman-restart" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
+              Play Next Word ➡️
+            </button>
           </div>
-          <button class="btn btn-primary" id="btn-hangman-restart">Play Next Profession ➡️</button>
         ` : isLost ? `
-          <div style="background:rgba(255,42,133,0.15);border:1px solid var(--accent-magenta);color:var(--accent-magenta);padding:14px;border-radius:var(--radius-md);margin-bottom:18px;">
-            Game Over! The target career was <strong>${current.word}</strong>.
+          <div class="game-result-box" style="border:2px solid var(--accent-magenta);">
+            <div style="font-size:32px;margin-bottom:6px;">💀</div>
+            <h4 style="font-size:20px;color:var(--accent-magenta);margin:0 0 6px 0;font-weight:700;">
+              Game Over · Out of Chances
+            </h4>
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 14px 0;">
+              You ran out of letter guesses. The target English word was:
+            </p>
+            <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Correct Answer</div>
+              <div style="font-family:var(--font-mono);font-size:30px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
+                ${escapeHtml(current.word)}
+              </div>
+              <p style="font-size:13.5px;color:var(--text-main);margin:10px 0 0 0;line-height:1.45;">
+                <strong>Clue:</strong> ${escapeHtml(current.clue)}
+              </p>
+              <div style="margin-top:12px;display:flex;justify-content:center;gap:10px;">
+                <button class="btn btn-secondary btn-sm" id="btn-hangman-speak-ans" type="button">🔊 Hear Pronunciation</button>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="btn-hangman-restart" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
+              🔄 Play New Game
+            </button>
           </div>
-          <button class="btn btn-primary" id="btn-hangman-restart">Try Again 🔄</button>
         ` : `
           <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:440px;margin:0 auto;" id="hangman-alphabet-grid">
             ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(char => `
@@ -6447,6 +6802,7 @@ function renderHangman(mount) {
       </div>
     `;
 
+    $('#btn-hangman-speak-ans')?.addEventListener('click', function() { speak(current.word, this); });
     $('#btn-hangman-restart')?.addEventListener('click', () => {
       current = WORDS[Math.floor(Math.random() * WORDS.length)];
       guessedLetters.clear();
@@ -6470,6 +6826,7 @@ function renderHangman(mount) {
 
   renderState();
 }
+
 
 // ─── 10. ROADMAP & EXPLORATION TOOLS (MY PLAN & QUIZ) ─────────────────────────
 function renderPlanTool(toolKey = 'bizcard') {
