@@ -1523,6 +1523,21 @@ function initNavigation() {
     }
 
     const sessionId = window.DigitalHumanGuide?.sessionId || `web_${Date.now()}`;
+    // Store locally as immediate resilient backup
+    try {
+      const localIssues = JSON.parse(localStorage.getItem('cf_local_issues') || '[]');
+      localIssues.unshift({
+        id: Date.now(),
+        session_id: sessionId,
+        visitor_name: visitorName,
+        issue_type: issueType,
+        description: description,
+        status: 'open',
+        created_at: Date.now()
+      });
+      localStorage.setItem('cf_local_issues', JSON.stringify(localIssues));
+    } catch {}
+
     const res = await fetchApi('user-issues', 'POST', {
       sessionId,
       visitorName,
@@ -8450,7 +8465,107 @@ window.adminDeleteScore = async function(id, name) {
   await renderAdminModeration();
 };
 
+window.renderAdminIssues = async function() {
+  const issuesMount = $('#admin-issues-container');
+  const issuesCount = $('#admin-issues-count');
+  if (!issuesMount) return;
+
+  let issues = [];
+  try {
+    const res = await fetchApi('admin/issues');
+    if (res?.issues && Array.isArray(res.issues)) {
+      issues = res.issues;
+    }
+  } catch (e) {
+    console.warn('Admin issues fetch error:', e);
+  }
+
+  // Merge local backup issues if server has missing entries
+  try {
+    const local = JSON.parse(localStorage.getItem('cf_local_issues') || '[]');
+    if (Array.isArray(local) && local.length > 0) {
+      const existingIds = new Set(issues.map(i => String(i.id)));
+      for (const loc of local) {
+        if (!existingIds.has(String(loc.id))) {
+          issues.push(loc);
+        }
+      }
+    }
+  } catch {}
+
+  // Sort descending by created_at
+  issues.sort((a, b) => (Number(b.created_at || b.id || 0)) - (Number(a.created_at || a.id || 0)));
+
+  if (issuesCount) {
+    const openCount = issues.filter(i => i.status !== 'resolved').length;
+    issuesCount.textContent = `${issues.length} Inquir${issues.length === 1 ? 'y' : 'ies'}${openCount > 0 ? ` (${openCount} open)` : ''}`;
+  }
+
+  if (!issues.length) {
+    issuesMount.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12.5px;">No active user inquiries or reported errors. All systems optimal! 🚀</div>';
+    return;
+  }
+
+  issuesMount.innerHTML = issues.map(iss => {
+    const isResolved = iss.status === 'resolved';
+    const timeStr = iss.created_at ? new Date(Number(iss.created_at)).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : '';
+    return `
+      <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:240px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <span class="badge-pill" style="font-size:10.5px;background:${isResolved ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)'};color:${isResolved ? '#10b981' : '#f59e0b'};border:1px solid ${isResolved ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'};">
+              ${isResolved ? '● Rectified & Resolved' : '● Open Inquiry'}
+            </span>
+            <strong style="font-size:13px;color:var(--text-main);">${escapeHtml(iss.visitor_name || 'Visitor')}</strong>
+            <span class="badge-pill badge-reg" style="font-size:11px;">${escapeHtml(iss.issue_type || 'General')}</span>
+            ${timeStr ? `<span style="font-size:11px;color:var(--text-dim);margin-left:auto;">${timeStr}</span>` : ''}
+          </div>
+          <p style="font-size:13px;color:var(--text-muted);margin:0 0 6px 0;line-height:1.45;">"${escapeHtml(iss.description)}"</p>
+          ${iss.resolution_notes ? `<div style="font-size:11.5px;color:#10b981;background:rgba(16,185,129,0.08);padding:4px 8px;border-radius:4px;display:inline-block;"><strong>Resolution:</strong> ${escapeHtml(iss.resolution_notes)}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          ${!isResolved ? `
+            <button class="btn btn-secondary btn-xs btn-resolve-issue" data-id="${iss.id}" type="button" style="padding:4px 10px;font-size:11.5px;color:var(--accent-cyan);border-color:var(--accent-cyan);">
+              🛠️ Rectify
+            </button>
+          ` : ''}
+          <button class="btn btn-xs" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:4px 8px;font-size:11.5px;border-radius:4px;cursor:pointer;" onclick="window.adminDeleteIssue('${iss.id}')" title="Delete Inquiry">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  $$('.btn-resolve-issue').forEach(btn => {
+    btn.onclick = async () => {
+      const issId = btn.dataset.id;
+      const notes = prompt('Enter rectification / resolution notes for this inquiry:');
+      if (notes) {
+        await fetchApi('admin/telemetry/resolve', 'POST', { issueId: issId, resolutionNotes: notes });
+        showToast('✅ Inquiry marked as rectified and archived.');
+        window.renderAdminIssues();
+      }
+    };
+  });
+};
+
+window.adminDeleteIssue = async function(issueId) {
+  if (!confirm('Are you sure you want to delete this inquiry record?')) return;
+  await fetchApi('admin/issues', { method: 'DELETE', body: JSON.stringify({ id: issueId }) });
+  try {
+    const local = JSON.parse(localStorage.getItem('cf_local_issues') || '[]');
+    const filtered = local.filter(i => String(i.id) !== String(issueId));
+    localStorage.setItem('cf_local_issues', JSON.stringify(filtered));
+  } catch {}
+  showToast('🗑️ Inquiry deleted successfully');
+  window.renderAdminIssues();
+};
+
 async function renderAdminModeration() {
+  if (typeof window.renderAdminIssues === 'function') {
+    window.renderAdminIssues();
+  }
   // 1. Render Visitor Reflections list in Admin Portal
   const feedbackList = $('#admin-feedback-list');
   const feedbackCount = $('#admin-feedback-count');
@@ -9003,7 +9118,7 @@ function initAdminWorkspace() {
 
   // Wire Telemetry panel controls
   $('#btn-refresh-telemetry')?.addEventListener('click', renderAdminTelemetry);
-  $('#btn-refresh-issues')?.addEventListener('click', renderAdminTelemetry);
+  $('#btn-refresh-issues')?.addEventListener('click', window.renderAdminIssues);
 
   // Load existing rclone settings
   const rcloneRemoteInput = $('#admin-rclone-remote');

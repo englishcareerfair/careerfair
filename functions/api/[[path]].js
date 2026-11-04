@@ -1846,6 +1846,25 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     return json({ ok: true, message: `Issue ${issueId} marked as resolved`, resolved_at: now });
   }
 
+  if ((path === '/admin/issues' || path === '/admin/issues/delete') && (method === 'DELETE' || method === 'POST')) {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+    let body = {};
+    try { body = await request.json(); } catch {}
+    const issueId = Number(body.id || body.issueId || url.searchParams.get('id'));
+    if (db && issueId) {
+      try {
+        await db.prepare('DELETE FROM user_issues WHERE id = ?').bind(issueId).run();
+      } catch (e) {
+        console.warn('D1 delete issue error:', e);
+      }
+    }
+    if (issueId) {
+      GLOBAL_CACHE.issues = GLOBAL_CACHE.issues.filter(i => Number(i.id) !== issueId);
+    }
+    return json({ ok: true, deleted: issueId });
+  }
+
   // ── 9e. Server-Side ML Human Presence Detection Heuristic ──────────────────
   if (path === '/ml/detect-human' && method === 'POST') {
     let body;
@@ -2162,6 +2181,11 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         feedbackRows = fb.results || [];
         const sc = await db.prepare('SELECT * FROM scores ORDER BY ts DESC').all();
         scoreRows = sc.results || [];
+        let issueRows = [];
+        try {
+          const iss = await db.prepare('SELECT * FROM user_issues ORDER BY created_at DESC').all();
+          issueRows = iss.results || [];
+        } catch {}
       } catch (e) {
         console.error('D1 Export error:', e);
       }
@@ -2190,8 +2214,10 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       database: 'careerfair-db (Cloudflare D1)',
       total_feedback: feedbackRows.length,
       total_scores: scoreRows.length,
+      total_issues: (typeof issueRows !== 'undefined' ? issueRows.length : 0),
       feedback: feedbackRows,
-      scores: scoreRows
+      scores: scoreRows,
+      issues: (typeof issueRows !== 'undefined' ? issueRows : [])
     });
   }
 
