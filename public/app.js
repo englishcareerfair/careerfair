@@ -1641,6 +1641,10 @@ const AppRouter = {
     const search = window.location.search;
     if (search) {
       const q = new URLSearchParams(search);
+      // Support incoming business card verification links -> target roadmap & bizcard view
+      if (q.get('v') === '1' || q.get('v') === '2040' || q.get('verify') === '2040' || (q.has('s') && q.has('t')) || (q.has('student') && q.has('title'))) {
+        return '/roadmap/bizcard';
+      }
       const tab = q.get('tab');
       if (tab) {
         const sub = q.get('sub') || q.get('cat') || q.get('game') || q.get('pack') || '';
@@ -2131,6 +2135,11 @@ window.speak = speak;
 window.speakGreeting = speakGreeting;
 
 function switchTab(tabId, options = {}) {
+  // Alias protection: map 'plan', 'myplan', 'bizcard' to 'roadmap'
+  if (tabId === 'plan' || tabId === 'myplan' || tabId === 'bizcard') {
+    tabId = 'roadmap';
+  }
+
   // Stop all active voice playback when navigating
   stopAllVoice();
 
@@ -8125,12 +8134,14 @@ function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '', email = 
   `;
 
   modal.style.display = 'flex';
+  modal.style.zIndex = '999999';
 
   const qrTarget = modal.querySelector('#modal-qr-code-target');
   renderQrCode(qrTarget, verifyUrl, 190);
 
   const closeFn = () => { modal.style.display = 'none'; };
   modal.querySelector('#btn-close-qr-modal')?.addEventListener('click', closeFn);
+  modal.querySelector('.modal-card')?.addEventListener('click', e => e.stopPropagation());
   modal.addEventListener('click', e => { if (e.target === modal) closeFn(); });
   modal.querySelector('#btn-qr-modal-copy')?.addEventListener('click', () => {
     navigator.clipboard?.writeText(verifyUrl);
@@ -8149,67 +8160,117 @@ function showVerifiedCredentialModal(student, title, creds, phone = '', email = 
 
   const emailRowHtml = email ? `
     <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Executive Email Address</div>
-    <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;">
+    <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;word-break:break-all;">
       <span>✉️</span> <span>${escapeHtml(email)}</span>
     </div>
   ` : '';
 
   const phoneRowHtml = phone ? `
     <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Executive Contact Line</div>
-    <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;">
+    <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;word-break:break-word;">
       <span>📱</span> <span>${escapeHtml(phone)}</span>
     </div>
   ` : '';
 
   modalBackdrop.innerHTML = `
-    <div class="modal-card" style="max-width:540px;text-align:center;position:relative;">
-      <button type="button" class="modal-close-btn" id="btn-close-verify-modal" aria-label="Close modal">×</button>
-      <div style="font-size:48px;margin-bottom:8px;">🛡️</div>
-      <div class="badge-pill badge-global" style="background:rgba(16,185,129,0.18);color:#34d399;border:1px solid #10b981;font-weight:700;margin-bottom:12px;">
-        OFFICIAL 2040 EXECUTIVE CREDENTIAL · VERIFIED
+    <div class="modal-card" style="max-width:min(460px, calc(100vw - 32px));width:100%;min-width:0;box-sizing:border-box;margin:auto;text-align:center;position:relative;padding:24px 18px;border-radius:22px;border:1px solid rgba(16,185,129,0.35);box-shadow:0 24px 60px rgba(0,0,0,0.85),0 0 28px rgba(16,185,129,0.18);">
+      <button type="button" class="modal-close-btn" id="btn-close-verify-modal" aria-label="Close modal" style="position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
+      <div style="font-size:42px;margin-bottom:8px;filter:drop-shadow(0 0 10px rgba(16,185,129,0.4));">🛡️</div>
+      <div style="display:inline-block;max-width:100%;margin-bottom:12px;">
+        <span class="badge-pill" style="background:rgba(16,185,129,0.14);color:#34d399;border:1px solid rgba(16,185,129,0.4);font-weight:700;white-space:normal;display:inline-block;line-height:1.35;padding:5px 12px;font-size:clamp(9.5px, 2.7vw, 11px);letter-spacing:0.04em;text-align:center;word-break:break-word;">
+          OFFICIAL 2040 EXECUTIVE CREDENTIAL · VERIFIED
+        </span>
       </div>
-      <h2 style="font-size:26px;font-weight:800;color:#fff;margin:0 0 6px 0;">${escapeHtml(student)}</h2>
-      <div style="color:var(--accent-cyan);font-size:16px;font-weight:700;margin-bottom:16px;">
+      <h2 style="font-size:clamp(20px, 4.8vw, 26px);font-weight:800;color:#fff;margin:0 0 6px 0;word-break:break-word;line-height:1.2;">${escapeHtml(student)}</h2>
+      <div style="color:var(--accent-cyan);font-size:clamp(13.5px, 3.6vw, 16px);font-weight:700;margin-bottom:16px;word-break:break-word;">
         ${escapeHtml(title)}
       </div>
 
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-md);padding:14px;margin-bottom:18px;text-align:left;">
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--radius-md);padding:14px;margin-bottom:18px;text-align:left;box-sizing:border-box;">
         <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Verified Honors &amp; Degree Track</div>
-        <div style="font-family:var(--font-mono);font-size:13.5px;color:var(--text-main);font-weight:600;margin-bottom:10px;">
+        <div style="font-family:var(--font-mono);font-size:12.5px;color:var(--text-main);font-weight:600;margin-bottom:10px;word-break:break-word;line-height:1.4;">
           ${escapeHtml(creds)}
         </div>
         ${emailRowHtml}
         ${phoneRowHtml}
         <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Issuing Academy</div>
-        <div style="font-size:12.5px;color:var(--text-muted);">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.4;">
           🏛️ Kanakia International School Mira Road · English Careers Forum
         </div>
-        <div style="font-size:11px;color:#34d399;margin-top:8px;display:flex;align-items:center;gap:4px;">
+        <div style="font-size:10.5px;color:#34d399;margin-top:8px;display:flex;align-items:center;gap:5px;line-height:1.3;">
           <span>✓</span> <span>Cryptographically Signed Dynamic QR Verification Active</span>
         </div>
       </div>
 
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button type="button" class="btn btn-primary" id="btn-verify-to-roadmap">
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%;box-sizing:border-box;">
+        <button type="button" class="btn btn-primary" id="btn-verify-to-roadmap" style="width:100%;min-height:44px;justify-content:center;font-size:14px;font-weight:700;">
           <span>🗺️</span> <span>Explore Career Roadmap</span>
         </button>
-        <button type="button" class="btn btn-secondary" id="btn-verify-dismiss">
-          <span>Done</span>
-        </button>
+        <div style="display:flex;gap:10px;width:100%;box-sizing:border-box;">
+          <button type="button" class="btn btn-secondary" id="btn-verify-to-card" style="flex:1;min-height:42px;justify-content:center;font-size:13px;padding:0 10px;">
+            <span>📇</span> <span>View Business Card</span>
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-verify-dismiss" style="min-height:42px;padding:0 20px;justify-content:center;font-size:13px;">
+            <span>Done</span>
+          </button>
+        </div>
       </div>
     </div>
   `;
 
   modalBackdrop.style.display = 'flex';
+  modalBackdrop.style.position = 'fixed';
+  modalBackdrop.style.inset = '0';
+  modalBackdrop.style.zIndex = '999999';
+  modalBackdrop.style.alignItems = 'center';
+  modalBackdrop.style.justifyContent = 'center';
+  modalBackdrop.style.padding = '16px';
+  modalBackdrop.style.boxSizing = 'border-box';
+  modalBackdrop.style.overflowY = 'auto';
 
-  const closeFn = () => { modalBackdrop.style.display = 'none'; };
+  const closeFn = () => { 
+    modalBackdrop.style.display = 'none'; 
+  };
+  
   modalBackdrop.querySelector('#btn-close-verify-modal')?.addEventListener('click', closeFn);
   modalBackdrop.querySelector('#btn-verify-dismiss')?.addEventListener('click', closeFn);
-  modalBackdrop.addEventListener('click', e => { if (e.target === modalBackdrop) closeFn(); });
+  
+  // Prevent clicks inside card from closing modal
+  modalBackdrop.querySelector('.modal-card')?.addEventListener('click', e => {
+    e.stopPropagation();
+  });
+  modalBackdrop.addEventListener('click', e => { 
+    if (e.target === modalBackdrop) closeFn(); 
+  });
+
+  // Action: Explore Career Roadmap
   modalBackdrop.querySelector('#btn-verify-to-roadmap')?.addEventListener('click', () => {
     closeFn();
-    switchTab('plan');
-    renderCareerRoadmap(title);
+    switchTab('roadmap');
+    if (title) STATE.targetCareer = title;
+    if (typeof renderPlanTool === 'function') {
+      renderPlanTool('myplan');
+    }
+    const sec = $('#sec-roadmap');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+    if (window.AppRouter && typeof window.AppRouter.navigate === 'function') {
+      window.AppRouter.navigate('/roadmap/myplan', { silent: true });
+    }
+  });
+
+  // Action: View Business Card
+  modalBackdrop.querySelector('#btn-verify-to-card')?.addEventListener('click', () => {
+    closeFn();
+    switchTab('roadmap');
+    if (title) STATE.targetCareer = title;
+    if (typeof renderPlanTool === 'function') {
+      renderPlanTool('bizcard');
+    }
+    const sec = $('#sec-roadmap');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+    if (window.AppRouter && typeof window.AppRouter.navigate === 'function') {
+      window.AppRouter.navigate('/roadmap/bizcard', { silent: true });
+    }
   });
 }
 
@@ -8231,9 +8292,42 @@ function checkIncomingCardVerification() {
       const phone = params.get('phone') || params.get('p') || '';
       const email = params.get('email') || params.get('e') || '';
 
+      // Prepare target career state so card and roadmap reflect student verified profile
+      if (title) {
+        STATE.targetCareer = title;
+      }
+      
+      // Auto-switch view to Roadmap/Bizcard in the background
+      switchTab('roadmap', { skipSubInit: true });
+      if (typeof renderPlanTool === 'function') {
+        renderPlanTool('bizcard');
+      }
+
+      // Pre-fill business card form if present
+      setTimeout(() => {
+        const nameInput = $('#bc-input-name');
+        if (nameInput && student) nameInput.value = student;
+        const phoneInput = $('#bc-input-phone');
+        if (phoneInput && phone) phoneInput.value = phone;
+        const emailInput = $('#bc-input-email');
+        if (emailInput && email) emailInput.value = email;
+        const careerSel = $('#bizcard-career-select');
+        if (careerSel && title) {
+          const opts = Array.from(careerSel.options);
+          const found = opts.find(o => o.value.toLowerCase() === title.toLowerCase());
+          if (found) {
+            careerSel.value = found.value;
+            careerSel.dispatchEvent(new Event('change'));
+          }
+        }
+      }, 50);
+
+      // Show verified executive credential modal on top
       showVerifiedCredentialModal(student, title, creds, phone, email);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error('Error handling card verification:', e);
+  }
 }
 
 function renderFutureBusinessCard(mount) {
@@ -8486,7 +8580,7 @@ function renderFutureBusinessCard(mount) {
     // Compact parameters: v=1, s=Name, t=Title, e=Email, p=Phone
     // Keeps QR code data under 100 chars -> Version 3 QR code with large, chunky modules
     // Scans in <0.1 second on any smartphone camera!
-    let verifyUrl = `${baseOrigin}${pathname}?v=1&s=${encodeURIComponent(name)}&t=${encodeURIComponent(career)}`;
+    let verifyUrl = `${baseOrigin}/?v=1&s=${encodeURIComponent(name)}&t=${encodeURIComponent(career)}`;
     if (email) {
       verifyUrl += `&e=${encodeURIComponent(email)}`;
     }
@@ -8688,7 +8782,7 @@ function downloadBusinessCardImage(name, title, creds, phone = '', email = '') {
         ? window.location.origin
         : 'https://careerwithenglish.pages.dev';
       const pathname = window.location.pathname || '/';
-      let verifyUrl = `${baseOrigin}${pathname}?v=1&s=${encodeURIComponent(name)}&t=${encodeURIComponent(title)}`;
+      let verifyUrl = `${baseOrigin}/?v=1&s=${encodeURIComponent(name)}&t=${encodeURIComponent(title)}`;
       if (email) verifyUrl += `&e=${encodeURIComponent(email)}`;
       if (phone) verifyUrl += `&p=${encodeURIComponent(phone)}`;
 
@@ -10957,12 +11051,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Pre-render home heroes & stats
   renderCareers();
   renderColleges();
-  checkIncomingCardVerification();
 
   // Initialize Hierarchical Deep-Linking Router
   if (window.AppRouter && typeof window.AppRouter.init === 'function') {
     window.AppRouter.init();
   }
+
+  // Check incoming card verification from QR scan (after router initializes)
+  setTimeout(() => {
+    checkIncomingCardVerification();
+  }, 100);
 
   try {
     const cachedFb = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
@@ -11307,234 +11405,5 @@ window.adminBanIp = async function(ipToBan) {
   showToast(`IP "${ip}" has been banned 🚫`);
   const input = $('#admin-ban-ip-input');
   if (input) input.value = '';
-  window.renderAdminBannedIps();
-};
-
-window.adminUnbanIp = async function(ip) {
-  if (!confirm(`Unban IP address "${ip}"?`)) return;
-
-  let banned = [];
-  try {
-    const raw = localStorage.getItem('cf_banned_ips');
-    if (raw) banned = JSON.parse(raw);
-  } catch {}
-  banned = banned.filter(i => i !== ip);
-  localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
-
-  try {
-    await fetchApi('admin/ban-ip', 'POST', { ip, action: 'unban' });
-  } catch (e) {
-    console.warn('Unban IP note:', e);
-  }
-
-  showToast(`IP "${ip}" unbanned ✅`);
-  window.renderAdminBannedIps();
-};
-
-window.renderAdminBannedIps = async function() {
-  const container = $('#admin-banned-ips-list');
-  const countBadge = $('#admin-banned-ips-count');
-  if (!container) return;
-
-  let banned = [];
-  try {
-    const res = await fetchApi('admin/ban-ip');
-    if (res && Array.isArray(res.banned_ips)) {
-      banned = res.banned_ips;
-      localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
-    }
-  } catch {
-    try {
-      const raw = localStorage.getItem('cf_banned_ips');
-      if (raw) banned = JSON.parse(raw);
-    } catch {}
-  }
-
-  if (countBadge) {
-    countBadge.textContent = `${banned.length} Banned IP${banned.length === 1 ? '' : 's'}`;
-  }
-
-  if (!banned.length) {
-    container.innerHTML = `<span style="font-size:12px;color:var(--text-muted);align-self:center;">No IP addresses currently banned.</span>`;
-  } else {
-    container.innerHTML = banned.map(ip => `
-      <div class="banned-ip-pill">
-        <span>🚫 ${escapeHtml(ip)}</span>
-        <button type="button" style="background:none;border:none;color:#f87171;cursor:pointer;padding:0 2px;font-weight:bold;" title="Unban this IP" onclick="window.adminUnbanIp('${escapeHtml(ip)}')">✕</button>
-      </div>
-    `).join('');
-  }
-};
-
-// ─── DYNAMIC API KEYS POOLS (INFINITE MAIN & BACKUP BOXES) ────────────────────
-window.initDynamicApiPools = function() {
-  // 1. Google Gemini Keys Setup
-  const geminiContainer = $('#gemini-keys-container');
-  const addGeminiBtn = $('#btn-add-gemini-key');
-
-  const getGeminiKeysArray = () => {
-    const raw = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || STATE.config.gemini_key || '').trim();
-    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
-    while (keys.length < 3) {
-      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
-    }
-    return keys;
-  };
-
-  const renderGeminiBoxes = (keys) => {
-    if (!geminiContainer) return;
-    geminiContainer.innerHTML = keys.map((key, i) => {
-      const label = i === 0 ? 'Main' : `Backup ${i}`;
-      const pillClass = i === 0 ? 'main' : 'backup';
-      const canRemove = keys.length > 3 || (i >= 3 && keys.length > 3);
-      const removeBtn = i >= 3
-        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeGeminiKeyRow(${i})" title="Remove this backup box">✕</button>`
-        : '';
-
-      return `
-        <div class="api-key-row" data-index="${i}">
-          <span class="api-key-label-pill ${pillClass}">${label}</span>
-          <input type="password" class="api-key-input gemini-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'AIzaSy... (Main Gemini Key)' : 'AIzaSy... (Backup Key ' + i + ')'}">
-          ${removeBtn}
-        </div>
-      `;
-    }).join('');
-
-    // Wire real-time input change
-    geminiContainer.querySelectorAll('.gemini-key-field').forEach(input => {
-      const save = () => {
-        const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
-        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
-        const joined = newKeys.join('\n');
-        localStorage.setItem('cf_gemini_keys', joined);
-        localStorage.setItem('cf_gemini_key', newKeys[0] || '');
-        STATE.config.gemini_keys = joined;
-        STATE.config.gemini_key = newKeys[0] || '';
-        updateGeminiStatusBadge(newKeys.length);
-      };
-      input.addEventListener('input', save);
-      input.addEventListener('change', save);
-    });
-
-    const activeCount = keys.filter(Boolean).length;
-    updateGeminiStatusBadge(activeCount);
-  };
-
-  const updateGeminiStatusBadge = (count) => {
-    const badge = $('#admin-gemini-key-status');
-    if (!badge) return;
-    if (count > 0) {
-      badge.innerHTML = `✅ <strong>${count} Gemini API Key${count > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active!`;
-    } else {
-      badge.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
-    }
-  };
-
-  window.syncAdminGeminiKeyBoxes = () => {
-    renderGeminiBoxes(getGeminiKeysArray());
-  };
-
-  window.removeGeminiKeyRow = (idx) => {
-    const current = getGeminiKeysArray();
-    current.splice(idx, 1);
-    const joined = current.filter(Boolean).join('\n');
-    localStorage.setItem('cf_gemini_keys', joined);
-    localStorage.setItem('cf_gemini_key', current.filter(Boolean)[0] || '');
-    renderGeminiBoxes(current);
-  };
-
-  addGeminiBtn?.addEventListener('click', () => {
-    const current = getGeminiKeysArray();
-    current.push('');
-    renderGeminiBoxes(current);
-  });
-
-  renderGeminiBoxes(getGeminiKeysArray());
-
-  // 2. ElevenLabs Keys Setup
-  const elevenContainer = $('#eleven-keys-container');
-  const addElevenBtn = $('#btn-add-eleven-key');
-
-  const getElevenKeysArray = () => {
-    const raw = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
-    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
-    while (keys.length < 3) {
-      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
-    }
-    return keys;
-  };
-
-  const renderElevenBoxes = (keys) => {
-    if (!elevenContainer) return;
-    elevenContainer.innerHTML = keys.map((key, i) => {
-      const label = i === 0 ? 'Main' : `Backup ${i}`;
-      const pillClass = i === 0 ? 'main' : 'backup';
-      const removeBtn = i >= 3
-        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeElevenKeyRow(${i})" title="Remove this backup box">✕</button>`
-        : '';
-
-      return `
-        <div class="api-key-row" data-index="${i}">
-          <span class="api-key-label-pill ${pillClass}">${label}</span>
-          <input type="password" class="api-key-input eleven-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'xi-... (Main ElevenLabs Key)' : 'xi-... (Backup Key ' + i + ')'}">
-          ${removeBtn}
-        </div>
-      `;
-    }).join('');
-
-    elevenContainer.querySelectorAll('.eleven-key-field').forEach(input => {
-      const save = () => {
-        const currentInputs = Array.from(elevenContainer.querySelectorAll('.eleven-key-field'));
-        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
-        const joined = newKeys.join('\n');
-        localStorage.setItem('cf_eleven_keys', joined);
-        localStorage.setItem('cf_eleven_key', newKeys[0] || '');
-        STATE.config.eleven_keys = joined;
-        STATE.config.eleven_key = newKeys[0] || '';
-        updateElevenStatusBadge(newKeys.length);
-      };
-      input.addEventListener('input', save);
-      input.addEventListener('change', save);
-    });
-
-    const activeCount = keys.filter(Boolean).length;
-    updateElevenStatusBadge(activeCount);
-  };
-
-  const updateElevenStatusBadge = (count) => {
-    const badge = $('#admin-eleven-status');
-    if (!badge) return;
-    if (count > 0) {
-      badge.innerHTML = `✅ <strong>${count} ElevenLabs Key${count > 1 ? 's' : ''}</strong> active. Studio Indian accent voice model will stay persistent across all key rotations!`;
-    } else {
-      badge.innerHTML = `⚠️ No ElevenLabs key entered. Studio voice synthesizes via high-fidelity Indian English (en-IN) neural voice!`;
-    }
-  };
-
-  window.syncAdminElevenKeyBoxes = () => {
-    renderElevenBoxes(getElevenKeysArray());
-  };
-
-  window.removeElevenKeyRow = (idx) => {
-    const current = getElevenKeysArray();
-    current.splice(idx, 1);
-    const joined = current.filter(Boolean).join('\n');
-    localStorage.setItem('cf_eleven_keys', joined);
-    localStorage.setItem('cf_eleven_key', current.filter(Boolean)[0] || '');
-    renderElevenBoxes(current);
-  };
-
-  addElevenBtn?.addEventListener('click', () => {
-    const current = getElevenKeysArray();
-    current.push('');
-    renderElevenBoxes(current);
-  });
-
-  renderElevenBoxes(getElevenKeysArray());
-
-  // 3. Initialize Ban IP Button Listener
-  $('#btn-admin-ban-ip')?.addEventListener('click', () => {
-    window.adminBanIp();
-  });
   window.renderAdminBannedIps();
 };

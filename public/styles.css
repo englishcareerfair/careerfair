@@ -1699,9 +1699,9 @@ tr:hover td { background: var(--surface-hover); }
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  z-index: 999999; /* Ensure modal always floats on top of all headers and sticky navigation bars */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1720,6 +1720,17 @@ tr:hover td { background: var(--surface-hover); }
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8);
   padding: 28px;
   position: relative;
+}
+
+@media (max-width: 600px) {
+  .modal-backdrop {
+    padding: 12px;
+  }
+  .modal-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+    max-height: 92vh;
+  }
 }
 
 .modal-close-btn {
