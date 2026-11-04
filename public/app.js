@@ -4197,11 +4197,6 @@ function initTeleprompter() {
       ctx.font = '600 12px "Space Grotesk", sans-serif';
       const timeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
       ctx.fillText(`KANAKIA MEDIA LAB · UTC ${timeStr}`, 980, 110);
-
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.font = '700 14px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('READY TO BROADCAST — CLICK "LAUNCH CAMERA" OR "RECORD BROADCAST CLIP"', 640, 520);
       ctx.restore();
 
       teleprompterState.idleAnimId = requestAnimationFrame(drawFrame);
