@@ -8,13 +8,17 @@
   <title>English Careers Forum 2026 · Every Career Speaks English</title>
   
   <link rel="icon" type="image/png" href="logo.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <!-- Preconnect & Typography: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=7.8">
+  <link rel="stylesheet" href="styles.css?v=7.9">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -29,9 +33,9 @@
   <script src="dopamine-engine.js?v=7.7" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
   <script src="dossier-pdf.js?v=7.7" defer></script>
-  <script src="guide-avatar.js?v=7.7" defer></script>
+  <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="app.js?v=8.8" defer></script>
+  <script src="app.js?v=8.9" defer></script>
 </head>
 <body>
 
@@ -1411,10 +1415,11 @@
       <h3 id="tos-modal-title" style="font-size:18px;font-weight:800;color:var(--text-main);margin-bottom:8px;">Statutory Terms of Service &amp; Privacy Policy</h3>
       <div style="font-size:11px;color:var(--accent-cyan);margin-bottom:14px;font-weight:600;">ENGLISH CAREERS FORUM 2026 · KANAKIA INTERNATIONAL SCHOOL MIRA ROAD</div>
       <div style="font-size:12.5px;color:var(--text-muted);line-height:1.55;display:flex;flex-direction:column;gap:12px;">
-        <p><strong>1. Indefinite Telemetry &amp; Interaction Storage:</strong> All student and visitor interactions with this platform—including audio speech evaluation attempts, camera-based human presence detections, screen state OCR captures, selected career trajectories, and arcade gaming scores—are continuously logged and stored indefinitely in the exhibition Google Drive archive using dedicated rclone synchronization protocols until explicitly deleted by platform administrators.</p>
-        <p><strong>2. Academic &amp; Research Evaluation:</strong> The collected data is solely utilized for academic evaluation, generating the official 2-Page Student Career Dossier, speech articulation analysis (accuracy, fluency, cadence), and curriculum enhancement.</p>
-        <p><strong>3. Data Rectification &amp; Error Reporting:</strong> Any student or parent who encounters an error, scoring anomaly, or requests data rectification may submit an inquiry directly through the platform or administrative console for prompt review and resolution.</p>
-        <p><strong>4. Encapsulation &amp; Security:</strong> Administrative API access is strictly governed via scoped cryptographic bearer tokens (<code>ecf_...</code>), guaranteeing zero unauthorized data disclosure.</p>
+        <p><strong>1. Student Audio, Camera &amp; Personal Data Protection:</strong> We adhere to strict educational data privacy principles. Live camera feeds, teleprompter video streams, and audio speech practice occur exclusively within your local browser sandbox. Video recordings created in the News Anchor Studio are composited entirely client-side and saved directly to the user's personal device; no student video, webcam feed, or raw microphone stream is uploaded to remote storage or persistent public archives.</p>
+        <p><strong>2. Academic Evaluation &amp; Speech Scoring:</strong> Spoken audio attempts submitted for Speech Lab phonetics analysis are processed transiently in memory to calculate articulation, fluency, clarity, and words-per-minute metrics. Only verified numerical scores, chosen career milestones, and optional student display names are recorded on the secure Cloudflare D1 exhibition leaderboard.</p>
+        <p><strong>3. Transparency, Local Control &amp; Data Retention:</strong> Student career blueprints, dossier generation, and aptitude quiz profiles are stored within browser local storage (localStorage) for the student's convenience and can be cleared at any time by refreshing browser cache or clicking reset. Telemetry sessions are strictly limited to anonymous interaction counts and diagnostics for fair operations.</p>
+        <p><strong>4. Data Rectification &amp; Error Reporting:</strong> Any student, teacher, or parent who notices an inaccurate score, display discrepancy, or wishes to request record rectification or removal may submit an issue via the platform error reporting tool for immediate administrator action.</p>
+        <p><strong>5. Zero Unauthorized Disclosure:</strong> All administrative endpoints and database queries are strictly authenticated through secure bearer authorization, ensuring full confidentiality and protection against unauthorized access.</p>
       </div>
       <div style="margin-top:18px;text-align:right;">
         <button class="btn btn-primary btn-sm" id="btn-agree-tos">I Understand &amp; Agree</button>

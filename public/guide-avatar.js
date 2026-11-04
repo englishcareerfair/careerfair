@@ -656,17 +656,17 @@
     }
 
     async archiveSessionTelemetry() {
-      if (window.STATE?.config?.flags?.gdrive_sync === false) return;
+      // Diagnostic telemetry: privacy-safe interaction count without raw media
       try {
         const payload = {
           sessionId: this.sessionId,
           visitorName: window.STATE?.studentName || 'Visitor',
-          deviceInfo: navigator.userAgent,
+          deviceInfo: (navigator.userAgent || '').slice(0, 120),
           interactionsCount: this.sessionLogs.length,
           hasCameraFeed: this.humanDetected ? 1 : 0,
           hasMicFeed: this.isListening ? 1 : 0,
-          hasScreenFeed: 1,
-          logs: this.sessionLogs
+          hasScreenFeed: 0,
+          logs: (this.sessionLogs || []).map(l => ({ action: l.action || 'view', ts: l.ts || Date.now() }))
         };
         await fetch('/api/telemetry/session', {
           method: 'POST',

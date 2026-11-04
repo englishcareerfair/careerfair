@@ -5339,16 +5339,37 @@ function getOracleOfflineDestiny(q1, q2, q3, bio) {
 
 function getCipherOfflineInspector(q, currentCase) {
   const ql = (q || '').toLowerCase();
-  if (ql.includes('finch') || ql.includes('doctor')) {
-    return "Dr. Finch was observed in the east reading alcove examining the astronomy folio until 11:15 PM. His alibi is partially substantiated by the night librarian, yet red ink stains were later discovered upon his cuffs.";
-  } else if (ql.includes('margaret') || ql.includes('sister')) {
-    return "Sister Margaret possesses the only brass key to the manuscript display cabinet. She claims she surrendered her satchel at the front foyer, yet a duplicate wax seal impression was found near her prayer book.";
-  } else if (ql.includes('kulkarni') || ql.includes('librarian')) {
-    return "Librarian Kulkarni logged the archival records meticulously at 10:45 PM. However, the archive logbook entries for the Nalanda folio show an irregular erasure and an unexpected cipher timestamp.";
-  } else if (ql.includes('time') || ql.includes('when') || ql.includes('hour')) {
+  
+  // Specific checks against active case suspects and evidence
+  if (currentCase && Array.isArray(currentCase.suspects)) {
+    for (const s of currentCase.suspects) {
+      const nameParts = s.name.toLowerCase().split(' ');
+      if (nameParts.some(p => p.length > 2 && ql.includes(p)) || (s.role && ql.includes(s.role.toLowerCase()))) {
+        if (s.name.toLowerCase().includes('margaret') || s.name.toLowerCase().includes('sister')) {
+          if (ql.includes('female') || ql.includes('woman') || ql.includes('gender')) {
+            return `Sister Margaret is indeed female, serving as the archive's senior book conservator. She claims she was repairing chant manuscripts, yet the clue points to her specific work station.`;
+          }
+          return `Sister Margaret states: "${s.alibi}". Notably, she had access to the exact tools and materials noted in the forensic clue.`;
+        }
+        if (s.name.toLowerCase().includes('finch') || s.name.toLowerCase().includes('doctor')) {
+          return `Dr. Finch asserts: "${s.alibi}". However, his notes reveal intense interest in the contested item.`;
+        }
+        if (s.name.toLowerCase().includes('kulkarni') || s.name.toLowerCase().includes('librarian')) {
+          return `Librarian Kulkarni maintains: "${s.alibi}". Cross-verifying the access log timestamp is recommended.`;
+        }
+        return `${s.name} (${s.role}) stated under inquiry: "${s.alibi}". Cross-reference this carefully with the discovered clue.`;
+      }
+    }
+  }
+
+  if (ql.includes('female') || ql.includes('woman') || ql.includes('man') || ql.includes('gender')) {
+    return `The suspect ledger indicates Sister Margaret is female, while Dr. Alistair Finch and Librarian Kulkarni are male campus personnel.`;
+  } else if (ql.includes('ink') || ql.includes('color') || ql.includes('drop')) {
+    return `Forensic analysis confirms the trace is bright blue calligraphy ink. Examine each suspect's declared writing instrument to identify who used blue ink.`;
+  } else if (ql.includes('time') || ql.includes('when') || ql.includes('hour') || ql.includes('clock')) {
     return "The archival chamber bells rang midnight when the display was discovered ajar. Forensic dust patterns suggest the glass lid was elevated between 11:20 PM and 11:45 PM.";
-  } else if (ql.includes('clue') || ql.includes('wax') || ql.includes('seal')) {
-    return `The key physical evidence is "${currentCase?.clue || 'the blue wax seal'}". Whoever handled the seal had recently touched classical calligraphic ink and damp parchment.`;
+  } else if (ql.includes('clue') || ql.includes('wax') || ql.includes('seal') || ql.includes('evidence')) {
+    return `The key physical evidence is "${currentCase?.clue || 'the blue ink trace'}". Whoever left this trace handled the contested materials immediately prior to discovery.`;
   } else {
     return `The inspector observes: "Every clue in this archive connects language with intent. Look closely at the suspects' declared motivations and cross-reference them with the physical evidence in the exhibit case."`;
   }
@@ -10797,6 +10818,15 @@ function renderHeroStream() {
 
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Service Worker Registration for PWA caching & offline resilience
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.warn('PWA service worker registration notice:', err);
+      });
+    });
+  }
+
   // Apply saved theme (Light or Dark) silently on boot
   setTheme(STATE.theme, true);
 

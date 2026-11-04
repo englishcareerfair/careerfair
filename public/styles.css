@@ -686,7 +686,7 @@ main {
 }
 
 /* ─── 8. INPUTS, SELECTS & CONTROLS ───────────────────────────────────────── */
-input, select, textarea {
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   width: 100%;
   padding: 10px 14px;
   background: var(--surface-raised);
@@ -697,6 +697,15 @@ input, select, textarea {
   font-size: 16px; /* 16px prevents automatic zoom-in on iOS Safari & Android Chrome */
   min-height: 44px; /* Accessible 44px touch target on mobile */
   transition: var(--transition);
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  cursor: pointer;
+  accent-color: var(--accent-cyan);
 }
 
 /* CRITICAL BUG FIX: Ensure select options always have dark text on light backgrounds or high-contrast background */
