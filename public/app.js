@@ -4916,13 +4916,15 @@ const GAMING_HALL_QUESTS = [
 
 async function callAiQuest(prompt, isJson = false) {
   let geminiKeyList = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash'];
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const fallbackSpeech = "That is a brilliant career aspiration! Strong English articulation allows you to lead international teams, present research, and master global opportunities.";
 
-  while (geminiKeyList.length > 0) {
-    const curKey = geminiKeyList[0];
+  // 1. Try Gemini Keys directly if available (client-side directly to Gemini with auto-rotation)
+  for (let i = 0; i < geminiKeyList.length; i++) {
+    const curKey = geminiKeyList[i];
     let keyExhausted = false;
 
-    // 1. First attempt backend /api/ai
+    // 1a. Attempt backend /api/ai
     try {
       const res = await fetch(getApiUrl('api/ai'), {
         method: 'POST',
@@ -4938,20 +4940,20 @@ async function callAiQuest(prompt, isJson = false) {
         keyExhausted = true;
       } else if (res.ok) {
         const data = await res.json();
-        if (data && data.reply) return data.reply;
-        if (data && data.text) {
-          if (isJson) {
-            const m = data.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        const candidate = (data && (data.reply || data.text || data.response)) || '';
+        if (candidate && String(candidate).trim() !== fallbackSpeech) {
+          if (isJson && typeof candidate === 'string') {
+            const m = candidate.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
             if (m) {
               try { return JSON.parse(m[0]); } catch {}
             }
           }
-          return data.text;
+          return candidate;
         }
       }
     } catch (e) {}
 
-    // 2. Direct client-side Gemini fallback
+    // 1b. Direct client-side Gemini call
     if (!keyExhausted) {
       for (const m of models) {
         try {
@@ -4972,7 +4974,7 @@ async function callAiQuest(prompt, isJson = false) {
           if (res.ok) {
             const data = await res.json();
             const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) {
+            if (text && String(text).trim() !== fallbackSpeech) {
               if (isJson) {
                 const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
                 if (match) {
@@ -4987,8 +4989,9 @@ async function callAiQuest(prompt, isJson = false) {
     }
 
     if (keyExhausted) {
-      console.warn(`Gemini API key ${curKey.slice(0, 6)}... quota exhausted. Purging key and promoting next backup key to Main.`);
-      geminiKeyList.shift();
+      console.warn(`Gemini key ${curKey.slice(0, 6)}... quota exhausted. Rotating.`);
+      geminiKeyList.splice(i, 1);
+      i--;
       const updatedPool = geminiKeyList.join('\n');
       localStorage.setItem('cf_gemini_keys', updatedPool);
       localStorage.setItem('cf_gemini_key', geminiKeyList[0] || '');
@@ -4997,12 +5000,32 @@ async function callAiQuest(prompt, isJson = false) {
       if (typeof window.syncAdminGeminiKeyBoxes === 'function') {
         window.syncAdminGeminiKeyBoxes();
       }
-    } else {
-      break;
     }
   }
 
-  // Graceful signal: return null so offline dual-engine seamlessly activates
+  // 2. If no keys or all keys exhausted, call backend /api/ai directly without key header (allows Workers AI / D1 key pool)
+  try {
+    const res = await fetch(getApiUrl('api/ai'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task: 'quest', prompt, json: isJson })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const candidate = (data && (data.reply || data.text || data.response)) || '';
+      if (candidate && String(candidate).trim() !== fallbackSpeech) {
+        if (isJson && typeof candidate === 'string') {
+          const m = candidate.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+          if (m) {
+            try { return JSON.parse(m[0]); } catch {}
+          }
+        }
+        return candidate;
+      }
+    }
+  } catch (e) {}
+
+  // Signal null so contextual offline responses generate
   return null;
 }
 
