@@ -5511,7 +5511,7 @@ function launchQuestScribe(mount) {
 
   mount.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0;">📜 Quest I: The Scribe (Victorian Gothic Tale)</h3>
+      <h3 style="font-size:20px;margin:0;">📜 Quest I: The Scribe</h3>
       <span class="badge-pill badge-reg" id="scribe-turn-badge">Chapter 1 of 6</span>
     </div>
     <div id="scribe-story-box" class="quest-output-box">The ink is still wet on the parchment...</div>
@@ -5597,7 +5597,7 @@ function launchQuestScribe(mount) {
 function launchQuestEtym(mount) {
   mount.innerHTML = `
     <div style="margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0 0 4px 0;">🏛️ Quest II: The Etymologist (Root-Word Detective)</h3>
+      <h3 style="font-size:20px;margin:0 0 4px 0;">🏛️ Quest II: The Etymologist</h3>
       <span style="font-size:13px;color:var(--text-dim);">Uncover the ancient Latin &amp; Greek lineages behind modern English career words.</span>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
