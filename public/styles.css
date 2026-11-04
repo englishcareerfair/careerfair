@@ -2298,12 +2298,35 @@ tr:hover td { background: var(--surface-hover); }
 
 /* ─── 20. FAIR FEEDBACK & REVIEW WALL (MOBILE & PC RESPONSIVE) ──────────── */
 .feedback-container {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(360px, 460px) 1fr;
+  align-items: start;
   gap: 24px;
-  max-width: 860px;
+  max-width: 1320px;
   margin: 0 auto;
   width: 100%;
+}
+
+.feedback-form-card {
+  position: sticky;
+  top: 84px;
+  z-index: 10;
+}
+
+.feedback-reflections-card {
+  min-width: 0;
+}
+
+@media (max-width: 991px) {
+  .feedback-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 720px;
+  }
+  .feedback-form-card {
+    position: static;
+  }
 }
 
 .feedback-card-header {
