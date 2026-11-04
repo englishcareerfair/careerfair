@@ -6238,7 +6238,7 @@ window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
     return { valid: false, reason: 'Nonsense word: identical repeated characters.' };
   }
 
-  // 1. Instant Offline Lexicon Check
+  // 1. Instant Standard Offline Common English Lexicon Check
   if (OFFLINE_5_LETTER_SET.has(word) || OFFLINE_COMMON_WORDS_SET.has(word)) {
     return { valid: true, source: 'offline_lexicon', word };
   }
@@ -6253,75 +6253,73 @@ window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
       window._verifiedWordsCache.add(word);
       return { valid: true, source: 'local_cache', word };
     } else if (cached[word] === false) {
-      return { valid: false, reason: 'Word not found in English dictionary.', word };
+      return { valid: false, reason: 'Word not found in Oxford or standard English dictionary.', word };
     }
   } catch {}
 
-  // 2. Triple Verification across online endpoints (Check Thrice)
+  // 2. Strict Oxford / Google / Wiktionary Standard English Dictionary Verification (Check Thrice)
   let isVerified = false;
   let attempts = 0;
 
-  // Attempt 1: Cloudflare backend / D1 KV dictionary endpoint
+  // Attempt 1: Oxford / Google English Dictionary (Free Dictionary API)
   try {
     attempts++;
-    const res1 = await fetchApi(`dict/${encodeURIComponent(word)}`);
-    if (Array.isArray(res1) && res1.length > 0 && !res1[0]?.not_found) {
-      isVerified = true;
-    } else if (res1 && res1.word && !res1.not_found && res1.meanings) {
-      isVerified = true;
+    const res1 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    if (res1.ok) {
+      const data1 = await res1.json();
+      if (Array.isArray(data1) && data1.length > 0 && data1[0]?.meanings && data1[0].meanings.length > 0) {
+        isVerified = true;
+      }
     }
   } catch (e) {
-    // Network / API error on Attempt 1 -> continue to next attempt
+    // Network error on Attempt 1 -> continue to Attempt 2
   }
 
-  // Attempt 2: Direct Free Dictionary API
+  // Attempt 2: Cloudflare backend dictionary endpoint (queries KV cache & Free Dictionary API)
   if (!isVerified) {
     try {
       attempts++;
-      const res2 = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
-      if (res2.ok) {
-        const data2 = await res2.json();
-        if (Array.isArray(data2) && data2.length > 0) {
-          isVerified = true;
-        }
+      const res2 = await fetchApi(`dict/${encodeURIComponent(word)}`);
+      if (Array.isArray(res2) && res2.length > 0 && !res2[0]?.not_found && res2[0]?.meanings) {
+        isVerified = true;
       }
     } catch (e) {
-      // Network / API error on Attempt 2 -> continue to next attempt
+      // Network error on Attempt 2 -> continue to Attempt 3
     }
   }
 
-  // Attempt 3: Datamuse API (100k+ words ultra-reliable dictionary fallback)
+  // Attempt 3: Official English Wiktionary Lexical REST API (verifies real English word entry & definitions)
   if (!isVerified) {
     try {
       attempts++;
-      const res3 = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(word)}&max=1`);
+      const res3 = await fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word)}`);
       if (res3.ok) {
-        const data3 = await res3.json();
-        if (Array.isArray(data3) && data3.length > 0 && data3[0]?.word?.toLowerCase() === word) {
+        const wikData = await res3.json();
+        if (wikData.en && Array.isArray(wikData.en) && wikData.en.length > 0) {
           isVerified = true;
         }
       }
     } catch (e) {
-      // Network / API error on Attempt 3
+      // Network error on Attempt 3
     }
   }
 
-  // Save to local cache
+  // Save result to local cache to keep gameplay fast
   try {
     const cached = JSON.parse(localStorage.getItem('cf_verified_words') || '{}');
     cached[word] = isVerified;
     const keys = Object.keys(cached);
-    if (keys.length > 600) delete cached[keys[0]];
+    if (keys.length > 800) delete cached[keys[0]];
     localStorage.setItem('cf_verified_words', JSON.stringify(cached));
   } catch {}
 
   if (isVerified) {
     window._verifiedWordsCache.add(word);
     OFFLINE_5_LETTER_SET.add(word);
-    return { valid: true, source: 'online_verified', attempts, word };
+    return { valid: true, source: 'dictionary_verified', attempts, word };
   }
 
-  return { valid: false, reason: 'Word not found in English dictionary.', attempts, word };
+  return { valid: false, reason: `"${word}" is not recognized in standard English dictionaries (Oxford/Google).`, attempts, word };
 };
 
 // GAME 2: Wordle (Career & Vocabulary Guess Challenge - Enhanced from careers-site)
