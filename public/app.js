@@ -10240,6 +10240,11 @@ function initAdminWorkspace() {
       if (view === 'data') {
         renderAdminModeration();
       }
+      if (view === 'ai') {
+        if (typeof window.initDynamicApiPools === 'function') {
+          window.initDynamicApiPools();
+        }
+      }
       if (window.AppRouter) {
         window.AppRouter.navigate('/admin/' + view, { silent: true });
       }
@@ -11518,5 +11523,234 @@ window.adminBanIp = async function(ipToBan) {
   showToast(`IP "${ip}" has been banned 🚫`);
   const input = $('#admin-ban-ip-input');
   if (input) input.value = '';
+  window.renderAdminBannedIps();
+};
+
+window.adminUnbanIp = async function(ip) {
+  if (!confirm(`Unban IP address "${ip}"?`)) return;
+
+  let banned = [];
+  try {
+    const raw = localStorage.getItem('cf_banned_ips');
+    if (raw) banned = JSON.parse(raw);
+  } catch {}
+  banned = banned.filter(i => i !== ip);
+  localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
+
+  try {
+    await fetchApi('admin/ban-ip', 'POST', { ip, action: 'unban' });
+  } catch (e) {
+    console.warn('Unban IP note:', e);
+  }
+
+  showToast(`IP "${ip}" unbanned ✅`);
+  window.renderAdminBannedIps();
+};
+
+window.renderAdminBannedIps = async function() {
+  const container = $('#admin-banned-ips-list');
+  const countBadge = $('#admin-banned-ips-count');
+  if (!container) return;
+
+  let banned = [];
+  try {
+    const res = await fetchApi('admin/ban-ip');
+    if (res && Array.isArray(res.banned_ips)) {
+      banned = res.banned_ips;
+      localStorage.setItem('cf_banned_ips', JSON.stringify(banned));
+    }
+  } catch {
+    try {
+      const raw = localStorage.getItem('cf_banned_ips');
+      if (raw) banned = JSON.parse(raw);
+    } catch {}
+  }
+
+  if (countBadge) {
+    countBadge.textContent = `${banned.length} Banned IP${banned.length === 1 ? '' : 's'}`;
+  }
+
+  if (!banned.length) {
+    container.innerHTML = `<span style="font-size:12px;color:var(--text-muted);align-self:center;">No IP addresses currently banned.</span>`;
+  } else {
+    container.innerHTML = banned.map(ip => `
+      <div class="banned-ip-pill">
+        <span>🚫 ${escapeHtml(ip)}</span>
+        <button type="button" style="background:none;border:none;color:#f87171;cursor:pointer;padding:0 2px;font-weight:bold;" title="Unban this IP" onclick="window.adminUnbanIp('${escapeHtml(ip)}')">✕</button>
+      </div>
+    `).join('');
+  }
+};
+
+// ─── DYNAMIC API KEYS POOLS (INFINITE MAIN & BACKUP BOXES) ────────────────────
+window.initDynamicApiPools = function() {
+  // 1. Google Gemini Keys Setup
+  const geminiContainer = $('#gemini-keys-container');
+  const addGeminiBtn = $('#btn-add-gemini-key');
+
+  const getGeminiKeysArray = () => {
+    const raw = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || STATE.config.gemini_key || '').trim();
+    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    while (keys.length < 3) {
+      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
+    }
+    return keys;
+  };
+
+  const renderGeminiBoxes = (keys) => {
+    if (!geminiContainer) return;
+    geminiContainer.innerHTML = keys.map((key, i) => {
+      const label = i === 0 ? 'Main' : `Backup ${i}`;
+      const pillClass = i === 0 ? 'main' : 'backup';
+      const canRemove = keys.length > 3 || (i >= 3 && keys.length > 3);
+      const removeBtn = i >= 3
+        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeGeminiKeyRow(${i})" title="Remove this backup box">✕</button>`
+        : '';
+
+      return `
+        <div class="api-key-row" data-index="${i}">
+          <span class="api-key-label-pill ${pillClass}">${label}</span>
+          <input type="password" class="api-key-input gemini-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'AIzaSy... (Main Gemini Key)' : 'AIzaSy... (Backup Key ' + i + ')'}">
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+
+    // Wire real-time input change
+    geminiContainer.querySelectorAll('.gemini-key-field').forEach(input => {
+      const save = () => {
+        const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
+        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        const joined = newKeys.join('\n');
+        localStorage.setItem('cf_gemini_keys', joined);
+        localStorage.setItem('cf_gemini_key', newKeys[0] || '');
+        STATE.config.gemini_keys = joined;
+        STATE.config.gemini_key = newKeys[0] || '';
+        updateGeminiStatusBadge(newKeys.length);
+      };
+      input.addEventListener('input', save);
+      input.addEventListener('change', save);
+    });
+
+    const activeCount = keys.filter(Boolean).length;
+    updateGeminiStatusBadge(activeCount);
+  };
+
+  const updateGeminiStatusBadge = (count) => {
+    const badge = $('#admin-gemini-key-status');
+    if (!badge) return;
+    if (count > 0) {
+      badge.innerHTML = `✅ <strong>${count} Gemini API Key${count > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active!`;
+    } else {
+      badge.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
+    }
+  };
+
+  window.syncAdminGeminiKeyBoxes = () => {
+    renderGeminiBoxes(getGeminiKeysArray());
+  };
+
+  window.removeGeminiKeyRow = (idx) => {
+    const current = getGeminiKeysArray();
+    current.splice(idx, 1);
+    const joined = current.filter(Boolean).join('\n');
+    localStorage.setItem('cf_gemini_keys', joined);
+    localStorage.setItem('cf_gemini_key', current.filter(Boolean)[0] || '');
+    renderGeminiBoxes(current);
+  };
+
+  addGeminiBtn?.addEventListener('click', () => {
+    const current = getGeminiKeysArray();
+    current.push('');
+    renderGeminiBoxes(current);
+  });
+
+  renderGeminiBoxes(getGeminiKeysArray());
+
+  // 2. ElevenLabs Keys Setup
+  const elevenContainer = $('#eleven-keys-container');
+  const addElevenBtn = $('#btn-add-eleven-key');
+
+  const getElevenKeysArray = () => {
+    const raw = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
+    let keys = raw.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    while (keys.length < 3) {
+      keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
+    }
+    return keys;
+  };
+
+  const renderElevenBoxes = (keys) => {
+    if (!elevenContainer) return;
+    elevenContainer.innerHTML = keys.map((key, i) => {
+      const label = i === 0 ? 'Main' : `Backup ${i}`;
+      const pillClass = i === 0 ? 'main' : 'backup';
+      const removeBtn = i >= 3
+        ? `<button type="button" class="btn-remove-api-row" onclick="window.removeElevenKeyRow(${i})" title="Remove this backup box">✕</button>`
+        : '';
+
+      return `
+        <div class="api-key-row" data-index="${i}">
+          <span class="api-key-label-pill ${pillClass}">${label}</span>
+          <input type="password" class="api-key-input eleven-key-field" data-index="${i}" value="${escapeHtml(key)}" placeholder="${i === 0 ? 'xi-... (Main ElevenLabs Key)' : 'xi-... (Backup Key ' + i + ')'}">
+          ${removeBtn}
+        </div>
+      `;
+    }).join('');
+
+    elevenContainer.querySelectorAll('.eleven-key-field').forEach(input => {
+      const save = () => {
+        const currentInputs = Array.from(elevenContainer.querySelectorAll('.eleven-key-field'));
+        const newKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        const joined = newKeys.join('\n');
+        localStorage.setItem('cf_eleven_keys', joined);
+        localStorage.setItem('cf_eleven_key', newKeys[0] || '');
+        STATE.config.eleven_keys = joined;
+        STATE.config.eleven_key = newKeys[0] || '';
+        updateElevenStatusBadge(newKeys.length);
+      };
+      input.addEventListener('input', save);
+      input.addEventListener('change', save);
+    });
+
+    const activeCount = keys.filter(Boolean).length;
+    updateElevenStatusBadge(activeCount);
+  };
+
+  const updateElevenStatusBadge = (count) => {
+    const badge = $('#admin-eleven-status');
+    if (!badge) return;
+    if (count > 0) {
+      badge.innerHTML = `✅ <strong>${count} ElevenLabs Key${count > 1 ? 's' : ''}</strong> active. Studio Indian accent voice model will stay persistent across all key rotations!`;
+    } else {
+      badge.innerHTML = `⚠️ No ElevenLabs key entered. Studio voice synthesizes via high-fidelity Indian English (en-IN) neural voice!`;
+    }
+  };
+
+  window.syncAdminElevenKeyBoxes = () => {
+    renderElevenBoxes(getElevenKeysArray());
+  };
+
+  window.removeElevenKeyRow = (idx) => {
+    const current = getElevenKeysArray();
+    current.splice(idx, 1);
+    const joined = current.filter(Boolean).join('\n');
+    localStorage.setItem('cf_eleven_keys', joined);
+    localStorage.setItem('cf_eleven_key', current.filter(Boolean)[0] || '');
+    renderElevenBoxes(current);
+  };
+
+  addElevenBtn?.addEventListener('click', () => {
+    const current = getElevenKeysArray();
+    current.push('');
+    renderElevenBoxes(current);
+  });
+
+  renderElevenBoxes(getElevenKeysArray());
+
+  // 3. Initialize Ban IP Button Listener
+  $('#btn-admin-ban-ip')?.addEventListener('click', () => {
+    window.adminBanIp();
+  });
   window.renderAdminBannedIps();
 };
