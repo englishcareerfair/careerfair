@@ -5806,151 +5806,387 @@ function launchQuestOracle(mount) {
   });
 }
 
-// QUEST 5: The Ink Cipher
-function launchQuestCipher(mount) {
-  mount.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0 0 4px 0;">🔍 Quest V: The Ink Cipher (Archive Mystery)</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Move your mouse across the archive document to illuminate clues with the forensic flashlight.</span>
-    </div>
-    
-    <div class="archive-case-lens" id="cipher-lens-box">
-      <div id="cipher-case-content" style="position:relative;z-index:2;">
-        <h4 id="cipher-case-title" style="color:var(--accent-cyan);margin-top:0;">Archive Case: The Disappearing Nalanda Translation</h4>
-        <p id="cipher-case-intro" style="font-size:14px;line-height:1.6;color:var(--text-main);">
-          At midnight in the library quadrangle, a priceless 14th-century illuminated folio translated from Nalanda Sanskrit into early English vanished from its locked mahogany case. Three scholars were logged present in the scriptorium.
-        </p>
-        <div style="margin:14px 0;padding:12px;background:rgba(0,0,0,0.3);border-radius:var(--radius-sm);border-left:3px solid var(--accent-cyan);">
-          <strong>Forensic Clue:</strong> <span id="cipher-case-clue">A smudge of ultramarine blue calligraphic wax was found near the display lock.</span>
-        </div>
-        <div style="font-weight:700;font-size:13px;color:var(--accent-magenta);margin-bottom:6px;">Suspects Under Interrogation:</div>
-        <div id="cipher-suspects-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;"></div>
-      </div>
-    </div>
+// ── CIPHER MYSTERY CASES (Easy to Progressive Difficulty) ─────────────────────
+const CIPHER_MYSTERY_CASES = [
+  // ── LEVEL 1: BEGINNER (Easy, clear words, everyday school vocabulary) ─────────
+  {
+    id: "nalanda-simple",
+    difficulty: "Easy · Level 1",
+    level: 1,
+    badge: "🟢 Beginner Detective",
+    title: "Archive Case: The Missing Ancient Book",
+    intro: "Late last night in the university library, an old gold-letter book went missing from a glass desk. The key was left on the table. Three campus helpers were nearby.",
+    clue: "A drop of bright blue ink was found near the open glass desk.",
+    culprit: "Sister Margaret",
+    culpritReason: "Sister Margaret was writing with bright blue ink in her notebook, while Dr. Finch used dark red ink and Librarian Kulkarni used black pencil.",
+    suspects: [
+      { name: "Dr. Alistair Finch", role: "History Teacher", alibi: "Says he was reading star maps in the high tower with a red pen." },
+      { name: "Sister Margaret", role: "Book Repairer", alibi: "Says she was fixing old song sheets with blue ink in the side room." },
+      { name: "Librarian Kulkarni", role: "Chief Librarian", alibi: "Says he was counting new books in the hallway with a pencil." }
+    ],
+    hint: "Look at the ink color found by the desk and check who was writing with that exact color."
+  },
+  {
+    id: "lost-trophy-simple",
+    difficulty: "Easy · Level 1",
+    level: 1,
+    badge: "🟢 Beginner Detective",
+    title: "Campus Case: The Golden Debate Cup",
+    intro: "During lunch break in the school hall, the shiny first-place debate cup disappeared from the showcase. The back door was left unlocked.",
+    clue: "A green ribbon with cookie crumbs was dropped beside the trophy stand.",
+    culprit: "Leo the Prefect",
+    culpritReason: "Leo was snacking on mint cookies and wearing his green debate team ribbon, while Maya had a blue badge and Coach Sam had a yellow whistle.",
+    suspects: [
+      { name: "Leo the Prefect", role: "Debate Captain", alibi: "Says he was eating lunch near the stage door." },
+      { name: "Maya Sharma", role: "Student Council Rep", alibi: "Says she was making blue posters in art class." },
+      { name: "Coach Sam", role: "Sports Coach", alibi: "Says he was blowing his yellow whistle out on the soccer ground." }
+    ],
+    hint: "Check what food and team colors were found near the trophy stand."
+  },
 
-    <!-- Interrogation Console -->
-    <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;">
-      <h4 style="margin:0 0 8px 0;font-size:15px;color:var(--accent-cyan);">Archive Interrogation Log</h4>
-      <div style="display:flex;gap:8px;margin-bottom:10px;">
-        <input type="text" id="cipher-question-input" placeholder="Question the suspects or ask the archive inspector a clue..." style="flex:1;">
-        <button class="btn btn-secondary" id="btn-cipher-ask">Interrogate</button>
-      </div>
-      <div id="cipher-interrogation-reply" style="min-height:40px;"></div>
-      
-      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-        <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Issue Accusation:</label>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="cipher-accuse-select" style="flex:1;min-width:200px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text);font-size:13px;"></select>
-          <button class="btn btn-primary" id="btn-cipher-accuse">⚖️ Present Evidence to Dean</button>
-        </div>
-        <div id="cipher-verdict-mount" style="margin-top:12px;"></div>
-      </div>
-    </div>
-  `;
+  // ── LEVEL 2: INTERMEDIATE (Moderate vocabulary, logical deduction) ──────────
+  {
+    id: "royal-diploma-med",
+    difficulty: "Medium · Level 2",
+    level: 2,
+    badge: "🟡 Senior Sleuth",
+    title: "Archive Case: The King's Charter Seal",
+    intro: "During the annual heritage exhibition, a historic royal charter bearing King George's wax insignia was swapped with a counterfeit replica. Only staff with laboratory passes entered the vault.",
+    clue: "A distinctive scent of almond polishing solvent lingered across the display vault.",
+    culprit: "Victor Vance",
+    culpritReason: "Victor Vance was using almond-scented lacquer solvent to clean brass frames, while Elena used citrus glass spray and Marcus handled dry archival gloves.",
+    suspects: [
+      { name: "Dr. Elena Rostova", role: "Visiting Chemist", alibi: "Claims she was sanitizing glass cabinets using fresh citrus spray." },
+      { name: "Victor Vance", role: "Framing Technician", alibi: "Claims he was refinishing antique brass borders in the basement workshop." },
+      { name: "Marcus Brody", role: "Security Archivist", alibi: "Claims he was reviewing digital motion logs wearing white cotton gloves." }
+    ],
+    hint: "Identify which cleaning solvent produces the almond aroma reported in the vault."
+  },
+  {
+    id: "stolen-microfilm-med",
+    difficulty: "Medium · Level 2",
+    level: 2,
+    badge: "🟡 Senior Sleuth",
+    title: "Media Lab Case: The Missing Flight Audio Tape",
+    intro: "Just before the journalism showcase, the original cockpit audio cassette from the historic 1982 trans-Atlantic flight was taken from the sound editing deck.",
+    clue: "A magnetic tape spool cap labeled '7.5 IPS High-Speed' was caught in the sound booth vent.",
+    culprit: "Audio Engineer Tara",
+    culpritReason: "Tara calibrated the only reel-to-reel deck operating at 7.5 IPS high-speed, whereas Reporter Neil used digital SD cards and Producer Diaz utilized cassette cassettes.",
+    suspects: [
+      { name: "Audio Engineer Tara", role: "Sound Archivist", alibi: "Maintains she was testing high-speed reel tapes in the back studio." },
+      { name: "Reporter Neil", role: "Investigative Journalist", alibi: "States he was transferring audio interviews from modern flash cards." },
+      { name: "Producer Diaz", role: "Newsroom Director", alibi: "Says he was proofreading teleprompter scripts in the main control gallery." }
+    ],
+    hint: "Match the speed format on the dropped spool cap with the recording equipment each suspect operates."
+  },
 
-  const lensBox = $('#cipher-lens-box');
-  const suspectsList = $('#cipher-suspects-list');
-  const accuseSelect = $('#cipher-accuse-select');
-  const askBtn = $('#btn-cipher-ask');
-  const accuseBtn = $('#btn-cipher-accuse');
-  const replyBox = $('#cipher-interrogation-reply');
-  const verdictMount = $('#cipher-verdict-mount');
-
-  // Flashlight illuminated lens mouse tracker
-  lensBox?.addEventListener('mousemove', (e) => {
-    const rect = lensBox.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    lensBox.style.setProperty('--lens-x', `${x}px`);
-    lensBox.style.setProperty('--lens-y', `${y}px`);
-  });
-
-  const currentCase = {
+  // ── LEVEL 3: ADVANCED (Sophisticated phrasing, multi-step forensic reasoning) ─
+  {
+    id: "nalanda-advanced",
+    difficulty: "Challenging · Level 3",
+    level: 3,
+    badge: "🔴 Chief Inspector",
     title: "Archive Case: The Disappearing Nalanda Translation",
     intro: "At midnight in the library quadrangle, a priceless 14th-century illuminated folio translated from Nalanda Sanskrit into early English vanished from its locked mahogany case. Three scholars were logged present in the scriptorium.",
     clue: "A smudge of ultramarine blue calligraphic wax was found near the display lock.",
     culprit: "Sister Margaret",
     culpritReason: "Sister Margaret uses genuine ultramarine wax imported from Venice to seal religious translations, whereas Dr. Finch and Librarian Kulkarni use standard scarlet seal lacquer.",
     suspects: [
-      { name: "Dr. Alistair Finch", role: "Visiting Oxford Paleographer", alibi: "Claims he was examining astronomy charts in the north tower." },
-      { name: "Sister Margaret", role: "Archival Conservator", alibi: "Claims she was restoring liturgical psalters in the scriptorium." },
-      { name: "Librarian Kulkarni", role: "Head Curator", alibi: "Claims he was cataloging new Sanskrit acquisitions in the main annex." }
-    ]
-  };
+      { name: "Dr. Alistair Finch", role: "Visiting Oxford Paleographer", alibi: "Claims he was examining astronomy charts in the north tower with scarlet ink." },
+      { name: "Sister Margaret", role: "Archival Conservator", alibi: "Claims she was restoring liturgical psalters in the scriptorium with blue wax." },
+      { name: "Librarian Kulkarni", role: "Head Curator", alibi: "Claims he was cataloging new Sanskrit acquisitions in the main annex with graphite." }
+    ],
+    hint: "Contrast the rare imported pigment used by religious conservators against standard scarlet institutional seal wax."
+  },
+  {
+    id: "cipher-code-advanced",
+    difficulty: "Challenging · Level 3",
+    level: 3,
+    badge: "🔴 Chief Inspector",
+    title: "Cipher Case: The Enigma Diplomatic Dispatch",
+    intro: "During an international mock embassy summit, an intercepted cipher telegram containing coded naval peacetime treaties was extracted from the locked embassy telex terminal.",
+    clue: "The cipher machine ribbon was rewound counter-clockwise using a left-handed mechanical key.",
+    culprit: "Attaché Henri Dupont",
+    culpritReason: "Attaché Dupont is the sole left-handed diplomat certified on the naval rotary machine and carried the counter-clockwise winding key on his personal keyring.",
+    suspects: [
+      { name: "Ambassador Sterling", role: "Senior Envoy", alibi: "Asserts he was delivering the plenary address with his right hand on the lectern." },
+      { name: "Attaché Henri Dupont", role: "Cryptographic Secretary", alibi: "Claims he was filing cipher decodes in the embassy vault." },
+      { name: "Counselor Priya Sen", role: "Legal Counsel", alibi: "States she was drafting formal treaty revisions on an electric typewriter." }
+    ],
+    hint: "Pay attention to the handedness and specific winding direction documented by the forensic examination."
+  }
+];
 
-  const initCase = () => {
-    if (!suspectsList || !accuseSelect) return;
-    suspectsList.innerHTML = '';
-    accuseSelect.innerHTML = '<option value="">-- Choose suspect to accuse --</option>';
+function getCipherOfflineInspector(q, currentCase) {
+  const ql = (q || '').toLowerCase();
+  if (!currentCase) return "The archive inspector is reviewing the evidence logs.";
 
-    currentCase.suspects.forEach(s => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background:var(--bg-subtle);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12.5px;';
-      card.innerHTML = `
-        <strong style="color:var(--text-main);">${escapeHtml(s.name)}</strong>
-        <div style="color:var(--accent-cyan);font-size:11.5px;margin:2px 0;">${escapeHtml(s.role)}</div>
-        <div style="color:var(--text-muted);font-size:11px;">Alibi: "${escapeHtml(s.alibi)}"</div>
-      `;
-      suspectsList.appendChild(card);
-
-      const opt = document.createElement('option');
-      opt.value = s.name;
-      opt.textContent = `${s.name} (${s.role})`;
-      accuseSelect.appendChild(opt);
-    });
-  };
-
-  askBtn?.addEventListener('click', async () => {
-    const q = $('#cipher-question-input')?.value.trim();
-    if (!q || !currentCase) return;
-
-    replyBox.innerHTML = '<div style="color:var(--accent-cyan);padding:8px;"><span class="spinner-sm"></span> Consulting the interrogation log...</div>';
-    
-    let ans = null;
-    try {
-      const prompt = `In this mystery case: "${currentCase.intro}", with suspects: ${JSON.stringify(currentCase.suspects)} and clue: "${currentCase.clue}". The student asks the inspector: "${q}". Provide a realistic 40-word detective response that offers a clue without spoiling the mystery immediately.`;
-      ans = await callAiQuest(prompt, false);
-    } catch (e) {
-      ans = null;
+  // Check if student asked about any suspect by name or title
+  for (const s of (currentCase.suspects || [])) {
+    const sNameParts = s.name.toLowerCase().split(/\s+/);
+    const sRoleParts = s.role.toLowerCase().split(/\s+/);
+    if (sNameParts.some(p => p.length > 2 && ql.includes(p)) || sRoleParts.some(p => p.length > 3 && ql.includes(p))) {
+      if (s.name === currentCase.culprit) {
+        return `Regarding ${s.name} (${s.role}): The log shows they had direct access to materials matching our clue. Re-read their alibi carefully—their activities align with the scene!`;
+      } else {
+        return `Regarding ${s.name} (${s.role}): The records show ${s.alibi.replace(/^[Ss]tates |^[Cc]laims |^[Ss]ays /, '')} Witnesses corroborate their location away from the scene.`;
+      }
     }
+  }
 
-    if (!ans || typeof ans !== 'string' || ans.length < 15) {
-      ans = getCipherOfflineInspector(q, currentCase);
-    }
+  if (ql.includes('time') || ql.includes('when') || ql.includes('hour') || ql.includes('clock') || ql.includes('midnight') || ql.includes('lunch')) {
+    return "The incident took place during the recorded window mentioned in the case summary. Key movements were logged just before the discovery.";
+  } else if (ql.includes('clue') || ql.includes('hint') || ql.includes('help') || ql.includes('who') || ql.includes('evidence')) {
+    return `Inspector's Guidance: "${currentCase.hint || 'Cross-reference the forensic clue with what each suspect was carrying or working on.'}"`;
+  } else if (ql.includes('ink') || ql.includes('wax') || ql.includes('ribbon') || ql.includes('tape') || ql.includes('solvent') || ql.includes('key')) {
+    return `Physical Evidence Detail: "${currentCase.clue}" Notice which suspect's tools or habits directly connect to this clue.`;
+  } else {
+    return `The inspector observes: "Every clue in this mystery connects language with intent. Look closely at the suspects' tools and declared alibis to solve the case!"`;
+  }
+}
 
-    replyBox.innerHTML = `
-      <div class="quest-output-box" style="border-left:3px solid var(--accent-magenta);margin:8px 0;">
-        <strong>Inspector's Note:</strong> ${escapeHtml(ans)}
+// QUEST 5: The Ink Cipher
+function launchQuestCipher(mount) {
+  // Retrieve saved case progression index
+  let savedIndex = parseInt(localStorage.getItem('cf_cipher_case_index') || '0', 10);
+  if (isNaN(savedIndex) || savedIndex < 0 || savedIndex >= CIPHER_MYSTERY_CASES.length) {
+    savedIndex = 0;
+  }
+  let currentCaseIndex = savedIndex;
+  let solvedCases = JSON.parse(localStorage.getItem('cf_cipher_solved_cases') || '[]');
+
+  function renderMysteryInterface() {
+    const currentCase = CIPHER_MYSTERY_CASES[currentCaseIndex];
+    const isSolved = solvedCases.includes(currentCase.id);
+
+    mount.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <h3 style="font-size:20px;margin:0;">🔍 Quest V: The Ink Cipher</h3>
+            <span class="badge-pill" style="font-size:11px;font-weight:700;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">
+              ${escapeHtml(currentCase.badge)}
+            </span>
+            ${isSolved ? '<span class="badge-pill" style="font-size:11px;font-weight:700;background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.35);">✅ Solved</span>' : ''}
+          </div>
+          <span style="font-size:13px;color:var(--text-dim);display:block;margin-top:2px;">
+            Words and clues progress from easy everyday English to forensic deduction as you solve mysteries.
+          </span>
+        </div>
+
+        <!-- Mystery Case Selector & Quick Jump -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <label for="cipher-case-select" style="font-size:12px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.04em;">Mystery:</label>
+          <select id="cipher-case-select" style="padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text-main);font-size:12.5px;font-weight:600;cursor:pointer;">
+            ${CIPHER_MYSTERY_CASES.map((c, i) => {
+              const solvedTag = solvedCases.includes(c.id) ? '✓ ' : '';
+              const sel = i === currentCaseIndex ? 'selected' : '';
+              return `<option value="${i}" ${sel}>${solvedTag}Case ${i + 1}: ${c.title.replace('Archive Case: ', '').replace('Campus Case: ', '').replace('Media Lab Case: ', '').replace('Cipher Case: ', '')} (${c.difficulty})</option>`;
+            }).join('')}
+          </select>
+          <button class="btn btn-secondary btn-xs" id="btn-cipher-cycle" type="button" title="Switch to another mystery" style="font-size:12px;padding:6px 10px;">
+            🔄 Switch Mystery
+          </button>
+        </div>
+      </div>
+      
+      <!-- Forensic Flashlight Archive Lens -->
+      <div class="archive-case-lens" id="cipher-lens-box">
+        <div id="cipher-case-content" style="position:relative;z-index:2;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px;">
+            <h4 id="cipher-case-title" style="color:var(--accent-cyan);margin:0;font-size:16px;">
+              ${escapeHtml(currentCase.title)}
+            </h4>
+            <span style="font-size:11.5px;color:var(--text-muted);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:12px;">
+              Vocabulary Level: <strong>${escapeHtml(currentCase.difficulty)}</strong>
+            </span>
+          </div>
+
+          <p id="cipher-case-intro" style="font-size:14px;line-height:1.6;color:var(--text-main);margin:8px 0 12px 0;">
+            ${escapeHtml(currentCase.intro)}
+          </p>
+
+          <div style="margin:12px 0;padding:12px 14px;background:rgba(0,0,0,0.3);border-radius:var(--radius-sm);border-left:3px solid var(--accent-cyan);">
+            <strong style="color:var(--accent-cyan);">🔍 Forensic Clue:</strong>
+            <span id="cipher-case-clue" style="color:var(--text-main);">${escapeHtml(currentCase.clue)}</span>
+          </div>
+
+          <div style="font-weight:700;font-size:13px;color:var(--accent-magenta);margin:14px 0 6px 0;">
+            Suspects Under Interrogation:
+          </div>
+          <div id="cipher-suspects-list" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;">
+            ${currentCase.suspects.map(s => `
+              <div style="background:var(--bg-subtle);padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:12.5px;">
+                <strong style="color:var(--text-main);">${escapeHtml(s.name)}</strong>
+                <div style="color:var(--accent-cyan);font-size:11.5px;margin:2px 0;">${escapeHtml(s.role)}</div>
+                <div style="color:var(--text-muted);font-size:11px;">Alibi: "${escapeHtml(s.alibi)}"</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Interrogation Console -->
+      <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+          <h4 style="margin:0;font-size:15px;color:var(--accent-cyan);">Archive Interrogation Log</h4>
+          <span style="font-size:12px;color:var(--text-dim);">Ask simple questions to uncover who handled the clue</span>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="cipher-question-input" placeholder="e.g. What color ink was found? or Ask about Sister Margaret..." style="flex:1;">
+          <button class="btn btn-secondary" id="btn-cipher-ask">Interrogate</button>
+        </div>
+        <div id="cipher-interrogation-reply" style="min-height:36px;"></div>
+        
+        <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
+          <label for="cipher-accuse-select" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Issue Formal Accusation:</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="cipher-accuse-select" style="flex:1;min-width:200px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-subtle);color:var(--text);font-size:13px;">
+              <option value="">-- Choose suspect to accuse --</option>
+              ${currentCase.suspects.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)} (${escapeHtml(s.role)})</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" id="btn-cipher-accuse">⚖️ Present Evidence to Dean</button>
+          </div>
+          <div id="cipher-verdict-mount" style="margin-top:12px;"></div>
+        </div>
       </div>
     `;
-  });
 
-  accuseBtn?.addEventListener('click', () => {
-    const suspect = accuseSelect?.value;
-    if (!suspect) {
-      showToast('Select a suspect to accuse.');
-      return;
-    }
+    // Wire Lens Mouse Tracking
+    const lensBox = $('#cipher-lens-box');
+    lensBox?.addEventListener('mousemove', (e) => {
+      const rect = lensBox.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      lensBox.style.setProperty('--lens-x', `${x}px`);
+      lensBox.style.setProperty('--lens-y', `${y}px`);
+    });
 
-    if (suspect === currentCase.culprit) {
-      verdictMount.innerHTML = `
-        <div style="background:rgba(16,185,129,0.15);border:1px solid var(--accent-green, #10b981);border-radius:var(--radius-md);padding:14px;color:var(--text-main);">
-          <div style="font-weight:700;color:var(--accent-green, #10b981);font-size:15px;margin-bottom:4px;">🎉 Case Solved! Master Sleuth!</div>
-          <p style="margin:0;font-size:13.5px;line-height:1.5;">${escapeHtml(currentCase.culpritReason)}</p>
+    // Wire Mystery Select Dropdown
+    $('#cipher-case-select')?.addEventListener('change', (e) => {
+      const idx = parseInt(e.target.value, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < CIPHER_MYSTERY_CASES.length) {
+        currentCaseIndex = idx;
+        localStorage.setItem('cf_cipher_case_index', String(currentCaseIndex));
+        renderMysteryInterface();
+        showToast(`Loaded Mystery ${currentCaseIndex + 1}: ${CIPHER_MYSTERY_CASES[currentCaseIndex].difficulty} 🔍`);
+      }
+    });
+
+    // Wire "Switch Mystery" Button (Cycles to next or next uncompleted)
+    $('#btn-cipher-cycle')?.addEventListener('click', () => {
+      currentCaseIndex = (currentCaseIndex + 1) % CIPHER_MYSTERY_CASES.length;
+      localStorage.setItem('cf_cipher_case_index', String(currentCaseIndex));
+      renderMysteryInterface();
+      showToast(`Switched to Case ${currentCaseIndex + 1}: ${CIPHER_MYSTERY_CASES[currentCaseIndex].difficulty} 🔄`);
+    });
+
+    // Wire Question Interrogation Button
+    const askBtn = $('#btn-cipher-ask');
+    const replyBox = $('#cipher-interrogation-reply');
+    askBtn?.addEventListener('click', async () => {
+      const q = ($('#cipher-question-input')?.value || '').trim();
+      if (!q || !currentCase) return;
+
+      replyBox.innerHTML = '<div style="color:var(--accent-cyan);padding:8px;"><span class="spinner-sm"></span> Consulting the interrogation log...</div>';
+      
+      let ans = null;
+      try {
+        const prompt = `In this mystery case: "${currentCase.intro}", with suspects: ${JSON.stringify(currentCase.suspects)} and clue: "${currentCase.clue}". The student asks the inspector: "${q}". Provide a clear, simple 35-word detective response suitable for middle-school and high-school students that offers a helpful hint without spoiling the culprit name immediately.`;
+        ans = await callAiQuest(prompt, false);
+      } catch (e) {
+        ans = null;
+      }
+
+      if (!ans || typeof ans !== 'string' || ans.length < 15) {
+        ans = getCipherOfflineInspector(q, currentCase);
+      }
+
+      replyBox.innerHTML = `
+        <div class="quest-output-box" style="border-left:3px solid var(--accent-magenta);margin:8px 0;">
+          <strong>Inspector's Note:</strong> ${escapeHtml(ans)}
         </div>
       `;
-    } else {
-      verdictMount.innerHTML = `
-        <div style="background:rgba(255,42,133,0.12);border:1px solid var(--accent-magenta);border-radius:var(--radius-md);padding:14px;color:var(--text-main);">
-          <div style="font-weight:700;color:var(--accent-magenta);font-size:15px;margin-bottom:4px;">❌ Insufficient Evidence</div>
-          <p style="margin:0;font-size:13.5px;line-height:1.5;">The Dean dismisses the petition against ${escapeHtml(suspect)}. Re-examine the clue: who uses that specific colored seal wax?</p>
-        </div>
-      `;
-    }
-  });
+    });
 
-  initCase();
+    // Enter key submits interrogation question
+    $('#cipher-question-input')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        askBtn?.click();
+      }
+    });
+
+    // Wire Accusation Button
+    const accuseBtn = $('#btn-cipher-accuse');
+    const accuseSelect = $('#cipher-accuse-select');
+    const verdictMount = $('#cipher-verdict-mount');
+
+    accuseBtn?.addEventListener('click', () => {
+      const suspect = accuseSelect?.value;
+      if (!suspect) {
+        showToast('Please select a suspect to accuse.');
+        return;
+      }
+
+      if (suspect === currentCase.culprit) {
+        // Mark case as solved and unlock next level difficulty!
+        if (!solvedCases.includes(currentCase.id)) {
+          solvedCases.push(currentCase.id);
+          localStorage.setItem('cf_cipher_solved_cases', JSON.stringify(solvedCases));
+        }
+
+        const nextCaseIndex = (currentCaseIndex + 1) < CIPHER_MYSTERY_CASES.length ? (currentCaseIndex + 1) : 0;
+        const nextCase = CIPHER_MYSTERY_CASES[nextCaseIndex];
+        const hasNext = (currentCaseIndex + 1) < CIPHER_MYSTERY_CASES.length;
+
+        verdictMount.innerHTML = `
+          <div style="background:rgba(16,185,129,0.15);border:1px solid var(--accent-green, #10b981);border-radius:var(--radius-md);padding:16px;color:var(--text-main);margin-top:10px;">
+            <div style="font-weight:700;color:var(--accent-green, #10b981);font-size:16px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+              <span>🎉</span> <span>Case Solved! Outstanding Detective Work!</span>
+            </div>
+            <p style="margin:0 0 12px 0;font-size:13.5px;line-height:1.5;">${escapeHtml(currentCase.culpritReason)}</p>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(16,185,129,0.3);padding-top:10px;">
+              <span style="font-size:12px;color:var(--text-dim);">
+                ${hasNext ? `Next Difficulty Level Unlocked: <strong>${escapeHtml(nextCase.difficulty)}</strong>` : '🏆 All archive mysteries solved! You are a Legendary Master Detective!'}
+              </span>
+              <button class="btn btn-primary btn-sm" id="btn-cipher-next-mystery" type="button" style="font-size:12px;">
+                ${hasNext ? `Proceed to Case ${nextCaseIndex + 1}: ${escapeHtml(nextCase.difficulty)} ➔` : 'Replay Mysteries 🔄'}
+              </button>
+            </div>
+          </div>
+        `;
+
+        $('#btn-cipher-next-mystery')?.addEventListener('click', () => {
+          currentCaseIndex = nextCaseIndex;
+          localStorage.setItem('cf_cipher_case_index', String(currentCaseIndex));
+          renderMysteryInterface();
+          showToast(`Advanced to Mystery ${currentCaseIndex + 1}: ${nextCase.difficulty} 🚀`);
+        });
+
+        // Trigger victory sound & celebration toast
+        if (typeof playSynthesizedSound === 'function') playSynthesizedSound('correct');
+        showToast('🎉 Mystery Solved! Next Difficulty Unlocked!');
+      } else {
+        if (typeof playSynthesizedSound === 'function') playSynthesizedSound('wrong');
+        verdictMount.innerHTML = `
+          <div style="background:rgba(255,42,133,0.12);border:1px solid var(--accent-magenta);border-radius:var(--radius-md);padding:14px;color:var(--text-main);margin-top:10px;">
+            <div style="font-weight:700;color:var(--accent-magenta);font-size:15px;margin-bottom:4px;display:flex;align-items:center;gap:6px;">
+              <span>❌</span> <span>Insufficient Evidence Against ${escapeHtml(suspect)}</span>
+            </div>
+            <p style="margin:0;font-size:13px;line-height:1.5;">
+              The Dean dismisses the petition. <em>Hint:</em> ${escapeHtml(currentCase.hint)}
+            </p>
+          </div>
+        `;
+      }
+    });
+  }
+
+  renderMysteryInterface();
 }
+
 
 // ─── OFFLINE ENGLISH LEXICON & TRIPLE-CHECK WORD VERIFIER ────────────────────
 const OFFLINE_5_LETTER_STR = "aaron aback abade abaft aband abase abash abate abbey abbot abeam abend abhor abide abode abood abord about above abrim abuse abyme abysm abyss acerb achoo acies acold acorn acres acrid acter acton actor acute adage adapt adays added adder addio addle adept adieu admit admix adobe adobo adopt adore adorn adown adret adrip adult adust aeaea aeger aegir aegis aerie aesir aevum afanc affix affor afire afore after again agama agape agasp agast agate agaze agent agger aggie aggro agile aging agita aglee aglet aglow agone agony agora agree agrin agued ahead aider aiger aigre aisle akasa akuma alamo aland alarm album alder alert algid alias alibi alief alien align alike alita alive alkie allay allee allen alley allot allow alloy aloft aloha alone along aloof aloud alpha altar alter alula amain amaru amass amate amaze amber ambit amble ambry amend amene ament amiss amity among amort amour amped ample amply ampul amuck amuse anear anele angel anger angle anglo angry angst anile anima anise ankle annex annoy annul anoia anomy anoon antic antre antsy anvil aorta apace apart apery apian appal apple apply appui apron apsis aptly arace arage arbit arbor arced arche arcus arden ardor arena arete argal argos argot argue argus arhat arian ariel ariki arion arise arist armor aroar aroma arose arras array arrha arris arrow arsis arson artha ascot ashen asher ashet asian aside asked askew askey aspen asper aspic aspis assay asset assur astar aster astir aston asura asway atene athel athos atilt atimy atlas atman atoll atomy atone attar atter attle audio audit auger aught augle augur aulic aural auric aurum avail avale avant avers avert avian avile avine aviso avoid await awake award aware awash awful awing awkly awoke axial axiom azoic azoth azure baaad babel babes babka bache bacon badge badly bagel bahut bairn baize baker balas balks balls bally balmy balsa balut banal banco bandy bantu bantz barbs bardo barge barmy baron barre barse barut basal based basen bases basic basil basin basis basso baste batak batch bated bathe batik baton batty baulk bavin bawdy bayou bazar beach beams beamy beano beast beath beats beaut bedim beech beefy befit befog began beget begin begod begot begun beige being beken belay belch belie belle belly below bench benny beret berme berry berth beryl beset besom betel betta betty bevel bever bezel bhakt bible biddy bidon bield bifid bight bigot bijou bilge billy bimbo bingo biome biota biped birds birdy birth bitch bitty bivvy bixie black blade blame bland blank blare blase blast blasé blate blaze blead bleak blear bleat blech bleck bleed bleep blend blenk blerd blesh bless blest blewe blick blike blimp blind blink bliss blitz blive bloat block bloke blond blood bloom blore blort blown bluff blunt blurb blurt blush board boast bodge boffo bogey boggy bogie bogus boink bolis bolts bolus boned boner bongo bonne bonny bonze booby boong boost booth booty booze boozy bored borer borne bosky bosom bossy botch botox botty bough boule bound bouse bovid bowed bowel bower boxer bozon brace brach brack bract braid brail brain brake braky brame brand brank brash brass brath brave bravo brawl brawn bread break bream breed brest breve brian briar bribe brick bride brief brier brill brine bring brink briny brisk broad broil broke broma brood brook brool broth brown bruin bruit brume brunt brush brusk brute bubba buddy budge buffa buffy buggy bugle build built bulge bulky bulla bully bumps bumpy bunch bunco bunko bunny burke burly burma burnt burro burry bursa burse burst bussy busty butch butte buxom buyer bylaw byway cabal cabin cable cache caddy caded cadet cadge cadgy cadre caged cager cagey cairn calid calme calve camel cameo canal candy canid canna canny canoe canon canto canty caper capri caput carat cards cared caret cargo carny carol carom carry carve casco caste casts catch cater catly catso catty caulk causa cause cavea cavel cavil cavum cavus cease cecum cedar ceded cella cello ceres chace chafe chaff chain chair chalk champ chank chant chaos chare chark charm chart chary chase chasm chaun chaus cheap cheat check cheek cheep cheer chela chert chest chevy chick chico chide chief child chile chill chime chimo chimp china chine ching chink chirk chirl chirm chirp chirr chock choda choir choke cholo chomo chomp choom chord chore chose chuck chuff chuke chump chunk churl churn churr chute cigar cinch cinct circo cirro cissy cited civet civic civil clack clade claim clamp clang clank clart clash clasp class clean clear cleat cleft clepe clerk cleve click cliff clift climb clime cline cling clink cloak clock clomp clone clonk close cloth cloud clout clove clown cluck clump clung clunk coach coact coast cobby cocky codex coily colly color combe combo comer comfy comic conch conde condo coney conge conic cooch cooed cooze coper coppy copse coral cords corny corps cotta couch cough could count court couth coven cover covet covey cowan cowed cower cowld coyly cozen crabs crack craft crake cramp crane crank crash crass crate crave crawk crawl craze crazy creak cream creat credo creed creek creel creep crepe crest crick cried crill crime crimp crisp croak crock croft crone cronk crony crook crool croon cross croud crowd crowl crown crude cruel cruet crumb crump cruor crush crust crypt cubby cummy cunny cunty cupid curia curio curly curry curse curst curve curvy cushy cutis cwtch cycle cynic daddy daeva daffo dagga daily daint dairy daisy daiva dalek dalle dally daman dampy dance dandy dange danna danse darke darts dashy dated datum dauby daunt david daynt dazed deade dealt deare dearn deary death debar debut decan decay decim decor decoy decry deech deeds deere defer deffo defix defog degas deice deify deign deism deity delay delta delve deman demic demit demob demon demos demur demux denay dench denim dense depot depth deque deray derry deshi despo deter detre detur deuce devan devel devil dewan dewar dhoti diamb diary diata diazo dicey dicky dicta didie didst dieth diety dight digit digne dildo dilly dimly dimmy dinar diner dingo dingy dinic dinka dinky diode dione diota dipod dippy dirae dirge dirty disch disco dishy ditch ditsy ditto ditty ditzy divan divas divel dives divet divot diwan dizzy djinn dobby dodge dodgy doesn dogan doggo doggy dogma dogon dogue doing doksa dolce dolly dolor dolos dolts dolus domal domme dompt domus donat donee donna donor donut doobt doody doole doomy doors dooty doozy doped dopey doren doric doris dorky dorms dorty doseh doted dotty doubt douce dough doune douse douth dover dowdy dowel dower downy dowry dowse dowty doxie doyen dozen draco draft drail drain drait drake drama drank drape drawl drawn draws dread dream drear dreck dreed dregs dress drest dreve dried drift drill drily dring drink drive droid droil droit droll drone drong drony droog drool droop drops dross drove drown druid drung drunk drupe drury dryad dryly duang dubby ducal duchy ducky dufus dugan dulce dulia dully dulux dumka dummy dumps dumpy dunal dunce dunes dunga dungy dunno dunny duomo duong duped duple duppy durag duras durga durin dusky dusty dutch dutie duvet dwale dwarf dweeb dwell dwine dying dyked dykon dylan dæmon eager eagle eagre ealey earal eared earle early earth eased easel easer easie easte easts easty eater eaved eaves ebbed ebery ebola ebone ebony ebook ecchi eccho eccle eckle eclat ecole ectal ectel ector edder eddic edema edens edged edges edick edict edify edile edith edits ednos educe educt eejit eensy eerie effed effet effie efter egall egean egest eggar egged egger egges eggie egnos egoic egret egypt eider eidos eigen eight eigne eikon eilat eisel eitan eject eking ekker eland elara elate elbow elden elder elect elegy elemi elene eleni eleve elfin elgar elian elias elide elihu elint eliot elise elite ellen eller ellet ellie ellis elmen eloge elogy eloin elong elope elpis elrod elsen elsie elton elude elute elvan elven elver elves elvin email embar embay embed ember embow embox embue embus emcee emeer ememe emend emery emits emmet emmew emote emove empey empty emule enact enate ender endow endue enema enemy enfin engle enjoy enlay enlil ennew ennui enoch enode enoki enorm enrol ensce ensky ensor ensue enter entia entre entry enure envie envir envoi envoy eolic eonic eoten epeus ephah ephor epics epist epoch epode epopt epoxy eppes eppie epson epure equal equid equip equiv erase erato ereco erect erema eremo ergat ergot erica erick erika ermin ernst erode erose erred error eruca eruct erupt eshay esker eskew espen esper espie espoo essay essen esses essex essie estee ester estoc estop estre estro etang etern ethan ethel ether ethic ethno ethos ethyl etten etter ettes ettin ettle etude euche eurus evade evans evatt evene evens event evert every evian evict evils evite evoke ewery exact exalt excel excur exeat exect exert exfil exile exist exode exord expat expel extol extra exude exult exurb eyass eyght eying eyrie eyrir fabbo fabby fable faced facet facts facty faddy faded fades fadge fagot fagus faine faint faire fairy faith fakir falls false famed fanal fancy fango fanny fanon fanti faqir farce faroe farro farsi farty fasiq fasti fatah fatal fated fatty faule fault fauna faust favor favus fawny fayre fazed feare fease feast feaze fecal fedai feeds feely feere feese feeze feign feild feint feist felid felix fella felon femme femur fence fenne feral feria ferny ferro ferry fetal fetch feted fetid fetis fetor feuds fever fiard fiber fibre fichu field fiend fiery fifth fifty fight filch files filet fille filly filmy filth final finch finds findy finer fines finis fiord fired firer firie first fitch fitly fiver fixed fixer fjeld fjord flack flail flair flake flaky flame flamy flank flare flash flask flats flawy fleak fleam fleck fleer flees fleet flesh flick flies fling flink flinn flint flirt flite float flock flood flook floor flops flora flory flosh floss floud flout flowe flowy flues fluey fluff fluid fluke fluky flume flump flung flunk fluor flurr flurt flury flush flute fluty flyer flyte foamy focal focas focus foehn fogey foggy fogle foine foist foley folio folks folly folwe fomes foods foray forby force fordo forex forge forgo forms forte forth forty forum fossa fosse fossé found fount fouth fouty fovea foxes foxly foyer fract frail frain frame frank fraud freak fream freck freed freep freer freke fremd fresh frets friar frick fried frigg frill frind frisk frist frith fritz frizz frock frond frons front frood frore frory frost froth frown frowy fruit frump frush fuage fubar fubby fucks fudge fuggy fugly fugue fulks fully fumed fumes fumet fumid funct fundi funds funge funky funny fuqua furor furry fused fusee fussy fusty futch futon fuzee fuzzy fynde fyrst fytte gabby gable gaffe gafia gaily galax galea gales galet galle gallu gamer gamey gamin gamut ganja ganza gaped garda garde garth gasps gassy gatch gatta gaudy gauge gault gaunt gause gauze gauzy gavel gawky gaybo gayle gayne gazed gazer gazes gazon gecko gedge geese geige geist gelee gelid genco gener genet genia genie genio genki genre genro genus geode geoid gerbe geshe gesso geste getup ghast ghaut ghole ghost ghoul giant gibby gibed gibes giddy gigue gihon gilet gimel gimpy ginch ginge ginzo gippo girls girly girth given giver gives gizmo glace glade glair glans glare glary glass glaum glaur glave glaze gleam glean glebe glede gleek gleet glide gliff glike glint gliss glist glitz gloam gloar gloat globe glock glome glomp gloom gloop glope glore glory gloss glost glout glove gloze gluck glued glump glute glyph gnarl gnash gnoff gnoll gnome goals gobbo godet godly goety gofer going golem golly goman gombo gomer gonad gondi gonna gonzo gooch goods goody gooey goofy goons goony goopy goose gored gorey gorge gorno gorsy gouge gound gourd gouts gowan gowns goyle grace grade grady graft grail grain grame grand grant grape graph grasp grass grate grave graze great grebe grebo greed greek green greet greta gride grief griff grift grike grill grime grimy grind grins griot gripe grise grist grisy grith grito grits grize groan groat groid groin grond grool groom grope gross grote groth group grout grove growl grown gruel gruff grump grunt grype guage guano guara guard guava guess guest guide guido guige guild guile guilt guise gulag gular gulch gully gulph gulpy gumbo gummy gumph gunge gunky gunny guppy gurge gurus gushy gusto gusts gusty gutsy gutty guyed guyot gyani gyaru gyppo gypsy gyral habit hacek hacks hacky hadal hadar hades hadji hadnt haemo hafiz hague haida haifa haiku haint hairy hajib hajji hakea hakim halal haler haley halle hallo halls halma halon haloo halse halts halva halve hamel hames hammy hamza hanai hanan hanap hance hands handy hangs hanja hanky hanna hanse haole haoma haply happi happy haram hardy harem harms harnt harpy harry harse harsh harte harth hasan hasta haste hasty hatch hated hater hates hatty haugh haulm hault haunt haute haven haver haves havoc havok hawse hayes hazan hazed hazel hazen heads heady heald heaps heard heare hears heart heast heate heath heats heauy heave heavy hebei heben hecht hedge hedgy heeds heels hefei hefts hefty hegel heine heist heith heitz helen helix hella helle hello helly helot helpe helps helve hemal hemic henan hence hench hende henny henri henry hepar herat herbs herma heroe heron herse hertz hesse hetty hevea hewer hexad hexed hexer heyre hided hidle hield hight hijab hijaz hiked hilar hills hilly hilsa hilum himbo hindu hiney hinge hinky hinny hints hippo hiram hired hirer hires hissy hitch hithe hives hizzy hoagy hoard hoary hoast hobby hobit hocus hogan hoise hoist hokey hokum holds holes holey holie holla hollo holly holme holon homel homer homey homie honda honed honey honky honor hooch hooke hooks hooky hoosh hoped hopei hopes hoppy horae horal horde horny horry horse horst horsy horus hosea hosed hosen hoser hosta hosts hotel hotly hough hoult houma hound houri hours house hovel hover howdy howls hubby hudna huffy huggy hulch hulky hullo human humic humid humor humph humpy humus hunch hunks hunky hunny hupia hurly hurra hurry husky hussy hutch huzza hwair hydra hygge hying hylic hymen hymie hymns hyoid hyped hyper hypha hyphy hyrax hythe ideal image imply index inner input irony issue japan joint judge juice knife knock known label labor large laser later laugh layer learn lease least leave legal lemon level lever light limit links liver lives local logic loose lower loyal lucky lunch mable macao macaw maced mache macho macro madam madge madid madly mafia magic magma magna magus maiko maine maize major maker makes malak malik malls malum malus maman mamil mamma mammy manas mando manes manet manga mango mangy mania manic manky manly manna manny manor mansa manse manta manto manus maqui marai maram march marco mardy marge marie marin marks marla marle marne marra marse marsh maser masks mason masse match mated mater matey maths matte maumy maund mauve maven mavin maxim maybe mayor mazed meach mealy means meant meany meare meaty mebbe mecca mecha medal medea media medic meech meets meido meiny melba melee melic melos memba memor memos menat mensa mense merck mercy merge merit merry mesel mesic mesne meson messy mesto metal meter metis metoo metra metre metro metta mewed mezzo miami miasm miaul micah micro midge midst miffy might milky milpa mimas mimbo mimeo mimic mince minde minge mingy minim minny minor minow minus mired mirid mirky mirth miser misle missy misty mitch miter mites mitis mitra mitre mitzi mixed mixer mizzy mneme moans moats mocha modal moded model modem moder modus moggy mogul moire moiré moist moldy moley molly moloc momma mommy momsy monad monde mondo money mongo monks monte month mooch moody moola moone moony moore moory moose moosh moped morae moral morbs morel mores moria mormo morne moron moros morph morse moser mosey mossy moted motel motet mothe mothy motif motor motte motto mould moult mound mount mourn mouse mousy mouth moved mover movie moxie msnbc mucid mucky mucor mucus muddy muder mudge mufti muggy mulch mulct mulet muley mulls multi mumak mummy munch munge mungo munro mural murid murky murth musal mused muser mushy music musky mussy musth musty muted mutex muton muzzy mynah mynde myrrh mythe mythy myton naked named naval needs nerve never newly night noble noise north noted novel nurse occur ocean offer often order organ other ought pacey paddy paean paeon pagan pagus paich paint palau paleo palmy palsy palus panda pandy panel panga pangs panic panin panne pansy panto pants papal papaw paper pappy parch pareo parka parky parle parly parol parry parse parsi party paseo passe passé pasta paste pasty patch paten pater patio patsy patte patty pauce pause paved pawky payne peace peach pearl pedal peeps peers peery peeve peice pekoe penal penis penny pensy peony peple peppy pepsi perch perdu peril perks perky peron perse pervy pesky petal peter petit petty pewit phase phasm phats pheer phial phlox phone phono phony photo phren phyle piano picky picot piece piety piggy piker pikey pilar piled piles pilot pinch piney pingo pinko pinky pinna pinny pious piper pique pirai pirot pissy piste pitch pithy pitty pivot pixie pizza place plage plain plait plane plank plans plant plash plasm plate plato platt platy playa plaza plead pleas pleat plebe plene plica plier pling plink ploce plonk plops plotz ploys pluck pluff plumb plume plump plunk plush pluto poach pocho podge podgy poesy pogue point poise poker pokey polar polis polka polly polyp pommy ponce poncy pongo pooch poofy pooja poopy poppy porch porno porny ports posed poser posit posse potch potty pouch pound power prang prank prase prate preed preen preso press prest prett preve price prick pride pried prill prima prime primo primp prink print prior prise prism privy prize probe prods proem prole prone prong proof props prose pross prosy proto proud prove provo prowl proxy prude prune psalm pseud pshaw psion psoas psyop pubes pubis pudge pudgy pudic pudor pudsy puffy puker pukka pulpy pulse punch punic punny punty pupil puppy puree purge purrs purse pursy purty pushy pusil pussy puswa putid putty pygmy pylon pyral pyxis pzazz queen query quest quick quiet quite quote radar radio raise range rapid ratio reach react ready realm refer relax relay renal renew reply reset rhyme rider ridge rifle right rigid rival river robot rocky roman rough round route royal rugby rural sable salad sally salve salvo sapid sappy sassy sated satin satyr saucy savor savvy scald scale scamp scant scape scarf scary scend scene scent scion scoff scold scoop scoot scope score scorn scour scout scowl scrag scrap scree screw scrim scrip scrub seamy sebek seedy segue seity seize semen sense sepia serve seven shack shade shady shaft shake shaky shall shame shank shape shard share sharp shawl sheaf shear sheen sheer sheet shelf shell shift shine shirk shirt shoal shoat shock shoot shore short shout shove shown showy shred shrew shrub shuck shunt sidle siege sieve sight sigil sigma silky silly since sinew singe sipid siren sissy sithe sixth sixty sized skank skeet skein skiff skill skirt skive skulk skull slack slake slang slant slash slate slave sleek sleep sleer sleet slice slick slide slike slime slink sloom slope slosh sloth slump slung slush slyly smack small smarm smart smash smaze smear smell smile smirk smite smoke smoky smolt snafu snake snare snark snarl sneak sneer snerk snide snipe snirt snoop snort snout snuff sober solar solid solve sonar sonsy soppy sorry sough sound souse south space spare spark spasm spate spawn speak spear speck speed speel spell spend spent spica spicy spiel spike spile spill spine spiny spire spirt spiry spite splay split spoil spoke spoof spook sport spout spray sprig sprog spume spunk spurn spurt squab squad squat squib stack stade staff stage staid stain stake stale stalk stall stamp stand stare stark start stash state stave stead steam steel steep steer stele steps stern stick stiff still stilt stime sting stock stoic stomp stone stony stood stoop stops store storm story stour stout strap straw stray strew stria strip strut stuck study stuff style stymy suave sudor sugar suite sully sunny super supra surge surly swack swain swamp swank sward swarm swart swash swath sweep sweet swell swift swill swing swink swipe swish swith swoon swoop sworn sylph synod tabby tabid table taboo tabor tachy tacit tacky tagus taiga tails taint taira taken takes talar talea tales talik talky tally talon talus tamed tamil tammy tango tangy tanka tansy tanto taper tapis tardy targe tarry tasis tasks tasse tasso taste tasto tasty tatar tater tatty taunt taupe tawny tawse taxes taxon teach teare tears teary tease techy teddy teeny teeth telex telic telos tempo tempt tenet tengu tenno tenon tenor tense tenth tenue tepid tepor terce terms terne terra terse terve testy tetra tetty texas thack thane thank tharm theca theft their thema theme there these thesp theta thich thick thill thine thing think third thirl thole thong thonk thorn thort those thoth thowt thred three threw throb throe throw thrum thugs thumb thump thunk thwap thwip thyme tiber tibia tidal tides tiger tight tigon tiler tilth timed times timid tinct tinea tinge tings tinny tipsy tired tisan titan titer tithe title titsy titty titup tizzy toady toast tober tobit today toile tokay token tokyo tommy tonal tondo toned toner tonic tonus tooth topaz topic topos toppo toppy toque torah torat torch torso torte torus total totem totty touch tough tours touse tower toxic toxin trace track tract trade trail train trait trama tramp trans trant traps trash traum trave trawl tread treat treed treen trend tress trews triad trial tribe trice trick tried trier trife triff trike trill trine tripe trist trite troad troat trode troid troll tromp trone troon troop trope troth trots trout trove truce truck trull truly trump trunk truss trust truth tryst tubby tufty tuhon tulip tulpa tumid tummy tuned tuner tunic turbo turio turul tutee tutor tutti twain twang twank tweak tweed tween tweet twerk twerp twice twill twine twink twire twirl twirp twist twixt twock twonk twunt tyger typic tyrol tythe uncle under undue union unity until upper upset urban usage usual valid value vapor vault venue verse video vigor viral virus visit vital vivid vocal voice voter wagon waste watch water wheel where which while white whole whose widen wider widow width windy woman women world worry worse worst worth would wound wrist write wrong wrote yield young youth zebra zones";
