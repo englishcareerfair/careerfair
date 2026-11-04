@@ -7929,7 +7929,7 @@ function renderFutureBusinessCard(mount) {
             <div class="biz-card-creds" id="bc-creds">Loading honors...</div>
             <div class="biz-card-school">
               <span>🏛️</span>
-              <span>Kanakia International School Mira Road &copy;</span>
+              <span>Kanakia International School Mira Road</span>
             </div>
           </div>
         </div>
@@ -8220,7 +8220,7 @@ function downloadBusinessCardImage(name, title, creds, phone = '', email = '') {
   // School
   ctx.fillStyle = '#64748b';
   ctx.font = '14px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('🏛️ Kanakia International School Mira Road ©', 40, 412);
+  ctx.fillText('🏛️ Kanakia International School Mira Road', 40, 412);
 
   // QR box
   ctx.fillStyle = '#ffffff';
@@ -9804,7 +9804,7 @@ function initAdminWorkspace() {
     STATE.config.school_branding = show;
     STATE.config.school_name = name;
     $('#school-branding-wrap').hidden = !show;
-    $('#school-branding-name').textContent = `${name} ©`;
+    $('#school-branding-name').textContent = name;
     await fetchApi('admin/config', 'PUT', { school_branding: show, school_name: name });
     showToast('Branding settings updated');
   });
@@ -10212,7 +10212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (cfg.banner) $('#broadcast-text').textContent = cfg.banner;
-    if (cfg.school_name) $('#school-branding-name').textContent = `${cfg.school_name} ©`;
+    if (cfg.school_name) $('#school-branding-name').textContent = cfg.school_name;
     const localStreamUrl = (localStorage.getItem('cf_stream_url') || '').trim();
     if (cfg.stream_url && cfg.stream_url.trim()) {
       STATE.config.stream_url = cfg.stream_url.trim();
