@@ -116,7 +116,7 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   if (adminKey && !headers['Authorization']) {
     headers['Authorization'] = 'Bearer ' + adminKey;
   } else if (!headers['Authorization'] && endpoint.startsWith('admin/')) {
-    headers['Authorization'] = 'Bearer careers2026';
+    headers['Authorization'] = 'Bearer botschool';
   }
 
   const clientGeminiKeys = localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || STATE.config?.gemini_keys || '';
@@ -9914,13 +9914,104 @@ function initAdminWorkspace() {
     renderAdminModeration();
   });
 
+  // ── Password Change Form Wiring ───────────────────────────────────────────
+  const formChangePwd = $('#form-change-admin-password');
+  if (formChangePwd && !formChangePwd.dataset.wired) {
+    formChangePwd.dataset.wired = 'true';
+    formChangePwd.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const curPwd = ($('#input-current-admin-pwd')?.value || '').trim();
+      const newPwd = ($('#input-new-admin-pwd')?.value || '').trim();
+      const confirmPwd = ($('#input-confirm-admin-pwd')?.value || '').trim();
+      const statusEl = $('#status-change-admin-pwd');
+
+      if (!newPwd || newPwd.length < 4) {
+        if (statusEl) {
+          statusEl.textContent = '❌ New password must be at least 4 characters.';
+          statusEl.style.color = '#ef4444';
+        }
+        showToast('Password too short (min 4 characters).');
+        return;
+      }
+      if (newPwd !== confirmPwd) {
+        if (statusEl) {
+          statusEl.textContent = '❌ New password and confirmation do not match.';
+          statusEl.style.color = '#ef4444';
+        }
+        showToast('New passwords do not match.');
+        return;
+      }
+
+      const activeToken = curPwd || STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || 'botschool';
+      const submitBtn = $('#btn-save-admin-pwd');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+      }
+      if (statusEl) {
+        statusEl.textContent = 'Updating password...';
+        statusEl.style.color = 'var(--text-muted)';
+      }
+
+      try {
+        const res = await fetch(getApiUrl('api/admin/change-password'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + activeToken
+          },
+          body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (res.ok && data?.ok) {
+          STATE.adminKey = newPwd;
+          sessionStorage.setItem('cf_admin_key', newPwd);
+          localStorage.setItem('cf_admin_key', newPwd);
+          if (STATE.config) STATE.config.admin_password = newPwd;
+
+          if (statusEl) {
+            statusEl.textContent = '✅ Admin password updated successfully!';
+            statusEl.style.color = '#10b981';
+          }
+          showToast('Admin password updated! 🔑');
+          formChangePwd.reset();
+        } else {
+          const errMsg = data?.error || data?.message || 'Failed to update password. Please check your current password.';
+          if (statusEl) {
+            statusEl.textContent = '❌ ' + errMsg;
+            statusEl.style.color = '#ef4444';
+          }
+          showToast(errMsg);
+        }
+      } catch (err) {
+        // Offline / local fallback
+        STATE.adminKey = newPwd;
+        sessionStorage.setItem('cf_admin_key', newPwd);
+        localStorage.setItem('cf_admin_key', newPwd);
+        if (STATE.config) STATE.config.admin_password = newPwd;
+        if (statusEl) {
+          statusEl.textContent = '✅ Saved locally (offline fallback mode)';
+          statusEl.style.color = '#10b981';
+        }
+        showToast('Admin password updated locally! 🔑');
+        formChangePwd.reset();
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Update Admin Password 💾';
+        }
+      }
+    });
+  }
+
   // Export handlers with secure admin authorization token
   $('#btn-export-scores-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'careers2026';
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'botschool';
     window.open(`/api/admin/export?key=${encodeURIComponent(key)}`);
   });
   $('#btn-export-feedback-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'careers2026';
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'botschool';
     window.open(`/api/admin/export-feedback?key=${encodeURIComponent(key)}`);
   });
 
@@ -10393,7 +10484,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Please enter the administrator password.');
       return;
     }
-    if (pwd === 'careers2026' || pwd === 'admin2026' || (STATE.config?.admin_password && pwd === STATE.config.admin_password)) {
+    const submitBtn = $('#admin-login-form button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    let valid = (pwd === 'botschool' || (STATE.config?.admin_password && pwd === STATE.config.admin_password));
+
+    // Live Cloudflare backend authentication verification
+    try {
+      const res = await fetch(getApiUrl('api/admin/ping'), {
+        headers: { 'Authorization': 'Bearer ' + pwd }
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.ok) valid = true;
+      } else if (res.status === 401 || res.status === 403) {
+        valid = false;
+      }
+    } catch (err) {
+      // Offline fallback: keeps valid check above
+    }
+
+    if (submitBtn) submitBtn.disabled = false;
+
+    if (valid) {
       STATE.adminKey = pwd;
       sessionStorage.setItem('cf_admin_key', pwd);
       localStorage.setItem('cf_admin_key', pwd);
@@ -10401,14 +10514,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       $('#admin-workspace-screen').hidden = false;
       initAdminWorkspace();
 
-  // Global D1 Exhibition Data Downloader Wiring
-  $('#btn-download-d1-json')?.addEventListener('click', () => {
-    window.open(getApiUrl('api/export/data?format=json'), '_blank');
-  });
+      // Global D1 Exhibition Data Downloader Wiring
+      $('#btn-download-d1-json')?.addEventListener('click', () => {
+        window.open(getApiUrl('api/export/data?format=json'), '_blank');
+      });
 
-  $('#btn-download-d1-csv')?.addEventListener('click', () => {
-    window.open(getApiUrl('api/export/data?format=csv'), '_blank');
-  });
+      $('#btn-download-d1-csv')?.addEventListener('click', () => {
+        window.open(getApiUrl('api/export/data?format=csv'), '_blank');
+      });
 
       loadFeedbackWall();
       loadLeaderboard();

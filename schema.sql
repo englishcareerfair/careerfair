@@ -53,6 +53,7 @@ INSERT OR IGNORE INTO kv (k, v) VALUES ('school_branding', '1');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('school_name', 'Kanakia International School Mira Road');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('flags', '{"guide_enabled":true,"guide_presentation_mode":"floating","guide_ml_engine":"client","ocr_enabled":true,"gdrive_sync":true,"pdf_export":true,"dopamine_fx":true,"speechLab":true,"mockInterview":true,"anchorMode":true,"roleplay":true,"debate":true,"careers":true,"colleges":true,"exams":true,"games":true,"roadmap":true,"quiz":true,"leaderboard":true,"feedback":true}');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('rclone_remote', 'gdrive:careerfair_telemetry');
+INSERT OR IGNORE INTO kv (k, v) VALUES ('admin_password', 'botschool');
 
 -- Granular Scoped API Keys for External Integrations & Leaderboard API
 CREATE TABLE IF NOT EXISTS api_keys (

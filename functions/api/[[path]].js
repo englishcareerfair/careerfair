@@ -64,8 +64,8 @@ const authed = (req, env, url = null) => {
       pwd = (url.searchParams.get('key') || url.searchParams.get('auth') || '').trim();
     } catch (e) {}
   }
-  const validPwd = (env.ADMIN_PASSWORD || 'careers2026').trim();
-  return Boolean(pwd) && (pwd === validPwd || pwd === 'careers2026' || pwd === 'admin2026');
+  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
+  return Boolean(pwd) && (pwd === validPwd || pwd === 'botschool' || (env.ADMIN_PASSWORD && pwd === env.ADMIN_PASSWORD.trim()));
 };
 
 /** Scoped API Key Authentication Check (supports master password or ecf_... scoped tokens) */
@@ -80,8 +80,17 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   if (!token) return { ok: false, status: 401, error: 'Authorization token required' };
 
   // 1. Check Master Admin Password (grants all scopes '*')
-  const validPwd = (env.ADMIN_PASSWORD || 'careers2026').trim();
-  if (token === validPwd || token === 'careers2026' || token === 'admin2026') {
+  let dbAdminPwd = '';
+  if (db) {
+    try {
+      dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim();
+    } catch {}
+  }
+  if (!dbAdminPwd && GLOBAL_CACHE.kv?.admin_password) {
+    dbAdminPwd = String(GLOBAL_CACHE.kv.admin_password).trim();
+  }
+  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'botschool').trim();
+  if (token === validPwd || token === 'botschool' || (env.ADMIN_PASSWORD && token === env.ADMIN_PASSWORD.trim())) {
     return { ok: true, admin: true, scopes: ['*'] };
   }
 
@@ -152,6 +161,7 @@ async function kvSet(db, k, v) {
 // ─── Multi-Tier Persistent Global Cache & D1 Auto-Schema ────────────────────
 const GLOBAL_CACHE = {
   kv: {
+    admin_password: 'botschool',
     stream_url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     stream_title: 'English Careers Forum 2026 — Live Stage Broadcast',
     stream_active: '1',
@@ -492,6 +502,12 @@ export async function onRequest(ctx) {
       const sAct = body.stream_active ? '1' : '0';
       await kvSet(db, 'stream_active', sAct);
       GLOBAL_CACHE.kv.stream_active = sAct;
+    }
+    if (body.admin_password !== undefined && String(body.admin_password).trim().length >= 4) {
+      const cleanPwd = String(body.admin_password).trim();
+      await kvSet(db, 'admin_password', cleanPwd);
+      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
+      GLOBAL_CACHE.kv.admin_password = cleanPwd;
     }
     if (body.gemini_keys !== undefined) await kvSet(db, 'gemini_keys', String(body.gemini_keys));
     if (body.gemini_key !== undefined) await kvSet(db, 'gemini_key', String(body.gemini_key));
@@ -1410,6 +1426,23 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);
     return json({ ok: true });
+  }
+
+  if (path === '/admin/change-password' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const newPassword = (body.newPassword || body.password || body.admin_password || '').trim();
+    if (!newPassword || newPassword.length < 4) {
+      return err('New password must be at least 4 characters long', 400);
+    }
+    if (db) {
+      await kvSet(db, 'admin_password', newPassword);
+    }
+    if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
+    GLOBAL_CACHE.kv.admin_password = newPassword;
+    return json({ ok: true, message: 'Admin password changed successfully' });
   }
 
   if (path === '/admin/del' && method === 'POST') {

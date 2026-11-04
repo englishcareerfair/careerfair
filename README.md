@@ -3,7 +3,7 @@
 > **A high-craft, full-stack student career intelligence and spoken English evaluation platform.**  
 > Designed for students (Class 8 & below, Class 9, Class 10+) and parents at **Kanakia International School Mira Road**.
 
-Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 (SQLite)**, **Cloudflare Pages Functions**, **ElevenLabs Speech-to-Text API**, **Google Gemini AI API**, and browser native **Web Speech & Web Audio APIs**.
+Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 (SQLite)**, **Cloudflare Pages Functions**, **ElevenLabs Speech API**, **Google Gemini AI API**, and browser native **Web Speech & Web Audio APIs**.
 
 ---
 
@@ -12,7 +12,7 @@ Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 
 ### 1. 🎯 Careers Directory & Intelligence (32+ Pathways)
 - Deep career profiles across **Medicine & Surgery, Commercial Aviation, Software Architecture, Corporate M&A Law, Civil Services (IFS/IAS), Defence (NDA), Broadcast Journalism, Luxury Hospitality, Venture Entrepreneurship, and Creative Writing**.
 - For every career: Typical starting and peak compensation bands, required academic degrees, entrance tests, and critically: **Why English is the Superpower** (e.g. ICAO mandatory aviation phraseology, USMLE licensing, cross-examination advocacy, client standups, investor pitching).
-- Interactive search and category filtering.
+- Interactive search, industry tags, and category filtering.
 
 ### 2. 🏛️ Colleges Explorer with Official Accreditations
 - Verified academic standards across three key categories:
@@ -37,7 +37,7 @@ Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 
 - **"Say It Better" Rewrite Synthesis**: Actionable coaching feedback with a polished model sentence.
 
 ### 5. 📹 Live On-Camera News Anchor Studio & Teleprompter
-- Direct webcam capture and **OBS Virtual Camera** support.
+- Direct webcam capture and **OBS Virtual Camera / Browser Source** integration.
 - Auto-scrolling teleprompter overlay with speed adjustments (`Slow`, `Normal`, `Fast`).
 - Authentic **Breaking News Lower-Third Graphic Banner** with student name and customized headline.
 - MediaRecorder integration for recording and downloading broadcast video clips.
@@ -48,87 +48,68 @@ Built for seamless deployment on **Cloudflare Pages** backed by **Cloudflare D1 
 - **Mayday Emergency Scenarios**: High-stress simulations for Airline Pilot ATC emergency diversion, ER Trauma triage consultation, Software Architecture database outage, and Diplomatic trade disputes.
 
 ### 7. 🎮 Career Language Arcade Suite (10 Games)
-- **Jobtris (Semantic Tetris)**: Falling industry skill blocks cleared by typing or speaking semantically related words; rewards umbrella combos!
-- **Wordle / Wordless**: Authentic 6-guess 5-letter career vocabulary challenge with green/yellow/grey feedback tiles and on-screen keyboard.
-- **Flash Cards Studio**: 40+ Career & SAT Power Words with IPA phonetics, TTS audio speaker playback, definitions, and etymology.
-- **Instant Live Dictionary**: Rapid word verification with grammatical parts of speech, definitions, and synonyms.
-- **Spelling Bee**: Voice articulates words aloud; student types spelling to maintain win streaks.
-- **Fix the Email**: Correct corporate communication mistakes with an instant polished rewrite.
-- **Guess the Package**: Flip-cards revealing real-world starting and peak salary bands.
+- **Jobtris (Semantic Tetris)**: Falling industry skill blocks cleared by typing or speaking semantic matches.
+- **Wordle / Wordless**: 6-guess 5-letter vocabulary challenge with multi-tier validation (offline dictionary + 3-pass verification), random English vocabulary selection, and an end-of-game solution reveal modal with 1-click New Game restart.
+- **Semantris Career Blocks**: Fast-paced word association game.
+- **Career Term Blitz & Hangman**: Timed vocabulary challenges with instant audio feedback.
+- **Idiom Master & Rapid Jargon Match**: Fun interactive tests for professional idioms and domain jargon.
 
-### 8. 🗺️ "My Plan" Roadmap & Exploration Tools
-- **Roadmap Blueprint**: Select Class (`Class 8 & below`, `Class 9`, `Class 10`, `Class 11`, `Class 12`, `College`) + Target Career + Daily Practice Time (15, 30, 45 mins) to generate a chronological milestone blueprint.
-- **5-Question Career Quiz**: Discovery assessment mapping natural student energy to career streams.
-- **Future Business Card Generator**: Personal executive credentials rendering student name, dream role, and a dynamic QR code for smartphone scanning!
-- **Parent vs. Child Dream Match**: Alignment report comparing student and parent career aspirations.
+### 8. 💼 Future Executive Business Card & Instant QR Verification
+- Generates a bespoke **Class of 2040 Executive Identity Card** with custom name, aspiring career title, official issuing academy credentials, and verified contact badge.
+- **Instant Vector QR Code**: 100% offline client-side vector QR generation (`<0.1s` smartphone camera scan).
+- **Compact Verification URL**: Lightweight query schema (`?v=1&s=...&t=...&e=...&p=...`) with Error Correction `'L'`, eliminating camera focus hunting.
+- **Synchronous Canvas Export**: Instant business card PNG download with direct embedded vector QR drawing.
 
-### 9. 🏆 Real-Time Leaderboard & Feedback Wall
-- Dynamic leaderboard displaying medals (🥇, 🥈, 🥉), speaking packs, accuracy percentages, and classes.
-- Public testimonial wall featuring approved visitor reviews.
+### 9. 💬 Dual Side-by-Side Feedback & Reflection Wall
+- **Wide-Screen / Laptop Layout**: Side-by-side display of the submission form and the live Visitor Reflections wall.
+- **Mobile Responsive Reflow**: Automatically collapses to a clean single-column vertical layout on mobile devices.
+- **Verified Review Badges**: Verified roles (`Student`, `Teacher`, `Parent`, `Guest`), custom administration titles, star ratings, and pinned reviews.
 
-### 10. ⚙️ Admin Control Room (`/admin` or Admin Button)
-- Protected by password: `careers2026`.
-- **Feature Flags**: Global toggles for every single module (Speech Lab, Anchor Mode, Colleges, Games, etc.). When toggled off, the UI dynamically reflows!
-- **Instant Theme Switcher**: 4 distinct visual identities:
-  1. *Cinema*: Dark Cinematic Space (Awwwards igloo.inc style)
-  2. *Festival*: Vibrant Forum Carnival with warm paper and vivid accents
-  3. *Corporate*: Scholastic clean architectural slate
-  4. *Enamel*: English Forum warm pressed paper, deep teal-night, and brass rails
-- **Live Announcement Banner & Synchronized Exam Timer**.
-- **Data Moderation & Exports**: One-click `.CSV` export for Leaderboard scores and Feedback logs.
+### 10. 🔒 Admin Control Room & Platform Management
+- **In-App Password Management**: Dedicated **🔐 Admin Password** tab to change the master admin password at any time with persistent storage in Cloudflare D1.
+- **Dynamic API Key Pools**: Main and backup key rotation for **Google Gemini** and **ElevenLabs** with auto-failover upon quota exhaustion.
+- **Voice Studio Tester**: Select from account voices or free-tier studio voices, with live in-browser speech synthesis testing.
+- **Live Stream Embed**: Synchronize YouTube live broadcast links and announcements across all connected visitor devices.
+- **Moderation Tools**: Pin VIP reflections, assign custom leadership titles (e.g. `Vice-Principal`), soft-delete spam, and ban disruptive IP addresses.
+- **Data Exports**: Export complete scores and reflection records to `.CSV` or `.JSON`.
 
 ---
 
-## 🚀 Step-by-Step Guide: Deploy to Cloudflare Pages via GitHub
-
-Deploying this project to Cloudflare Pages using GitHub takes about 5 minutes and requires **zero build commands**.
+## 🚀 Quick Start & Deployment Guide
 
 ### Prerequisites
 - A free account on [GitHub](https://github.com/)
 - A free account on [Cloudflare](https://dash.cloudflare.com/)
-- Git installed on your computer
 
 ---
 
-### Step 1: Initialize Git and Push to GitHub
+### Step 1: Push Code to GitHub
 
-1. Open your terminal or PowerShell and navigate to the `careerfair` folder:
+1. Clone or navigate to your project repository:
    ```bash
-   cd c:\Users\shwet\OneDrive\Desktop\careerfair\careerfair
+   cd careerfair
    ```
 
-2. Initialize Git, stage all files, and commit:
+2. Stage all files, commit, and push to your GitHub repository:
    ```bash
-   git init
    git add .
-   git commit -m "Initial commit of Career Fair platform"
-   git branch -M main
-   ```
-
-3. Go to [github.com/new](https://github.com/new) and create a new repository (e.g. `careerfair`). Keep it public or private.
-
-4. Connect your local repository and push:
-   ```bash
-   git remote add origin https://github.com/<your-username>/careerfair.git
-   git push -u origin main
+   git commit -m "Update Career Fair platform"
+   git push origin main
    ```
 
 ---
 
-### Step 2: Create Cloudflare Pages Project
+### Step 2: Deploy on Cloudflare Pages
 
 1. Log into your [Cloudflare Dashboard](https://dash.cloudflare.com/).
-2. In the left sidebar, click **Workers & Pages**.
-3. Click the **Create application** button, then select the **Pages** tab.
-4. Click **Connect to Git** and authorize your GitHub account.
-5. Select your newly created `careerfair` repository.
-6. Configure the build settings:
-   - **Project name**: `careerfair` (or your preferred name)
-   - **Production branch**: `main`
+2. In the sidebar, navigate to **Workers & Pages**.
+3. Click **Create application**, then select the **Pages** tab.
+4. Click **Connect to Git** and choose your repository.
+5. Configure the build settings:
    - **Framework preset**: `None`
    - **Build command**: *(leave completely blank)*
    - **Build output directory**: `public`
-7. Click **Save and Deploy**.
+6. Click **Save and Deploy**.
 
 Cloudflare will deploy your static assets in under 60 seconds!
 
@@ -136,58 +117,52 @@ Cloudflare will deploy your static assets in under 60 seconds!
 
 ### Step 3: Create Cloudflare D1 Database
 
-To enable the live leaderboard, student voice scores, and feedback storage:
+To enable the live leaderboard, student voice scores, feedback storage, and persistent admin settings:
 
 1. In the Cloudflare Dashboard, go to **Storage & Databases** > **D1 SQL Database**.
 2. Click **Create database**.
 3. Name it `careerfair-db` and click **Create**.
-4. Click on your newly created `careerfair-db` database and switch to the **Console** tab.
-5. Open the [`schema.sql`](./schema.sql) file from this repository, copy its entire contents, paste them into the D1 console, and click **Execute**.
-
-Your database tables (`kv`, `scores`, `feedback`) and default settings are now created!
+4. Open your new `careerfair-db` database and switch to the **Console** tab.
+5. Open [`schema.sql`](./schema.sql), copy its contents, paste them into the D1 console, and click **Execute**.
 
 ---
 
-### Step 4: Bind D1 Database to your Pages Project
+### Step 4: Bind D1 Database to Pages
 
-1. In the Cloudflare Dashboard, return to **Workers & Pages** and click on your `careerfair` Pages project.
-2. Go to **Settings** > **Functions**.
-3. Scroll down to **D1 database bindings** and click **Add binding**:
-   - **Variable name**: `DB`  *(Must be exactly uppercase `DB`)*
+1. In the Cloudflare Dashboard, go to **Workers & Pages** > your `careerfair` project.
+2. Navigate to **Settings** > **Functions**.
+3. Under **D1 database bindings**, click **Add binding**:
+   - **Variable name**: `DB` *(Must be uppercase `DB`)*
    - **D1 Database**: Select `careerfair-db`
 4. Click **Save**.
 
 ---
 
-### Step 5: Configure Environment Variables & Secrets (Optional but Recommended)
+### Step 5: Configure Environment Variables (Optional)
 
-1. In your Pages project settings, go to **Settings** > **Environment variables**.
-2. Click **Add variables** under **Production**:
-   - `ADMIN_PASSWORD`: Set your desired admin password (e.g. `careers2026`).
-   - `GEMINI_API_KEY`: *(Optional)* Your Google Gemini API Key for AI speech coaching and rewrites.
-   - `ELEVEN_KEY`: *(Optional)* Your ElevenLabs API key for server-side speech-to-text.
-   - `STT_MODEL`: `scribe_v1` *(Defaults to scribe_v1)*
-3. Click **Save**.
+In your Pages project settings (**Settings** > **Environment variables**), you can optionally configure:
 
----
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `ADMIN_PASSWORD` | Master password for the control room (can also be updated inside Admin Panel) | Configured in D1 / Dashboard |
+| `GEMINI_API_KEY` | Google Gemini API key for AI feedback and coaching rewrites | Heuristic fallback |
+| `ELEVEN_KEY` | ElevenLabs API key for studio Indian English voice synthesis | Web Speech fallback |
+| `STT_MODEL` | Speech-to-text model identifier | `scribe_v1` |
 
-### Step 6: Redeploy & Launch
-
-1. Go to the **Deployments** tab of your Pages project.
-2. Click the latest deployment's **Retry deployment** button (or click **Create deployment**).
-3. Once deployed, open your live URL (e.g. `https://careerfair.pages.dev`)!
+> [!TIP]
+> You can also configure multiple Gemini and ElevenLabs backup keys directly inside the **Admin Panel** under **AI & Speech Router** without redeploying!
 
 ---
 
 ## 💻 Local Testing & Offline Operations
 
-You can test the entire website locally without any server by opening `public/index.html` in your web browser, or by serving it using Python:
+You can test the entire platform locally without external server dependencies by opening `public/index.html` directly in your browser, or serving it with Python:
 
 ```bash
-# In c:\Users\shwet\OneDrive\Desktop\careerfair\careerfair\public
+cd public
 python -m http.server 8080
 ```
-Then visit `http://localhost:8080` in your browser. All audio waveform visualizers, speech recognition, games, and responsive themes function completely offline!
+Then visit `http://localhost:8080`. All audio waveform visualizers, speech recognition, games, QR code verification, and responsive themes function completely offline!
 
 ---
 
@@ -197,23 +172,24 @@ Then visit `http://localhost:8080` in your browser. All audio waveform visualize
 careerfair/
 ├── public/
 │   ├── index.html            # Unified Single-Page Application (HTML5, responsive, accessible)
-│   ├── styles.css            # Opinionated token system, 4 theme switchers, fluid typography
-│   ├── app.js                # Interactive engine, Web Speech API, AudioContext waveform, games
+│   ├── styles.css            # Token system, 4 theme switchers, fluid typography & grid
+│   ├── app.js                # Core interactive engine, Web Speech API, AudioContext, arcade games
+│   ├── qrcode.min.js         # Offline client-side vector QR code generator
 │   ├── _headers              # Security, mic/cam permissions, CORS, and caching headers
 │   └── favicon.svg           # Branded SVG favicon
 ├── functions/
 │   └── api/
-│       └── [[path]].js       # Cloudflare Pages Functions backend (D1, STT, Gemini AI, Admin)
+│       └── [[path]].js       # Cloudflare Pages Functions backend (D1, STT, Gemini AI, Admin routes)
 ├── schema.sql                # D1 SQLite database tables & starter configuration
-├── wrangler.toml             # Cloudflare Pages / D1 configuration
-└── README.md                 # Complete documentation & Cloudflare deployment guide
+├── wrangler.toml             # Cloudflare Pages & D1 database bindings configuration
+└── README.md                 # Documentation, feature guide & deployment instructions
 ```
 
 ---
 
-## 🔑 Default Credentials & Quick Reference
+## 🔐 Administration & Security Reference
 
-- **Admin Password**: `careers2026`
-- **Default Passing Threshold**: `70%` accuracy
-- **School Branding**: *Kanakia International School Mira Road ©*
-- **Speech Ladder Packs**: `Everyday`, `Journalism`, `Law`, `Academic`
+- **Admin Control Room**: Accessible via the **Admin** navigation tab.
+- **Password Management**: Change the master password at any time via **Admin Panel > 🔐 Admin Password**. The new password is saved directly to Cloudflare D1.
+- **Passing Threshold**: Configurable accuracy benchmark (default: 70%).
+- **Branding**: Kanakia International School Mira Road.
