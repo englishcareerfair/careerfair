@@ -1371,23 +1371,246 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
         const pLower = (pText || '').toLowerCase();
         
         // 1. Interrogation / Detective Mystery Case
-        if (pLower.includes('mystery case') || pLower.includes('suspect') || pLower.includes('interrogat') || pLower.includes('inspector')) {
-          if (pLower.includes('finch') || pLower.includes('doctor')) {
-            return "Dr. Finch insists he was cataloguing planetary charts in the observatory alcove. However, his cuffs bore distinctive red ink smudges matching the uncatalogued folio margin.";
-          }
-          if (pLower.includes('margaret') || pLower.includes('sister')) {
-            return "Sister Margaret is a senior book conservator who holds the cabinet key. She states she was repairing songbooks with blue ink, yet duplicate wax impressions were noted near her desk.";
-          }
-          if (pLower.includes('kulkarni') || pLower.includes('librarian')) {
-            return "Librarian Kulkarni logged incoming deliveries until late evening. The archive logbook shows a timestamp discrepancy between 11:20 PM and midnight.";
-          }
-          if (pLower.includes('ink') || pLower.includes('color') || pLower.includes('clue')) {
-            return "Forensic examination indicates the ink trace left at the scene is bright blue calligraphy pigment, freshly blotted upon the velvet cabinet lining.";
-          }
-          if (pLower.includes('female') || pLower.includes('woman') || pLower.includes('man') || pLower.includes('gender')) {
-            return "Sister Margaret is the only female suspect present in the archive registry; Dr. Finch and Librarian Kulkarni are the other two individuals under inquiry.";
-          }
-          return "The inspector advises: Compare the physical ink and physical clues directly with each suspect's declared instruments and alibis.";
+        if (pLower.includes('[mystery interrogation]') || pLower.includes('mystery case') || pLower.includes('student interrogation question') || pLower.includes('archive case') || pLower.includes('interrogat') || pLower.includes('suspect')) {
+          const qMatch = pText.match(/Student Interrogation Question:\s*["']?([^"'\n\r]+)["']?/i) ||
+                         pText.match(/student asks the inspector:\s*["']?([^"'\n\r]+)["']?/i) ||
+                         pText.match(/Student(?:'s)? Question:\s*["']?([^"'\n\r]+)["']?/i);
+          const studentQ = qMatch ? qMatch[1].trim() : (pText.includes('?') ? pText.split('?')[0].split('\n').pop() : '');
+
+          const BACKEND_CIPHER_CASES = [
+            {
+              id: "nalanda-simple",
+              title: "Archive Case: The Missing Ancient Book",
+              intro: "Late last night in the university library, an old gold-letter book went missing from a glass desk. The key was left on the table. Three campus helpers were nearby.",
+              time: "Late last night in the university library",
+              location: "The open glass desk in the university library",
+              stolen: "An old gold-letter book",
+              clue: "A drop of bright blue ink was found near the open glass desk.",
+              culprit: "Sister Margaret",
+              suspects: [
+                { name: "Dr. Alistair Finch", role: "History Teacher", gender: "male", alibi: "Says he was reading star maps in the high tower with a red pen." },
+                { name: "Sister Margaret", role: "Book Repairer", gender: "female", alibi: "Says she was fixing old song sheets with blue ink in the side room." },
+                { name: "Librarian Kulkarni", role: "Chief Librarian", gender: "male", alibi: "Says he was counting new books in the hallway with a pencil." }
+              ]
+            },
+            {
+              id: "lost-trophy-simple",
+              title: "Campus Case: The Golden Debate Cup",
+              intro: "During lunch break in the school hall, the shiny first-place debate cup disappeared from the showcase. The back door was left unlocked.",
+              time: "During lunch break in the school hall",
+              location: "The trophy showcase in the school hall",
+              stolen: "The shiny first-place debate cup",
+              clue: "A green ribbon with cookie crumbs was dropped beside the trophy stand.",
+              culprit: "Leo the Prefect",
+              suspects: [
+                { name: "Leo the Prefect", role: "Debate Captain", gender: "male", alibi: "Says he was eating lunch near the stage door." },
+                { name: "Maya Sharma", role: "Student Council Rep", gender: "female", alibi: "Says she was making blue posters in art class." },
+                { name: "Coach Sam", role: "Sports Coach", gender: "male", alibi: "Says he was blowing his yellow whistle out on the soccer ground." }
+              ]
+            },
+            {
+              id: "royal-diploma-med",
+              title: "Archive Case: The King's Charter Seal",
+              intro: "During the annual heritage exhibition, a historic royal charter bearing King George's wax insignia was swapped with a counterfeit replica. Only staff with laboratory passes entered the vault.",
+              time: "During the annual heritage exhibition in the vault",
+              location: "The heritage display vault",
+              stolen: "A historic royal charter bearing King George's wax insignia",
+              clue: "A distinctive scent of almond polishing solvent lingered across the display vault.",
+              culprit: "Victor Vance",
+              suspects: [
+                { name: "Dr. Elena Rostova", role: "Visiting Chemist", gender: "female", alibi: "Claims she was sanitizing glass cabinets using fresh citrus spray." },
+                { name: "Victor Vance", role: "Framing Technician", gender: "male", alibi: "Claims he was refinishing antique brass borders in the basement workshop." },
+                { name: "Marcus Brody", role: "Security Archivist", gender: "male", alibi: "Claims he was reviewing digital motion logs wearing white cotton gloves." }
+              ]
+            },
+            {
+              id: "stolen-microfilm-med",
+              title: "Media Lab Case: The Missing Flight Audio Tape",
+              intro: "Just before the journalism showcase, the original cockpit audio cassette from the historic 1982 trans-Atlantic flight was taken from the sound editing deck.",
+              time: "Just before the journalism showcase in the media lab",
+              location: "The sound editing deck in the media lab",
+              stolen: "The original cockpit audio cassette from the historic 1982 trans-Atlantic flight",
+              clue: "A magnetic tape spool cap labeled '7.5 IPS High-Speed' was caught in the sound booth vent.",
+              culprit: "Audio Engineer Tara",
+              suspects: [
+                { name: "Audio Engineer Tara", role: "Sound Archivist", gender: "female", alibi: "Maintains she was testing high-speed reel tapes in the back studio." },
+                { name: "Reporter Neil", role: "Investigative Journalist", gender: "male", alibi: "States he was transferring audio interviews from modern flash cards." },
+                { name: "Producer Diaz", role: "Newsroom Director", gender: "male", alibi: "Says he was proofreading teleprompter scripts in the main control gallery." }
+              ]
+            },
+            {
+              id: "nalanda-advanced",
+              title: "Archive Case: The Disappearing Nalanda Translation",
+              intro: "At midnight in the library quadrangle, a priceless 14th-century illuminated folio translated from Nalanda Sanskrit into early English vanished from its locked mahogany case. Three scholars were logged present in the scriptorium.",
+              time: "At midnight in the library quadrangle scriptorium",
+              location: "The locked mahogany case in the library quadrangle scriptorium",
+              stolen: "A 14th-century illuminated folio translated from Nalanda Sanskrit into early English",
+              clue: "A smudge of ultramarine blue calligraphic wax was found near the display lock.",
+              culprit: "Sister Margaret",
+              suspects: [
+                { name: "Dr. Alistair Finch", role: "Visiting Oxford Paleographer", gender: "male", alibi: "Claims he was examining astronomy charts in the north tower with scarlet ink." },
+                { name: "Sister Margaret", role: "Archival Conservator", gender: "female", alibi: "Claims she was restoring liturgical psalters in the scriptorium with blue wax." },
+                { name: "Librarian Kulkarni", role: "Head Curator", gender: "male", alibi: "Claims he was cataloging new Sanskrit acquisitions in the main annex with graphite." }
+              ]
+            },
+            {
+              id: "cipher-code-advanced",
+              title: "Cipher Case: The Enigma Diplomatic Dispatch",
+              intro: "During an international mock embassy summit, an intercepted cipher telegram containing coded naval peacetime treaties was extracted from the locked embassy telex terminal.",
+              time: "During an international mock embassy summit at the telex terminal",
+              location: "The locked embassy telex terminal",
+              stolen: "An intercepted cipher telegram containing coded naval peacetime treaties",
+              clue: "The cipher machine ribbon was rewound counter-clockwise using a left-handed mechanical key.",
+              culprit: "Attaché Henri Dupont",
+              suspects: [
+                { name: "Ambassador Sterling", role: "Senior Envoy", gender: "male", alibi: "Asserts he was delivering the plenary address with his right hand on the lectern." },
+                { name: "Attaché Henri Dupont", role: "Cryptographic Secretary", gender: "male", alibi: "Claims he was filing cipher decodes in the embassy vault." },
+                { name: "Counselor Priya Sen", role: "Legal Counsel", gender: "female", alibi: "States she was drafting formal treaty revisions on an electric typewriter." }
+              ]
+            }
+          ];
+
+          let matchedCase = BACKEND_CIPHER_CASES.find(c => pText.includes(c.title) || pText.includes(c.id) || pText.includes(c.stolen) || pText.includes(c.clue)) || BACKEND_CIPHER_CASES[0];
+
+          const resolveInterr = (qStr, cObj) => {
+            const ql = (qStr || '').trim().toLowerCase();
+            if (!ql || !cObj) return "The archive inspector is reviewing the case records.";
+
+            // 1. Inquiries about the Culprit / Who did it
+            const culpritQueries = [
+              'who did it', 'who is the culprit', 'who stole', 'who is the thief',
+              'who is guilty', 'who took it', 'who committed', 'tell me the answer',
+              'tell me who', 'who is responsible', 'who done it', 'who was it',
+              'who done this', 'who is to blame'
+            ];
+            if (culpritQueries.some(k => ql.includes(k))) {
+              return "To maintain investigative integrity, the inspector cannot declare the culprit directly. Compare the physical evidence with each suspect's declared tools and alibi, then issue your formal accusation below.";
+            }
+
+            // 2. Specific Forensic Evidence & Clue Material queries with word boundaries
+            if (/\b(ink|color|colour|pen|pens|pencil|pencils|pigment)\b/i.test(ql)) {
+              if (cObj.id && cObj.id.includes('nalanda')) {
+                return `Ink Evidence Log: ${cObj.clue} Check each suspect's declared writing instrument to verify who used this ink.`;
+              }
+            }
+            if (/\b(wax|seal|seals|lacquer)\b/i.test(ql)) {
+              if (cObj.clue && (/\b(wax|seal|lacquer)\b/i.test(cObj.clue))) {
+                return `Seal & Wax Evidence: ${cObj.clue}`;
+              }
+            }
+            if (/\b(solvent|scent|smell|almond|citrus|chemical)\b/i.test(ql)) {
+              if (cObj.clue && (/\b(solvent|scent|smell|almond|citrus)\b/i.test(cObj.clue))) {
+                return `Chemical Evidence Log: ${cObj.clue}`;
+              }
+            }
+            if (/\b(ribbon|cookie|cookies|crumb|crumbs|food|snack)\b/i.test(ql)) {
+              if (cObj.clue && (/\b(ribbon|cookie|crumb)\b/i.test(cObj.clue))) {
+                return `Physical Clue Log: ${cObj.clue}`;
+              }
+            }
+            if (/\b(tape|spool|7\.5|speed|ips|cassette|reel)\b/i.test(ql)) {
+              if (cObj.clue && (/\b(tape|spool|ips|speed|cassette|reel)\b/i.test(cObj.clue))) {
+                return `Audio Recording Clue: ${cObj.clue}`;
+              }
+            }
+            if (/\b(key|keys|left-hand|counter-clockwise|winding|handed)\b/i.test(ql) || ql.includes('left hand')) {
+              if (cObj.clue && (/\b(key|counter-clockwise|left-handed)\b/i.test(cObj.clue) || cObj.clue.includes('left-handed'))) {
+                return `Mechanical Evidence Log: ${cObj.clue}`;
+              }
+            }
+
+            // General clue / evidence / what was found query
+            if (/\b(clue|clues|evidence|proof|trace|traces|forensic)\b/i.test(ql) || ql.includes('found at') || ql.includes('what was found') || ql.includes('what did you find')) {
+              return `Forensic Clue: ${cObj.clue}`;
+            }
+
+            // 3. Stolen Item / Subject of the crime
+            const stolenQueries = [
+              'what was stolen', 'what is stolen', 'what went missing', 'what was lost',
+              'what is missing', 'what was taken', 'what disappeared', 'what happened',
+              'stolen item', 'missing item', 'what book', 'what cup', 'what charter',
+              'what tape', 'what folio', 'what telegram', 'what was swapped'
+            ];
+            if (stolenQueries.some(k => ql.includes(k)) || (/\b(stolen|missing)\b/i.test(ql) && /\b(what|which)\b/i.test(ql))) {
+              const item = cObj.stolen || cObj.intro;
+              return `Missing Archive Subject: ${item}.`;
+            }
+
+            // 4. Suspect-specific inquiries (Name, Role, Gender, Alibi, Tools)
+            if (Array.isArray(cObj.suspects)) {
+              for (const s of cObj.suspects) {
+                const nameParts = s.name.toLowerCase().split(/\s+/).filter(p => p.length > 2 && !['the', 'and', 'for'].includes(p));
+                const roleParts = s.role.toLowerCase().split(/\s+/).filter(p => p.length > 2 && !['the', 'and', 'for'].includes(p));
+                const isNamed = nameParts.some(p => {
+                  const reg = new RegExp(`\\b${p}\\b`, 'i');
+                  return reg.test(ql);
+                }) || roleParts.some(p => {
+                  const reg = new RegExp(`\\b${p}\\b`, 'i');
+                  return reg.test(ql);
+                });
+
+                if (isNamed) {
+                  const asksFemale = /\b(female|woman|girl|lady)\b/i.test(ql);
+                  const asksMale = /\b(male|man|boy|gentleman)\b/i.test(ql);
+
+                  if (asksFemale) {
+                    if (s.gender === 'female') {
+                      return `Yes, ${s.name} is female; she serves as ${s.role} in this case.`;
+                    } else {
+                      return `No, ${s.name} is male; he serves as ${s.role} in this case.`;
+                    }
+                  }
+                  if (asksMale) {
+                    if (s.gender === 'male') {
+                      return `Yes, ${s.name} is male; he serves as ${s.role} in this case.`;
+                    } else {
+                      return `No, ${s.name} is female; she serves as ${s.role} in this case.`;
+                    }
+                  }
+
+                  return `${s.name} (${s.role}) declared under inquiry: "${s.alibi}"`;
+                }
+              }
+            }
+
+            // 5. General Gender Queries (when no suspect name is mentioned)
+            if (/\b(female|woman|girl|women|ladies)\b/i.test(ql)) {
+              const females = (cObj.suspects || []).filter(s => s.gender === 'female');
+              if (females.length > 0) {
+                return `The female suspect in this case is: ${females.map(s => `${s.name} (${s.role})`).join(', ')}.`;
+              }
+              return "There are no female suspects recorded in this case.";
+            }
+            if (/\b(male|man|boy|men|gentlemen)\b/i.test(ql)) {
+              const males = (cObj.suspects || []).filter(s => s.gender === 'male');
+              if (males.length > 0) {
+                return `The male suspects in this case are: ${males.map(s => `${s.name} (${s.role})`).join(', ')}.`;
+              }
+              return "There are no male suspects recorded in this case.";
+            }
+
+            // 6. Time & Chronology queries
+            if (/\b(time|when|hour|hours|clock|timing|timestamp|date|midnight|lunch|night|morning|evening)\b/i.test(ql) || ql.includes('at what time') || ql.includes('what time') || ql.includes('when did')) {
+              const timeDetail = cObj.time || cObj.intro.split(',')[0];
+              return `Incident Timeline: The incident occurred ${timeDetail.trim().replace(/\.$/, '')}.`;
+            }
+
+            // 7. Location & Scene queries
+            if (/\b(where|location|place|scene|venue|desk|vault|hall|room|tower|booth|terminal|quadrangle)\b/i.test(ql) || ql.includes('where did') || ql.includes('where was')) {
+              const locDetail = cObj.location || 'the scene described in the archive case summary';
+              return `Scene Location: The incident occurred at ${locDetail.trim().replace(/\.$/, '')}.`;
+            }
+
+            // 8. General suspects overview
+            if (ql.includes('suspects') || ql.includes('who are the suspects') || ql.includes('people') || ql.includes('everyone')) {
+              return `Suspects under inquiry: ${(cObj.suspects || []).map(s => `${s.name} (${s.role})`).join('; ')}.`;
+            }
+
+            // 9. Strict Fallback for Unrecorded / Unrelated details
+            return "That information is not found in the archive records.";
+          };
+
+          return resolveInterr(studentQ, matchedCase);
         }
 
         // 2. The Bard's Mirror (Poetry, Ballad, or Critique)
