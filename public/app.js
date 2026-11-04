@@ -9031,7 +9031,6 @@ async function loadFeedbackWall() {
               <strong style="font-size:14.5px;">${escapeHtml(f.name || 'Anonymous')}</strong>
               ${titleBadgeHtml}
               <span class="feedback-item-badge">${roleBadge}</span>
-              ${isPinned ? '<span class="feedback-pin-badge">📌 Pinned Review</span>' : ''}
             </div>
             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
               <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
