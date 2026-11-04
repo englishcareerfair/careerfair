@@ -31,7 +31,7 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.7" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="app.js?v=8.5" defer></script>
+  <script src="app.js?v=8.6" defer></script>
 </head>
 <body>
 
@@ -575,23 +575,31 @@
 
           <div style="margin-bottom:12px;">
             <label style="font-size:13px;font-weight:600;">Select Script / Roleplay:</label>
-            <select id="anchor-script-select">
-              <option value="breaking">Breaking News Bulletin (Media Anchor)</option>
-              <option value="pilot">Aviation ATC Clearance (Commercial Airline Captain)</option>
-              <option value="doctor">Emergency Medical Briefing (Chief Trauma Surgeon)</option>
-              <option value="lawyer">Supreme Court Constitutional Argument (Senior Advocate)</option>
-              <option value="diplomat">UN General Assembly Climate Address (Chief Diplomat)</option>
-              <option value="rocket">ISRO / NASA Launch Countdown (Mission Flight Director)</option>
-              <option value="cricket">Cricket World Cup Final Over (Live Sports Broadcaster)</option>
-              <option value="ciso">Cyber Incident Response SOC Standup (CISO)</option>
-              <option value="tech">Distributed Systems Architecture (Chief Technology Officer)</option>
-              <option value="pitch">Silicon Valley Series A Pitch (Startup Founder)</option>
-              <option value="wildlife">Sundarbans Delta Wildlife Tracking (Nat Geo Biologist)</option>
-              <option value="banker">Cross-Border $12B M&A Briefing (Wall Street Banker)</option>
-              <option value="chef">Three-Star Michelin Kitchen Service (Executive Chef)</option>
-              <option value="pr">Corporate Crisis Press Briefing (PR Spokesperson)</option>
-              <option value="f1">Formula 1 Rain Strategy Radio (F1 Race Engineer)</option>
-              <option value="ocean">Deep-Sea Mariana Trench Exploration (Marine Geologist)</option>
+            <select id="anchor-script-select" class="form-select">
+              <optgroup label="🎙️ MEDIA, BROADCASTING & PUBLIC LIFE">
+                <option value="breaking" selected>📰 Breaking News Bulletin (Media Anchor)</option>
+                <option value="cricket">🏏 Cricket World Cup Final Over (Live Sports Broadcaster)</option>
+                <option value="diplomat">🌐 UN General Assembly Climate Address (Chief Diplomat)</option>
+                <option value="pr">📢 Corporate Crisis Press Briefing (PR Spokesperson)</option>
+              </optgroup>
+              <optgroup label="🚀 STEM, AVIATION & SPACE MISSION">
+                <option value="pilot">✈️ Aviation ATC Clearance (Commercial Airline Captain)</option>
+                <option value="rocket">🚀 ISRO / NASA Launch Countdown (Mission Flight Director)</option>
+                <option value="f1">🏎️ Formula 1 Rain Strategy Radio (F1 Race Engineer)</option>
+                <option value="ocean">🌊 Deep-Sea Mariana Trench Exploration (Marine Geologist)</option>
+                <option value="wildlife">🐅 Sundarbans Delta Wildlife Tracking (Nat Geo Biologist)</option>
+              </optgroup>
+              <optgroup label="💻 TECH, CYBER & VENTURE CAPITAL">
+                <option value="tech">⚙️ Distributed Systems Architecture (Chief Technology Officer)</option>
+                <option value="ciso">🛡️ Cyber Incident Response SOC Standup (CISO)</option>
+                <option value="pitch">💡 Silicon Valley Series A Pitch (Startup Founder)</option>
+                <option value="banker">💼 Cross-Border $12B M&A Briefing (Wall Street Banker)</option>
+              </optgroup>
+              <optgroup label="⚖️ LAW, HEALTHCARE & GASTRONOMY">
+                <option value="lawyer">⚖️ Supreme Court Constitutional Argument (Senior Advocate)</option>
+                <option value="doctor">🩺 Emergency Medical Briefing (Chief Trauma Surgeon)</option>
+                <option value="chef">🍳 Three-Star Michelin Kitchen Service (Executive Chef)</option>
+              </optgroup>
             </select>
           </div>
 
