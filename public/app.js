@@ -6210,6 +6210,11 @@ window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
     return { valid: false, reason: `Word must be exactly ${requiredLength} letters long.` };
   }
 
+  // 0. Immediate rejection of repeated characters (e.g. eeeee, ttttt)
+  if (/^(.)\1+$/.test(word)) {
+    return { valid: false, reason: 'Nonsense word: identical repeated characters.' };
+  }
+
   // 1. Instant Offline Lexicon Check
   if (OFFLINE_5_LETTER_SET.has(word) || OFFLINE_COMMON_WORDS_SET.has(word)) {
     return { valid: true, source: 'offline_lexicon', word };
@@ -6296,35 +6301,124 @@ window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
   return { valid: false, reason: 'Word not found in English dictionary.', attempts, word };
 };
 
-// GAME 2: Wordle (5-Letter Random English Vocabulary)
+// GAME 2: Wordle (Career & Vocabulary Guess Challenge - Enhanced from careers-site)
 function renderWordle(mount) {
-  const SECRET_WORDS = ["about", "above", "actor", "acute", "admit", "adopt", "adult", "after", "again", "agent", "agree", "ahead", "alarm", "album", "alert", "alike", "alive", "allow", "alone", "along", "alter", "among", "anger", "angle", "angry", "apart", "apple", "apply", "arena", "argue", "arise", "armor", "arrow", "asset", "audio", "audit", "avoid", "award", "aware", "badly", "baker", "bases", "basic", "basis", "beach", "began", "begin", "begun", "being", "below", "bench", "birth", "black", "blame", "blind", "block", "blood", "board", "boost", "booth", "bound", "brain", "brand", "bread", "break", "breed", "brief", "bring", "broad", "broke", "brown", "build", "built", "buyer", "cable", "calm", "cameo", "canal", "candy", "canoe", "cargo", "carry", "catch", "cause", "chain", "chair", "chalk", "champ", "chart", "chase", "cheap", "check", "chest", "chief", "child", "china", "chose", "civil", "claim", "class", "clean", "clear", "click", "clock", "close", "coach", "coast", "could", "count", "court", "cover", "craft", "crash", "cream", "crime", "cross", "crowd", "crown", "curve", "cycle", "daily", "dance", "dated", "dealt", "death", "debut", "delay", "depth", "doing", "doubt", "dozen", "draft", "drama", "drank", "draw", "drawn", "dream", "dress", "drill", "drink", "drive", "drove", "dying", "eager", "early", "earth", "eight", "elite", "empty", "enemy", "enjoy", "enter", "entry", "equal", "error", "event", "every", "exact", "exist", "extra", "faith", "false", "fault", "fiber", "field", "fifth", "fifty", "fight", "final", "first", "fixed", "flame", "flash", "fleet", "floor", "fluid", "focus", "force", "forth", "forty", "forum", "found", "frame", "frank", "fraud", "fresh", "front", "fruit", "fully", "funny", "giant", "given", "glass", "globe", "glory", "going", "grace", "grade", "grand", "grant", "grass", "great", "green", "gross", "group", "grown", "guard", "guess", "guest", "guide", "habit", "happy", "harsh", "heart", "heavy", "hello", "hence", "hobby", "horse", "hotel", "house", "human", "ideal", "image", "imply", "index", "inner", "input", "issue", "irony", "joint", "judge", "juice", "knife", "knock", "known", "label", "labor", "large", "laser", "later", "laugh", "layer", "learn", "lease", "least", "leave", "legal", "lemon", "level", "lever", "light", "limit", "links", "liver", "lives", "local", "logic", "loose", "lower", "loyal", "lucky", "lunch", "magic", "major", "maker", "mango", "march", "match", "maybe", "mayor", "meant", "media", "metal", "might", "minor", "minus", "mixed", "model", "money", "month", "moral", "motor", "mount", "mouse", "mouth", "movie", "music", "naked", "named", "naval", "needs", "nerve", "never", "newly", "night", "noble", "noise", "north", "noted", "novel", "nurse", "occur", "ocean", "offer", "often", "order", "organ", "other", "ought", "paint", "panel", "paper", "party", "peace", "pearl", "phase", "phone", "photo", "piano", "piece", "pilot", "pitch", "pizza", "place", "plain", "plane", "plant", "plate", "plaza", "point", "polar", "pound", "power", "press", "price", "pride", "prime", "print", "prior", "prize", "proof", "proud", "prove", "pulse", "punch", "pupil", "queen", "query", "quest", "quick", "quiet", "quite", "quote", "radar", "radio", "raise", "range", "rapid", "ratio", "reach", "react", "ready", "realm", "refer", "relax", "relay", "renal", "renew", "reply", "reset", "rhyme", "rider", "ridge", "rifle", "right", "rigid", "rival", "river", "robot", "rocky", "roman", "rough", "round", "route", "royal", "rugby", "rural", "salad", "scale", "scene", "scope", "score", "sense", "serve", "seven", "shade", "shaft", "shake", "shall", "shame", "shape", "share", "sharp", "sheet", "shelf", "shell", "shift", "shine", "shirt", "shock", "shoot", "shore", "short", "shout", "shown", "sight", "sigma", "since", "sixth", "sixty", "sized", "skill", "skull", "slave", "sleep", "slide", "slope", "small", "smart", "smile", "smoke", "snake", "solid", "solve", "sonar", "sorry", "sound", "south", "space", "spare", "spark", "speak", "speed", "spend", "spent", "split", "spoke", "sport", "squad", "staff", "stage", "stake", "stand", "stare", "start", "state", "steam", "steel", "steep", "steer", "stick", "still", "stock", "stone", "stood", "stops", "store", "storm", "story", "strip", "stuck", "study", "stuff", "style", "sugar", "suite", "super", "sweet", "table", "taken", "taste", "taxes", "teach", "teeth", "tempo", "tenth", "terms", "thank", "theft", "their", "theme", "there", "these", "thick", "thing", "think", "third", "those", "three", "threw", "throw", "thumb", "tiger", "tight", "times", "tired", "title", "today", "token", "topic", "total", "touch", "tough", "tower", "track", "trade", "trail", "train", "treat", "trend", "trial", "tribe", "trick", "tried", "truck", "truly", "trunk", "trust", "truth", "twice", "twist", "uncle", "under", "undue", "union", "unity", "until", "upper", "upset", "urban", "usage", "usual", "valid", "value", "vapor", "vault", "venue", "verse", "video", "vigor", "viral", "virus", "visit", "vital", "vivid", "vocal", "voice", "voter", "wagon", "waste", "watch", "water", "wheel", "where", "which", "while", "white", "whole", "whose", "widen", "wider", "widow", "width", "windy", "woman", "women", "world", "worry", "worse", "worst", "worth", "would", "wound", "wrist", "write", "wrong", "wrote", "yield", "young", "youth", "zebra", "zones"];
-  // Random English word for secret answer
-  const rawSecret = SECRET_WORDS[Math.floor(Math.random() * SECRET_WORDS.length)] || "world";
+  // Curated Career, Arts & Professional Vocabulary from careers-site
+  const CAREER_WORDS = [
+    "WRITE", "NOVEL", "MEDIA", "POETS", "STORY", "ESSAY", "DRAFT", "PROSE",
+    "VERSE", "PRESS", "SPEAK", "WORDS", "CLERK", "PAPER", "PRINT", "STUDY",
+    "LEARN", "TOPIC", "QUOTE", "STYLE", "VOICE", "STAGE", "SCENE", "LEGAL",
+    "COURT", "BRIEF", "ORDER", "RULES", "CLASS", "GRADE", "ACTOR", "JUDGE",
+    "PILOT", "RADIO", "EVENT", "SKILL", "CRAFT", "CHIEF", "GUIDE", "AUDIT"
+  ];
+
+  // Rich General 5-Letter English Vocabulary
+  const GENERAL_WORDS = [
+    "ABOUT", "ABOVE", "ACUTE", "ADMIT", "ADOPT", "ADULT", "AFTER", "AGAIN",
+    "AGENT", "AGREE", "AHEAD", "ALARM", "ALBUM", "ALERT", "ALIKE", "ALIVE",
+    "ALLOW", "ALONE", "ALONG", "ALTER", "AMONG", "ANGER", "ANGLE", "ANGRY",
+    "APART", "APPLE", "APPLY", "ARENA", "ARGUE", "ARISE", "ARMOR", "ARROW",
+    "ASSET", "AUDIO", "AVOID", "AWARD", "AWARE", "BADLY", "BAKER", "BASIC",
+    "BASIS", "BEACH", "BEGAN", "BEGIN", "BEING", "BELOW", "BENCH", "BIRTH",
+    "BLACK", "BLAME", "BLIND", "BLOCK", "BLOOD", "BOARD", "BOOST", "BOOTH",
+    "BOUND", "BRAIN", "BRAND", "BREAD", "BREAK", "BREED", "BRING", "BROAD",
+    "BROKE", "BROWN", "BUILD", "BUILT", "BUYER", "CABLE", "CALM", "CANAL",
+    "CANDY", "CARGO", "CARRY", "CATCH", "CAUSE", "CHAIN", "CHAIR", "CHALK",
+    "CHAMP", "CHART", "CHASE", "CHEAP", "CHECK", "CHEST", "CHILD", "CHINA",
+    "CIVIL", "CLAIM", "CLEAN", "CLEAR", "CLICK", "CLOCK", "CLOSE", "COACH",
+    "COAST", "COUNT", "COVER", "CRASH", "CREAM", "CRIME", "CROSS", "CROWD",
+    "CROWN", "CURVE", "CYCLE", "DAILY", "DANCE", "DEALT", "DEATH", "DEBUT",
+    "DELAY", "DEPTH", "DOUBT", "DOZEN", "DRAMA", "DREAM", "DRESS", "DRILL",
+    "DRINK", "DRIVE", "EAGER", "EARLY", "EARTH", "EIGHT", "ELITE", "EMPTY",
+    "ENEMY", "ENJOY", "ENTER", "ENTRY", "EQUAL", "ERROR", "EVERY", "EXACT",
+    "EXIST", "EXTRA", "FAITH", "FALSE", "FAULT", "FIBER", "FIELD", "FIFTH",
+    "FIFTY", "FIGHT", "FINAL", "FIRST", "FIXED", "FLAME", "FLASH", "FLEET",
+    "FLOOR", "FLUID", "FOCUS", "FORCE", "FORTH", "FORTY", "FORUM", "FOUND",
+    "FRAME", "FRANK", "FRAUD", "FRESH", "FRONT", "FRUIT", "FULLY", "FUNNY",
+    "GIANT", "GLASS", "GLOBE", "GLORY", "GRACE", "GRAND", "GRANT", "GRASS",
+    "GREAT", "GREEN", "GROSS", "GROUP", "GUARD", "GUESS", "GUEST", "HABIT",
+    "HAPPY", "HARSH", "HEART", "HEAVY", "HELLO", "HENCE", "HOBBY", "HORSE",
+    "HOTEL", "HOUSE", "HUMAN", "IDEAL", "IMAGE", "IMPLY", "INDEX", "INNER",
+    "INPUT", "ISSUE", "IRONY", "JOINT", "JUICE", "KNIFE", "KNOCK", "KNOWN",
+    "LABEL", "LABOR", "LARGE", "LASER", "LATER", "LAUGH", "LAYER", "LEASE",
+    "LEAST", "LEAVE", "LEMON", "LEVEL", "LEVER", "LIGHT", "LIMIT", "LINKS",
+    "LIVER", "LIVES", "LOCAL", "LOGIC", "LOOSE", "LOWER", "LOYAL", "LUCKY",
+    "LUNCH", "MAGIC", "MAJOR", "MAKER", "MARCH", "MATCH", "MAYBE", "MAYOR",
+    "MEANT", "METAL", "MIGHT", "MINOR", "MINUS", "MIXED", "MODEL", "MONEY",
+    "MONTH", "MORAL", "MOTOR", "MOUNT", "MOUSE", "MOUTH", "MOVIE", "MUSIC",
+    "NAVAL", "NEEDS", "NERVE", "NEVER", "NEWLY", "NIGHT", "NOBLE", "NOISE",
+    "NORTH", "NOTED", "NURSE", "OCCUR", "OCEAN", "OFFER", "OFTEN", "ORGAN",
+    "OTHER", "OUGHT", "PAINT", "PANEL", "PARTY", "PEACE", "PEARL", "PHASE",
+    "PHONE", "PHOTO", "PIANO", "PIECE", "PITCH", "PIZZA", "PLACE", "PLAIN",
+    "PLANE", "PLANT", "PLATE", "PLAZA", "POINT", "POLAR", "POUND", "POWER",
+    "PRICE", "PRIDE", "PRIME", "PRIOR", "PRIZE", "PROOF", "PROUD", "PROVE",
+    "PULSE", "PUNCH", "PUPIL", "QUEEN", "QUERY", "QUEST", "QUICK", "QUIET",
+    "QUITE", "RADAR", "RAISE", "RANGE", "RAPID", "RATIO", "REACH", "REACT",
+    "READY", "REALM", "REFER", "RELAX", "RELAY", "RENEW", "REPLY", "RESET",
+    "RHYME", "RIDER", "RIDGE", "RIFLE", "RIGHT", "RIGID", "RIVAL", "RIVER",
+    "ROBOT", "ROCKY", "ROMAN", "ROUGH", "ROUND", "ROUTE", "ROYAL", "RUGBY",
+    "RURAL", "SALAD", "SCALE", "SCOPE", "SCORE", "SENSE", "SERVE", "SEVEN",
+    "SHADE", "SHAFT", "SHAKE", "SHALL", "SHAME", "SHAPE", "SHARE", "SHARP",
+    "SHEET", "SHELF", "SHELL", "SHIFT", "SHINE", "SHIRT", "SHOCK", "SHOOT",
+    "SHORE", "SHORT", "SHOUT", "SHOWN", "SIGHT", "SIGMA", "SINCE", "SIXTH",
+    "SIXTY", "SKULL", "SLAVE", "SLEEP", "SLIDE", "SLOPE", "SMALL", "SMART",
+    "SMILE", "SMOKE", "SNAKE", "SOLID", "SOLVE", "SONAR", "SORRY", "SOUND",
+    "SOUTH", "SPACE", "SPARE", "SPARK", "SPEED", "SPEND", "SPENT", "SPLIT",
+    "SPOKE", "SPORT", "SQUAD", "STAFF", "STAKE", "STAND", "STARE", "START",
+    "STATE", "STEAM", "STEEL", "STEEP", "STEER", "STICK", "STILL", "STOCK",
+    "STONE", "STOOD", "STOPS", "STORE", "STORM", "STRIP", "STUCK", "STUFF",
+    "SUGAR", "SUITE", "SUPER", "SWEET", "TABLE", "TAKEN", "TASTE", "TAXES",
+    "TEACH", "TEETH", "TEMPO", "TENTH", "TERMS", "THANK", "THEFT", "THEIR",
+    "THEME", "THERE", "THESE", "THICK", "THING", "THINK", "THIRD", "THOSE",
+    "THREE", "THREW", "THROW", "THUMB", "TIGER", "TIGHT", "TIMES", "TIRED",
+    "TITLE", "TODAY", "TOKEN", "TOTAL", "TOUCH", "TOUGH", "TOWER", "TRACK",
+    "TRADE", "TRAIL", "TRAIN", "TREAT", "TREND", "TRIAL", "TRIBE", "TRICK",
+    "TRIED", "TRUCK", "TRULY", "TRUNK", "TRUST", "TRUTH", "TWICE", "TWIST",
+    "UNCLE", "UNDER", "UNDUE", "UNION", "UNITY", "UNTIL", "UPPER", "UPSET",
+    "URBAN", "USAGE", "USUAL", "VALID", "VALUE", "VAPOR", "VAULT", "VENUE",
+    "VIDEO", "VIGOR", "VIRAL", "VIRUS", "VISIT", "VITAL", "VIVID", "VOCAL",
+    "VOTER", "WAGON", "WASTE", "WATCH", "WATER", "WHEEL", "WHERE", "WHICH",
+    "WHILE", "WHITE", "WHOLE", "WHOSE", "WIDEN", "WIDER", "WIDOW", "WIDTH",
+    "WINDY", "WOMAN", "WOMEN", "WORLD", "WORRY", "WORSE", "WORST", "WORTH",
+    "WOULD", "WOUND", "WRIST", "WRONG", "WROTE", "YIELD", "YOUNG", "YOUTH"
+  ];
+
+  // Combined pool with career vocabulary highlighted
+  const ALL_SECRETS = [...CAREER_WORDS, ...GENERAL_WORDS];
+  const isCareerWord = (w) => CAREER_WORDS.includes(w.toUpperCase());
+
+  const rawSecret = ALL_SECRETS[Math.floor(Math.random() * ALL_SECRETS.length)] || "WRITE";
   const secret = rawSecret.toUpperCase();
   let row = 0;
+  const maxAttempts = 6;
   let isGameOver = false;
 
   mount.innerHTML = `
-    <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
-      <h3 style="font-size:20px;">🟩 Wordle · 5-Letter English Vocabulary</h3>
-      <span style="font-size:13px;color:var(--text-dim);">Guess the 5-letter English word in 6 tries. Green = right spot, Yellow = wrong spot, Gray = absent.</span>
+    <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:18px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:24px;">🟩</span>
+        <h3 style="font-size:22px;font-weight:800;letter-spacing:-0.01em;margin:0;">Word Guess Challenge</h3>
+        <span class="badge badge-primary" style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;">Wordle Style</span>
+      </div>
+      <p id="wordle-banner-msg" style="font-size:14px;color:var(--text-muted);margin:4px 0 0;font-weight:500;">
+        Guess the 5-letter English word in 6 tries. Green = right spot, Yellow = wrong spot, Gray = absent.
+      </p>
     </div>
 
     <div class="wordle-board" id="wordle-board"></div>
 
-    <div id="wordle-msg" style="text-align:center;font-size:13.5px;min-height:22px;margin:8px 0;transition:all 0.2s;"></div>
+    <div id="wordle-msg" style="text-align:center;font-size:14px;min-height:24px;margin:8px 0;transition:all 0.2s;"></div>
 
-    <div id="wordle-controls" style="max-width:380px;margin:12px auto;display:flex;gap:8px;">
-      <input type="text" id="wordle-input" maxlength="5" placeholder="TYPE 5 LETTERS..." autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-family:var(--font-mono);text-align:center;font-size:18px;letter-spacing:0.2em;flex:1;">
-      <button class="btn btn-primary" id="btn-wordle-guess" type="button" style="min-width:90px;">Enter</button>
+    <div id="wordle-controls" style="max-width:380px;margin:14px auto;display:flex;gap:8px;">
+      <input type="text" id="wordle-input" maxlength="5" placeholder="ENTER 5 LETTERS..." autocomplete="off" spellcheck="false" style="text-transform:uppercase;font-family:var(--font-mono);text-align:center;font-size:18px;letter-spacing:0.25em;flex:1;font-weight:700;">
+      <button class="btn btn-primary" id="btn-wordle-guess" type="button" style="min-width:100px;font-weight:700;">Submit 🎯</button>
     </div>
 
-    <div id="wordle-result-mount" style="max-width:440px;margin:0 auto;"></div>
+    <div id="wordle-result-mount" style="max-width:440px;margin:16px auto 0;"></div>
   `;
 
   const board = $('#wordle-board');
-  for (let r = 0; r < 6; r++) {
+  for (let r = 0; r < maxAttempts; r++) {
     const rowEl = document.createElement('div');
     rowEl.className = 'wordle-row';
     rowEl.id = `w-row-${r}`;
@@ -6351,13 +6445,21 @@ function renderWordle(mount) {
   };
 
   const guess = async () => {
-    if (isGameOver) return;
+    if (isGameOver || row >= maxAttempts) return;
     const input = $('#wordle-input');
     const guessBtn = $('#btn-wordle-guess');
     const word = (input.value || '').trim().toUpperCase();
 
-    if (word.length !== 5) {
-      showWordleMsg('⚠️ Please enter exactly 5 letters!');
+    if (word.length !== 5 || !/^[A-Z]{5}$/.test(word)) {
+      showWordleMsg('⚠️ Please enter exactly 5 English letters.');
+      input.classList.add('wordle-shake');
+      setTimeout(() => input.classList.remove('wordle-shake'), 400);
+      return;
+    }
+
+    // Strict non-word filter: Reject identical characters (EEEEE, TTTTT, etc.)
+    if (/^(.)\1{4}$/.test(word)) {
+      showWordleMsg(`❌ "${word}" is not a valid English word. Please enter a real word.`);
       input.classList.add('wordle-shake');
       setTimeout(() => input.classList.remove('wordle-shake'), 400);
       return;
@@ -6371,10 +6473,10 @@ function renderWordle(mount) {
     const verifyResult = await window.verifyEnglishWord(word, 5);
 
     guessBtn.disabled = false;
-    guessBtn.textContent = 'Enter';
+    guessBtn.textContent = 'Submit 🎯';
 
     if (!verifyResult.valid) {
-      showWordleMsg(`⚠️ "${word}" is not in the English dictionary! Please enter a real word.`);
+      showWordleMsg(`❌ "${word}" is not in the English dictionary! Please enter a real word.`);
       input.classList.add('wordle-shake');
       const currentRowEl = $(`#w-row-${row}`);
       if (currentRowEl) currentRowEl.classList.add('wordle-shake');
@@ -6426,17 +6528,30 @@ function renderWordle(mount) {
       guessBtn.disabled = true;
       clearWordleMsg();
 
+      const bannerMsg = $('#wordle-banner-msg');
+      if (bannerMsg) {
+        bannerMsg.innerHTML = `<span style="color:var(--accent-emerald);font-weight:700;">🎉 Brilliant! You cracked it in ${row + 1} / ${maxAttempts} tries!</span>`;
+      }
+
+      // Audio praise inspired by careers-site
+      speak('Congratulations! You got the word right.');
+
       const resultMount = $('#wordle-result-mount');
       if (resultMount) {
+        const careerBadge = isCareerWord(secret)
+          ? `<div style="margin-bottom:8px;"><span class="badge badge-success" style="font-size:11px;padding:3px 10px;">🌟 Career &amp; Professional Lexicon</span></div>`
+          : '';
+
         resultMount.innerHTML = `
           <div class="game-result-box" style="border:2px solid var(--accent-emerald);">
             <div style="font-size:32px;margin-bottom:6px;">🎉</div>
             <h4 style="font-size:20px;color:var(--accent-emerald);margin:0 0 6px 0;font-weight:700;">
-              Brilliant Victory!
+              Brilliant! You Cracked It!
             </h4>
-            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 16px 0;">
-              You deduced the English word in <strong>${row + 1} / 6</strong> tries!
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 14px 0;">
+              You solved the secret word in <strong>${row + 1} / ${maxAttempts}</strong> attempts!
             </p>
+            ${careerBadge}
             <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
               <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Target Word</div>
               <div style="font-family:var(--font-mono);font-size:32px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
@@ -6447,7 +6562,7 @@ function renderWordle(mount) {
               </div>
             </div>
             <button class="btn btn-primary" id="btn-wordle-new-game" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
-              🔄 Play New Game
+              🔄 Play Another Word
             </button>
           </div>
         `;
@@ -6462,26 +6577,36 @@ function renderWordle(mount) {
     input.value = '';
 
     // 2. Game Over condition (Out of Guesses)
-    if (row >= 6) {
+    if (row >= maxAttempts) {
       isGameOver = true;
       input.disabled = true;
       guessBtn.disabled = true;
       clearWordleMsg();
 
+      const bannerMsg = $('#wordle-banner-msg');
+      if (bannerMsg) {
+        bannerMsg.innerHTML = `<span style="color:var(--accent-magenta);font-weight:700;">Game over! The secret word was: ${secret}</span>`;
+      }
+
       // Dedicated Game Over Box (No notification toast!)
       const resultMount = $('#wordle-result-mount');
       if (resultMount) {
+        const careerBadge = isCareerWord(secret)
+          ? `<div style="margin-bottom:8px;"><span class="badge badge-info" style="font-size:11px;padding:3px 10px;">🌟 Career &amp; Professional Lexicon</span></div>`
+          : '';
+
         resultMount.innerHTML = `
           <div class="game-result-box" style="border:2px solid var(--accent-magenta);">
             <div style="font-size:32px;margin-bottom:6px;">💀</div>
             <h4 style="font-size:20px;color:var(--accent-magenta);margin:0 0 6px 0;font-weight:700;">
               Game Over · Out of Guesses
             </h4>
-            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 16px 0;">
+            <p style="font-size:13.5px;color:var(--text-muted);margin:0 0 14px 0;">
               Valiant effort! Here is the correct solution for this round:
             </p>
+            ${careerBadge}
             <div style="background:var(--bg-subtle);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:18px;">
-              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Correct Answer</div>
+              <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Secret Word</div>
               <div style="font-family:var(--font-mono);font-size:32px;font-weight:800;letter-spacing:0.25em;color:var(--accent-cyan);text-transform:uppercase;">
                 ${escapeHtml(secret)}
               </div>
@@ -6490,7 +6615,7 @@ function renderWordle(mount) {
               </div>
             </div>
             <button class="btn btn-primary" id="btn-wordle-new-game" type="button" style="padding:10px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,240,255,0.25);">
-              🔄 Play New Game
+              🔄 Play Another Word
             </button>
           </div>
         `;
@@ -6504,6 +6629,7 @@ function renderWordle(mount) {
   $('#wordle-input')?.addEventListener('keydown', e => { if (e.key === 'Enter') guess(); });
   setTimeout(() => $('#wordle-input')?.focus(), 100);
 }
+
 
 // GAME 3: Flash Cards Studio (AI Dynamic Generation & Extensive Offline Dataset)
 const flashCardSession = {
