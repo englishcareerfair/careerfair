@@ -6239,7 +6239,7 @@ window.verifyEnglishWord = async function(rawWord, requiredLength = 0) {
     const res1 = await fetchApi(`dict/${encodeURIComponent(word)}`);
     if (Array.isArray(res1) && res1.length > 0 && !res1[0]?.not_found) {
       isVerified = true;
-    } else if (res1 && res1.word) {
+    } else if (res1 && res1.word && !res1.not_found && res1.meanings) {
       isVerified = true;
     }
   } catch (e) {
