@@ -1,12 +1,22 @@
 // English Careers Forum 2026 - Service Worker
-const CACHE_NAME = 'ecf-static-v9.4';
+const CACHE_NAME = 'ecf-static-v10.0';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/styles.css?v=8.0',
+  '/styles.css',
+  '/app.js',
+  '/voicelab.js',
+  '/dopamine-engine.js',
+  '/game-completion-detector.js',
+  '/dossier-pdf.js',
+  '/guide-avatar.js',
+  '/qrcode.min.js',
   '/logo.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-512-maskable.png',
   '/favicon.svg',
   '/manifest.json'
 ];

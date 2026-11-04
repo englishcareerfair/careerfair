@@ -635,7 +635,14 @@ export async function onRequest(ctx) {
     if (audioFile && env.ELEVEN_KEY && typeof env.ELEVEN_KEY === 'string' && env.ELEVEN_KEY.trim()) {
       try {
         const sttForm = new FormData();
-        sttForm.append('file', audioFile, 'attempt.webm');
+        let fileName = 'attempt.webm';
+        if (audioFile.name && typeof audioFile.name === 'string') {
+          fileName = audioFile.name;
+        } else if (audioFile.type) {
+          if (audioFile.type.includes('mp4')) fileName = 'attempt.mp4';
+          else if (audioFile.type.includes('ogg')) fileName = 'attempt.ogg';
+        }
+        sttForm.append('file', audioFile, fileName);
         sttForm.append('model_id', env.STT_MODEL || 'scribe_v1');
 
         const sttRes = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
@@ -662,14 +669,19 @@ export async function onRequest(ctx) {
     let fluency = (inputFluency !== null && !isNaN(inputFluency))
       ? Math.round(inputFluency)
       : Math.min(100, acc + 5);
+    fluency = Math.max(0, Math.min(100, fluency));
 
     let clarity = (inputClarity !== null && !isNaN(inputClarity))
       ? Math.round(inputClarity)
       : Math.min(100, acc + 2);
+    clarity = Math.max(0, Math.min(100, clarity));
 
     let wpm = (inputWpm !== null && !isNaN(inputWpm))
       ? Math.round(inputWpm)
       : 130;
+    wpm = Math.max(0, Math.min(400, wpm));
+
+    level = Math.max(1, Math.min(10, level));
 
     const passed = acc >= passThreshold;
 

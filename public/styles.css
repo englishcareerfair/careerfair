@@ -97,6 +97,8 @@ body {
   font-size: 16px;
   line-height: 1.6;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100svh;
   position: relative;
   overflow-x: hidden;
 }
@@ -424,6 +426,12 @@ button, input, select, textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   .theme-switcher-slider,
   .theme-btn,
   .theme-btn-icon {
@@ -448,6 +456,10 @@ button, input, select, textarea {
   cursor: pointer;
   transition: var(--transition);
   white-space: nowrap;
+}
+
+.greeting-prefix {
+  display: inline;
 }
 
 .greeting-text-desktop {
@@ -1765,13 +1777,27 @@ tr:hover td { background: var(--surface-hover); }
 /* ─── 18. TOAST NOTIFICATIONS ─────────────────────────────────────────────── */
 #toast-container {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  right: calc(24px + env(safe-area-inset-right));
   z-index: 2000;
   display: flex;
   flex-direction: column;
   gap: 10px;
   pointer-events: none;
+  max-width: calc(100vw - 32px);
+}
+
+@media (max-width: 768px) {
+  #toast-container {
+    left: calc(16px + env(safe-area-inset-left));
+    right: calc(16px + env(safe-area-inset-right));
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    align-items: center;
+  }
+  .toast {
+    max-width: 100%;
+    width: auto;
+  }
 }
 
 .toast {
@@ -2046,6 +2072,9 @@ tr:hover td { background: var(--surface-hover); }
     flex-shrink: 0;
     white-space: nowrap;
     gap: 4px;
+  }
+  .greeting-prefix {
+    display: none;
   }
   .greeting-text-desktop {
     display: none;
@@ -4072,6 +4101,8 @@ body.obs-overlay-mode #sec-teleprompter {
   inset: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
+  height: 100dvh !important;
+  height: 100svh !important;
   margin: 0 !important;
   padding: 0 !important;
   background: transparent !important;
@@ -4084,6 +4115,8 @@ body.obs-overlay-mode .broadcast-stage-grid {
   display: block !important;
   width: 100vw !important;
   height: 100vh !important;
+  height: 100dvh !important;
+  height: 100svh !important;
   position: relative !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -4094,6 +4127,8 @@ body.obs-overlay-mode #video-stage-wrapper {
   inset: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
+  height: 100dvh !important;
+  height: 100svh !important;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;

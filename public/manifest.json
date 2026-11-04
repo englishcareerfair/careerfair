@@ -2,6 +2,8 @@
   "name": "English Careers Forum 2026",
   "short_name": "CareersForum",
   "description": "Explore 32+ Global Careers Where English Opens Doors. Interactive AI Speech Lab, Career Roadmaps & Arcade Games.",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0c0d10",
@@ -9,10 +11,22 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "192x192 512x512",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/favicon.svg",

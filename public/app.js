@@ -5,9 +5,49 @@
  */
 
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
-// Dark Mode is default on start
-const savedInitialTheme = localStorage.getItem('cf_theme');
-const initialResolvedTheme = (savedInitialTheme === 'light') ? 'light' : 'dark';
+// Safe Storage Fallback for Safari Private Browsing and restricted environments
+(function() {
+  const createMemoryStorage = () => {
+    const store = {};
+    return {
+      getItem: k => (Object.prototype.hasOwnProperty.call(store, k) ? store[k] : null),
+      setItem: (k, v) => { store[k] = String(v); },
+      removeItem: k => { delete store[k]; },
+      clear: () => { for (const k in store) delete store[k]; },
+      key: i => Object.keys(store)[i] || null,
+      get length() { return Object.keys(store).length; }
+    };
+  };
+
+  try {
+    const t = '__cf_st_test__';
+    window.localStorage.setItem(t, t);
+    window.localStorage.removeItem(t);
+  } catch (_) {
+    try {
+      const mem = createMemoryStorage();
+      Object.defineProperty(window, 'localStorage', { value: mem, configurable: true, writable: true });
+    } catch (e) {}
+  }
+
+  try {
+    const t = '__cf_st_test__';
+    window.sessionStorage.setItem(t, t);
+    window.sessionStorage.removeItem(t);
+  } catch (_) {
+    try {
+      const mem = createMemoryStorage();
+      Object.defineProperty(window, 'sessionStorage', { value: mem, configurable: true, writable: true });
+    } catch (e) {}
+  }
+})();
+
+// Respect user preference or system theme (prefers-color-scheme)
+const savedInitialTheme = (function() {
+  try { return localStorage.getItem('cf_theme'); } catch (_) { return null; }
+})();
+const systemPrefersLight = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+const initialResolvedTheme = savedInitialTheme ? (savedInitialTheme === 'light' ? 'light' : 'dark') : (systemPrefersLight ? 'light' : 'dark');
 
 const STATE = {
   theme: initialResolvedTheme,
@@ -136,14 +176,23 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   const isLocal = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'));
   const targetUrl = (isPrimary || isLocal) ? `/api/${cleanEndpoint}` : `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`;
 
+  // Robust timeout handler for slow/school Wi-Fi networks (10s default)
+  const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  const timeoutMs = opts.timeout || 10000;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  const fetchOpts = Object.assign({}, opts);
+  if (controller && !fetchOpts.signal) fetchOpts.signal = controller.signal;
+
   try {
-    const res = await fetch(targetUrl, opts);
+    const res = await fetch(targetUrl, fetchOpts);
+    if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
   } catch (err) {
-    // If external cross-origin call fails (e.g. offline), try local relative path
+    if (timeoutId) clearTimeout(timeoutId);
+    // If external cross-origin call fails (e.g. offline or slow network), try local relative path
     if (!isPrimary) {
       try {
-        const localRes = await fetch(`/api/${cleanEndpoint}`, opts);
+        const localRes = await fetch(`/api/${cleanEndpoint}`, fetchOpts);
         if (localRes.ok) return await localRes.json();
       } catch (e) {}
     }
@@ -185,7 +234,7 @@ function stopAllVoice() {
   // Check greeting button specifically
   const greetingBtn = $('#btn-greeting');
   if (greetingBtn && (greetingBtn.classList.contains('playing') || greetingBtn.classList.contains('speaking-active') || greetingBtn.textContent.includes('Stop'))) {
-    greetingBtn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text">Listen AI Greeting</span>';
+    greetingBtn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>';
     greetingBtn.classList.remove('playing', 'speaking-active');
   }
 }
@@ -2705,7 +2754,12 @@ function toggleSpeakLadderRecord() {
   }
 
   if (!SpeechRecognition) {
-    showToast('Browser Speech Recognition not supported. You can type or paste in the transcript.');
+    if (preview && preview.value.trim()) {
+      evaluateSpeakAttempt();
+      return;
+    }
+    showToast('Speech Recognition not supported in this browser. You can type your spoken attempt in the text box below and click the microphone orb to evaluate!');
+    if (preview) preview.focus();
     return;
   }
 
@@ -3223,7 +3277,8 @@ async function sendAudioToElevenLabsSTT(audioBlob) {
   if (!audioBlob || audioBlob.size < 2000) return;
   try {
     const fd = new FormData();
-    fd.append('file', audioBlob, 'speech.webm');
+    const ext = (audioBlob.type && audioBlob.type.includes('mp4')) ? 'speech.mp4' : (audioBlob.type && audioBlob.type.includes('ogg') ? 'speech.ogg' : 'speech.webm');
+    fd.append('file', audioBlob, ext);
 
     const headers = {};
     const elevenKey = localStorage.getItem('cf_eleven_key');
@@ -3329,12 +3384,13 @@ async function startSpeechLabAudio() {
     renderSpeechLabWaveform();
 
     // 1. ElevenLabs Scribe Continuous Segment STT Dispatcher
-    let mimeType = 'audio/webm';
+    let mimeType = '';
     if (window.MediaRecorder) {
-      if (!MediaRecorder.isTypeSupported('audio/webm')) {
-        if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+      if (typeof MediaRecorder.isTypeSupported === 'function') {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
+        else if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+        else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
         else if (MediaRecorder.isTypeSupported('audio/ogg')) mimeType = 'audio/ogg';
-        else mimeType = '';
       }
 
       function recordNextSegment() {
@@ -11027,6 +11083,23 @@ function renderHeroStream() {
     }
   }
 }
+
+// Listen for voiceschanged on Chromium/Android browsers where voices load asynchronously
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    try { window.speechSynthesis.getVoices(); } catch (_) {}
+  };
+}
+
+// Stop audio/media streams when page is backgrounded or device screen locks
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopAllVoice();
+    if (STATE.isRecording && STATE.speechRecognition) {
+      try { STATE.speechRecognition.stop(); } catch (_) {}
+    }
+  }
+});
 
 // ─── 13. APP BOOTSTRAP INITIALIZER ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {

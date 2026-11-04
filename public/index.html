@@ -11,6 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="logo.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
   <!-- Preconnect & Typography: Plus Jakarta Sans, Space Grotesk, JetBrains Mono -->
@@ -22,13 +23,17 @@
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
-      document.write('<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"><\/script>');
+      const _qrScript = document.createElement('script');
+      _qrScript.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+      _qrScript.integrity = 'sha384-lQXOAyZwHXE55JFyrOMB7nY2Wv+m5ZWNtJcHrd1rceRQXAYNLak8ukN5TjBTcIwz';
+      _qrScript.crossOrigin = 'anonymous';
+      document.head.appendChild(_qrScript);
     }
   </script>
-  <!-- High-Precision Vector PDF, Tesseract OCR & Confetti -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+  <!-- High-Precision Vector PDF, Tesseract OCR & Confetti (Pinned versions with Subresource Integrity) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
   <script src="dopamine-engine.js?v=7.7" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
@@ -72,7 +77,7 @@
 
         <!-- Spoken Greeting Button -->
         <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
-          <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-text-desktop">Listen AI Greeting</span><span class="greeting-text-mobile">Greeting</span></span>
+          <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>
         </button>
 
         <!-- Official 2-Page Student Career Dossier & Business Card Download Button -->

@@ -13,7 +13,7 @@
   Cache-Control: public, max-age=86400
 
 /styles.css
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate
 
 /app.js
-  Cache-Control: no-cache, no-store, must-revalidate
+  Cache-Control: no-cache, must-revalidate

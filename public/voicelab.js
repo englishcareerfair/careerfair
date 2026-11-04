@@ -161,14 +161,22 @@ window.VoiceLab = (function () {
           startVisualizer(stream);
 
           state.audioChunks = [];
-          state.mediaRecorder = new MediaRecorder(stream);
+          let supportedMime = '';
+          if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported) {
+            if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) supportedMime = 'audio/webm;codecs=opus';
+            else if (MediaRecorder.isTypeSupported('audio/webm')) supportedMime = 'audio/webm';
+            else if (MediaRecorder.isTypeSupported('audio/mp4')) supportedMime = 'audio/mp4';
+            else if (MediaRecorder.isTypeSupported('audio/ogg')) supportedMime = 'audio/ogg';
+          }
+          state.mediaRecorder = new MediaRecorder(stream, supportedMime ? { mimeType: supportedMime } : undefined);
           state.mediaRecorder.ondataavailable = (e) => {
             if (e.data.size > 0) state.audioChunks.push(e.data);
           };
 
           state.mediaRecorder.onstop = () => {
             stopVisualizer();
-            const blob = new Blob(state.audioChunks, { type: 'audio/wav' });
+            const mimeType = supportedMime || (state.mediaRecorder && state.mediaRecorder.mimeType) || 'audio/webm';
+            const blob = new Blob(state.audioChunks, { type: mimeType });
             state.recordedBlob = blob;
 
             if (audioElem) {
@@ -240,7 +248,12 @@ window.VoiceLab = (function () {
 
     if (placeholder) placeholder.style.display = 'none';
     const ctx = canvas.getContext('2d');
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
     state.audioContext = audioCtx;
     const source = audioCtx.createMediaStreamSource(stream);
     const analyser = audioCtx.createAnalyser();
