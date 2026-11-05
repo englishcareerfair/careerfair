@@ -4,6 +4,123 @@
  * accredited colleges explorer, arcade games, and admin console.
  */
 
+// ─── 0. IMMERSIVE LOADING SCREEN & TUTORIAL GUIDE ─────────────────────────────
+(function() {
+  const TUTORIAL_TIPS = [
+    {
+      icon: '🎯',
+      title: 'GLOBAL CAREERS MATRIX',
+      text: 'Explore 32+ modern careers requiring English fluency, complete with entrance exams, NAAC/NIRF colleges, and admission pathways.'
+    },
+    {
+      icon: '🎙️',
+      title: '6D AI SPEECH COACH',
+      text: 'Practice spoken English in the AI Speech Lab with real-time phoneme feedback, fluency analytics, and vocal coaching.'
+    },
+    {
+      icon: '📹',
+      title: 'NEWS ANCHOR & TELEPROMPTER',
+      text: 'Rehearse professional teleprompter scripts with a live video mirror, dynamic pacing controls, and recording exports.'
+    },
+    {
+      icon: '🎮',
+      title: 'HIGH-DOPAMINE ARCADE GAMES',
+      text: 'Sharpen your reflex grammar and vocabulary across 11 fast-paced games on the live exhibition leaderboard.'
+    },
+    {
+      icon: '🗺️',
+      title: 'STUDENT CAREER DOSSIER',
+      text: 'Generate and download your official 2-Page Student Career Dossier with verifiable QR credentials anytime.'
+    },
+    {
+      icon: '📱',
+      title: 'THUMB-FRIENDLY NAVIGATION',
+      text: 'On smartphones, navigation tabs dock smoothly to the bottom when you scroll down for effortless one-handed control.'
+    }
+  ];
+
+  let currentTipIndex = 0;
+  let tipTimer = null;
+  let isDismissed = false;
+  let progressVal = 15;
+  const loaderStartTime = Date.now();
+  const minDisplayMs = 1300;
+
+  const setProgress = (val, message) => {
+    progressVal = Math.max(progressVal, Math.min(100, val));
+    const pBar = document.getElementById('loader-progress-bar');
+    const pPct = document.getElementById('loader-status-pct');
+    const pMsg = document.getElementById('loader-status-msg');
+    if (pBar) pBar.style.width = `${progressVal}%`;
+    if (pPct) pPct.textContent = `${Math.round(progressVal)}%`;
+    if (pMsg && message) pMsg.textContent = message;
+  };
+
+  const cycleTutorialTip = () => {
+    if (isDismissed) return;
+    currentTipIndex = (currentTipIndex + 1) % TUTORIAL_TIPS.length;
+    const tip = TUTORIAL_TIPS[currentTipIndex];
+    const textEl = document.getElementById('loader-tutorial-text');
+    const badgeEl = document.querySelector('.loader-tutorial-badge');
+    const iconEl = document.querySelector('.loader-tutorial-icon');
+    const dots = document.querySelectorAll('.loader-dot');
+
+    if (textEl) {
+      textEl.classList.add('text-fade');
+      setTimeout(() => {
+        textEl.textContent = tip.text;
+        if (badgeEl) badgeEl.textContent = tip.title;
+        if (iconEl) iconEl.textContent = tip.icon;
+        dots.forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === currentTipIndex);
+        });
+        textEl.classList.remove('text-fade');
+      }, 250);
+    }
+  };
+
+  const startTipCycle = () => {
+    if (tipTimer) clearInterval(tipTimer);
+    tipTimer = setInterval(cycleTutorialTip, 2400);
+  };
+
+  const dismissLoader = () => {
+    if (isDismissed) return;
+    isDismissed = true;
+    setProgress(100, 'Welcome to English Careers Forum 2026!');
+    if (tipTimer) clearInterval(tipTimer);
+
+    const elapsed = Date.now() - loaderStartTime;
+    const remaining = Math.max(0, minDisplayMs - elapsed);
+
+    setTimeout(() => {
+      const loader = document.getElementById('site-loader');
+      if (loader) {
+        loader.classList.add('loader-hidden');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 520);
+      }
+    }, remaining);
+  };
+
+  window.SiteLoader = {
+    setProgress,
+    dismiss: dismissLoader
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startTipCycle);
+  } else {
+    startTipCycle();
+  }
+
+  // Safety ceiling: never block longer than 3.6s
+  setTimeout(() => {
+    if (!isDismissed) dismissLoader();
+  }, 3600);
+})();
+
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
 // Safe Storage Fallback for Safari Private Browsing and restricted environments
 (function() {
@@ -1751,6 +1868,10 @@ const AppRouter = {
     const hash = window.location.hash || '';
     if (hash.startsWith('#/') || (hash.startsWith('#') && hash.length > 1 && !hash.startsWith('#sec-'))) {
       return this.normalizePath(hash);
+    }
+
+    if (window.location.protocol === 'file:') {
+      return '/hero';
     }
 
     const pathname = window.location.pathname || '/';
@@ -11188,6 +11309,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+  // Update loader progress: DOM parsed & theme applied
+  window.SiteLoader?.setProgress(35, 'Calibrating Career Intelligence Matrix...');
+
   // Apply saved theme (Light or Dark) silently on boot
   setTheme(STATE.theme, true);
 
@@ -11315,9 +11439,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Update loader progress: Cloud services connected
+  window.SiteLoader?.setProgress(65, 'Connecting Exhibition Cloud Services...');
+
   // Pre-render home heroes & stats
   renderCareers();
   renderColleges();
+
+  // Update loader progress: Interactive studios pre-rendered
+  window.SiteLoader?.setProgress(85, 'Preparing Interactive Studios...');
 
   // Initialize Hierarchical Deep-Linking Router
   if (window.AppRouter && typeof window.AppRouter.init === 'function') {
@@ -11338,6 +11468,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cachedScores = JSON.parse(localStorage.getItem('cf_user_scores') || '[]');
     updateLeaderboardBadges(cachedScores);
   } catch (e) {}
+
+  // Full website load trigger for SiteLoader
+  const signalSiteLoaded = () => {
+    window.SiteLoader?.dismiss();
+  };
+  if (document.readyState === 'complete') {
+    signalSiteLoaded();
+  } else {
+    window.addEventListener('load', signalSiteLoaded, { once: true });
+  }
 
   // ─── BACKGROUND MULTI-SYSTEM GLOBAL SYNCHRONIZER ───
   // Automatically synchronizes live stream, scores, and feedback across systems

@@ -44,6 +44,70 @@
 </head>
 <body>
 
+  <!-- ── 0. FULL-PAGE IMMERSIVE LOADING SCREEN & TUTORIAL GUIDE ── -->
+  <div id="site-loader" class="site-loader" aria-live="polite" aria-busy="true">
+    <div class="loader-bg-overlay"></div>
+    <div class="loader-card">
+      <div class="loader-orbital-system">
+        <div class="loader-ring ring-outer"></div>
+        <div class="loader-ring ring-mid"></div>
+        <div class="loader-ring ring-inner"></div>
+        <div class="loader-emblem">
+          <svg class="loader-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="50" cy="50" r="44" stroke="url(#loaderGrad1)" stroke-width="3" stroke-dasharray="140 70" stroke-linecap="round"/>
+            <circle cx="39" cy="42" r="17" stroke="rgba(0, 240, 255, 0.9)" stroke-width="2.5"/>
+            <circle cx="61" cy="42" r="17" stroke="rgba(255, 42, 133, 0.9)" stroke-width="2.5"/>
+            <circle cx="50" cy="62" r="17" stroke="rgba(16, 185, 129, 0.9)" stroke-width="2.5"/>
+            <defs>
+              <linearGradient id="loaderGrad1" x1="0" y1="0" x2="100" y2="100">
+                <stop offset="0%" stop-color="#00f0ff"/>
+                <stop offset="50%" stop-color="#8b5cf6"/>
+                <stop offset="100%" stop-color="#ff2a85"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+
+      <div class="loader-brand-block">
+        <div class="loader-school-pill">
+          <span class="loader-pulse-dot" aria-hidden="true"></span>
+          <span>KANAKIA INTERNATIONAL SCHOOL MIRA ROAD</span>
+        </div>
+        <h1 class="loader-heading">English Careers Forum <span class="loader-year">2026</span></h1>
+        <p class="loader-tagline">Every Modern Profession Speaks English</p>
+      </div>
+
+      <div class="loader-progress-section">
+        <div class="loader-progress-track">
+          <div class="loader-progress-bar" id="loader-progress-bar"></div>
+        </div>
+        <div class="loader-meta-row">
+          <span class="loader-status-msg" id="loader-status-msg">Calibrating Career Intelligence Matrix...</span>
+          <span class="loader-status-pct" id="loader-status-pct">15%</span>
+        </div>
+      </div>
+
+      <div class="loader-tutorial-panel">
+        <div class="loader-tutorial-header">
+          <span class="loader-tutorial-icon">💡</span>
+          <span class="loader-tutorial-badge">PLATFORM TUTORIAL</span>
+          <div class="loader-dots-indicator" id="loader-dots-indicator">
+            <span class="loader-dot active"></span>
+            <span class="loader-dot"></span>
+            <span class="loader-dot"></span>
+            <span class="loader-dot"></span>
+            <span class="loader-dot"></span>
+            <span class="loader-dot"></span>
+          </div>
+        </div>
+        <p class="loader-tutorial-text" id="loader-tutorial-text">
+          Explore 32+ Global Careers with AI-verified eligibility, top colleges, and admission pathways.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- ── 1. AMBIENT BROADCAST & SCHOOL BRANDING BAR ── -->
   <div class="top-broadcast-bar" id="top-bar">
     <div class="school-tag" id="school-branding-wrap">
