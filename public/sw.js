@@ -1,5 +1,5 @@
 // English Careers Forum 2026 - Service Worker
-const CACHE_NAME = 'ecf-static-v10.0';
+const CACHE_NAME = 'ecf-static-v11.0';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -40,41 +40,100 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  // NEVER cache API requests, admin requests, or external AI calls
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin') || event.request.method !== 'GET') {
+  // Only intercept GET requests
+  if (event.request.method !== 'GET') {
     return;
   }
 
-  // Network-first strategy for HTML and JS to ensure fresh deployments
-  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('.js')) {
+  const url = new URL(event.request.url);
+
+  // NEVER cache API requests, admin endpoints, or external AI/TTS streaming
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/admin')) {
+    return;
+  }
+
+  const isSameOrigin = (url.origin === location.origin);
+  const isNavigation = (event.request.mode === 'navigate');
+  const isHtmlAccept = (event.request.headers.get('accept') || '').includes('text/html');
+  const isDocumentDest = (event.request.destination === 'document');
+
+  // SPA deep-linking routes: same-origin paths without a file extension (e.g. /games, /careers, /roadmap, /games/wordle)
+  const lastSegment = url.pathname.split('/').pop() || '';
+  const isExtensionlessPath = isSameOrigin && !lastSegment.includes('.');
+  const isHtmlOrJsAsset = url.pathname.endsWith('.html') || url.pathname.endsWith('.js');
+
+  const isSpaOrPageRequest = isNavigation || isDocumentDest || isHtmlAccept || isExtensionlessPath || isHtmlOrJsAsset;
+
+  // 1. Network-first strategy for HTML documents, JS bundles, and SPA page routes
+  if (isSpaOrPageRequest) {
     event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+      (async () => {
+        try {
+          const networkResponse = await fetch(event.request);
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+            return networkResponse;
           }
-          return response;
-        })
-        .catch(() => caches.match(event.request).then((res) => res || caches.match('/index.html')))
+          // If server returned 404 for an extensionless SPA path (e.g. /games), fallback to cached SPA shell
+          if (networkResponse && networkResponse.status === 404 && isExtensionlessPath) {
+            const cachedShell = (await caches.match('/index.html')) || (await caches.match('/'));
+            if (cachedShell) return cachedShell;
+          }
+          if (networkResponse) {
+            return networkResponse;
+          }
+        } catch (err) {
+          // Network failed (offline, timeout, or network blip)
+        }
+
+        // Cache fallback: exact match -> /index.html -> /
+        const cached = (await caches.match(event.request)) ||
+                       (await caches.match('/index.html')) ||
+                       (await caches.match('/'));
+        if (cached) {
+          return cached;
+        }
+
+        // Guaranteed valid Response object fallback (NEVER undefined)
+        return new Response(
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>English Careers Forum</title></head><body><script>location.reload();</script></body></html>',
+          { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
+      })()
     );
     return;
   }
 
-  // Stale-while-revalidate for images, icons, and static fonts
+  // 2. Stale-while-revalidate for images, icons, and static assets
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200) {
-          const clone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return networkResponse;
-      }).catch(() => cachedResponse);
+    (async () => {
+      const cachedResponse = await caches.match(event.request);
 
-      return cachedResponse || fetchPromise;
-    })
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+          }
+          return networkResponse;
+        })
+        .catch(() => null);
+
+      if (cachedResponse) {
+        // Return cached asset immediately, revalidate in background
+        fetchPromise.catch(() => {});
+        return cachedResponse;
+      }
+
+      // Not in cache: await network response
+      const networkResult = await fetchPromise;
+      if (networkResult) {
+        return networkResult;
+      }
+
+      // If both cache and network fail, return a valid 404 Response (NEVER undefined)
+      return new Response('', { status: 404, statusText: 'Not Found' });
+    })()
   );
 });

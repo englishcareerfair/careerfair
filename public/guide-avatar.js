@@ -589,12 +589,10 @@
 
       let aiResponse = "That is a brilliant aspiration! English communication gives you an extraordinary advantage in that field.";
       try {
-        const clientKey = window.STATE?.config?.gemini_keys || localStorage.getItem('cf_gemini_keys');
         const res = await fetch('/api/ai', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            ...(clientKey ? { 'x-gemini-keys': clientKey } : {})
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             task: 'guide',

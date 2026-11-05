@@ -1,13 +1,15 @@
-# Static assets missing on server should 404 cleanly instead of serving index.html
-/*.js    /404.html 404
-/*.css   /404.html 404
-/*.png   /404.html 404
-/*.jpg   /404.html 404
-/*.jpeg  /404.html 404
-/*.svg   /404.html 404
-/*.json  /404.html 404
-/*.ico   /404.html 404
-/*.woff2 /404.html 404
+# Cloudflare Pages SPA Routing Configuration
 
-# SPA Page Navigation Fallback
-/*       /index.html 200
+# Prevent missing static assets from falling through to SPA index.html
+/*.js       /index.html 404
+/*.css      /index.html 404
+/*.png      /index.html 404
+/*.jpg      /index.html 404
+/*.jpeg     /index.html 404
+/*.svg      /index.html 404
+/*.json     /index.html 404
+/*.ico      /index.html 404
+/*.woff2    /index.html 404
+
+# Single Page Application (SPA) Deep-Linking Rewrite
+/*          /index.html 200
