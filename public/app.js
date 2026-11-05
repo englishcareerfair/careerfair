@@ -1498,6 +1498,74 @@ function setupHorizontalScrollShelf(track, leftBtn, rightBtn, step = 280) {
   return updateArrows;
 }
 
+function initMobileScrollNav() {
+  const subNav = document.getElementById('sub-nav');
+  const placeholder = document.getElementById('sub-nav-placeholder');
+  if (!subNav) return;
+
+  let ticking = false;
+  let isDocked = false;
+
+  const updateNavDockState = () => {
+    ticking = false;
+    const isMobile = window.innerWidth <= 768;
+
+    if (!isMobile) {
+      if (isDocked) {
+        subNav.classList.remove('mobile-docked-bottom');
+        document.body.classList.remove('has-docked-nav');
+        if (placeholder) {
+          placeholder.style.display = 'none';
+          placeholder.style.height = '0px';
+        }
+        isDocked = false;
+      }
+      return;
+    }
+
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const dockThreshold = 95;
+    const undockThreshold = 55;
+
+    if (!isDocked && scrollY > dockThreshold) {
+      const navHeight = subNav.offsetHeight || 60;
+      if (placeholder) {
+        placeholder.style.height = `${navHeight}px`;
+        placeholder.style.display = 'block';
+      }
+      subNav.classList.add('mobile-docked-bottom');
+      document.body.classList.add('has-docked-nav');
+      isDocked = true;
+    } else if (isDocked && scrollY <= undockThreshold) {
+      subNav.classList.remove('mobile-docked-bottom');
+      document.body.classList.remove('has-docked-nav');
+      if (placeholder) {
+        placeholder.style.display = 'none';
+        placeholder.style.height = '0px';
+      }
+      isDocked = false;
+    }
+  };
+
+  window.updateMobileNavDockState = updateNavDockState;
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(updateNavDockState);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(updateNavDockState);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  updateNavDockState();
+}
+
 function initNavigation() {
   const tabBtns = $$('.tab-btn');
   tabBtns.forEach(btn => {
@@ -1634,6 +1702,9 @@ function initNavigation() {
   initGamePicker();
   initPlanTools();
   initLeaderboard();
+
+  // Initialize mobile-only scroll-down tab docking
+  initMobileScrollNav();
 }
 
 // =========================================================================
@@ -2212,6 +2283,11 @@ function switchTab(tabId, options = {}) {
     targetSec.hidden = false;
     if (!options.keepScroll) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window.updateMobileNavDockState === 'function') {
+        window.updateMobileNavDockState();
+        setTimeout(window.updateMobileNavDockState, 150);
+        setTimeout(window.updateMobileNavDockState, 450);
+      }
     }
   }
 
