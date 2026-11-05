@@ -41,11 +41,320 @@
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="app.js?v=9.4" defer></script>
+  <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
+  <style id="loader-critical-css">
+    .site-loader {
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      z-index: 99999999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: radial-gradient(circle at 50% 35%, #0f172a 0%, #07090e 100%) !important;
+      background-color: #07090e !important;
+      color: #ffffff !important;
+      padding: 20px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)) !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+      opacity: 1;
+      transform: scale(1);
+      transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    [data-theme="light"] .site-loader {
+      background: radial-gradient(circle at 50% 35%, #f8fafc 0%, #e2e8f0 100%) !important;
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+    .site-loader.loader-hidden {
+      opacity: 0 !important;
+      transform: scale(1.03) !important;
+      pointer-events: none !important;
+    }
+    .loader-bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(0, 240, 255, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .loader-card {
+      max-width: 480px !important;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      position: relative !important;
+      z-index: 2 !important;
+      gap: 16px !important;
+      box-sizing: border-box !important;
+    }
+    .loader-orbital-system {
+      position: relative !important;
+      width: 88px !important;
+      height: 88px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+    }
+    .loader-ring {
+      position: absolute !important;
+      border-radius: 50% !important;
+      border: 2px solid transparent !important;
+      box-sizing: border-box !important;
+    }
+    .loader-ring.ring-outer {
+      inset: 0 !important;
+      border-top-color: #00f0ff !important;
+      border-right-color: rgba(0, 240, 255, 0.2) !important;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4) !important;
+      animation: loaderSpin 2.4s linear infinite !important;
+    }
+    .loader-ring.ring-mid {
+      inset: 10px !important;
+      border-bottom-color: #ff2a85 !important;
+      border-left-color: rgba(255, 42, 133, 0.2) !important;
+      box-shadow: 0 0 14px rgba(255, 42, 133, 0.4) !important;
+      animation: loaderSpinRev 3s linear infinite !important;
+    }
+    .loader-ring.ring-inner {
+      inset: 20px !important;
+      border-top-color: #8b5cf6 !important;
+      border-left-color: rgba(139, 92, 246, 0.2) !important;
+      box-shadow: 0 0 12px rgba(139, 92, 246, 0.4) !important;
+      animation: loaderSpin 1.8s linear infinite !important;
+    }
+    .loader-emblem {
+      width: 44px !important;
+      height: 44px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 3 !important;
+      animation: loaderPulse 2.2s ease-in-out infinite !important;
+    }
+    .loader-logo-icon {
+      width: 44px !important;
+      height: 44px !important;
+      max-width: 44px !important;
+      max-height: 44px !important;
+      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.6)) !important;
+    }
+    @keyframes loaderSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    @keyframes loaderSpinRev {
+      from { transform: rotate(360deg); }
+      to { transform: rotate(0deg); }
+    }
+    @keyframes loaderPulse {
+      0%, 100% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(1.08); filter: brightness(1.25); }
+    }
+    .loader-brand-block {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+    .loader-school-pill {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.08em !important;
+      padding: 4px 10px !important;
+      border-radius: 99px !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #00f0ff !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    [data-theme="light"] .loader-school-pill {
+      background: rgba(0, 0, 0, 0.04) !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+      color: #0284c7 !important;
+    }
+    .loader-pulse-dot {
+      width: 6px !important;
+      height: 6px !important;
+      border-radius: 50% !important;
+      background: #10b981 !important;
+      box-shadow: 0 0 8px #10b981 !important;
+      display: inline-block !important;
+    }
+    .loader-heading {
+      font-size: clamp(20px, 5.5vw, 26px) !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em !important;
+      margin: 0 !important;
+      line-height: 1.2 !important;
+      color: #ffffff !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    [data-theme="light"] .loader-heading {
+      color: #0f172a !important;
+    }
+    .loader-heading .loader-year {
+      background: linear-gradient(135deg, #00f0ff, #ff2a85) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+    }
+    .loader-tagline {
+      font-size: 13px !important;
+      color: #94a3b8 !important;
+      margin: 0 !important;
+      font-weight: 500 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    [data-theme="light"] .loader-tagline {
+      color: #64748b !important;
+    }
+    .loader-progress-section {
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      box-sizing: border-box !important;
+    }
+    .loader-progress-track {
+      width: 100% !important;
+      height: 6px !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+      border-radius: 99px !important;
+      overflow: hidden !important;
+      position: relative !important;
+      box-sizing: border-box !important;
+    }
+    [data-theme="light"] .loader-progress-track {
+      background: rgba(0, 0, 0, 0.08) !important;
+    }
+    .loader-progress-bar {
+      width: 15%;
+      height: 100% !important;
+      background: linear-gradient(90deg, #00f0ff, #8b5cf6, #ff2a85) !important;
+      border-radius: 99px !important;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.6) !important;
+      transition: width 0.3s ease !important;
+    }
+    .loader-meta-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      font-size: 12px !important;
+      color: #94a3b8 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+      gap: 8px !important;
+      width: 100% !important;
+    }
+    .loader-status-msg {
+      font-weight: 500 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      flex: 1 !important;
+      text-align: left !important;
+    }
+    .loader-status-pct {
+      font-weight: 700 !important;
+      color: #00f0ff !important;
+      font-variant-numeric: tabular-nums !important;
+      flex-shrink: 0 !important;
+      margin-left: 8px !important;
+    }
+    [data-theme="light"] .loader-status-pct {
+      color: #0284c7 !important;
+    }
+    .loader-tutorial-panel {
+      width: 100% !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 14px !important;
+      padding: 12px 14px !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      text-align: left !important;
+      box-sizing: border-box !important;
+    }
+    [data-theme="light"] .loader-tutorial-panel {
+      background: rgba(255, 255, 255, 0.9) !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    .loader-tutorial-header {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.06em !important;
+      color: #ff2a85 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .loader-tutorial-icon {
+      font-size: 14px !important;
+    }
+    .loader-tutorial-badge {
+      flex: 1 !important;
+    }
+    .loader-dots-indicator {
+      display: flex !important;
+      gap: 4px !important;
+      align-items: center !important;
+    }
+    .loader-dot {
+      width: 6px !important;
+      height: 6px !important;
+      border-radius: 50% !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+      display: inline-block !important;
+    }
+    [data-theme="light"] .loader-dot {
+      background: rgba(0, 0, 0, 0.2) !important;
+    }
+    .loader-dot.active {
+      background: #ff2a85 !important;
+      width: 14px !important;
+      border-radius: 99px !important;
+    }
+    .loader-tutorial-text {
+      margin: 0 !important;
+      font-size: 12.5px !important;
+      line-height: 1.5 !important;
+      color: #e2e8f0 !important;
+      font-weight: 500 !important;
+      min-height: 38px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    [data-theme="light"] .loader-tutorial-text {
+      color: #1e293b !important;
+    }
+    @media (max-width: 480px) {
+      .loader-card { gap: 12px !important; }
+      .loader-orbital-system { width: 76px !important; height: 76px !important; }
+      .loader-emblem { width: 36px !important; height: 36px !important; }
+      .loader-logo-icon { width: 36px !important; height: 36px !important; }
+      .loader-tutorial-panel { padding: 10px 12px !important; }
+      .loader-tutorial-text { font-size: 12px !important; }
+    }
+  </style>
 </head>
 <body>
 
   <!-- ── 0. FULL-PAGE IMMERSIVE LOADING SCREEN & TUTORIAL GUIDE ── -->
-  <div id="site-loader" class="site-loader" aria-live="polite" aria-busy="true">
+  <div id="site-loader" class="site-loader" style="position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:99999999;background:#07090e;display:flex;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden;" aria-live="polite" aria-busy="true">
     <div class="loader-bg-overlay"></div>
     <div class="loader-card">
       <div class="loader-orbital-system">
@@ -53,7 +362,7 @@
         <div class="loader-ring ring-mid"></div>
         <div class="loader-ring ring-inner"></div>
         <div class="loader-emblem">
-          <svg class="loader-logo-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="loader-logo-icon" width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="50" cy="50" r="44" stroke="url(#loaderGrad1)" stroke-width="3" stroke-dasharray="140 70" stroke-linecap="round"/>
             <circle cx="39" cy="42" r="17" stroke="rgba(0, 240, 255, 0.9)" stroke-width="2.5"/>
             <circle cx="61" cy="42" r="17" stroke="rgba(255, 42, 133, 0.9)" stroke-width="2.5"/>

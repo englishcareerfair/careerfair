@@ -305,6 +305,8 @@
   font-size: 12px;
   font-family: var(--font-sub, 'Space Grotesk', sans-serif);
   color: var(--text-dim, #94a3b8);
+  gap: 8px;
+  width: 100%;
 }
 
 .loader-status-msg {
@@ -312,13 +314,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 80%;
+  flex: 1;
+  text-align: left;
 }
 
 .loader-status-pct {
   font-weight: 700;
   color: #00f0ff;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 [data-theme="light"] .loader-status-pct {

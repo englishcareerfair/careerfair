@@ -87,19 +87,22 @@
   const dismissLoader = () => {
     if (isDismissed) return;
     isDismissed = true;
-    setProgress(100, 'Welcome to English Careers Forum 2026!');
+    setProgress(100, 'Exhibition Ready!');
     if (tipTimer) clearInterval(tipTimer);
 
     const elapsed = Date.now() - loaderStartTime;
-    const remaining = Math.max(0, minDisplayMs - elapsed);
+    const remaining = Math.max(0, 750 - elapsed);
 
     setTimeout(() => {
       const loader = document.getElementById('site-loader');
       if (loader) {
         loader.classList.add('loader-hidden');
+        loader.style.opacity = '0';
+        loader.style.pointerEvents = 'none';
         setTimeout(() => {
           loader.style.display = 'none';
-        }, 520);
+          try { loader.remove(); } catch (_) {}
+        }, 400);
       }
     }, remaining);
   };
@@ -11376,6 +11379,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     signalSiteLoaded();
   } else {
     window.addEventListener('load', signalSiteLoaded, { once: true });
+    // Safety fallback: dismiss cleanly within 1.5s after DOM ready even if external assets hang
+    setTimeout(signalSiteLoaded, 1500);
   }
 
   // ─── BACKGROUND MULTI-SYSTEM GLOBAL SYNCHRONIZER ───
