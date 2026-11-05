@@ -407,10 +407,9 @@ export async function onRequest(ctx) {
       user_titles = GLOBAL_CACHE.user_titles || {};
     }
 
-    const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', ''));
+    const has_gemini_key = Boolean(env.GEMINI_API_KEY || env.GEMINI_API_KEYS || (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', '')));
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
-    const eleven_keys = (await kvGet(db, 'eleven_keys', '')) || (await kvGet(db, 'eleven_key', ''));
-    const eleven_key = (await kvGet(db, 'eleven_key', '')) || (eleven_keys ? eleven_keys.split(/[\r\n,]+/)[0].trim() : '') || (env.ELEVEN_KEY ? 'configured' : '');
+    const has_eleven_key = Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')));
 
     let totalScores = 0;
     let totalFeedback = 0;
@@ -447,12 +446,9 @@ export async function onRequest(ctx) {
       rclone_remote,
       rclone_endpoint,
       user_titles,
-      gemini_keys,
-      gemini_key: gemini_keys,
+      has_gemini_key,
       eleven_voice,
-      eleven_keys,
-      eleven_key,
-      has_eleven_key: Boolean(env.ELEVEN_KEY || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', ''))),
+      has_eleven_key,
       db_connected: Boolean(db),
       db_status: db ? 'connected' : 'unbound',
       total_scores: totalScores || GLOBAL_CACHE.scores.length,

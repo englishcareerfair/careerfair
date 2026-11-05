@@ -281,10 +281,7 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     headers['Authorization'] = 'Bearer botschool';
   }
 
-  const clientGeminiKeys = localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || STATE.config?.gemini_keys || '';
-  if (clientGeminiKeys && !headers['x-gemini-keys']) {
-    headers['x-gemini-keys'] = clientGeminiKeys;
-  }
+  // X-Gemini-Keys header removed: API keys are securely kept and resolved on the backend
   opts.headers = headers;
 
   const cleanEndpoint = endpoint.replace(/^\/+/, '');
@@ -5191,16 +5188,14 @@ async function callAiQuest(prompt, isJson = false) {
     const curKey = geminiKeyList[i];
     let keyExhausted = false;
 
-    // 1a. Attempt backend /api/ai
+    // 1a. Attempt backend /api/ai (secure backend key resolution)
     try {
       const res = await fetch(getApiUrl('api/ai'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-gemini-key': curKey,
-          'x-goog-api-key': curKey
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ task: 'quest', prompt, json: isJson, gemini_keys: curKey })
+        body: JSON.stringify({ task: 'quest', prompt, json: isJson })
       });
 
       if (res.status === 429 || res.status === 403) {
@@ -5220,40 +5215,8 @@ async function callAiQuest(prompt, isJson = false) {
       }
     } catch (e) {}
 
-    // 1b. Direct client-side Gemini call
-    if (!keyExhausted) {
-      for (const m of models) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(curKey)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': curKey },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              ...(isJson ? { generationConfig: { responseMimeType: 'application/json' } } : {})
-            })
-          });
-
-          if (res.status === 429 || res.status === 403) {
-            keyExhausted = true;
-            break;
-          }
-
-          if (res.ok) {
-            const data = await res.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text && String(text).trim() !== fallbackSpeech) {
-              if (isJson) {
-                const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-                if (match) {
-                  try { return JSON.parse(match[0]); } catch {}
-                }
-              }
-              return text;
-            }
-          }
-        } catch (e) {}
-      }
-    }
+    // 1b. Direct client-side call removed to prevent network tab key leaks.
+    // Backend /api/ai handles key rotation and fallback safely in cloud.
 
     if (keyExhausted) {
       console.warn(`Gemini key ${curKey.slice(0, 6)}... quota exhausted. Rotating.`);
@@ -11362,7 +11325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       STATE.config.gemini_key = localGemini;
       localStorage.setItem('cf_gemini_keys', localGemini);
       sessionStorage.setItem('cf_gemini_keys', localGemini);
-      fetchApi('admin/config', 'PUT', { gemini_keys: localGemini, gemini_key: localGemini.split(/[\r\n,]+/)[0].trim() });
+      // Client does not auto-post keys to config on boot without admin auth
     }
 
     const localElevenKeys = localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || '';
