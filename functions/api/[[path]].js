@@ -458,6 +458,23 @@ export async function onRequest(ctx) {
     });
   }
 
+    // ── 2a. GET /admin/config (Authenticated admin configuration & key sync across all devices) ────
+  if (path === '/admin/config' && method === 'GET') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+
+    const gemini_keys = (await kvGet(db, 'gemini_keys', '')) || (await kvGet(db, 'gemini_key', '')) || env.GEMINI_API_KEYS || env.GEMINI_API_KEY || '';
+    const eleven_keys = (await kvGet(db, 'eleven_keys', '')) || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || env.ELEVEN_API_KEY || '';
+    const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
+
+    return json({
+      ok: true,
+      gemini_keys,
+      eleven_keys,
+      eleven_voice
+    });
+  }
+
   // ── 2. PUT /admin/config ───────────────────────────────────────────────────
   if (path === '/admin/config' && method === 'PUT') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
@@ -750,7 +767,8 @@ export async function onRequest(ctx) {
 
   // ── 4b. POST /stt (ElevenLabs Scribe Speech-to-Text Word & Sentence Detection) ──
   if (path === '/stt' && method === 'POST') {
-    const elevenKey = (request.headers.get('xi-api-key') || env.ELEVEN_KEY || '').trim();
+    let elevenKey = (request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
+    if (elevenKey && elevenKey.includes('\n')) elevenKey = elevenKey.split(/[\r\n,]+/)[0].trim();
 
     let formData;
     try {

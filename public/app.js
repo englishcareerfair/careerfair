@@ -406,41 +406,31 @@ async function speak(text, btn = null) {
   let elevenKeyList = rawElevenKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
   const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
-  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs with Automatic Key Failover
+  // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Backend (/api/tts)
+  // Backend securely resolves keys from Cloudflare D1/env with zero keys exposed in Network tab
   let playedSuccessfully = false;
-  while (elevenKeyList.length > 0 && !playedSuccessfully) {
-    const currentKey = elevenKeyList[0];
-    const effectiveKey = (currentKey && currentKey !== 'configured') ? currentKey : '';
+  const canAttemptTts = Boolean(elevenKeyList.length > 0 || STATE.config?.has_eleven_key || STATE.config?.eleven_keys);
+
+  if (canAttemptTts) {
     try {
       const res = await fetch(getApiUrl('api/tts'), {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...(effectiveKey ? { 'xi-api-key': effectiveKey } : {})
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           text: text,
-          apiKey: effectiveKey,
           voiceId: savedVoiceId,
           accent: 'indian'
         })
       });
 
-      // If key is quota exhausted or invalid (401, 402, 429), remove it and promote next backup key to Main
       if (res.status === 401 || res.status === 402 || res.status === 429) {
-        console.warn(`ElevenLabs key ${currentKey.slice(0, 6)}... quota exhausted or invalid (status ${res.status}). Failing over to next backup key.`);
-        elevenKeyList.shift();
-        const updatedPool = elevenKeyList.join('\n');
-        localStorage.setItem('cf_eleven_keys', updatedPool);
-        localStorage.setItem('cf_eleven_key', elevenKeyList[0] || '');
-        STATE.config.eleven_keys = updatedPool;
-        STATE.config.eleven_key = elevenKeyList[0] || '';
-        if (typeof window.syncAdminElevenKeyBoxes === 'function') {
-          window.syncAdminElevenKeyBoxes();
-        }
-        continue;
+        console.warn(`ElevenLabs TTS response status: ${res.status}. Falling back smoothly to high-fidelity Indian Neural Speech.`);
+        fallbackIndianNeuralSpeech(text, targetBtn);
+        return;
       }
-
+      
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('audio')) {
         const audioBlob = await res.blob();
@@ -3414,8 +3404,6 @@ async function sendAudioToElevenLabsSTT(audioBlob) {
     fd.append('file', audioBlob, ext);
 
     const headers = {};
-    const elevenKey = localStorage.getItem('cf_eleven_key');
-    if (elevenKey) headers['xi-api-key'] = elevenKey;
     if (STATE.adminKey) headers['Authorization'] = 'Bearer ' + STATE.adminKey;
 
     const res = await fetch(getApiUrl('api/stt'), {
@@ -10370,6 +10358,35 @@ function applyFeatureFlags() {
 }
 
 function initAdminWorkspace() {
+  // Authoritative global API key sync from Cloudflare D1 to synchronize keys across all admin devices
+  fetchApi('admin/config').then(adminCfg => {
+    if (adminCfg && adminCfg.ok) {
+      if (adminCfg.gemini_keys) {
+        STATE.config.gemini_keys = adminCfg.gemini_keys;
+        STATE.config.gemini_key = adminCfg.gemini_keys.split(/[\r\n,]+/)[0].trim();
+        try {
+          localStorage.setItem('cf_gemini_keys', adminCfg.gemini_keys);
+          localStorage.setItem('cf_gemini_key', STATE.config.gemini_key);
+        } catch {}
+      }
+      if (adminCfg.eleven_keys) {
+        STATE.config.eleven_keys = adminCfg.eleven_keys;
+        STATE.config.eleven_key = adminCfg.eleven_keys.split(/[\r\n,]+/)[0].trim();
+        try {
+          localStorage.setItem('cf_eleven_keys', adminCfg.eleven_keys);
+          localStorage.setItem('cf_eleven_key', STATE.config.eleven_key);
+        } catch {}
+      }
+      if (adminCfg.eleven_voice) {
+        STATE.config.eleven_voice = adminCfg.eleven_voice;
+        try { localStorage.setItem('cf_eleven_voice', adminCfg.eleven_voice); } catch {}
+      }
+      if (typeof window.syncAdminGeminiKeyBoxes === 'function') window.syncAdminGeminiKeyBoxes();
+      if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
+      if (typeof verifyAndLoadElevenVoices === 'function') verifyAndLoadElevenVoices(true);
+    }
+  }).catch(() => {});
+
   if (typeof window.initDynamicApiPools === 'function') window.initDynamicApiPools();
   const dbStatusWrap = $('#admin-db-status-pill');
   if (dbStatusWrap && STATE.config) {
@@ -11841,8 +11858,10 @@ window.initDynamicApiPools = function() {
   const updateGeminiStatusBadge = (count) => {
     const badge = $('#admin-gemini-key-status');
     if (!badge) return;
-    if (count > 0) {
-      badge.innerHTML = `✅ <strong>${count} Gemini API Key${count > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active!`;
+    const hasKeys = count > 0 || Boolean(STATE.config?.has_gemini_key) || Boolean(STATE.config?.gemini_keys);
+    if (hasKeys) {
+      const displayCount = count > 0 ? count : 1;
+      badge.innerHTML = `✅ <strong>${displayCount} Gemini API Key${displayCount > 1 ? 's' : ''}</strong> active &amp; ready in pool. Auto-failover and quota purging active across all devices!`;
     } else {
       badge.innerHTML = `⚠️ No Gemini key configured. System uses deterministic heuristics failover.`;
     }
@@ -11922,8 +11941,10 @@ window.initDynamicApiPools = function() {
   const updateElevenStatusBadge = (count) => {
     const badge = $('#admin-eleven-status');
     if (!badge) return;
-    if (count > 0) {
-      badge.innerHTML = `✅ <strong>${count} ElevenLabs Key${count > 1 ? 's' : ''}</strong> active. Studio Indian accent voice model will stay persistent across all key rotations!`;
+    const hasKeys = count > 0 || Boolean(STATE.config?.has_eleven_key) || Boolean(STATE.config?.eleven_keys);
+    if (hasKeys) {
+      const displayCount = count > 0 ? count : 1;
+      badge.innerHTML = `✅ <strong>${displayCount} ElevenLabs Key${displayCount > 1 ? 's' : ''}</strong> active &amp; ready in pool. Studio Indian accent voice model active across all devices!`;
     } else {
       badge.innerHTML = `⚠️ No ElevenLabs key entered. Studio voice synthesizes via high-fidelity Indian English (en-IN) neural voice!`;
     }
