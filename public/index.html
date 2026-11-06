@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=10.3">
+  <link rel="stylesheet" href="styles.css?v=10.4">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -40,8 +40,8 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="loader.js?v=10.3"></script>
-  <script src="app.js?v=10.3" defer></script>
+  <script src="loader.js?v=10.4"></script>
+  <script src="app.js?v=10.4" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -1841,8 +1841,11 @@
         <p><strong>4. Data Rectification &amp; Error Reporting:</strong> Any student, teacher, or parent who notices an inaccurate score, display discrepancy, or wishes to request record rectification or removal may submit an issue via the platform error reporting tool for immediate administrator action.</p>
         <p><strong>5. Zero Unauthorized Disclosure:</strong> All administrative endpoints and database queries are strictly authenticated through secure bearer authorization, ensuring full confidentiality and protection against unauthorized access.</p>
       </div>
-      <div style="margin-top:18px;text-align:right;">
+      <div id="tos-agree-container" style="margin-top:18px;text-align:right;">
         <button class="btn btn-primary btn-sm" id="btn-agree-tos">I Understand &amp; Agree</button>
+      </div>
+      <div id="tos-agreed-badge" style="display:none;margin-top:18px;align-items:center;justify-content:flex-end;gap:6px;font-size:12.5px;color:#10b981;font-weight:700;">
+        <span>?</span> <span>Agreed &amp; Verified</span>
       </div>
     </div>
   </div>

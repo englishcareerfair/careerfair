@@ -53,7 +53,7 @@ const savedInitialTheme = (function() {
 const systemPrefersLight = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
 const initialResolvedTheme = savedInitialTheme ? (savedInitialTheme === 'light' ? 'light' : 'dark') : (systemPrefersLight ? 'light' : 'dark');
 
-const STATE = {
+const STATE = window.STATE = {
   theme: initialResolvedTheme,
   activeTab: 'hero',
   studentName: localStorage.getItem('cf_student_name') || '',
@@ -1557,21 +1557,41 @@ function initNavigation() {
   });
 
   // Legal Modal (Terms of Service & Privacy Policy)
+  const syncTosAgreeButtonState = () => {
+    const agreeContainer = $('#tos-agree-container') || $('#btn-agree-tos')?.parentElement;
+    if (localStorage.getItem('cf_tos_agreed') === 'true') {
+      if (agreeContainer) agreeContainer.style.display = 'none';
+      const agreedBadge = $('#tos-agreed-badge');
+      if (agreedBadge) agreedBadge.style.display = 'inline-flex';
+    }
+  };
+
   $('#link-open-tos')?.addEventListener('click', () => {
+    syncTosAgreeButtonState();
     $('#tos-pp-modal')?.classList.add('active');
   });
   $('#btn-close-tos')?.addEventListener('click', () => {
     $('#tos-pp-modal')?.classList.remove('active');
   });
   $('#btn-agree-tos')?.addEventListener('click', () => {
+    try {
+      localStorage.setItem('cf_tos_agreed', 'true');
+    } catch (_) {}
+    const agreeContainer = $('#tos-agree-container') || $('#btn-agree-tos')?.parentElement;
+    if (agreeContainer) agreeContainer.style.display = 'none';
+    const agreedBadge = $('#tos-agreed-badge');
+    if (agreedBadge) agreedBadge.style.display = 'inline-flex';
     $('#tos-pp-modal')?.classList.remove('active');
-    showToast('✅ Terms of Service & Telemetry Consent confirmed.');
+    showToast('\u2705 Terms of Service & Telemetry Consent confirmed.');
   });
   $('#tos-pp-modal')?.addEventListener('click', (e) => {
     if (e.target.id === 'tos-pp-modal') {
       $('#tos-pp-modal').classList.remove('active');
     }
   });
+
+  // Check on initial load
+  syncTosAgreeButtonState();
 
   // User Issue Reporting Modal
   $('#link-report-issue')?.addEventListener('click', () => {
