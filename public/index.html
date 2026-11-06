@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=10.0">
+  <link rel="stylesheet" href="styles.css?v=10.1">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -40,7 +40,7 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="app.js?v=10.0" defer></script>
+  <script src="app.js?v=10.1" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -740,9 +740,7 @@
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
               <span class="badge-pill badge-reg" id="active-challenge-pack-tag">Everyday Fluency</span>
-              <span class="badge-pill" id="active-challenge-ai-badge" style="font-size:11px;background:rgba(0,240,255,0.08);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.25);">
-                ⚡ Dynamic AI Sentence
-              </span>
+              <span class="badge-pill" id="active-challenge-ai-badge" style="display:none;"></span>
             </div>
 
             <h4 style="font-size:22px;line-height:1.45;margin-bottom:18px;color:var(--text-main);font-weight:700;" id="speak-target-sentence">
@@ -849,10 +847,8 @@
             <div class="teleprompter-header-bar">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span class="teleprompter-live-indicator"><span class="prompter-pulse"></span> PROMPTER</span>
-                <span class="badge-pill" id="speech-lab-ai-badge" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">⚡ Gemini AI Sentence</span>
-                <span class="badge-pill" id="speech-lab-stt-engine-badge" style="background:rgba(255,42,133,0.1);color:var(--accent-magenta);border:1px solid rgba(255,42,133,0.3);font-size:11px;">
-                  🎙️ ElevenLabs Scribe Active
-                </span>
+                <span class="badge-pill" id="speech-lab-ai-badge" style="display:none;"></span>
+                <span class="badge-pill" id="speech-lab-stt-engine-badge" style="display:none;"></span>
               </div>
               <div style="display:flex;gap:6px;align-items:center;">
                 <button type="button" class="btn btn-secondary btn-sm" id="btn-speech-lab-listen" title="Listen to AI sentence pronunciation">

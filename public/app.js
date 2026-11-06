@@ -3365,7 +3365,7 @@ function changeSpeechLabSentence(userTriggered = false) {
     }
   }
 
-  if (aiBadge) aiBadge.textContent = sourceBadge;
+  if (aiBadge) { aiBadge.style.display = 'none'; }
 
   speechLabUsedSentences.add(selectedSentence);
   try {
@@ -5079,9 +5079,7 @@ function renderStandaloneQuest(mount, questIdx) {
           </span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">
-            ✨ Powered by Gemini AI
-          </span>
+          
 
         </div>
       </div>
@@ -5615,9 +5613,7 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
             Immersive generative literary adventures. Click any side card to bring it forward, or the center card to embark!
           </span>
         </div>
-        <span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);font-weight:700;">
-          ✨ Powered by Gemini AI
-        </span>
+        
       </div>
     </div>
 
@@ -7328,12 +7324,9 @@ function renderDictionaryLookup(mount) {
           <h3 style="font-size:20px;display:flex;align-items:center;gap:8px;">
             <span>📖</span> <span>Instant Live Dictionary &amp; Lexicon Check</span>
           </h3>
-          <span style="font-size:13px;color:var(--text-dim);">Live Free Dictionary API with intelligent Gemini lexical backup &amp; authentic Indian pronunciation.</span>
+          <span style="font-size:13px;color:var(--text-dim);">Comprehensive English dictionary definition, lexical exploration, and authentic Indian pronunciation.</span>
         </div>
-        <div style="display:flex;gap:6px;">
-          <span class="badge-pill" style="font-size:11px;color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.3);">🟢 Free Dictionary API</span>
-          <span class="badge-pill" style="font-size:11px;color:var(--accent-cyan);border:1px solid var(--accent-cyan);">✨ Gemini AI Backup</span>
-        </div>
+        <div style="display:none;"></div>
       </div>
     </div>
 
@@ -7353,7 +7346,7 @@ function renderDictionaryLookup(mount) {
     const resultBox = $('#dict-result-mount');
     if (!word) return;
 
-    resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><span class="spinner-sm"></span> Consulting Free Dictionary API & Lexicon...</div>';
+    resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);"><span class="spinner-sm"></span> Searching dictionary & lexicon database...</div>';
     
     let data = null;
     let source = 'Free Dictionary API';
@@ -7379,7 +7372,7 @@ function renderDictionaryLookup(mount) {
 
     // 3. Intelligent Gemini Backup if word is not found in Free Dictionary API
     if (!data || data.not_found || !Array.isArray(data) || !data.length) {
-      resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--accent-cyan);"><span class="spinner-sm"></span> Word not found in standard dictionary. Synthesizing lexical entry with Gemini AI Backup...</div>';
+      resultBox.innerHTML = '<div style="display:flex;align-items:center;gap:8px;color:var(--accent-cyan);"><span class="spinner-sm"></span> Synthesizing comprehensive lexical entry...</div>';
       try {
         const aiPrompt = `Define the English word or term "${word}". Return ONLY JSON in this structure:
 [{"word":"${word}","phonetic":"/ipa/","meanings":[{"partOfSpeech":"noun/verb/adjective","definitions":[{"definition":"clear concise definition","example":"a realistic example sentence"}]}]}]`;
@@ -7398,9 +7391,7 @@ function renderDictionaryLookup(mount) {
       const def = meaning?.definitions?.[0]?.definition || 'Definition available.';
       const ex = meaning?.definitions?.[0]?.example || '';
       const isGemini = source.includes('Gemini') || item.source === 'gemini';
-      const sourceBadge = isGemini 
-        ? '<span class="badge-pill" style="background:rgba(0,240,255,0.15);color:var(--accent-cyan);border:1px solid var(--accent-cyan);">✨ Gemini AI Lexicon Backup</span>'
-        : '<span class="badge-pill badge-reg" style="color:var(--accent-green, #10b981);border-color:rgba(16,185,129,0.3);">🟢 Free Dictionary API Verified</span>';
+      const sourceBadge = '';
 
       resultBox.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -7421,7 +7412,7 @@ function renderDictionaryLookup(mount) {
       `;
     } else {
       resultBox.innerHTML = `
-        <div style="color:var(--accent-magenta);font-weight:600;margin-bottom:6px;">⚠️ Word not recognized in Free Dictionary API or Gemini Lexicon.</div>
+        <div style="color:var(--accent-magenta);font-weight:600;margin-bottom:6px;">⚠️ Word not found in dictionary.</div>
         <div style="font-size:13px;color:var(--text-muted);">Please check the spelling or search a standard English root word (e.g. <em>articulate</em>, <em>benevolent</em>, <em>resilient</em>).</div>
       `;
     }
@@ -7934,9 +7925,7 @@ function renderMyPlan(mount) {
               ${careerObj.icon || '🎯'} ${escapeHtml(blueprint.career)} Pathway
             </h3>
           </div>
-          <span class="badge-pill" style="background:rgba(0,240,255,0.1);border:1px solid var(--accent-cyan);color:var(--accent-cyan);font-weight:700;font-size:11.5px;">
-            ${provider.includes('Gemini') ? '🤖 Gemini AI Generated' : '⚡ Precision Engine'}
-          </span>
+          
         </div>
 
         <!-- Why English Superpower -->
