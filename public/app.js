@@ -546,11 +546,9 @@ async function speak(text, btn = null) {
             }
           }
         }
-        break;
       }
     } catch (e) {
       console.warn('TTS attempt exception:', e);
-      break;
     }
   }
 
