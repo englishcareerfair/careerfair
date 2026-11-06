@@ -5506,9 +5506,10 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
       card.className = `arc-card ${absOffset === 0 ? 'active' : ''}`;
       card.setAttribute('data-index', i);
 
-      const tx = offset * 210;
-      const ty = absOffset * absOffset * 18;
-      const rot = offset * 8;
+      const isMobileArc = window.innerWidth <= 768;
+      const tx = offset * (isMobileArc ? 160 : 210);
+      const ty = absOffset * absOffset * (isMobileArc ? 12 : 18);
+      const rot = offset * (isMobileArc ? 6 : 8);
       const sc = 1 - absOffset * 0.12;
       card.style.transform = `translateX(${tx}px) translateY(${ty}px) rotate(${rot}deg) scale(${sc})`;
       card.style.zIndex = 10 - absOffset;
@@ -5578,6 +5579,34 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
     renderArc();
     launchQuest(activeIndex);
   });
+
+  // Touch swipe support for 3D Arc Carousel on mobile phones
+  let arcTouchStartX = 0;
+  let arcTouchStartY = 0;
+  carousel.addEventListener('touchstart', (e) => {
+    if (e.touches && e.touches[0]) {
+      arcTouchStartX = e.touches[0].clientX;
+      arcTouchStartY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  carousel.addEventListener('touchend', (e) => {
+    if (!arcTouchStartX || !e.changedTouches || !e.changedTouches[0]) return;
+    const dx = e.changedTouches[0].clientX - arcTouchStartX;
+    const dy = e.changedTouches[0].clientY - arcTouchStartY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) {
+        activeIndex = (activeIndex + 1) % GAMING_HALL_QUESTS.length;
+      } else {
+        activeIndex = (activeIndex - 1 + GAMING_HALL_QUESTS.length) % GAMING_HALL_QUESTS.length;
+      }
+      syncQuestUrl();
+      renderArc();
+      launchQuest(activeIndex);
+    }
+    arcTouchStartX = 0;
+    arcTouchStartY = 0;
+  }, { passive: true });
 
   window.setGamingHallQuest = (idx) => {
     activeIndex = idx;

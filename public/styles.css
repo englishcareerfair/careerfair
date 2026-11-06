@@ -4864,3 +4864,294 @@ body.obs-overlay-mode .news-lower-third {
 input[data-capitalize="name"] {
   text-transform: capitalize;
 }
+
+
+/* =========================================================================
+   COMPREHENSIVE MOBILE VIEWPORT OPTIMIZATIONS (360px - 480px)
+   ========================================================================= */
+
+@media (max-width: 768px) {
+  /* Fluid mobile typography across all headings & cards */
+  h1, .hero-heading {
+    font-size: clamp(22px, 5.5vw, 28px) !important;
+    line-height: 1.25 !important;
+  }
+  h2 {
+    font-size: clamp(19px, 4.8vw, 23px) !important;
+    line-height: 1.3 !important;
+  }
+  h3 {
+    font-size: clamp(16px, 4.2vw, 19px) !important;
+    line-height: 1.35 !important;
+  }
+  h4 {
+    font-size: clamp(14px, 3.8vw, 16px) !important;
+  }
+
+  /* Horizontal Filter Shelf touch & scroll ergonomics */
+  .shelf-scroll-wrapper {
+    gap: 4px !important;
+    margin-bottom: 14px !important;
+  }
+  .shelf-scroll-arrow {
+    display: none !important; /* Hide arrows on touch devices to give 100% width to touch scrolling */
+  }
+  .shelf-scroll-track {
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 12px !important;
+  }
+  .shelf-scroll-track::-webkit-scrollbar {
+    display: none !important;
+  }
+  .filter-chip {
+    padding: 7px 14px !important;
+    font-size: 12.5px !important;
+    min-height: 38px !important;
+    touch-action: manipulation !important;
+  }
+
+  /* Speech Lab Recording Controls & Ladder Responsive Fit */
+  .speech-lab-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  #speech-lab-controls,
+  div:has(> #btn-speech-lab-record) {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  #btn-speech-lab-record,
+  #btn-speech-lab-stop,
+  #btn-speech-lab-analyze {
+    flex: 1 1 calc(50% - 6px) !important;
+    min-width: 140px !important;
+    min-height: 44px !important;
+  }
+  #btn-speech-lab-analyze {
+    flex: 1 1 100% !important; /* Spans full width on row 2 for prominent CTA */
+  }
+
+  /* Teleprompter Studio Mobile Viewport Fitting */
+  .broadcast-stage-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .video-frame-container {
+    aspect-ratio: 16 / 9 !important;
+    border-radius: var(--radius-md) !important;
+    max-height: 240px !important;
+  }
+  .teleprompter-ticker-container {
+    top: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    height: 46px !important;
+    padding: 0 8px !important;
+  }
+  .teleprompter-brand-pill {
+    padding: 2px 7px 2px 5px !important;
+    font-size: 9.5px !important;
+    margin-right: 6px !important;
+  }
+  .teleprompter-brand-text {
+    font-size: 9.5px !important;
+  }
+  .teleprompter-sentence-text {
+    font-size: 14px !important;
+  }
+  .news-lower-third {
+    bottom: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
+  }
+  .lower-third-tag {
+    font-size: 9.5px !important;
+    padding: 2px 6px !important;
+  }
+  .lower-third-headline {
+    font-size: 12px !important;
+  }
+
+  /* Leaderboard Table Responsive Cell Fit & Card Viewport */
+  .table-wrapper {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: var(--radius-md) !important;
+  }
+  .table-wrapper table {
+    min-width: 480px !important;
+  }
+  th, td {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  /* BizCard Responsive Scaling on Mobile Phones */
+  .biz-card-render {
+    padding: 16px !important;
+    min-height: 180px !important;
+  }
+  .biz-card-name {
+    font-size: 20px !important;
+  }
+  .biz-card-title {
+    font-size: 12.5px !important;
+  }
+  .biz-card-qr-box {
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    min-height: 64px !important;
+    padding: 4px !important;
+  }
+  .biz-card-bottom {
+    margin-top: 14px !important;
+    padding-top: 10px !important;
+  }
+  .biz-card-creds {
+    font-size: 11px !important;
+  }
+
+  /* Wordle Board Mobile Scaling (Ensures 5 columns strictly fit <= 360px) */
+  .wordle-board {
+    max-width: 270px !important;
+    gap: 4px !important;
+    margin: 12px auto !important;
+  }
+  .wordle-row {
+    gap: 4px !important;
+  }
+  .wordle-tile {
+    width: 46px !important;
+    height: 46px !important;
+    font-size: 18px !important;
+    border-radius: 6px !important;
+  }
+  #wordle-controls {
+    max-width: 100% !important;
+    padding: 0 4px !important;
+  }
+  #wordle-input {
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+  #btn-wordle-guess {
+    min-height: 44px !important;
+  }
+
+  /* Flashcards, Spelling Bee & Hangman Responsive Layout */
+  .flashcard-stage {
+    min-height: 200px !important;
+  }
+  #spelling-input, #dict-query {
+    font-size: 16px !important; /* Prevents iOS auto-zoom */
+    min-height: 44px !important;
+  }
+  .spelling-bee-controls, .dict-search-row {
+    flex-wrap: wrap !important;
+  }
+  #hangman-display {
+    gap: 4px !important;
+    padding: 4px 2px !important;
+  }
+  .hangman-letter-slot {
+    min-width: 28px !important;
+    height: 38px !important;
+    font-size: 18px !important;
+  }
+  .hangman-key {
+    min-width: 30px !important;
+    height: 38px !important;
+    font-size: 12.5px !important;
+    padding: 2px !important;
+  }
+
+  /* 3D Arc Carousel Mobile Card Tuning */
+  .arc-stage {
+    padding: 6px 0 12px !important;
+  }
+  .arc-carousel {
+    height: 220px !important;
+    margin: 10px 0 !important;
+    touch-action: pan-y pinch-zoom !important;
+  }
+  .arc-card {
+    width: 220px !important;
+    min-height: 175px !important;
+    padding: 14px 12px !important;
+  }
+  .arc-card-icon {
+    font-size: 22px !important;
+  }
+  .arc-card-title {
+    font-size: 15px !important;
+  }
+  .arc-card-subtitle {
+    font-size: 10px !important;
+  }
+  .arc-card-desc {
+    font-size: 11.5px !important;
+    line-height: 1.35 !important;
+  }
+  .arc-nav-row {
+    gap: 8px !important;
+    margin: 12px auto 16px !important;
+  }
+  .arc-nav-btn {
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    min-height: 38px !important;
+  }
+  .arc-indicator-pill {
+    padding: 5px 12px !important;
+    font-size: 11px !important;
+  }
+
+  /* Quest Interactive Play Arena Responsive Polish */
+  .quest-view-card {
+    padding: 14px 12px !important;
+  }
+  .quest-output-box {
+    padding: 12px !important;
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+    max-height: 260px !important;
+  }
+  .quest-options-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .quest-choice-btn {
+    padding: 10px 12px !important;
+    font-size: 12.5px !important;
+    min-height: 44px !important;
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 375px) {
+  /* iPhone SE & Ultra-compact screen micro-tuning */
+  .wordle-tile {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+  .arc-card {
+    width: 200px !important;
+    min-height: 165px !important;
+    padding: 12px 10px !important;
+  }
+  .sub-navbar .tab-btn {
+    padding: 5px 9px !important;
+    font-size: 11.5px !important;
+  }
+}
