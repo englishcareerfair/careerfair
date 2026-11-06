@@ -7522,7 +7522,23 @@ function renderHangman(mount) {
   let remainingMistakes = 6;
 
   function renderState() {
-    const displayWord = current.word.split('').map(l => guessedLetters.has(l) ? l : '_').join(' ');
+    const wordLetters = current.word.split('');
+    const letterCount = wordLetters.length;
+    // Auto-calculate dynamic letter tile size so any word fits perfectly on one single line across mobile & desktop
+    const fontSize = letterCount > 13 ? 'clamp(14px, 3.2vw, 22px)' : letterCount > 10 ? 'clamp(16px, 3.8vw, 26px)' : letterCount > 7 ? 'clamp(18px, 4.5vw, 30px)' : 'clamp(22px, 5.5vw, 34px)';
+    const tileWidth = letterCount > 13 ? 'clamp(18px, 4.2vw, 28px)' : letterCount > 10 ? 'clamp(22px, 5.2vw, 34px)' : letterCount > 7 ? 'clamp(26px, 6.2vw, 40px)' : 'clamp(32px, 7.5vw, 46px)';
+    const tileGap = letterCount > 13 ? 'clamp(2px, 0.8vw, 6px)' : letterCount > 10 ? 'clamp(3px, 1.2vw, 8px)' : 'clamp(4px, 1.8vw, 10px)';
+
+    const letterSlotsHtml = wordLetters.map(l => {
+      const isRevealed = guessedLetters.has(l);
+      return `<span class="hangman-slot" style="display:inline-flex;flex-direction:column;align-items:center;justify-content:flex-end;width:${tileWidth};flex-shrink:0;user-select:none;">
+        <span style="font-family:var(--font-mono);font-size:${fontSize};font-weight:800;color:var(--accent-cyan);line-height:1;height:${fontSize};display:flex;align-items:center;justify-content:center;transition:all 0.2s ease;">
+          ${isRevealed ? l : '&nbsp;'}
+        </span>
+        <span style="display:block;width:100%;height:3px;background:var(--accent-cyan);border-radius:2px;margin-top:4px;box-shadow:0 0 6px rgba(0,240,255,0.4);"></span>
+      </span>`;
+    }).join('');
+
     const isWon = current.word.split('').every(l => guessedLetters.has(l));
     const isLost = remainingMistakes <= 0;
 
@@ -7532,13 +7548,13 @@ function renderHangman(mount) {
         <p style="font-size:13.5px;color:var(--text-dim);">Guess the letters of the English word before running out of chances. Clue: <strong>${current.clue}</strong></p>
       </div>
 
-      <div style="text-align:center;max-width:540px;margin:20px auto;">
-        <div style="font-size:14px;color:var(--accent-gold);margin-bottom:10px;">
+      <div style="text-align:center;max-width:100%;width:100%;margin:20px auto;box-sizing:border-box;">
+        <div style="font-size:14px;color:var(--accent-gold);margin-bottom:12px;">
           Chances Left: <strong>${remainingMistakes} / 6</strong>
         </div>
 
-        <div style="font-family:var(--font-mono);font-size:32px;letter-spacing:0.25em;color:var(--accent-cyan);margin:24px 0;" id="hangman-display">
-          ${displayWord}
+        <div style="display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;gap:${tileGap};margin:20px auto;max-width:100%;overflow-x:auto;padding:6px 4px;white-space:nowrap;-webkit-overflow-scrolling:touch;" id="hangman-display">
+          ${letterSlotsHtml}
         </div>
 
         ${isWon ? `
