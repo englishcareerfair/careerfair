@@ -1143,7 +1143,7 @@ export async function onRequest(ctx) {
     }
 
     const errors = [];
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    const models = ['gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview', 'gemini-3.5-flash-lite', 'gemini-2.5-flash', 'gemini-flash-latest'];
 
     for (let i = 0; i < keysPool.length; i++) {
       const key = keysPool[i];
@@ -1686,11 +1686,40 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
           }
         }
 
-        // 4. Default JSON structure if JSON was requested
+        // 4. Default JSON structure if JSON was requested (Branching Gothic Scribe Quest)
         if (reqJson) {
+          // Detect reader choice from prompt if present
+          const choiceMatch = pText.match(/The reader chooses:\s*["']([^"']+)["']/i);
+          const userChoice = choiceMatch ? choiceMatch[1].trim() : '';
+          const isEnding = pLower.includes('dramatic final conclusion') || pLower.includes('choices []');
+
+          if (isEnding) {
+            return JSON.stringify({
+              story: userChoice 
+                ? `You resolve to ${userChoice.toLowerCase().replace(/^[\"\']+|[\"\']+$/g, '')}. The shadows part as radiant amber light floods the arched scriptorium. Every mystery inscribed upon the ancient vellum aligns into crystalline truth. Your daring courage has brought this Gothic chronicle to an unforgettable and triumphant conclusion.`
+                : `You step forward into the dawn light as the ancient quadrangle awakens. The secrets of the Scriptorium are sealed in memory and honor, bringing your Gothic journey to a triumphant finish.`,
+              choices: []
+            });
+          }
+
+          if (userChoice) {
+            return JSON.stringify({
+              story: `Heeding your intuition, you choose to ${userChoice.toLowerCase().replace(/^[\"\']+|[\"\']+$/g, '')}. An arcane mechanism clicks softly within the stonework, illuminating a gilded corridor lined with historic manuscripts. The draft carries the scent of cedar and dried lavender, beckoning you deeper into the heart of the enigma.`,
+              choices: [
+                `Decipher the cryptic Latin cipher inscribed along the gilded door`,
+                `Venture toward the glowing stained-glass alcove ahead`,
+                `Consult the pocket compass and mark your coordinates`
+              ]
+            });
+          }
+
           return JSON.stringify({
-            story: "The ancient parchment reveals an intricate mystery before you...",
-            choices: ["Examine the classical inscription", "Consult the archive custodian", "Follow the lantern light into the reading hall"]
+            story: "Rain lashes against the stained-glass lancets of the ancient library at St. Jude's. Before you stands an arched obsidian portal, inscribed with faint silver runes that shimmer whenever thunder shakes the spires. In your hand rests a brass serpent key with amethyst eyes.",
+            choices: [
+              "Insert the serpent key into the silver-inscribed obsidian portal",
+              "Unlatch the iron-banded door leading toward the cloisters",
+              "Descend the spiral stone staircase into the subterranean vaults"
+            ]
           });
         }
 

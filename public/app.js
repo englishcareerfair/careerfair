@@ -5202,8 +5202,8 @@ async function callAiQuest(prompt, isJson = false) {
         keyExhausted = true;
       } else if (res.ok) {
         const data = await res.json();
-        const candidate = (data && (data.reply || data.text || data.response)) || '';
-        if (candidate && String(candidate).trim() !== fallbackSpeech) {
+        const candidate = (data && (data.reply !== undefined ? data.reply : (data.text || data.response))) || '';
+        if (candidate && (typeof candidate === 'object' || String(candidate).trim() !== fallbackSpeech)) {
           if (isJson && typeof candidate === 'string') {
             const m = candidate.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
             if (m) {
@@ -5721,9 +5721,10 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
   launchQuest(activeIndex);
 }
 
-// QUEST 1: The Scribe
+// QUEST 1: The Scribe (Fully Dynamic Branching Interactive Tale)
 function launchQuestScribe(mount) {
   let turn = 0;
+  let storyHistory = [];
 
   mount.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -5747,12 +5748,21 @@ function launchQuestScribe(mount) {
     turn++;
     if (turnBadge) turnBadge.textContent = `Chapter ${turn} of 6`;
 
+    if (choice) {
+      storyHistory.push(`Chapter ${turn - 1} Choice: ${choice}`);
+    }
+
     try {
       let userMsg = '';
       if (!choice) {
-        userMsg = 'You write a dark-fantasy Gothic quest in Victorian prose that any high-school student can read. Return JSON {"story":"80-100 words opening the mystery","choices":["choice 1","choice 2","choice 3"]}. Begin the tale.';
+        userMsg = 'You are the Master Scribe. Write Chapter 1 of a dark-fantasy Gothic quest in Victorian prose for a high-school student. Return strict JSON {"story":"80-100 words opening an atmospheric mystery with immediate tension","choices":["choice 1","choice 2","choice 3"]}.';
       } else {
-        userMsg = `The reader chooses: "${choice}". ${turn >= 6 ? 'Bring the tale to a dramatic final conclusion now with choices [].' : 'Continue the tale with 80 words and return JSON {"story":"...","choices":["choice 1","choice 2","choice 3"]}.'}`;
+        const historyContext = storyHistory.slice(-3).join(' -> ');
+        if (turn >= 6) {
+          userMsg = `The reader chooses: "${choice}". Narrative history: [${historyContext}]. This is the final Chapter 6. Bring this tale to a dramatic, conclusive resolution that honors their exact choice. Return strict JSON {"story":"80-100 words delivering the final triumph or revelation","choices":[]}.`;
+        } else {
+          userMsg = `The reader chooses: "${choice}". Narrative history: [${historyContext}]. Write Chapter ${turn} of 6, developing the story strictly according to their choice. Return strict JSON {"story":"80-100 words continuing the consequence of their action","choices":["new choice A","new choice B","new choice C"]}.`;
+        }
       }
 
       let data = null;
@@ -5762,19 +5772,53 @@ function launchQuestScribe(mount) {
         data = null;
       }
 
-      // Seamless offline dual-engine fallback if AI is unavailable
-      if (!data || !data.story) {
-        const offlineIndex = Math.min(Math.max(0, turn - 1), SCRIBE_OFFLINE_TALES.length - 1);
-        data = SCRIBE_OFFLINE_TALES[offlineIndex];
+      // If AI returned structured response, verify it has story
+      let storyText = '';
+      let nextChoices = [];
+
+      if (data && typeof data === 'object' && data.story) {
+        storyText = String(data.story).trim();
+        nextChoices = Array.isArray(data.choices) ? data.choices : [];
+      } else if (data && typeof data === 'string') {
+        const jsonMatch = data.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.story) {
+              storyText = parsed.story;
+              nextChoices = Array.isArray(parsed.choices) ? parsed.choices : [];
+            }
+          } catch {}
+        }
       }
 
-      const storyText = data.story || 'The tale continues into the shadows...';
+      // Contextual dynamic branching fallback if network or quota is unavailable
+      if (!storyText || storyText.includes('ancient parchment reveals an intricate mystery before you')) {
+        if (!choice) {
+          const rootData = SCRIBE_OFFLINE_TALES[0];
+          storyText = rootData.story;
+          nextChoices = rootData.choices;
+        } else if (turn >= 6) {
+          storyText = `You courageously carry out your choice to "${choice}". Light surges through the ancient stained-glass windows, driving back the shadows as the final clockwork bell strikes. Every riddle inscribed in the Scriptorium has been mastered through your discernment, bringing your Gothic journey to a triumphant conclusion.`;
+          nextChoices = [];
+        } else {
+          const actionClean = choice.trim();
+          storyText = `Acting upon your resolve to "${actionClean}", you venture deeper into the mystery. The stone corridor responds with a rhythmic mechanical hum as concealed oil lamps flare to life. Ahead, a heavy iron portal bears three freshly unveiled Latin runes, reacting dynamically to your presence.`;
+          nextChoices = [
+            `Analyze the Latin inscription: "Veritas Vos Liberabit" to unlock the inner sanctum`,
+            `Draw your lantern closer to inspect the mechanical locking cylinder`,
+            `Signal into the vaulted gallery to test for echoes or hidden watchers`
+          ];
+        }
+      }
+
+      storyHistory.push(`Chapter ${turn} Story: ${storyText.slice(0, 80)}...`);
       await typeInto(storyBox, storyText);
 
       choicesBox.innerHTML = '';
-      const choices = (turn >= 6) ? [] : (Array.isArray(data.choices) ? data.choices : []);
-      if (choices.length > 0) {
-        choices.forEach(ch => {
+      const finalChoices = (turn >= 6) ? [] : nextChoices;
+      if (finalChoices.length > 0) {
+        finalChoices.forEach(ch => {
           const btn = document.createElement('button');
           btn.className = 'quest-choice-btn';
           btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
@@ -5786,21 +5830,30 @@ function launchQuestScribe(mount) {
       }
     } catch (err) {
       console.warn('Scribe quest step safe recovery:', err);
-      const offlineIndex = Math.min(Math.max(0, turn - 1), SCRIBE_OFFLINE_TALES.length - 1);
-      const fallbackData = SCRIBE_OFFLINE_TALES[offlineIndex];
-      storyBox.textContent = fallbackData.story;
+      const fallbackText = choice 
+        ? `You press forward with "${choice}". The ancient library answers with a deep resonance, revealing a hidden stairwell winding upward into the observatory.`
+        : (SCRIBE_OFFLINE_TALES[0]?.story || 'The adventure begins in the shadowy library...');
+      storyBox.textContent = fallbackText;
       choicesBox.innerHTML = '';
-      (fallbackData.choices || []).forEach(ch => {
-        const btn = document.createElement('button');
-        btn.className = 'quest-choice-btn';
-        btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
-        btn.onclick = () => step(ch);
-        choicesBox.appendChild(btn);
-      });
+      if (turn < 6) {
+        [
+          `Climb the spiral stairs toward the starlit observatory dome`,
+          `Examine the bronze astrolabe turning silently upon the pedestal`,
+          `Unroll the parchment map to check your location against the campus layout`
+        ].forEach(ch => {
+          const btn = document.createElement('button');
+          btn.className = 'quest-choice-btn';
+          btn.innerHTML = `<span>👉</span> <span>${escapeHtml(ch)}</span>`;
+          btn.onclick = () => step(ch);
+          choicesBox.appendChild(btn);
+        });
+      } else {
+        choicesBox.innerHTML = '<div style="padding:14px;background:var(--surface);border-radius:var(--radius-md);color:var(--accent-cyan);font-weight:600;">✨ The tale has reached its dramatic conclusion. Click "Start New Tale" to venture forth again.</div>';
+      }
     }
   };
 
-  $('#btn-scribe-reset')?.addEventListener('click', () => { turn = 0; step(); });
+  $('#btn-scribe-reset')?.addEventListener('click', () => { turn = 0; storyHistory = []; step(); });
   $('#btn-scribe-listen')?.addEventListener('click', function() {
     const text = storyBox.textContent;
     if (text) speak(text, this);
