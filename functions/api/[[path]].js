@@ -163,7 +163,7 @@ const GLOBAL_CACHE = {
   kv: {
     admin_password: 'botschool',
     stream_url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    stream_title: 'English Careers Forum 2026 — Live Stage Broadcast',
+    stream_title: 'Career Fair 2026 — Live Stage Broadcast',
     stream_active: '1',
     rclone_remote: 'gdrive:careerfair_telemetry'
   },
@@ -369,7 +369,7 @@ export async function onRequest(ctx) {
   // ── 1. GET /config ─────────────────────────────────────────────────────────
   if (path === '/config' && method === 'GET') {
     const pass = parseInt(await kvGet(db, 'pass', '70'), 10) || 70;
-    const banner = await kvGet(db, 'banner', 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!');
+    const banner = await kvGet(db, 'banner', 'Welcome to Career Fair 2026 · Explore 32+ Careers Where English Opens Doors!');
     const timer = parseInt(await kvGet(db, 'timer', '0'), 10) || 0;
     const theme = await kvGet(db, 'theme', 'light');
     const school_branding = await kvGet(db, 'school_branding', '1') === '1';
@@ -392,7 +392,7 @@ export async function onRequest(ctx) {
     }
 
     const stream_url = (await kvGet(db, 'stream_url', '')) || GLOBAL_CACHE.kv.stream_url || env.STREAM_URL || env.YOUTUBE_URL || 'https://www.youtube.com/watch?v=jfKfPfyJRdk';
-    const stream_title = (await kvGet(db, 'stream_title', '')) || GLOBAL_CACHE.kv.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+    const stream_title = (await kvGet(db, 'stream_title', '')) || GLOBAL_CACHE.kv.stream_title || 'Career Fair 2026 — Live Stage Broadcast';
     const stream_active = ((await kvGet(db, 'stream_active', '')) || GLOBAL_CACHE.kv.stream_active || '1') === '1';
     const rclone_remote = (await kvGet(db, 'rclone_remote', '')) || GLOBAL_CACHE.kv.rclone_remote || env.RCLONE_REMOTE || 'gdrive:careerfair_telemetry';
     const rclone_endpoint = (await kvGet(db, 'rclone_endpoint', '')) || env.RCLONE_ENDPOINT || '';
@@ -1217,7 +1217,7 @@ export async function onRequest(ctx) {
 
       if (keysPool.length > 0) {
         try {
-          const roadmapPrompt = `You are the Lead Career Strategist and Academic Counselor at the English Careers Forum 2026.
+          const roadmapPrompt = `You are the Lead Career Strategist and Academic Counselor at the Career Fair 2026.
 Generate a comprehensive, deeply personalized, chronological career roadmap blueprint for an ambitious school student.
 
 Student Profile:
@@ -1290,7 +1290,7 @@ Return ONLY valid JSON without markdown code fences or extra text.`;
       const pack = body.pack || 'Everyday';
       if (keysPool.length > 0) {
         try {
-          const sentencePrompt = `You are an expert English speech and phonetics coach at the English Careers Forum 2026.
+          const sentencePrompt = `You are an expert English speech and phonetics coach at the Career Fair 2026.
 Generate exactly ONE distinct, articulate, grammatically flawless practice sentence in English for a high school student to read aloud for speech evaluation.
 Domain/Style: ${pack}.
 Requirements:
@@ -1314,7 +1314,7 @@ Requirements:
       const avoidWords = Array.isArray(body.avoid) ? body.avoid.slice(-30).join(', ') : '';
       if (keysPool.length > 0) {
         try {
-          const vocabPrompt = `You are an expert English vocabulary & lexicography coach at the English Careers Forum 2026.
+          const vocabPrompt = `You are an expert English vocabulary & lexicography coach at the Career Fair 2026.
 Generate exactly ONE distinct, sophisticated English vocabulary word (such as found in GRE/SAT, professional law, journalism, medicine, or aviation).
 ${avoidWords ? `Do NOT repeat any of these recently seen words: ${avoidWords}.` : ''}
 Return a strict JSON object with this exact structure:
@@ -1708,7 +1708,7 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
     // 8e. General & Speech Coaching with Failover
     if (task === 'speech-coaching' && keysPool.length > 0) {
       try {
-        const fullPrompt = `You are the lead AI Career & English Communication Coach at the English Careers Forum 2026 for Kanakia International School students.
+        const fullPrompt = `You are the lead AI Career & English Communication Coach at the Career Fair 2026 for Kanakia International School students.
 Task: ${task}
 Input text/metrics: ${text} | ${JSON.stringify(metrics)}
 Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance. Highlight strengths, offer one "Say It Better" rewrite, and give 2 clear action points.'}`;
@@ -2365,7 +2365,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   if (path === '/tts' && method === 'POST') {
     let body;
     try { body = await request.json(); } catch { body = {}; }
-    const text = body.text || 'Welcome to the English Careers Forum 2026 at Kanakia International School. Good English is the universal language that unlocks thirty-two global career pathways.';
+    const text = body.text || 'Welcome to the Career Fair 2026 at Kanakia International School. Good English is the universal language that unlocks thirty-two global career pathways.';
     
     // Resolve key from body, header, database KV, or env
     let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();

@@ -1,5 +1,5 @@
 /**
- * English Careers Forum 2026 — Dopamine Engine & FOMO Gamification Suite
+ * Career Fair 2026 — Dopamine Engine & FOMO Gamification Suite
  * Powers Reels-style psychological feedback loops, mystery trajectory unlocks,
  * live social proof pulses, Web Audio micro-chimes, confetti, and story cards.
  */
@@ -319,7 +319,7 @@
 
     ctx.fillStyle = '#00f0ff';
     ctx.font = 'bold 28px "Space Grotesk", sans-serif';
-    ctx.fillText('ENGLISH CAREERS FORUM 2026 · OFFICIAL CAREER MATCH', 540, 240);
+    ctx.fillText('CAREER FAIR 2026 · OFFICIAL CAREER MATCH', 540, 240);
 
     // Rarity Badge Box
     ctx.fillStyle = tier.color || '#00f0ff';
@@ -365,7 +365,7 @@
     // Footer Watermark
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '24px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('Every modern career speaks English · Explore yours at English Careers Forum', 540, 1780);
+    ctx.fillText('Every modern career speaks English · Explore yours at Career Fair', 540, 1780);
 
     // Trigger download
     const link = document.createElement('a');

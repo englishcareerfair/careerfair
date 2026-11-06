@@ -472,9 +472,23 @@
   }
   .loader-tutorial-panel {
     padding: 12px 14px;
+    touch-action: pan-y pinch-zoom;
+    user-select: none;
+    -webkit-user-select: none;
   }
   .loader-tutorial-text {
     font-size: 12px;
+  }
+  /* On small mobile screens, navigation buttons are hidden so user relies directly on touch swipe & dots */
+  .loader-tips-nav {
+    display: none !important;
+  }
+}
+
+/* On laptop, tablets and desktop: show clear interactive buttons to navigate the tips */
+@media (min-width: 481px) {
+  .loader-tips-nav {
+    display: inline-flex !important;
   }
 }
 
@@ -2543,10 +2557,21 @@ tr:hover td { background: var(--surface-hover); }
     gap: 4px;
   }
 
+  /* Remove navigation buttons in mobile for main tabs; completely rely on touch swipe response */
   .sub-navbar .shelf-scroll-arrow {
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
+    display: none !important;
+  }
+
+  .sub-navbar .nav-tabs-wrapper {
+    touch-action: pan-x !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-x: contain !important;
+    scrollbar-width: none !important; /* Hide scrollbar on mobile for sleek app feel */
+    -ms-overflow-style: none !important;
+    padding: 6px 4px !important;
+  }
+  .sub-navbar .nav-tabs-wrapper::-webkit-scrollbar {
+    display: none !important;
   }
 
   .sub-navbar .tab-btn {

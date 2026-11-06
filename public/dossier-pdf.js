@@ -1,5 +1,5 @@
 /**
- * English Careers Forum 2026 — High-Resolution 2-Page Vector PDF Dossier & Cut-Out Business Card
+ * Career Fair 2026 — High-Resolution 2-Page Vector PDF Dossier & Cut-Out Business Card
  * Generates official 2-Page printable Student Dossier with achievement badges, career trajectory,
  * college matches, 6D speech evaluation, arcade results, and scissor-guideline business card.
  * Adheres strictly to the requirement: "Skip any thing in the pdf if not attempted by the user".
@@ -100,7 +100,7 @@
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('ENGLISH CAREERS FORUM 2026 · OFFICIAL STUDENT CAREER DOSSIER', 105, 24, { align: 'center' });
+    doc.text('CAREER FAIR 2026 · OFFICIAL STUDENT CAREER DOSSIER', 105, 24, { align: 'center' });
 
     doc.setTextColor(200, 215, 230);
     doc.setFontSize(7.5);
@@ -305,12 +305,12 @@
       doc.setTextColor(15, 23, 42);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
-      doc.text('WELCOME TO THE ENGLISH CAREERS FORUM 2026', 105, curY + 18, { align: 'center' });
+      doc.text('WELCOME TO THE CAREER FAIR 2026', 105, curY + 18, { align: 'center' });
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(71, 85, 105);
-      doc.text('This digital dossier certifies that this student attended the English Careers Forum 2026 exhibition.', 105, curY + 28, { align: 'center' });
+      doc.text('This digital dossier certifies that this student attended the Career Fair 2026 exhibition.', 105, curY + 28, { align: 'center' });
       doc.text('As you explore careers, record pronunciation attempts in our 6D AI studio, and solve language games,', 105, curY + 36, { align: 'center' });
       doc.text('your official results and personalized milestones will automatically populate this permanent document.', 105, curY + 44, { align: 'center' });
 
@@ -339,7 +339,7 @@
     doc.setTextColor(0, 240, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text('ENGLISH CAREERS FORUM 2026 · PERFORMANCE & CREDENTIALS', 105, 17, { align: 'center' });
+    doc.text('CAREER FAIR 2026 · PERFORMANCE & CREDENTIALS', 105, 17, { align: 'center' });
 
     curY = 34;
 
@@ -399,7 +399,7 @@
     doc.setFont('helvetica', 'bold');
     doc.text('Official Fair Convenor', 130, curY + 29);
     doc.setFont('helvetica', 'normal');
-    doc.text('English Careers Forum 2026', 130, curY + 34);
+    doc.text('Career Fair 2026', 130, curY + 34);
 
     // ─────────────────────────────────────────────────────────────────────────
     // SECTION 6: PRINTABLE STUDENT BUSINESS CARD WITH SCISSOR GUIDELINE
@@ -438,7 +438,7 @@
 
     doc.setTextColor(148, 163, 184);
     doc.setFontSize(6.5);
-    doc.text('ENGLISH CAREERS FORUM 2026 · STUDENT AMBASSADOR CARD', cardX + 8, cardY + 16);
+    doc.text('CAREER FAIR 2026 · STUDENT AMBASSADOR CARD', cardX + 8, cardY + 16);
 
     // Golden Divider Line
     doc.setDrawColor(232, 160, 74);

@@ -1,4 +1,4 @@
-// English Careers Forum 2026 - Service Worker
+// Career Fair 2026 - Service Worker
 const CACHE_NAME = 'ecf-static-v11.0';
 
 // Critical shell assets to pre-cache
@@ -97,7 +97,7 @@ self.addEventListener('fetch', (event) => {
 
         // Guaranteed valid Response object fallback (NEVER undefined)
         return new Response(
-          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>English Careers Forum</title></head><body><script>location.reload();</script></body></html>',
+          '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Career Fair 2026</title></head><body><script>location.reload();</script></body></html>',
           { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
       })()

@@ -115,6 +115,41 @@
       });
     });
 
+    // Touch gesture swipe response for mobile devices to cycle tips left and right
+    const panel = document.getElementById('loader-tips-panel') || document.querySelector('.loader-tutorial-panel');
+    if (panel && !panel.dataset.touchBound) {
+      panel.dataset.touchBound = 'true';
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+
+      panel.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length === 0) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+      }, { passive: true });
+
+      panel.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length === 0) return;
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = e.changedTouches[0].clientY - touchStartY;
+        const deltaTime = Date.now() - touchStartTime;
+
+        // Minimum swipe threshold (30px horizontal, within 500ms, mostly horizontal)
+        if (Math.abs(deltaX) > 30 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2 && deltaTime < 600) {
+          if (deltaX < 0) {
+            // Swiped left -> Next Tip
+            showTip(currentTipIndex + 1);
+          } else {
+            // Swiped right -> Previous Tip
+            showTip(currentTipIndex - 1);
+          }
+          resetTipTimer();
+        }
+      }, { passive: true });
+    }
+
     resetTipTimer();
   };
 
@@ -212,12 +247,12 @@ const STATE = {
   adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '',
   config: {
     pass: 70,
-    banner: 'Welcome to English Careers Forum 2026 · Explore 32+ Careers Where English Opens Doors!',
+    banner: 'Welcome to Career Fair 2026 · Explore 32+ Careers Where English Opens Doors!',
     timer: 0,
     school_branding: true,
     school_name: 'Kanakia International School Mira Road',
     stream_url: localStorage.getItem('cf_stream_url') || 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
-    stream_title: localStorage.getItem('cf_stream_title') || 'English Careers Forum 2026 — Live Stage Broadcast',
+    stream_title: localStorage.getItem('cf_stream_title') || 'Career Fair 2026 — Live Stage Broadcast',
     stream_active: localStorage.getItem('cf_stream_active') !== 'false',
     stream_autoplay: localStorage.getItem('cf_stream_autoplay') !== 'false',
     gemini_keys: localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || sessionStorage.getItem('cf_gemini_keys') || '',
@@ -602,7 +637,7 @@ function fallbackNeuralSpeech(text, btn) {
 
 async function speakGreeting() {
   const btn = $('#btn-greeting');
-  const greetingText = "Welcome to the English Careers Forum 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
+  const greetingText = "Welcome to the Career Fair 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
 
   if (activeSpeechButton && (activeSpeechButton === btn || activeSpeechButton.id === 'btn-greeting')) {
     stopAllVoice();
@@ -4092,7 +4127,7 @@ function initTeleprompter() {
     breaking: {
       tag: "BREAKING NEWS",
       role: "Media Anchor",
-      text: "Good evening, we are broadcasting live from the English Careers Forum 2026 at Kanakia International School. Today, students explore how articulate English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
+      text: "Good evening, we are broadcasting live from the Career Fair 2026 at Kanakia International School. Today, students explore how articulate English powers over thirty-two professional trajectories — from commercial aviation to pediatric surgery."
     },
     pilot: {
       tag: "FLIGHT DECK ATC",
@@ -8486,7 +8521,7 @@ function showVerifiedCredentialModal(student, title, creds, phone = '', email = 
         ${phoneRowHtml}
         <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Issuing Academy</div>
         <div style="font-size:12px;color:var(--text-muted);line-height:1.4;">
-          🏛️ Kanakia International School Mira Road · English Careers Forum
+          🏛️ Kanakia International School Mira Road · Career Fair
         </div>
         <div style="font-size:10.5px;color:#34d399;margin-top:8px;display:flex;align-items:center;gap:5px;line-height:1.3;">
           <span>✓</span> <span>Cryptographically Signed Dynamic QR Verification Active</span>
@@ -9412,7 +9447,7 @@ async function loadFeedbackWall() {
         <div class="feedback-empty-state">
           <span class="feedback-empty-icon">💬</span>
           <div class="feedback-empty-title">No feedback submitted yet</div>
-          <div class="feedback-empty-desc">Be the first to share your thoughts about the English Careers Forum exhibits!</div>
+          <div class="feedback-empty-desc">Be the first to share your thoughts about the Career Fair exhibits!</div>
         </div>
       `;
       return;
@@ -10803,7 +10838,7 @@ function initAdminWorkspace() {
     const customVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
     const testText = customVoiceId
       ? `Hello! This is a live voice test using voice ID: ${customVoiceId}. Every career pathway speaks with clarity and confidence.`
-      : "Welcome to the English Careers Forum 2026. This voice test demonstrates authentic Indian English pronunciation for all thirty-two careers.";
+      : "Welcome to the Career Fair 2026. This voice test demonstrates authentic Indian English pronunciation for all thirty-two careers.";
     await speak(testText, this);
   });
 
@@ -10992,7 +11027,7 @@ function initAdminWorkspace() {
     streamUrlInput.value = STATE.config.stream_url || '';
   }
   if (streamTitleInput) {
-    streamTitleInput.value = STATE.config.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+    streamTitleInput.value = STATE.config.stream_title || 'Career Fair 2026 — Live Stage Broadcast';
   }
   if (streamActiveToggle) {
     streamActiveToggle.checked = STATE.config.stream_active !== false;
@@ -11070,7 +11105,7 @@ function initAdminWorkspace() {
 
   $('#btn-save-stream')?.addEventListener('click', async () => {
     const urlVal = streamUrlInput ? streamUrlInput.value.trim() : '';
-    const titleVal = streamTitleInput ? streamTitleInput.value.trim() : 'English Careers Forum 2026 — Live Stage Broadcast';
+    const titleVal = streamTitleInput ? streamTitleInput.value.trim() : 'Career Fair 2026 — Live Stage Broadcast';
     const activeVal = streamActiveToggle ? streamActiveToggle.checked : true;
     const autoVal = streamAutoplayToggle ? streamAutoplayToggle.checked : true;
 
@@ -11199,7 +11234,7 @@ function renderHeroStream() {
   const rawUrl = STATE.config.stream_url || '';
   const isActive = STATE.config.stream_active !== false;
   const isAutoplay = STATE.config.stream_autoplay !== false;
-  const title = STATE.config.stream_title || 'English Careers Forum 2026 — Live Stage Broadcast';
+  const title = STATE.config.stream_title || 'Career Fair 2026 — Live Stage Broadcast';
   const videoId = extractYouTubeId(rawUrl);
 
   if (isActive && videoId) {

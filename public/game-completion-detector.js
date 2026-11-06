@@ -1,5 +1,5 @@
 /**
- * English Careers Forum 2026 — Hybrid Game Completion Detector & Tesseract.js OCR
+ * Career Fair 2026 — Hybrid Game Completion Detector & Tesseract.js OCR
  * Seamlessly detects game completion across Jobtris, Wordle, Hangman, Blitz, Slap, etc.
  * Combines zero-latency in-memory state hooks with on-canvas OCR and interactive voice check-in.
  */

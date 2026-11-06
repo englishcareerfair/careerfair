@@ -1,5 +1,5 @@
 /**
- * English Careers Forum 2026 — AI Digital Human Guide & Presence Detection
+ * Career Fair 2026 — AI Digital Human Guide & Presence Detection
  * Detects human presence via Camera ML (Client FaceDetector / MediaPipe / Server YOLO / Hybrid),
  * mounts modular realistic guide HUD (Floating / Studio / Sidebar), and autonomously guides visitors
  * through interactive voice career discovery, 32+ careers, accredited colleges, entrance exams,
@@ -119,7 +119,7 @@
               <button class="dg-close-btn" id="dg-btn-skip" title="Skip Tour (✕)">✕</button>
               <div class="dg-studio-header">
                 <span class="live-pill">● AI MENTOR BROADCAST</span>
-                <h3>Welcome to English Careers Forum 2026</h3>
+                <h3>Welcome to Career Fair 2026</h3>
                 <p>Kanakia International School Mira Road</p>
               </div>
 
@@ -211,7 +211,7 @@
             </div>
 
             <div class="dg-hud-subtitles" id="dg-caption-text">
-              Welcome to English Careers Forum 2026! Good English opens 32+ global careers.
+              Welcome to Career Fair 2026! Good English opens 32+ global careers.
             </div>
 
             <div class="dg-hud-actions">
@@ -370,7 +370,7 @@
         case 0:
           // Step 1: Presence Detection & Welcome
           await this.speakGuideLine(
-            "Hello! I see you! Welcome to the English Careers Forum 2026 at Kanakia International School Mira Road. I am your realistic digital guide. Let's find out how English unlocks your dream career!"
+            "Hello! I see you! Welcome to the Career Fair 2026 at Kanakia International School Mira Road. I am your realistic digital guide. Let's find out how English unlocks your dream career!"
           );
           this.tourTimeout = setTimeout(() => this.executeStep(1), 7500);
           break;
