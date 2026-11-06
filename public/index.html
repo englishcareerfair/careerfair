@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=10.1">
+  <link rel="stylesheet" href="styles.css?v=10.2">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -40,7 +40,7 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="app.js?v=10.1" defer></script>
+  <script src="app.js?v=10.2" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -1184,11 +1184,21 @@
       <div class="feedback-container">
         <!-- 1. Leave Your Feedback (Entry Box on Top) -->
         <div class="card feedback-form-card">
-          <div class="feedback-card-header">
-            <div class="feedback-header-icon" style="font-size:24px;">✍️</div>
-            <div>
-              <h3 style="font-size:19px;font-weight:800;margin:0 0 4px 0;">Leave Your Feedback</h3>
-              <p style="font-size:13px;color:var(--text-muted);margin:0;">Share your experience and thoughts about the exhibits, games, and career guidance.</p>
+          <div class="feedback-card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:240px;">
+              <div class="feedback-header-icon" style="font-size:24px;">✍️</div>
+              <div>
+                <h3 style="font-size:19px;font-weight:800;margin:0 0 4px 0;">Leave Your Feedback</h3>
+                <p style="font-size:13px;color:var(--text-muted);margin:0;">Share your experience and thoughts about the exhibits, games, and career guidance.</p>
+              </div>
+            </div>
+            <!-- Direct QR Code for Feedback -->
+            <div id="feedback-qr-mount" style="display:flex;align-items:center;gap:10px;background:var(--bg-subtle);padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-md);cursor:pointer;" title="Scan QR Code to open Feedback on phone">
+              <div id="fb-qr-code-box" style="width:48px;height:48px;background:#ffffff;border-radius:4px;display:grid;place-items:center;overflow:hidden;padding:2px;"></div>
+              <div style="font-size:11.5px;line-height:1.3;">
+                <strong style="color:var(--text-main);display:block;font-size:12px;">📱 Scan & Review</strong>
+                <span style="color:var(--text-muted);">Open directly on phone</span>
+              </div>
             </div>
           </div>
 

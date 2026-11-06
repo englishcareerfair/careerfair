@@ -1891,11 +1891,9 @@ const AppRouter = {
     if (segments.length === 0 || segments[0] === 'hero' || segments[0] === 'home' || segments[0] === 'overview') {
       return '/';
     }
-    // Strict restriction: maximum 1 sub-tab (e.g. /colleges/maharashtra, never /colleges/maharashtra/st-xaviers)
-    if (segments.length > 2) {
-      return '/' + segments.slice(0, 2).join('/');
-    }
-    return '/' + segments.join('/');
+    // Strict 1-slash restriction: exactly one sub-path segment (/tab) and NOTHING MORE
+    // e.g. /careers, /colleges, /exams, /feedback, and / for home
+    return '/' + segments[0];
   },
 
   // Reads current path from location (hash first if present, then pathname, then query params)
@@ -2573,7 +2571,7 @@ function renderCareers() {
 
     if (window.AppRouter) {
       const catSlug = slugify(careerObj.cat || activeCat);
-      window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug), { silent: true });
+      window.AppRouter.navigate('/careers', { silent: true });
     }
 
     if (!btn) return; // If clicked card outside button, just updated URL
@@ -2606,7 +2604,7 @@ function renderCareers() {
       update();
       if (window.AppRouter) {
         const catSlug = slugify(activeCat);
-        window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug), { silent: true });
+        window.AppRouter.navigate('/careers', { silent: true });
       }
     });
   });
@@ -2679,7 +2677,7 @@ function renderColleges() {
     const card = e.target.closest('.card');
     if (!card) return;
     if (window.AppRouter) {
-      window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
+      window.AppRouter.navigate('/colleges', { silent: true });
     }
   });
 
@@ -2690,7 +2688,7 @@ function renderColleges() {
       activeRegion = btn.dataset.region;
       update();
       if (window.AppRouter) {
-        window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
+        window.AppRouter.navigate('/colleges', { silent: true });
       }
     });
   });
@@ -2699,7 +2697,7 @@ function renderColleges() {
     activeAccred = e.target.value;
     update();
     if (window.AppRouter) {
-      window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
+      window.AppRouter.navigate('/colleges', { silent: true });
     }
   });
 
@@ -2750,7 +2748,7 @@ function renderExams() {
     if (!card) return;
     const exSlug = card.dataset.examSlug;
     if (exSlug && window.AppRouter) {
-      window.AppRouter.navigate('/exams/' + exSlug, { silent: true });
+      window.AppRouter.navigate('/exams', { silent: true });
     }
   });
 }
@@ -2842,7 +2840,7 @@ function initSpeakLadder() {
       if (packTag) packTag.textContent = btn.textContent;
       changeSpeechSentence();
       if (window.AppRouter) {
-        window.AppRouter.navigate('/speak/' + slugify(speakPack), { silent: true });
+        window.AppRouter.navigate('/speak', { silent: true });
       }
     });
   });
@@ -4553,7 +4551,7 @@ function initTeleprompter() {
     }
     if (window.AppRouter) {
       const scriptKey = scriptSelect?.value || 'breaking';
-      window.AppRouter.navigate('/teleprompter/' + scriptKey, { silent: true });
+      window.AppRouter.navigate('/teleprompter', { silent: true });
     }
   };
 
@@ -4586,7 +4584,7 @@ function initTeleprompter() {
   scriptSelect?.addEventListener('change', e => {
     applyScript(e.target.value);
     if (window.AppRouter) {
-      window.AppRouter.navigate('/teleprompter/' + e.target.value, { silent: true });
+      window.AppRouter.navigate('/teleprompter', { silent: true });
     }
   });
 
@@ -5156,7 +5154,7 @@ function initGamePicker() {
       const gameKey = btn.dataset.game;
       renderGameArena(gameKey);
       if (window.AppRouter) {
-        window.AppRouter.navigate('/games/' + gameKey, { silent: true });
+        window.AppRouter.navigate('/games', { silent: true });
       }
       // Auto-center the clicked game chip in the visible viewport
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -7700,7 +7698,7 @@ function initPlanTools() {
       const toolKey = btn.dataset.tool;
       renderPlanTool(toolKey);
       if (window.AppRouter) {
-        window.AppRouter.navigate('/roadmap/' + toolKey, { silent: true });
+        window.AppRouter.navigate('/roadmap', { silent: true });
       }
     };
   });
@@ -9422,7 +9420,7 @@ function initLeaderboard() {
       const pack = btn.dataset.boardPack || 'All';
       loadLeaderboard(pack);
       if (window.AppRouter) {
-        window.AppRouter.navigate('/leaderboard/' + slugify(pack), { silent: true });
+        window.AppRouter.navigate('/leaderboard', { silent: true });
       }
     };
   });
@@ -9497,6 +9495,27 @@ function updateFeedbackBadges(feedbacks) {
 
 async function loadFeedbackWall() {
   const list = $('#feedback-wall-list');
+
+  // Render dedicated Feedback Wall QR Code (https://careerwithenglish.pages.dev/feedback)
+  const fbQrMount = $('#fb-qr-code-box');
+  if (fbQrMount && !fbQrMount._rendered) {
+    const baseOrigin = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
+      ? window.location.origin
+      : 'https://careerwithenglish.pages.dev';
+    const feedbackUrl = baseOrigin + '/feedback';
+    function tryRenderFbQr() {
+      if (typeof qrcode !== 'undefined') {
+        renderQrCode(fbQrMount, feedbackUrl, 44);
+        fbQrMount._rendered = true;
+      } else {
+        setTimeout(tryRenderFbQr, 100);
+      }
+    }
+    tryRenderFbQr();
+    $('#feedback-qr-mount')?.addEventListener('click', () => {
+      showEnlargedQrModal('Fair Visitor Feedback', 'Community Wall & Reflections', 'Scan on phone to submit review', feedbackUrl);
+    });
+  }
   const countBadge = $('#feedback-count-badge');
   const form = $('#feedback-form');
   const starContainer = $('#star-selector-useful');
@@ -10600,7 +10619,7 @@ function initAdminWorkspace() {
         }
       }
       if (window.AppRouter) {
-        window.AppRouter.navigate('/admin/' + view, { silent: true });
+        window.AppRouter.navigate('/admin', { silent: true });
       }
     });
   });
