@@ -1275,7 +1275,12 @@ Return a strict JSON object with this exact structure:
 }
 Return ONLY valid JSON without markdown code fences or extra text.`;
 
-          const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: roadmapPrompt }] }], { maxOutputTokens: 1100, temperature: 0.7 });
+          const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: roadmapPrompt }] }], {
+            maxOutputTokens: 2500,
+            temperature: 0.7,
+            thinkingConfig: { thinkingBudget: 0 },
+            responseMimeType: 'application/json'
+          });
           if (aiRes.ok && aiRes.text) {
             const jsonMatch = aiRes.text.match(/\{[\s\S]*\}/);
             if (jsonMatch) {

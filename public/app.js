@@ -8029,7 +8029,7 @@ function renderMyPlan(mount) {
     // Show dynamic AI Loading state
     out.innerHTML = `
       <div class="card" style="padding:32px 20px;text-align:center;background:var(--bg-subtle);border:1.5px dashed var(--accent-cyan);border-radius:var(--radius-lg);">
-        <div style="font-size:38px;animation:pulseGreeting 1.4s infinite alternate;display:inline-block;margin-bottom:8px;">⚡</div>
+        <div style="font-size:42px;animation:pulseIconGlow 1.4s infinite ease-in-out;display:inline-block;margin-bottom:10px;">⚡</div>
         <h4 style="font-size:18px;font-weight:800;color:var(--text-main);margin:0 0 6px 0;">Synthesizing AI Roadmap Blueprint...</h4>
         <p style="font-size:13.5px;color:var(--text-muted);margin:0 auto;max-width:460px;line-height:1.5;">
           Personalizing milestones for <strong>${escapeHtml(car)}</strong> (${escapeHtml(cls)}, ${time}m daily commitment) using Google Gemini AI...
