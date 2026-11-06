@@ -4,37 +4,37 @@
  * accredited colleges explorer, arcade games, and admin console.
  */
 
-// ─── 0. IMMERSIVE LOADING SCREEN & TUTORIAL GUIDE ─────────────────────────────
+// ─── 0. IMMERSIVE LOADING SCREEN & TIPS GUIDE ─────────────────────────────
 (function() {
   const TUTORIAL_TIPS = [
     {
-      icon: '🎯',
-      title: 'GLOBAL CAREERS MATRIX',
+      icon: '🌐',
+      title: 'TIPS',
       text: 'Explore 32+ modern careers requiring English fluency, complete with entrance exams, NAAC/NIRF colleges, and admission pathways.'
     },
     {
       icon: '🎙️',
-      title: '6D AI SPEECH COACH',
+      title: 'TIPS',
       text: 'Practice spoken English in the AI Speech Lab with real-time phoneme feedback, fluency analytics, and vocal coaching.'
     },
     {
       icon: '📹',
-      title: 'NEWS ANCHOR & TELEPROMPTER',
+      title: 'TIPS',
       text: 'Rehearse professional teleprompter scripts with a live video mirror, dynamic pacing controls, and recording exports.'
     },
     {
       icon: '🎮',
-      title: 'HIGH-DOPAMINE ARCADE GAMES',
+      title: 'TIPS',
       text: 'Sharpen your reflex grammar and vocabulary across 11 fast-paced games on the live exhibition leaderboard.'
     },
     {
-      icon: '🗺️',
-      title: 'STUDENT CAREER DOSSIER',
+      icon: '📜',
+      title: 'TIPS',
       text: 'Generate and download your official 2-Page Student Career Dossier with verifiable QR credentials anytime.'
     },
     {
       icon: '📱',
-      title: 'THUMB-FRIENDLY NAVIGATION',
+      title: 'TIPS',
       text: 'On smartphones, navigation tabs dock smoothly to the bottom when you scroll down for effortless one-handed control.'
     }
   ];
@@ -42,23 +42,21 @@
   let currentTipIndex = 0;
   let tipTimer = null;
   let isDismissed = false;
-  let progressVal = 15;
   const loaderStartTime = Date.now();
-  const minDisplayMs = 1300;
 
   const setProgress = (val, message) => {
-    progressVal = Math.max(progressVal, Math.min(100, val));
+    // Progress bar was removed per user request; keep setProgress as no-op safe API
     const pBar = document.getElementById('loader-progress-bar');
     const pPct = document.getElementById('loader-status-pct');
     const pMsg = document.getElementById('loader-status-msg');
-    if (pBar) pBar.style.width = `${progressVal}%`;
-    if (pPct) pPct.textContent = `${Math.round(progressVal)}%`;
+    if (pBar) pBar.style.width = `${val}%`;
+    if (pPct) pPct.textContent = `${Math.round(val)}%`;
     if (pMsg && message) pMsg.textContent = message;
   };
 
-  const cycleTutorialTip = () => {
+  const showTip = (idx, direction = 1) => {
     if (isDismissed) return;
-    currentTipIndex = (currentTipIndex + 1) % TUTORIAL_TIPS.length;
+    currentTipIndex = (idx + TUTORIAL_TIPS.length) % TUTORIAL_TIPS.length;
     const tip = TUTORIAL_TIPS[currentTipIndex];
     const textEl = document.getElementById('loader-tutorial-text');
     const badgeEl = document.querySelector('.loader-tutorial-badge');
@@ -71,27 +69,62 @@
         textEl.textContent = tip.text;
         if (badgeEl) badgeEl.textContent = tip.title;
         if (iconEl) iconEl.textContent = tip.icon;
-        dots.forEach((dot, idx) => {
-          dot.classList.toggle('active', idx === currentTipIndex);
+        dots.forEach((dot, dIdx) => {
+          dot.classList.toggle('active', dIdx === currentTipIndex);
         });
         textEl.classList.remove('text-fade');
-      }, 250);
+      }, 200);
     }
   };
 
-  const startTipCycle = () => {
+  const cycleTutorialTip = () => {
+    showTip(currentTipIndex + 1);
+  };
+
+  const resetTipTimer = () => {
     if (tipTimer) clearInterval(tipTimer);
-    tipTimer = setInterval(cycleTutorialTip, 2400);
+    tipTimer = setInterval(cycleTutorialTip, 3200);
+  };
+
+  const setupTipButtons = () => {
+    const nextBtn = document.getElementById('btn-loader-next-tip');
+    const prevBtn = document.getElementById('btn-loader-prev-tip');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showTip(currentTipIndex + 1);
+        resetTipTimer();
+      });
+    }
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        showTip(currentTipIndex - 1);
+        resetTipTimer();
+      });
+    }
+
+    const dots = document.querySelectorAll('.loader-dot');
+    dots.forEach((dot, dotIdx) => {
+      dot.style.cursor = 'pointer';
+      dot.addEventListener('click', () => {
+        showTip(dotIdx);
+        resetTipTimer();
+      });
+    });
+
+    resetTipTimer();
   };
 
   const dismissLoader = () => {
     if (isDismissed) return;
     isDismissed = true;
-    setProgress(100, 'Exhibition Ready!');
     if (tipTimer) clearInterval(tipTimer);
 
     const elapsed = Date.now() - loaderStartTime;
-    const remaining = Math.max(0, 750 - elapsed);
+    const remaining = Math.max(0, 650 - elapsed);
 
     setTimeout(() => {
       const loader = document.getElementById('site-loader');
@@ -109,13 +142,15 @@
 
   window.SiteLoader = {
     setProgress,
+    nextTip: () => showTip(currentTipIndex + 1),
+    prevTip: () => showTip(currentTipIndex - 1),
     dismiss: dismissLoader
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startTipCycle);
+    document.addEventListener('DOMContentLoaded', setupTipButtons);
   } else {
-    startTipCycle();
+    setupTipButtons();
   }
 
   // Safety ceiling: never block longer than 3.6s

@@ -349,6 +349,45 @@
       .loader-tutorial-panel { padding: 10px 12px !important; }
       .loader-tutorial-text { font-size: 12px !important; }
     }
+
+    .loader-tips-nav {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin-left: auto !important;
+    }
+    .btn-loader-nav {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: #00f0ff !important;
+      border-radius: 99px !important;
+      padding: 4px 10px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      transition: all 0.2s ease !important;
+      line-height: 1.2 !important;
+      touch-action: manipulation !important;
+      user-select: none !important;
+    }
+    .btn-loader-nav:hover, .btn-loader-nav:active {
+      background: rgba(0, 240, 255, 0.2) !important;
+      border-color: #00f0ff !important;
+      color: #ffffff !important;
+      transform: scale(1.04) !important;
+    }
+    [data-theme="light"] .btn-loader-nav {
+      background: rgba(0, 0, 0, 0.05) !important;
+      border-color: rgba(0, 0, 0, 0.15) !important;
+      color: #0284c7 !important;
+    }
+    [data-theme="light"] .btn-loader-nav:hover, [data-theme="light"] .btn-loader-nav:active {
+      background: rgba(2, 132, 199, 0.15) !important;
+      color: #0369a1 !important;
+    }
   </style>
 </head>
 <body>
@@ -387,20 +426,10 @@
         <p class="loader-tagline">Every Modern Profession Speaks English</p>
       </div>
 
-      <div class="loader-progress-section">
-        <div class="loader-progress-track">
-          <div class="loader-progress-bar" id="loader-progress-bar"></div>
-        </div>
-        <div class="loader-meta-row">
-          <span class="loader-status-msg" id="loader-status-msg">Calibrating Career Intelligence Matrix...</span>
-          <span class="loader-status-pct" id="loader-status-pct">15%</span>
-        </div>
-      </div>
-
       <div class="loader-tutorial-panel">
         <div class="loader-tutorial-header">
           <span class="loader-tutorial-icon">💡</span>
-          <span class="loader-tutorial-badge">PLATFORM TUTORIAL</span>
+          <span class="loader-tutorial-badge">TIPS</span>
           <div class="loader-dots-indicator" id="loader-dots-indicator">
             <span class="loader-dot active"></span>
             <span class="loader-dot"></span>
@@ -408,6 +437,10 @@
             <span class="loader-dot"></span>
             <span class="loader-dot"></span>
             <span class="loader-dot"></span>
+          </div>
+          <div class="loader-tips-nav">
+            <button type="button" class="btn-loader-nav" id="btn-loader-prev-tip" aria-label="Previous tip">◀</button>
+            <button type="button" class="btn-loader-nav" id="btn-loader-next-tip" aria-label="Next tip">Next Tip ▶</button>
           </div>
         </div>
         <p class="loader-tutorial-text" id="loader-tutorial-text">
