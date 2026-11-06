@@ -9238,12 +9238,18 @@ async function loadLeaderboard(filterPack = 'All') {
 
     tr.innerHTML = `
       <td><strong style="color:${i < 3 ? 'var(--accent-gold)' : 'var(--text-muted)'}">${medal}</strong></td>
-      <td><strong>${escapeHtml(sc.name)}</strong>${titleBadgeHtml}${titleBtnHtml}${delBtnHtml}</td>
+      <td class="leaderboard-name-cell">
+        <div class="leaderboard-name-wrap">
+          <strong class="leaderboard-name-text" title="${escapeHtml(sc.name)}">${escapeHtml(sc.name)}</strong>
+          ${titleBadgeHtml}
+          ${(titleBtnHtml || delBtnHtml) ? `<span class="admin-score-actions">${titleBtnHtml}${delBtnHtml}</span>` : ''}
+        </div>
+      </td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'Everyday')}</span></td>
       <td><strong style="color:var(--accent-emerald);">${sc.acc}%</strong></td>
       <td>${sc.fluency || '--'}%</td>
       <td>${sc.wpm || 130}</td>
-      <td style="font-size:12px;color:var(--text-dim);">${sc.ts ? new Date(Number(sc.ts)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
+      <td style="font-size:12px;color:var(--text-dim);white-space:nowrap;">${sc.ts ? new Date(Number(sc.ts)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--'}</td>
     `;
     tbody.appendChild(tr);
   });
@@ -9420,14 +9426,14 @@ async function loadFeedbackWall() {
 
       const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
       const adminActionsHtml = isAdmin
-        ? `<div style="display:inline-flex;gap:6px;align-items:center;">
-             <button type="button" class="btn btn-sm" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-pinned="${isPinned ? 0 : 1}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminTogglePinFeedback(this.dataset.id, Number(this.dataset.pinned), decodeURIComponent(this.dataset.comment || ''))">
+        ? `<div class="admin-feedback-actions">
+             <button type="button" class="btn btn-sm btn-admin-feedback" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-pinned="${isPinned ? 0 : 1}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminTogglePinFeedback(this.dataset.id, Number(this.dataset.pinned), decodeURIComponent(this.dataset.comment || ''))">
                ${isPinned ? '📌 Pinned' : '📍 Pin'}
              </button>
-             <button type="button" class="btn btn-sm" title="Assign Official Title (e.g. Vice-Principal)" style="background:rgba(0,240,255,0.1);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" onclick="window.adminAssignUserTitle('${encodeURIComponent(f.name || '')}')">
+             <button type="button" class="btn btn-sm btn-admin-feedback" title="Assign Official Title (e.g. Vice-Principal)" style="background:rgba(0,240,255,0.1);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" onclick="window.adminAssignUserTitle('${encodeURIComponent(f.name || '')}')">
                🏷️ Title
              </button>
-             <button type="button" class="btn btn-sm" title="Delete this reflection (Admin)" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">
+             <button type="button" class="btn btn-sm btn-admin-feedback btn-admin-del" title="Delete this reflection (Admin)" style="background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">
                🗑️
              </button>
            </div>`
@@ -9436,13 +9442,16 @@ async function loadFeedbackWall() {
       return `
         <div class="feedback-item ${isPinned ? 'pinned' : ''}">
           <div class="feedback-item-header">
-            <div class="feedback-item-author" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">
-              <strong style="font-size:14.5px;">${escapeHtml(f.name || 'Anonymous')}</strong>
+            <div class="feedback-item-author">
+              <strong class="feedback-author-name" title="${escapeHtml(f.name || 'Anonymous')}">${escapeHtml(f.name || 'Anonymous')}</strong>
               ${titleBadgeHtml}
-              <span class="feedback-item-badge">${roleBadge}</span>
+              <span class="feedback-item-badge" title="${roleBadge}">${roleBadge}</span>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <div class="feedback-item-stars" title="${starCount} out of 5 stars">${stars} <span style="font-size:12px;color:var(--text-muted);font-weight:600;">(${starCount}/5)</span></div>
+            <div class="feedback-item-meta-group">
+              <div class="feedback-item-stars" title="${starCount} out of 5 stars">
+                <span class="feedback-item-stars-icons">${stars}</span>
+                <span class="feedback-item-stars-score">(${starCount}/5)</span>
+              </div>
               ${adminActionsHtml}
             </div>
           </div>
