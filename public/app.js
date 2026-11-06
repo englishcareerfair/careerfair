@@ -159,18 +159,16 @@
     if (tipTimer) clearInterval(tipTimer);
 
     const elapsed = Date.now() - loaderStartTime;
-    const remaining = Math.max(0, 650 - elapsed);
+    const remaining = Math.max(0, 300 - elapsed);
 
     setTimeout(() => {
       const loader = document.getElementById('site-loader');
       if (loader) {
         loader.classList.add('loader-hidden');
-        loader.style.opacity = '0';
-        loader.style.pointerEvents = 'none';
-        setTimeout(() => {
-          loader.style.display = 'none';
-          try { loader.remove(); } catch (_) {}
-        }, 400);
+        loader.style.setProperty('opacity', '0', 'important');
+        loader.style.setProperty('pointer-events', 'none', 'important');
+        loader.style.setProperty('display', 'none', 'important');
+        try { loader.remove(); } catch (_) {}
       }
     }, remaining);
   };
@@ -188,10 +186,10 @@
     setupTipButtons();
   }
 
-  // Safety ceiling: never block longer than 3.6s
+  // Safety ceiling: never block longer than 2.0s under any circumstances
   setTimeout(() => {
     if (!isDismissed) dismissLoader();
-  }, 3600);
+  }, 2000);
 })();
 
 // ─── 1. GLOBAL STATE & UTILITIES ──────────────────────────────────────────────
