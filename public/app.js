@@ -1842,9 +1842,9 @@ const AppRouter = {
   },
   _isRouting: false,
 
-  // Normalizes any path/hash into clean lowercase '/tab/subtab/part' format
+  // Normalizes any path/hash into clean lowercase single-subtab format (max 1 sub-tab, e.g. /colleges/maharashtra, and / for home)
   normalizePath(raw) {
-    if (!raw) return '/hero';
+    if (!raw) return '/';
     let p = String(raw).trim();
     // Strip hash prefix
     if (p.startsWith('#/')) p = p.slice(1);
@@ -1853,8 +1853,18 @@ const AppRouter = {
     p = p.replace(/\/index\.html$/i, '');
     // Ensure leading slash, strip trailing slashes
     if (!p.startsWith('/')) p = '/' + p;
-    p = p.replace(/\/+$/, '') || '/hero';
-    return p;
+    p = p.replace(/\/+$/, '');
+    if (!p) return '/';
+
+    const segments = p.replace(/^\/+|\/+$/g, '').split('/').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (segments.length === 0 || segments[0] === 'hero' || segments[0] === 'home' || segments[0] === 'overview') {
+      return '/';
+    }
+    // Strict restriction: maximum 1 sub-tab (e.g. /colleges/maharashtra, never /colleges/maharashtra/st-xaviers)
+    if (segments.length > 2) {
+      return '/' + segments.slice(0, 2).join('/');
+    }
+    return '/' + segments.join('/');
   },
 
   // Reads current path from location (hash first if present, then pathname, then query params)
@@ -1865,7 +1875,7 @@ const AppRouter = {
     }
 
     if (window.location.protocol === 'file:') {
-      return '/hero';
+      return '/';
     }
 
     const pathname = window.location.pathname || '/';
@@ -1883,12 +1893,11 @@ const AppRouter = {
       const tab = q.get('tab');
       if (tab) {
         const sub = q.get('sub') || q.get('cat') || q.get('game') || q.get('pack') || '';
-        const part = q.get('part') || q.get('id') || q.get('level') || '';
-        return this.normalizePath('/' + [tab, sub, part].filter(Boolean).join('/'));
+        return this.normalizePath('/' + [tab, sub].filter(Boolean).join('/'));
       }
     }
 
-    return '/hero';
+    return '/';
   },
 
   // Updates the browser address bar with the canonical URL
@@ -1907,8 +1916,8 @@ const AppRouter = {
         return;
       }
 
-      const targetUrl = cleanPath + (window.location.search || '');
-      if (window.location.pathname !== cleanPath || window.location.hash) {
+      const targetUrl = (cleanPath === '/' ? '/' : cleanPath) + (window.location.search || '');
+      if (window.location.pathname !== cleanPath || (cleanPath === '/' && window.location.pathname !== '/') || window.location.hash) {
         if (replace) {
           window.history.replaceState({ path: cleanPath }, '', targetUrl);
         } else {
@@ -1939,19 +1948,21 @@ const AppRouter = {
     this.current.tab = tabId;
     this.current.subtab = '';
     this.current.part = '';
-    this.updateUrl('/' + (tabId === 'hero' ? '' : tabId), false);
+    this.updateUrl((!tabId || tabId === 'hero') ? '/' : '/' + tabId, false);
   },
 
   // Dispatches route to UI elements
   routeTo(rawPath, options = {}) {
     this._isRouting = true;
     try {
+      // Parse raw path segments (allows parsing incoming 3-part links/bookmarks for scroll/highlight)
+      const rawClean = String(rawPath || '').trim().replace(/^[#\/]+|[\/]+$/g, '');
+      const rawSegments = rawClean.split('/').map(s => s.trim().toLowerCase()).filter(Boolean);
+      let rawTab = rawSegments[0] || 'hero';
+      const subtab = rawSegments[1] || '';
+      const part = rawSegments[2] || '';
+
       const path = this.normalizePath(rawPath);
-      const segments = path.replace(/^\/+|\/+$/g, '').split('/').map(s => s.trim().toLowerCase()).filter(Boolean);
-      
-      let rawTab = segments[0] || 'hero';
-      const subtab = segments[1] || '';
-      const part = segments[2] || '';
 
       // Tab aliases
       const TAB_ALIASES = {
@@ -2531,8 +2542,7 @@ function renderCareers() {
 
     if (window.AppRouter) {
       const catSlug = slugify(careerObj.cat || activeCat);
-      const careerSlug = slugify(careerObj.title);
-      window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug) + '/' + careerSlug, { silent: true });
+      window.AppRouter.navigate('/careers/' + (catSlug === 'all' ? 'all' : catSlug), { silent: true });
     }
 
     if (!btn) return; // If clicked card outside button, just updated URL
@@ -2637,9 +2647,8 @@ function renderColleges() {
   container.addEventListener('click', e => {
     const card = e.target.closest('.card');
     if (!card) return;
-    const colSlug = card.dataset.collegeSlug;
-    if (colSlug && window.AppRouter) {
-      window.AppRouter.navigate('/colleges/' + slugify(activeRegion) + '/' + colSlug, { silent: true });
+    if (window.AppRouter) {
+      window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
     }
   });
 
@@ -2659,8 +2668,7 @@ function renderColleges() {
     activeAccred = e.target.value;
     update();
     if (window.AppRouter) {
-      const accredSlug = activeAccred !== 'All' ? slugify(activeAccred) : '';
-      window.AppRouter.navigate('/colleges/' + slugify(activeRegion) + (accredSlug ? '/' + accredSlug : ''), { silent: true });
+      window.AppRouter.navigate('/colleges/' + slugify(activeRegion), { silent: true });
     }
   });
 
@@ -4509,7 +4517,7 @@ function initTeleprompter() {
     }
     if (window.AppRouter) {
       const scriptKey = scriptSelect?.value || 'breaking';
-      window.AppRouter.navigate('/teleprompter/' + scriptKey + '/' + spd, { silent: true });
+      window.AppRouter.navigate('/teleprompter/' + scriptKey, { silent: true });
     }
   };
 
@@ -4542,8 +4550,7 @@ function initTeleprompter() {
   scriptSelect?.addEventListener('change', e => {
     applyScript(e.target.value);
     if (window.AppRouter) {
-      const spd = teleprompterState.currentSpeed === 1.2 ? 'slow' : teleprompterState.currentSpeed === 4.2 ? 'fast' : 'normal';
-      window.AppRouter.navigate('/teleprompter/' + e.target.value + (spd !== 'normal' ? '/' + spd : ''), { silent: true });
+      window.AppRouter.navigate('/teleprompter/' + e.target.value, { silent: true });
     }
   });
 
@@ -5614,8 +5621,8 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
 
   function syncQuestUrl() {
     gamingHallArcIndex = activeIndex;
-    if (window.AppRouter && GAMING_HALL_QUESTS[activeIndex]) {
-      window.AppRouter.navigate('/games/gaming-hall/' + GAMING_HALL_QUESTS[activeIndex].id, { silent: true });
+    if (window.AppRouter) {
+      window.AppRouter.navigate('/games/gaming-hall', { silent: true });
     }
   }
 
