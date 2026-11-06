@@ -1158,7 +1158,11 @@ export async function onRequest(ctx) {
             },
             body: JSON.stringify({
               contents,
-              generationConfig: Object.assign({ maxOutputTokens: 600, temperature: 0.7 }, generationConfig)
+              generationConfig: Object.assign({ 
+                maxOutputTokens: 2500, 
+                temperature: 0.7,
+                thinkingConfig: { thinkingBudget: 0 }
+              }, generationConfig)
             })
           });
 
@@ -1350,8 +1354,9 @@ Return ONLY valid raw JSON without markdown code fences or extra text.`;
       // Primary: Google Gemini with Multi-Key Failover Pool
       if (keysPool.length > 0) {
         const aiRes = await callGeminiWithFailover(keysPool, [{ parts: [{ text: promptText }] }], {
-          maxOutputTokens: 1000,
+          maxOutputTokens: 2500,
           temperature: 0.8,
+          thinkingConfig: { thinkingBudget: 0 },
           responseMimeType: isJson ? 'application/json' : undefined
         });
         if (aiRes.ok && aiRes.text) {
