@@ -4842,3 +4842,14 @@ body.obs-overlay-mode .news-lower-third {
     letter-spacing: -1.5px !important;
   }
 }
+
+
+/* Automatic First Letter Capitalization for User Name Inputs */
+#speak-student-name,
+#anchor-name-input,
+#fb-name,
+#biz-name,
+#issue-user-name,
+input[data-capitalize="name"] {
+  text-transform: capitalize;
+}

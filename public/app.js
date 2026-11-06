@@ -321,6 +321,19 @@ function escapeHtml(str) {
   }[tag] || tag));
 }
 
+// Automatically capitalize the first letter of each word in a user name
+function capitalizeName(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str.trim().split(/\s+/).map(word => {
+    if (!word) return '';
+    if (word.includes('-')) {
+      return word.split('-').map(part => part ? part.charAt(0).toUpperCase() + part.slice(1) : '').join('-');
+    }
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }).join(' ');
+}
+window.capitalizeName = capitalizeName;
+
 // Universal Global D1 API Client (Unified across careerwithenglish, futureofenglish & mobile devices)
 const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 
@@ -1676,6 +1689,24 @@ function initMobileScrollNav() {
 }
 
 function initNavigation() {
+  // Global auto-capitalizer for all user name fields
+  const nameSelectors = '#speak-student-name, #anchor-name-input, #fb-name, #biz-name, #issue-user-name, input[data-capitalize="name"]';
+  document.addEventListener('focusout', e => {
+    if (e.target && e.target.matches && e.target.matches(nameSelectors)) {
+      if (typeof capitalizeName === 'function') {
+        const cap = capitalizeName(e.target.value);
+        if (cap !== e.target.value) e.target.value = cap;
+      }
+    }
+  }, true);
+  document.addEventListener('change', e => {
+    if (e.target && e.target.matches && e.target.matches(nameSelectors)) {
+      if (typeof capitalizeName === 'function') {
+        const cap = capitalizeName(e.target.value);
+        if (cap !== e.target.value) e.target.value = cap;
+      }
+    }
+  }, true);
   const tabBtns = $$('.tab-btn');
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -1744,7 +1775,9 @@ function initNavigation() {
     }
   });
   $('#btn-submit-user-issue')?.addEventListener('click', async () => {
-    const visitorName = ($('#issue-user-name')?.value || STATE.studentName || 'Visitor').trim();
+    const rawVisitorName = ($('#issue-user-name')?.value || STATE.studentName || 'Visitor').trim();
+    const visitorName = capitalizeName(rawVisitorName) || 'Visitor';
+    if ($('#issue-user-name') && rawVisitorName) $('#issue-user-name').value = visitorName;
     const issueType = ($('#issue-category')?.value || 'general').trim();
     const description = ($('#issue-description')?.value || '').trim();
 
@@ -2935,7 +2968,9 @@ function toggleSpeakLadderRecord() {
 
   // Start recording
   const nameInput = $('#speak-student-name');
-  const nameVal = (nameInput ? nameInput.value : STATE.studentName || '').trim();
+  const rawNameVal = (nameInput ? nameInput.value : STATE.studentName || '').trim();
+  const nameVal = capitalizeName(rawNameVal);
+  if (nameInput && nameVal) nameInput.value = nameVal;
   if (!nameVal) {
     if (nameInput) {
       nameInput.focus();
@@ -2998,7 +3033,9 @@ async function evaluateSpeakAttempt() {
   const target = $('#speak-target-sentence')?.textContent.trim() || '';
   const transcript = $('#speak-transcript-preview')?.value.trim() || '';
   const nameInput = $('#speak-student-name');
-  const name = (nameInput ? nameInput.value : STATE.studentName || '').trim();
+  const rawName = (nameInput ? nameInput.value : STATE.studentName || '').trim();
+  const name = capitalizeName(rawName);
+  if (nameInput && name) nameInput.value = name;
   const resultBox = $('#speak-eval-result');
 
   if (!name) {
@@ -4244,7 +4281,8 @@ function initTeleprompter() {
     if (activeS1) activeS1.textContent = `"${data.text}"`;
     if (activeS2) activeS2.textContent = `"${data.text}"`;
     if (lowerTag) lowerTag.textContent = data.tag;
-    const nameVal = nameInput?.value.trim() || 'STUDENT';
+    const nameVal = capitalizeName(nameInput?.value.trim() || '') || 'STUDENT';
+    if (nameInput && nameInput.value.trim()) nameInput.value = capitalizeName(nameInput.value.trim());
     if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · ${data.role.toUpperCase()} · KANAKIA INTERNATIONAL SCHOOL`;
     teleprompterState.tickerOffset = 0;
     if (activeTrack) activeTrack.style.transform = 'translateX(0px)';
@@ -4784,7 +4822,8 @@ function initTeleprompter() {
   // 8. Recording and Downloading (Toggle Record Clip <-> Stop Recording with Overlays)
   recordBtn?.addEventListener('click', async () => {
     const recText = $('#record-btn-text');
-    const studentName = nameInput?.value.trim();
+    const studentName = capitalizeName(nameInput?.value.trim() || '');
+    if (nameInput && studentName) nameInput.value = studentName;
 
     // STOP RECORDING
     if (teleprompterState.isRecording) {
@@ -8923,7 +8962,8 @@ function renderFutureBusinessCard(mount) {
   // Helper to update the card preview live
   const updateCard = (animatePulse = false) => {
     const rawName = (nameInput?.value || '').trim();
-    const name = rawName || 'Explorer';
+    const name = capitalizeName(rawName) || 'Explorer';
+    if (nameInput && rawName) nameInput.value = capitalizeName(rawName);
 
     let career = careerSelect?.value || 'Commercial Airline Pilot';
     if (career === '__custom__') {
@@ -9631,7 +9671,9 @@ async function loadFeedbackWall() {
     form._boundFeedback = true;
     form.addEventListener('submit', async e => {
       e.preventDefault();
-      const name = ($('#fb-name')?.value || '').trim();
+      const rawName = ($('#fb-name')?.value || '').trim();
+      const name = capitalizeName(rawName);
+      if ($('#fb-name') && name) $('#fb-name').value = name;
       const role = $('#fb-role')?.value || 'Student';
       const classInfo = $('#fb-class')?.value || '';
       const comment = ($('#fb-comment')?.value || '').trim();
