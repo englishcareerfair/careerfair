@@ -1,11 +1,12 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'ecf-static-v20.0';
+const CACHE_NAME = 'ecf-static-v21.0';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/styles.css',
+  '/loader.js',
   '/app.js',
   '/voicelab.js',
   '/dopamine-engine.js',
