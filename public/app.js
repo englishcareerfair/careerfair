@@ -1,3 +1,9 @@
+// Clear any legacy client-side deletion blocklist so authoritative D1 scores are fully displayed
+try {
+  localStorage.removeItem('cf_deleted_scores');
+  localStorage.removeItem('cf_scores_reset');
+} catch (_) {}
+
 /**
  * Career Fair: Every Career Speaks English — Complete Client Application
  * Unified single-engine client powering all features, speech intelligence,
@@ -9331,11 +9337,7 @@ async function loadLeaderboard(filterPack = 'All') {
     });
   }
 
-  // Filter out any scores explicitly deleted in this session
-  const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
-  if (deletedScores.length > 0) {
-    scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
-  }
+// D1 database is authoritative source of truth for scores
 
   scores.sort((a, b) => (Number(b.acc) || 0) - (Number(a.acc) || 0) || (Number(b.ts) || 0) - (Number(a.ts) || 0));
 
@@ -9839,11 +9841,6 @@ window.adminDeleteScore = async function(id, name) {
   }
 
   try {
-    const deleted = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
-    if (name && !deleted.includes(name)) deleted.push(name);
-    if (id && !deleted.includes(String(id))) deleted.push(String(id));
-    localStorage.setItem('cf_deleted_scores', JSON.stringify(deleted));
-
     const raw = localStorage.getItem('cf_user_scores');
     if (raw) {
       let items = JSON.parse(raw);
@@ -10032,29 +10029,11 @@ async function renderAdminModeration() {
   const scoresCount = $('#admin-scores-count');
 
   if (scoresTbody) {
-    const isReset = localStorage.getItem('cf_scores_reset') === 'true';
-    const deletedScores = JSON.parse(localStorage.getItem('cf_deleted_scores') || '[]');
-
     let scores = [];
     try {
       const data = await fetchApi('scores');
-      if (Array.isArray(data) && data.length > 0) scores = data;
+      if (Array.isArray(data)) scores = data;
     } catch {}
-
-    if (!scores.length && !isReset) {
-      scores = [
-        { id: 'bm_1', name: "Ananya Sharma", pack: "Journalism", acc: 98, fluency: 96, wpm: 142, ts: Date.now() - 1800000 },
-        { id: 'bm_2', name: "Kabir Mehta", pack: "Law", acc: 95, fluency: 93, wpm: 136, ts: Date.now() - 3600000 },
-        { id: 'bm_3', name: "Riya S.", pack: "Everyday", acc: 91, fluency: 89, wpm: 124, ts: Date.now() - 5400000 },
-        { id: 'bm_4', name: "Arjun Verma", pack: "Academic", acc: 89, fluency: 87, wpm: 121, ts: Date.now() - 7200000 },
-        { id: 'bm_5', name: "Zoya Merchant", pack: "Journalism", acc: 88, fluency: 86, wpm: 129, ts: Date.now() - 9000000 },
-        { id: 'bm_6', name: "Devansh Nair", pack: "Law", acc: 85, fluency: 83, wpm: 118, ts: Date.now() - 12000000 }
-      ];
-    }
-
-    if (deletedScores.length > 0) {
-      scores = scores.filter(s => !deletedScores.includes(s.name) && !deletedScores.includes(String(s.id)));
-    }
 
     if (scoresCount) {
       scoresCount.textContent = `${scores.length} Attempt${scores.length === 1 ? '' : 's'}`;
