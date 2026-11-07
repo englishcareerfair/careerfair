@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=11.3">
+  <link rel="stylesheet" href="styles.css?v=11.4">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -37,11 +37,11 @@
   <!-- Architectural Engines -->
   <script src="dopamine-engine.js?v=7.7" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
-  <script src="dossier-pdf.js?v=7.7" defer></script>
+  <script src="dossier-pdf.js?v=11.4" defer></script>
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="loader.js?v=11.3"></script>
-  <script src="app.js?v=11.3" defer></script>
+  <script src="loader.js?v=11.4"></script>
+  <script src="app.js?v=11.4" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -812,6 +812,15 @@
             <span class="badge-pill badge-nirf" id="speech-session-state">Standby</span>
           </div>
 
+          <!-- Student Name Input (Top of Stage - Synced with Leaderboard) -->
+          <div id="speech-lab-name-container" style="background:var(--bg-subtle);border:1px solid rgba(0,240,255,0.35);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;">
+            <label for="speech-lab-student-name" style="font-size:12.5px;font-weight:700;color:var(--text-main);display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <span>🎙️ Student Name <span style="color:#ef4444;" title="Mandatory for Leaderboard">*</span></span>
+              <span style="font-size:11px;color:var(--accent-cyan);font-weight:600;">Leaderboard Ranking</span>
+            </label>
+            <input type="text" id="speech-lab-student-name" placeholder="Enter your full name to map score on leaderboard" autocomplete="name" style="width:100%;font-size:14px;font-weight:600;padding:8px 12px;border-radius:var(--radius-sm);background:var(--surface-card);color:var(--text-main);border:1px solid var(--border);transition:all 0.2s ease;">
+          </div>
+
           <!-- Waveform Canvas -->
           <canvas id="speech-lab-waveform" style="width:100%;height:100px;background:#000;border-radius:var(--radius-md);margin-bottom:14px;"></canvas>
 
@@ -885,13 +894,7 @@
             </div>
           </div>
 
-          <!-- Student Name Input (Synced with Leaderboard) -->
-          <div style="margin-top:14px;margin-bottom:12px;">
-            <label for="speech-lab-student-name" style="font-size:13px;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:4px;margin-bottom:4px;">
-              Student Name <span style="color:#ef4444;" title="Mandatory for Leaderboard">*</span>
-            </label>
-            <input type="text" id="speech-lab-student-name" placeholder="Enter your name to map score on leaderboard" autocomplete="name" style="width:100%;font-size:13.5px;">
-          </div>
+
 
           <div style="display:flex;gap:10px;margin-top:12px;">
             <button class="btn btn-primary" id="btn-speech-lab-record" type="button">
@@ -1868,6 +1871,16 @@
         <svg style="width:15px;height:15px;color:#10b981;display:inline-block;flex-shrink:0;vertical-align:middle;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
         <span>Agreed &amp; Verified</span>
       </div>
+      <script>
+        try {
+          if (localStorage.getItem('cf_tos_agreed') === 'true') {
+            var _tc = document.getElementById('tos-agree-container');
+            if (_tc) _tc.remove();
+            var _tb = document.getElementById('tos-agreed-badge');
+            if (_tb) _tb.style.display = 'inline-flex';
+          }
+        } catch(e) {}
+      </script>
     </div>
   </div>
 

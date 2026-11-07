@@ -382,7 +382,7 @@
     doc.setTextColor(15, 23, 42);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.5);
-    doc.text('OFFICIAL FORUM ENDORSEMENT & ACCREDITATION SEAL', 16, curY + 7);
+    doc.text('OFFICIAL FAIR ENDORSEMENT & ACCREDITATION SEAL', 16, curY + 7);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);

@@ -1564,9 +1564,11 @@ function initNavigation() {
 
   // Legal Modal (Terms of Service & Privacy Policy)
   const syncTosAgreeButtonState = () => {
-    const agreeContainer = $('#tos-agree-container') || $('#btn-agree-tos')?.parentElement;
     if (localStorage.getItem('cf_tos_agreed') === 'true') {
-      if (agreeContainer) agreeContainer.style.display = 'none';
+      const agreeContainer = $('#tos-agree-container');
+      if (agreeContainer) agreeContainer.remove();
+      const agreeBtn = $('#btn-agree-tos');
+      if (agreeBtn) agreeBtn.remove();
       const agreedBadge = $('#tos-agreed-badge');
       if (agreedBadge) agreedBadge.style.display = 'inline-flex';
     }
@@ -1583,12 +1585,14 @@ function initNavigation() {
     try {
       localStorage.setItem('cf_tos_agreed', 'true');
     } catch (_) {}
-    const agreeContainer = $('#tos-agree-container') || $('#btn-agree-tos')?.parentElement;
-    if (agreeContainer) agreeContainer.style.display = 'none';
+    const agreeContainer = $('#tos-agree-container');
+    if (agreeContainer) agreeContainer.remove();
+    const agreeBtn = $('#btn-agree-tos');
+    if (agreeBtn) agreeBtn.remove();
     const agreedBadge = $('#tos-agreed-badge');
     if (agreedBadge) agreedBadge.style.display = 'inline-flex';
     $('#tos-pp-modal')?.classList.remove('active');
-    showToast('\u2705 Terms of Service & Telemetry Consent confirmed.');
+    showToast('Terms of Service & Telemetry Consent confirmed.');
   });
   $('#tos-pp-modal')?.addEventListener('click', (e) => {
     if (e.target.id === 'tos-pp-modal') {
@@ -3263,6 +3267,11 @@ function passAwaySpeechLabSentence(manualSkip = false) {
     if (percentLabel) percentLabel.textContent = '100% Passed';
     if (screen) screen.classList.add('speech-lab-screen-complete');
     showToast('Sentence Passed! 🚀');
+
+    // Automatically trigger speech analysis and leaderboard sync upon passing
+    setTimeout(() => {
+      analyzeSpeechLabSample();
+    }, 120);
   }
 
   // Instantaneous zero-delay cue swap: new sentence renders immediately without even 1ms delay
@@ -3402,11 +3411,20 @@ function initSpeechLab() {
     }
     if (!labNameInput.dataset.bound) {
       labNameInput.dataset.bound = 'true';
+      labNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          labNameInput.blur();
+          analyzeSpeechLabSample();
+        }
+      });
       labNameInput.addEventListener('input', () => {
+        labNameInput.style.borderColor = '';
+        labNameInput.style.boxShadow = '';
         const cap = capitalizeName(labNameInput.value);
         if (cap !== labNameInput.value && labNameInput.value.length === 1) labNameInput.value = cap;
         STATE.studentName = labNameInput.value.trim();
-        localStorage.setItem('cf_student_name', STATE.studentName);
+        try { localStorage.setItem('cf_student_name', STATE.studentName); } catch (_) {}
         const otherInput = $('#speak-student-name');
         if (otherInput && otherInput.value !== labNameInput.value) otherInput.value = labNameInput.value;
       });
@@ -3414,9 +3432,13 @@ function initSpeechLab() {
         const cap = capitalizeName(labNameInput.value);
         labNameInput.value = cap;
         STATE.studentName = cap;
-        localStorage.setItem('cf_student_name', cap);
+        try { localStorage.setItem('cf_student_name', cap); } catch (_) {}
         const otherInput = $('#speak-student-name');
         if (otherInput) otherInput.value = cap;
+        // If an evaluation was pending student name, map it immediately to leaderboard
+        if (STATE.speechLabPendingEval && cap) {
+          analyzeSpeechLabSample();
+        }
       });
     }
   }
@@ -3570,6 +3592,11 @@ function stopSpeechLabAudio() {
   $('#speech-session-state').textContent = 'Prompter Idle';
   $('#btn-speech-lab-record').disabled = false;
   $('#btn-speech-lab-stop').disabled = true;
+
+  // Automatically trigger speech analysis and leaderboard sync upon stopping recording
+  setTimeout(() => {
+    analyzeSpeechLabSample();
+  }, 120);
 }
 
 function renderSpeechLabWaveform() {
@@ -3696,9 +3723,27 @@ function analyzeSpeechLabSample() {
                 ($('#speak-student-name')?.value || '').trim() ||
                 (STATE.studentName || '').trim() ||
                 (localStorage.getItem('cf_student_name') || '').trim();
-  const name = capitalizeName(rawName || 'Student Explorer');
-  if (speechLabNameInput && rawName) speechLabNameInput.value = name;
-  if ($('#speak-student-name') && rawName) $('#speak-student-name').value = name;
+
+  // If student hasn't entered their name, highlight the input at the top and prompt them
+  if (!rawName) {
+    STATE.speechLabPendingEval = { accuracy, fluency, clarity, text, currentSpeechLabSentence };
+    if (speechLabNameInput) {
+      speechLabNameInput.focus();
+      speechLabNameInput.style.borderColor = '#ef4444';
+      speechLabNameInput.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.6)';
+      setTimeout(() => {
+        speechLabNameInput.style.borderColor = '';
+        speechLabNameInput.style.boxShadow = '';
+      }, 3500);
+    }
+    showToast('⚠️ Please enter your name at the top to map your score to the leaderboard!');
+    return;
+  }
+
+  STATE.speechLabPendingEval = null;
+  const name = capitalizeName(rawName);
+  if (speechLabNameInput) speechLabNameInput.value = name;
+  if ($('#speak-student-name')) $('#speak-student-name').value = name;
   STATE.studentName = name;
   try { localStorage.setItem('cf_student_name', name); } catch (_) {}
 

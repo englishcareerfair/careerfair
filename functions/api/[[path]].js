@@ -578,21 +578,21 @@ export async function onRequest(ctx) {
       } catch {}
     }
 
-    // Merge with in-memory cache to guarantee persistence even across worker cold starts
-    if (GLOBAL_CACHE.scores.length > 0) {
-      const seen = new Set(results.map(r => r.name.toLowerCase()));
-      for (const s of GLOBAL_CACHE.scores) {
-        if (!seen.has(s.name.toLowerCase())) {
-          if (pack && pack !== 'All') {
-            const isSpeech = (pack.toLowerCase() === 'speech lab' || pack.toLowerCase() === 'ai speech lab');
-            if (isSpeech ? !(s.pack || '').toLowerCase().includes('speech') : s.pack !== pack) continue;
-          }
-          if (className && className !== 'All' && s.class_name !== className) continue;
-          results.push(s);
-          seen.add(s.name.toLowerCase());
-        }
+    // D1 is the authoritative source of truth.
+    // Fall back to in-memory cache ONLY if D1 is unreachable or returned 0 rows.
+    if ((!results || results.length === 0) && GLOBAL_CACHE.scores.length > 0) {
+      let cached = [...GLOBAL_CACHE.scores];
+      if (pack && pack !== 'All') {
+        const isSpeech = (pack.toLowerCase() === 'speech lab' || pack.toLowerCase() === 'ai speech lab');
+        cached = cached.filter(s => isSpeech ? (s.pack || '').toLowerCase().includes('speech') : s.pack === pack);
       }
-      results.sort((a, b) => b.acc - a.acc || b.ts - a.ts);
+      if (className && className !== 'All') {
+        cached = cached.filter(s => s.class_name === className);
+      }
+      results = cached;
+    } else if (results && results.length > 0 && (!pack || pack === 'All') && (!className || className === 'All')) {
+      // Keep memory cache aligned with authoritative D1 database
+      GLOBAL_CACHE.scores = [...results];
     }
 
     return json(results);
