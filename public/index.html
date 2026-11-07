@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=11.1">
+  <link rel="stylesheet" href="styles.css?v=11.2">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -40,8 +40,8 @@
   <script src="dossier-pdf.js?v=7.7" defer></script>
   <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="loader.js?v=11.1"></script>
-  <script src="app.js?v=11.1" defer></script>
+  <script src="loader.js?v=11.2"></script>
+  <script src="app.js?v=11.2" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -885,6 +885,14 @@
             </div>
           </div>
 
+          <!-- Student Name Input (Synced with Leaderboard) -->
+          <div style="margin-top:14px;margin-bottom:12px;">
+            <label for="speech-lab-student-name" style="font-size:13px;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+              Student Name <span style="color:#ef4444;" title="Mandatory for Leaderboard">*</span>
+            </label>
+            <input type="text" id="speech-lab-student-name" placeholder="Enter your name to map score on leaderboard" autocomplete="name" style="width:100%;font-size:13.5px;">
+          </div>
+
           <div style="display:flex;gap:10px;margin-top:12px;">
             <button class="btn btn-primary" id="btn-speech-lab-record" type="button">
               <span>🎙️</span> <span>Record Voice</span>
@@ -901,7 +909,18 @@
         <!-- Right: 6-Dimension Scorecard & AI Coaching -->
         <div class="card" id="speech-lab-results-card">
           <h3 style="font-size:18px;margin-bottom:8px;">6-Dimension Speech Assessment</h3>
-          <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:16px;">Calculated using audio cadence, sentence structure, and vocabulary diversity.</p>
+          <p style="font-size:13.5px;color:var(--text-dim);margin-bottom:14px;">Calculated using audio cadence, sentence structure, and vocabulary diversity.</p>
+
+          <!-- Overall Speech Accuracy Banner (Mapped to Leaderboard) -->
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.25);border-radius:var(--radius-md);margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <span style="font-size:13px;color:var(--text-muted);font-weight:600;">Overall Speech Accuracy:</span>
+              <strong id="speech-lab-accuracy-val" style="font-family:var(--font-mono);font-size:18px;color:var(--accent-cyan);margin-left:8px;">--%</strong>
+            </div>
+            <span class="badge-pill badge-global" id="speech-lab-leaderboard-status" style="display:none;font-size:11.5px;color:#34d399;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);">
+              &#10003; Mapped to Leaderboard
+            </span>
+          </div>
 
           <!-- 6 Dimensions Grid -->
           <div class="dimensions-grid">
@@ -1140,6 +1159,7 @@
           <button class="filter-chip" data-board-pack="Journalism">Journalism</button>
           <button class="filter-chip" data-board-pack="Law">Law</button>
           <button class="filter-chip" data-board-pack="Academic">Academic</button>
+          <button class="filter-chip" data-board-pack="Speech Lab">AI Speech Lab</button>
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1845,7 +1865,8 @@
         <button class="btn btn-primary btn-sm" id="btn-agree-tos">I Understand &amp; Agree</button>
       </div>
       <div id="tos-agreed-badge" style="display:none;margin-top:18px;align-items:center;justify-content:flex-end;gap:6px;font-size:12.5px;color:#10b981;font-weight:700;">
-        <span>?</span> <span>Agreed &amp; Verified</span>
+        <svg style="width:15px;height:15px;color:#10b981;display:inline-block;flex-shrink:0;vertical-align:middle;" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+        <span>Agreed &amp; Verified</span>
       </div>
     </div>
   </div>

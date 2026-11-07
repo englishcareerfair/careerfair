@@ -2745,7 +2745,7 @@ async function changeSpeechSentence(userTriggered = false) {
       const candidate = aiRes.sentence.trim().replace(/^["']|["']$/g, '');
       if (candidate.length > 20 && !usedSentenceHistory.has(candidate)) {
         selectedSentence = candidate;
-        if (aiBadge) aiBadge.textContent = '⚡ Gemini AI Generated';
+        if (aiBadge) aiBadge.style.display = 'none';
       }
     }
   } catch (e) {}
@@ -2869,7 +2869,7 @@ async function evaluateSpeakAttempt() {
   const nameInput = $('#speak-student-name');
   const rawName = (nameInput ? nameInput.value : STATE.studentName || '').trim();
   const name = capitalizeName(rawName);
-  if (nameInput && name) nameInput.value = name;
+  if (nameInput && name) nameInput.value = name; const labNameMirror = $('#speech-lab-student-name'); if (labNameMirror) labNameMirror.value = name;
   const resultBox = $('#speak-eval-result');
 
   if (!name) {
@@ -3177,7 +3177,7 @@ function changeSpeechLabSentence(userTriggered = false) {
   if (speechLabPrefetchedSentence && speechLabPrefetchedSentence.sentence) {
     selectedSentence = speechLabPrefetchedSentence.sentence;
     if (speechLabPrefetchedSentence.source === 'gemini') {
-      sourceBadge = '⚡ Gemini AI Generated';
+      sourceBadge = '';
     }
     speechLabPrefetchedSentence = null;
   }
@@ -3386,6 +3386,33 @@ function initSpeechLab() {
   // 2. Setup AI Sentence Teleprompter Screen
   if (!currentSpeechLabSentence) {
     changeSpeechLabSentence(false);
+  }
+
+  // Wire Student Name in Speech Lab (Synchronized with Speak Ladder & Leaderboard)
+  const labNameInput = $('#speech-lab-student-name');
+  if (labNameInput) {
+    if (!labNameInput.value) {
+      labNameInput.value = STATE.studentName || localStorage.getItem('cf_student_name') || '';
+    }
+    if (!labNameInput.dataset.bound) {
+      labNameInput.dataset.bound = 'true';
+      labNameInput.addEventListener('input', () => {
+        const cap = capitalizeName(labNameInput.value);
+        if (cap !== labNameInput.value && labNameInput.value.length === 1) labNameInput.value = cap;
+        STATE.studentName = labNameInput.value.trim();
+        localStorage.setItem('cf_student_name', STATE.studentName);
+        const otherInput = $('#speak-student-name');
+        if (otherInput && otherInput.value !== labNameInput.value) otherInput.value = labNameInput.value;
+      });
+      labNameInput.addEventListener('blur', () => {
+        const cap = capitalizeName(labNameInput.value);
+        labNameInput.value = cap;
+        STATE.studentName = cap;
+        localStorage.setItem('cf_student_name', cap);
+        const otherInput = $('#speak-student-name');
+        if (otherInput) otherInput.value = cap;
+      });
+    }
   }
 
   // 3. Bind interactive buttons (idempotent guards)
@@ -3621,7 +3648,15 @@ function analyzeSpeechLabSample() {
   const grammar = Math.min(100, Math.max(50, 80 + (text.length > 50 ? 15 : 5)));
   const confidence = Math.min(100, Math.max(50, Math.round((fluency + clarity) / 2)));
 
+  // Accuracy calculation: combines word articulation ratio and phonetic/Levenshtein similarity
+  const wordAcc = Math.round(passRatio * 100);
+  const levAcc = currentSpeechLabSentence ? calculateLevenshteinAccuracy(currentSpeechLabSentence, text) : wordAcc;
+  const accuracy = Math.min(100, Math.max(50, Math.round((wordAcc * 0.6) + (levAcc * 0.4))));
+
   // Update UI Elements
+  const accValEl = $('#speech-lab-accuracy-val');
+  if (accValEl) accValEl.textContent = `${accuracy}%`;
+
   $('#dim-pronunciation').textContent = pronunciation;
   $('#dim-fluency').textContent = fluency;
   $('#dim-clarity').textContent = clarity;
@@ -3649,6 +3684,90 @@ function analyzeSpeechLabSample() {
     localStorage.setItem('cf_coach_6d', JSON.stringify(STATE.studentProfile.coach6D));
   } catch (e) {}
 
+  // Resolve Student Name for Exhibition Leaderboard mapping
+  const speechLabNameInput = $('#speech-lab-student-name');
+  let rawName = (speechLabNameInput ? speechLabNameInput.value : '').trim() ||
+                ($('#speak-student-name')?.value || '').trim() ||
+                (STATE.studentName || '').trim() ||
+                (localStorage.getItem('cf_student_name') || '').trim();
+  const name = capitalizeName(rawName || 'Student Explorer');
+  if (speechLabNameInput && rawName) speechLabNameInput.value = name;
+  if ($('#speak-student-name') && rawName) $('#speak-student-name').value = name;
+  STATE.studentName = name;
+  try { localStorage.setItem('cf_student_name', name); } catch (_) {}
+
+  // Save attempt to local scores so it is reflected immediately
+  const wpmVal = parseInt($('#wpm-value-label')?.textContent, 10) || 130;
+  const localScoreObj = {
+    id: 'sc_' + Date.now(),
+    name,
+    pack: 'Speech Lab',
+    level: 1,
+    acc: accuracy,
+    fluency,
+    clarity,
+    wpm: wpmVal,
+    class_name: STATE.studentClass || 'Class 10',
+    target_career: STATE.studentProfile?.targetCareer || '',
+    ts: Date.now()
+  };
+
+  try {
+    const curScores = JSON.parse(localStorage.getItem('cf_user_scores') || '[]');
+    const sIdx = curScores.findIndex(s => (s.name || '').toLowerCase() === name.toLowerCase());
+    if (sIdx === -1) {
+      curScores.unshift(localScoreObj);
+    } else if (accuracy >= (curScores[sIdx].acc || 0)) {
+      curScores[sIdx] = localScoreObj;
+    }
+    localStorage.setItem('cf_user_scores', JSON.stringify(curScores));
+  } catch (e) {}
+
+  // Persist speech profile for official 2-Page Dossier
+  STATE.studentProfile.lastSpeech = {
+    pack: 'Speech Lab',
+    accuracy,
+    fluency,
+    clarity,
+    wpm: wpmVal,
+    sentence: currentSpeechLabSentence || text
+  };
+  try {
+    localStorage.setItem('cf_last_speech', JSON.stringify(STATE.studentProfile.lastSpeech));
+  } catch (e) {}
+
+  // Post attempt to Cloudflare backend D1 storage
+  fetchApi('attempt', 'POST', {
+    name,
+    pack: 'Speech Lab',
+    target: currentSpeechLabSentence || text,
+    fallback_text: text,
+    class_name: STATE.studentClass || 'Class 10',
+    acc: accuracy,
+    fluency,
+    clarity,
+    wpm: wpmVal
+  }).then(async () => {
+    try {
+      const activeBtn = $('#leaderboard-pack-filters .filter-chip.active');
+      const curPack = activeBtn ? activeBtn.dataset.boardPack : 'All';
+      await loadLeaderboard(curPack);
+    } catch (e) {}
+  }).catch(() => {});
+
+  // Update Leaderboard mapping status pill
+  const lbStatus = $('#speech-lab-leaderboard-status');
+  if (lbStatus) {
+    lbStatus.style.display = 'inline-flex';
+    lbStatus.innerHTML = `&#10003; Mapped to Leaderboard (${accuracy}%)`;
+  }
+
+  // Refresh leaderboard immediately so user sees their rank without delay
+  loadLeaderboard();
+  try {
+    updateLeaderboardBadges(JSON.parse(localStorage.getItem('cf_user_scores') || '[]'));
+  } catch (_) {}
+
   // AI Coaching Rewrite Suggestions
   $('#ai-coaching-text').innerHTML = `
     <div style="margin-bottom:10px;">
@@ -3658,13 +3777,14 @@ function analyzeSpeechLabSample() {
     </div>
     <strong>Targeted Strengths &amp; Adjustments:</strong><br>
     • Articulation completion: <strong>${passedWords} / ${totalTargetWords} words passed (${Math.round(passRatio * 100)}%)</strong>.<br>
+    • Overall Accuracy score: <strong>${accuracy}%</strong> (recorded on Exhibition Leaderboard).<br>
     • Vocabulary richness: <strong>${vocab}%</strong> across ${words.length} spoken tokens.<br>
     • ${fillers > 0 ? `Notice ${fillers} filler phrase(s). Practice taking a silent 1-second pause when searching for words.` : 'Zero hesitation fillers detected! Flawless executive rhythm.'}<br><br>
     <strong>"Say It Better" Model Delivery:</strong><br>
     <em style="color:var(--accent-cyan);">"${escapeHtml(currentSpeechLabSentence || text.replace(/\b(um+|uh+|like|you know)\b/gi, '').trim())}"</em>
   `;
 
-  showToast('Speech Analysis Complete!');
+  showToast(`Speech Analysis Complete! Score (${accuracy}%) mapped to Leaderboard.`);
 }
 
 function drawSpiderRadar(scores) {
@@ -7681,7 +7801,7 @@ function renderMyPlan(mount) {
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
         <div>
           <h3 style="font-size:20px;font-weight:800;margin:0 0 4px 0;">🗺️ "My Plan" Personalized AI Career Roadmap</h3>
-          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">Select your class, target career, and daily time to generate a bespoke chronological milestone blueprint powered by Google Gemini AI.</p>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">Select your class, target career, and daily time to generate a bespoke chronological milestone blueprint.</p>
         </div>
         <span class="badge-pill" style="background:rgba(0,240,255,0.08);border:1px solid var(--border-strong);color:var(--accent-cyan);font-weight:700;">
           ⚡ 32 Pathways Available
@@ -7884,7 +8004,7 @@ function renderMyPlan(mount) {
         <div style="font-size:42px;animation:pulseIconGlow 1.4s infinite ease-in-out;display:inline-block;margin-bottom:10px;">⚡</div>
         <h4 style="font-size:18px;font-weight:800;color:var(--text-main);margin:0 0 6px 0;">Synthesizing AI Roadmap Blueprint...</h4>
         <p style="font-size:13.5px;color:var(--text-muted);margin:0 auto;max-width:460px;line-height:1.5;">
-          Personalizing milestones for <strong>${escapeHtml(car)}</strong> (${escapeHtml(cls)}, ${time}m daily commitment) using Google Gemini AI...
+          Personalizing milestones for <strong>${escapeHtml(car)}</strong> (${escapeHtml(cls)}, ${time}m daily commitment)...
         </p>
       </div>
     `;
@@ -9155,7 +9275,9 @@ async function loadLeaderboard(filterPack = 'All') {
 
   let serverScores = null;
   try {
-    const data = await fetchApi(`scores${filterPack && filterPack !== 'All' ? '?pack=' + encodeURIComponent(filterPack) : ''}`);
+    const isSpeechPack = filterPack && (filterPack.toLowerCase() === 'speech lab' || filterPack.toLowerCase() === 'ai speech lab');
+    const queryPack = isSpeechPack ? 'Speech Lab' : filterPack;
+    const data = await fetchApi(`scores${queryPack && queryPack !== 'All' ? '?pack=' + encodeURIComponent(queryPack) : ''}`);
     if (Array.isArray(data)) {
       serverScores = data;
     }
@@ -9163,25 +9285,50 @@ async function loadLeaderboard(filterPack = 'All') {
     console.warn('Leaderboard sync note:', e);
   }
 
+  // Retrieve cached local scores
+  let localScores = [];
+  try {
+    const raw = localStorage.getItem('cf_user_scores');
+    if (raw) localScores = JSON.parse(raw);
+  } catch (e) {}
+
   let scores = [];
   if (Array.isArray(serverScores)) {
-    // Cloudflare D1 is the single authoritative source of truth:
-    // Overwrite local cache with authoritative server items so deleted scores disappear everywhere!
-    scores = serverScores;
+    scores = [...serverScores];
+
+    // Merge recent local scores that may still be in-flight or not yet committed to server
+    if (Array.isArray(localScores) && localScores.length > 0) {
+      localScores.forEach(loc => {
+        if (!loc || !loc.name) return;
+        const normName = loc.name.toLowerCase().trim();
+        const existingIdx = scores.findIndex(s => (s.name || '').toLowerCase().trim() === normName);
+        if (existingIdx === -1) {
+          scores.push(loc);
+        } else if ((Number(loc.acc) || 0) > (Number(scores[existingIdx].acc) || 0)) {
+          scores[existingIdx] = { ...scores[existingIdx], ...loc };
+        }
+      });
+    }
+
     try {
       if (!filterPack || filterPack === 'All') {
         localStorage.setItem('cf_user_scores', JSON.stringify(scores));
       }
     } catch (e) {}
   } else {
-    // Fallback to local storage only if offline or network unreachable
-    try {
-      const raw = localStorage.getItem('cf_user_scores');
-      if (raw) scores = JSON.parse(raw);
-    } catch (e) {}
-    if (filterPack && filterPack !== 'All') {
-      scores = scores.filter(s => (s.pack || '').toLowerCase() === filterPack.toLowerCase());
-    }
+    scores = localScores;
+  }
+
+  // Filter by pack if specified
+  if (filterPack && filterPack !== 'All') {
+    const fLower = filterPack.toLowerCase();
+    scores = scores.filter(s => {
+      const p = (s.pack || '').toLowerCase();
+      if (fLower === 'speech lab' || fLower === 'ai speech lab') {
+        return p.includes('speech');
+      }
+      return p === fLower;
+    });
   }
 
   // Filter out any scores explicitly deleted in this session

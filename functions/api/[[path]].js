@@ -550,8 +550,13 @@ export async function onRequest(ctx) {
     const binds = [];
 
     if (pack && pack !== 'All') {
-      conditions.push('pack=?');
-      binds.push(pack);
+      if (pack.toLowerCase() === 'speech lab' || pack.toLowerCase() === 'ai speech lab') {
+        conditions.push('(pack = ? OR pack = ? OR LOWER(pack) LIKE ?)');
+        binds.push('Speech Lab', 'AI Speech Lab', '%speech%');
+      } else {
+        conditions.push('pack=?');
+        binds.push(pack);
+      }
     }
     if (className && className !== 'All') {
       conditions.push('class_name=?');
@@ -578,7 +583,10 @@ export async function onRequest(ctx) {
       const seen = new Set(results.map(r => r.name.toLowerCase()));
       for (const s of GLOBAL_CACHE.scores) {
         if (!seen.has(s.name.toLowerCase())) {
-          if (pack && pack !== 'All' && s.pack !== pack) continue;
+          if (pack && pack !== 'All') {
+            const isSpeech = (pack.toLowerCase() === 'speech lab' || pack.toLowerCase() === 'ai speech lab');
+            if (isSpeech ? !(s.pack || '').toLowerCase().includes('speech') : s.pack !== pack) continue;
+          }
           if (className && className !== 'All' && s.class_name !== className) continue;
           results.push(s);
           seen.add(s.name.toLowerCase());
