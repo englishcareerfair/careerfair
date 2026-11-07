@@ -84,7 +84,7 @@
   display: none !important;
 }
 
-/* ─── 0. FULL-SCREEN IMMERSIVE LOADER & TUTORIAL GUIDE ────────────────────── */
+/* ─── 0. FULL-SCREEN IMMERSIVE LOADER ────────────────────── */
 .site-loader {
   position: fixed;
   inset: 0;
@@ -331,7 +331,7 @@
   color: #0284c7;
 }
 
-/* Tutorial / Pro-Tip Card */
+
 .loader-tips-nav {
   display: inline-flex;
   align-items: center;
@@ -377,87 +377,29 @@
   color: #0369a1;
 }
 
-.loader-tutorial-panel {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 14px 16px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  text-align: left;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
 
-[data-theme="light"] .loader-tutorial-panel {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(0, 0, 0, 0.08);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
 
-.loader-tutorial-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #ff2a85;
-}
+[data-theme="light"] 
 
-.loader-tutorial-icon {
-  font-size: 14px;
-}
 
-.loader-tutorial-badge {
-  flex: 1;
-}
 
-.loader-dots-indicator {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
 
-.loader-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
 
-[data-theme="light"] .loader-dot {
-  background: rgba(0, 0, 0, 0.2);
-}
 
-.loader-dot.active {
-  background: #ff2a85;
-  width: 14px;
-  border-radius: 99px;
-}
 
-.loader-tutorial-text {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--text-main, #e2e8f0);
-  font-weight: 500;
-  min-height: 40px;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
 
-[data-theme="light"] .loader-tutorial-text {
-  color: #1e293b;
-}
 
-.loader-tutorial-text.text-fade {
-  opacity: 0;
-  transform: translateY(4px);
-}
+
+
+[data-theme="light"] 
+
+
+
+
+
+[data-theme="light"] 
+
+
 
 @media (max-width: 480px) {
   .loader-card {
@@ -471,15 +413,8 @@
     width: 38px;
     height: 38px;
   }
-  .loader-tutorial-panel {
-    padding: 12px 14px;
-    touch-action: pan-y pinch-zoom;
-    user-select: none;
-    -webkit-user-select: none;
-  }
-  .loader-tutorial-text {
-    font-size: 12px;
-  }
+  
+  
   /* On small mobile screens, navigation buttons are hidden so user relies directly on touch swipe & dots */
   .loader-tips-nav {
     display: none !important;

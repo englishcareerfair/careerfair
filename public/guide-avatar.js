@@ -3,7 +3,7 @@
  * Detects human presence via Camera ML (Client FaceDetector / MediaPipe / Server YOLO / Hybrid),
  * mounts modular realistic guide HUD (Floating / Studio / Sidebar), and autonomously guides visitors
  * through interactive voice career discovery, 32+ careers, accredited colleges, entrance exams,
- * 6D speech evaluation, news anchor mode, arcade games with OCR, live leaderboard, and 2-page PDF dossier.
+ * 6D speech evaluation, news anchor mode, arcade games with OCR, live leaderboard.
  */
 
 (function (window) {
@@ -173,8 +173,7 @@
               <div class="dg-check-item" data-step="6"><span>7.</span> News Anchor & Teleprompter</div>
               <div class="dg-check-item" data-step="7"><span>8.</span> Language Arcade & OCR</div>
               <div class="dg-check-item" data-step="8"><span>9.</span> Leaderboard & Reviews</div>
-              <div class="dg-check-item" data-step="9"><span>10.</span> 2-Page Printable Dossier</div>
-            </div>
+                          </div>
 
             <div class="dg-drawer-caption" id="dg-caption-text">
               Welcome! Let me guide you through every interactive exhibit.
@@ -195,7 +194,7 @@
                 <span class="dg-status-dot"></span>
                 <span class="dg-hud-title">AI Guide</span>
               </div>
-              <div class="dg-hud-step-pill" id="dg-step-indicator">Step 1/10</div>
+              <div class="dg-hud-step-pill" id="dg-step-indicator">Step 1/9</div>
               <button class="dg-hud-skip" id="dg-btn-skip" title="Skip Tour (✕)">✕</button>
             </div>
 
@@ -492,25 +491,11 @@
           await this.speakGuideLine(
             "Check out our real-time Leaderboard and parent reflections! See how students across all grades are excelling today."
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(9), 7500);
+          this.tourTimeout = setTimeout(() => this.finishTour(), 7500);
           break;
 
         case 9:
-          // Step 10: 2-Page Printable Dossier & Business Card
-          if (flags.pdf_export === false) {
-            this.finishTour();
-            return;
-          }
-          if (typeof window.switchTab === 'function') {
-            window.switchTab('roadmap');
-          }
-          await this.speakGuideLine(
-            "Congratulations! Your entire journey, career roadmap, and official student business card are ready in an official two-page printable PDF. Download it now!"
-          );
-          if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
-            window.DossierPDF.generate();
-          }
-          this.tourTimeout = setTimeout(() => this.finishTour(), 8500);
+          this.finishTour();
           break;
 
         default:
@@ -521,7 +506,7 @@
 
     advanceToNextStep() {
       if (this.tourTimeout) clearTimeout(this.tourTimeout);
-      if (this.currentStep < 9) {
+      if (this.currentStep < 8) {
         this.executeStep(this.currentStep + 1);
       } else {
         this.finishTour();

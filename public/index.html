@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=11.4">
+  <link rel="stylesheet" href="styles.css?v=11.5">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -37,11 +37,10 @@
   <!-- Architectural Engines -->
   <script src="dopamine-engine.js?v=7.7" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
-  <script src="dossier-pdf.js?v=11.4" defer></script>
-  <script src="guide-avatar.js?v=7.8" defer></script>
+    <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="loader.js?v=11.4"></script>
-  <script src="app.js?v=11.4" defer></script>
+  <script src="loader.js?v=11.5"></script>
+  <script src="app.js?v=11.5" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -277,40 +276,7 @@
     [data-theme="light"] .loader-status-pct {
       color: #0284c7 !important;
     }
-    .loader-tutorial-panel {
-      width: 100% !important;
-      background: rgba(255, 255, 255, 0.04) !important;
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
-      border-radius: 14px !important;
-      padding: 12px 14px !important;
-      backdrop-filter: blur(12px) !important;
-      -webkit-backdrop-filter: blur(12px) !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 8px !important;
-      text-align: left !important;
-      box-sizing: border-box !important;
-    }
-    [data-theme="light"] .loader-tutorial-panel {
-      background: rgba(255, 255, 255, 0.9) !important;
-      border-color: rgba(0, 0, 0, 0.08) !important;
-    }
-    .loader-tutorial-header {
-      display: flex !important;
-      align-items: center !important;
-      gap: 8px !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      letter-spacing: 0.06em !important;
-      color: #ff2a85 !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    }
-    .loader-tutorial-icon {
-      font-size: 14px !important;
-    }
-    .loader-tutorial-badge {
-      flex: 1 !important;
-    }
+    [data-theme="light"]
     .loader-dots-indicator {
       display: flex !important;
       gap: 4px !important;
@@ -331,70 +297,19 @@
       width: 14px !important;
       border-radius: 99px !important;
     }
-    .loader-tutorial-text {
-      margin: 0 !important;
-      font-size: 12.5px !important;
-      line-height: 1.5 !important;
-      color: #e2e8f0 !important;
-      font-weight: 500 !important;
-      min-height: 38px !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    }
-    [data-theme="light"] .loader-tutorial-text {
-      color: #1e293b !important;
-    }
     @media (max-width: 480px) {
       .loader-card { gap: 12px !important; }
       .loader-orbital-system { width: 76px !important; height: 76px !important; }
       .loader-emblem { width: 36px !important; height: 36px !important; }
       .loader-logo-icon { width: 36px !important; height: 36px !important; }
-      .loader-tutorial-panel { padding: 10px 12px !important; }
-      .loader-tutorial-text { font-size: 12px !important; }
     }
-
-    .loader-tips-nav {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 6px !important;
-      margin-left: auto !important;
-    }
-    .btn-loader-nav {
-      background: rgba(255, 255, 255, 0.08) !important;
-      border: 1px solid rgba(255, 255, 255, 0.2) !important;
-      color: #00f0ff !important;
-      border-radius: 99px !important;
-      padding: 4px 10px !important;
-      font-size: 11px !important;
-      font-weight: 700 !important;
-      cursor: pointer !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 4px !important;
-      transition: all 0.2s ease !important;
-      line-height: 1.2 !important;
-      touch-action: manipulation !important;
-      user-select: none !important;
-    }
-    .btn-loader-nav:hover, .btn-loader-nav:active {
-      background: rgba(0, 240, 255, 0.2) !important;
-      border-color: #00f0ff !important;
-      color: #ffffff !important;
-      transform: scale(1.04) !important;
-    }
-    [data-theme="light"] .btn-loader-nav {
-      background: rgba(0, 0, 0, 0.05) !important;
-      border-color: rgba(0, 0, 0, 0.15) !important;
-      color: #0284c7 !important;
-    }
-    [data-theme="light"] .btn-loader-nav:hover, [data-theme="light"] .btn-loader-nav:active {
-      background: rgba(2, 132, 199, 0.15) !important;
-      color: #0369a1 !important;
-    }
+    [data-theme="light"]
+    [data-theme="light"]
   </style>
 </head>
 <body>
 
-  <!-- ── 0. FULL-PAGE IMMERSIVE LOADING SCREEN & TUTORIAL GUIDE ── -->
+  <!-- ── 0. FULL-PAGE IMMERSIVE LOADING SCREEN ── -->
   <div id="site-loader" class="site-loader" style="position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;z-index:99999999;background:#07090e;display:flex;align-items:center;justify-content:center;box-sizing:border-box;overflow:hidden;" aria-live="polite" aria-busy="true">
     <div class="loader-bg-overlay"></div>
     <div class="loader-card">
@@ -428,28 +343,7 @@
         <p class="loader-tagline">Every Modern Profession Speaks English</p>
       </div>
 
-      <div class="loader-tutorial-panel" id="loader-tips-panel">
-        <div class="loader-tutorial-header">
-          <span class="loader-tutorial-icon">💡</span>
-          <span class="loader-tutorial-badge">TIPS</span>
-          <div class="loader-dots-indicator" id="loader-dots-indicator">
-            <span class="loader-dot active"></span>
-            <span class="loader-dot"></span>
-            <span class="loader-dot"></span>
-            <span class="loader-dot"></span>
-            <span class="loader-dot"></span>
-            <span class="loader-dot"></span>
-          </div>
-          <div class="loader-tips-nav">
-            <button type="button" class="btn-loader-nav" id="btn-loader-prev-tip" aria-label="Previous tip">◀</button>
-            <button type="button" class="btn-loader-nav" id="btn-loader-next-tip" aria-label="Next tip">Next Tip ▶</button>
-          </div>
-        </div>
-        <p class="loader-tutorial-text" id="loader-tutorial-text">
-          Explore 32+ Global Careers with AI-verified eligibility, top colleges, and admission pathways.
-        </p>
       </div>
-    </div>
   </div>
 
   <!-- ── 1. AMBIENT BROADCAST & SCHOOL BRANDING BAR ── -->
@@ -488,8 +382,7 @@
           <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>
         </button>
 
-        <!-- Official 2-Page Student Career Dossier & Business Card Download Button -->
-      </div>
+              </div>
       
       <div class="header-actions-row">
         <!-- Interactive Animated Theme Switcher (Light / Dark) -->
@@ -1860,7 +1753,7 @@
       <div style="font-size:12.5px;color:var(--text-muted);line-height:1.55;display:flex;flex-direction:column;gap:12px;">
         <p><strong>1. Student Audio, Camera &amp; Personal Data Protection:</strong> We adhere to strict educational data privacy principles. Live camera feeds, teleprompter video streams, and audio speech practice occur exclusively within your local browser sandbox. Video recordings created in the News Anchor Studio are composited entirely client-side and saved directly to the user's personal device; no student video, webcam feed, or raw microphone stream is uploaded to remote storage or persistent public archives.</p>
         <p><strong>2. Academic Evaluation &amp; Speech Scoring:</strong> Spoken audio attempts submitted for Speech Lab phonetics analysis are processed transiently in memory to calculate articulation, fluency, clarity, and words-per-minute metrics. Only verified numerical scores, chosen career milestones, and optional student display names are recorded on the secure Cloudflare D1 exhibition leaderboard.</p>
-        <p><strong>3. Transparency, Local Control &amp; Data Retention:</strong> Student career blueprints, dossier generation, and aptitude quiz profiles are stored within browser local storage (localStorage) for the student's convenience and can be cleared at any time by refreshing browser cache or clicking reset. Telemetry sessions are strictly limited to anonymous interaction counts and diagnostics for fair operations.</p>
+        <p><strong>3. Transparency, Local Control &amp; Data Retention:</strong> Student career blueprints and aptitude quiz profiles are stored within browser local storage (localStorage) for the student's convenience and can be cleared at any time by refreshing browser cache or clicking reset. Telemetry sessions are strictly limited to anonymous interaction counts and diagnostics for fair operations.</p>
         <p><strong>4. Data Rectification &amp; Error Reporting:</strong> Any student, teacher, or parent who notices an inaccurate score, display discrepancy, or wishes to request record rectification or removal may submit an issue via the platform error reporting tool for immediate administrator action.</p>
         <p><strong>5. Zero Unauthorized Disclosure:</strong> All administrative endpoints and database queries are strictly authenticated through secure bearer authorization, ensuring full confidentiality and protection against unauthorized access.</p>
       </div>

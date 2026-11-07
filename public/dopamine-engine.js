@@ -231,10 +231,7 @@
             </p>
 
             <div class="mystery-actions">
-              <button class="btn btn-primary btn-sm" id="btn-mystery-add-dossier" style="background:${tier.color};color:#000;font-weight:800;">
-                ⭐ Pin to My Career Dossier
-              </button>
-              <button class="btn btn-secondary btn-sm" id="btn-mystery-story-card">
+              <button class="btn btn-primary btn-sm" id="btn-mystery-story-card" style="background:${tier.color};color:#000;font-weight:800;">
                 📸 Download Story Card
               </button>
             </div>
@@ -255,21 +252,7 @@
       if (e.target === modal) modal.classList.remove('active');
     };
 
-    modal.querySelector('#btn-mystery-add-dossier').onclick = () => {
-      if (window.STATE) {
-        if (!window.STATE.studentProfile) window.STATE.studentProfile = {};
-        window.STATE.studentProfile.chosenCareer = resolvedCareer;
-        try {
-          localStorage.setItem('cf_chosen_career', JSON.stringify(resolvedCareer));
-        } catch (e) {}
-      }
-      playSynthesizedChime('ding');
-      triggerConfettiBurst(0.5, 0.4);
-      if (typeof window.showToast === 'function') {
-        window.showToast(`✨ ${resolvedCareer.title} added to your official Dossier!`);
-      }
-      modal.classList.remove('active');
-    };
+
 
     modal.querySelector('#btn-mystery-story-card').onclick = () => {
       generateStoryGraphic(resolvedCareer, tier, studentName);

@@ -1555,12 +1555,7 @@ function initNavigation() {
     speakGreeting();
   });
 
-  // Official 2-Page Student Career Dossier & Business Card button
-  $('#btn-header-dossier')?.addEventListener('click', () => {
-    if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
-      window.DossierPDF.generate();
-    }
-  });
+
 
   // Legal Modal (Terms of Service & Privacy Policy)
   const syncTosAgreeButtonState = () => {
@@ -2395,11 +2390,7 @@ function renderCareers() {
           <div><strong style="color:var(--text-main);">Required Path:</strong> ${escapeHtml(c.degrees)}</div>
           <div><strong style="color:var(--text-main);">Entrance Tests:</strong> <span style="color:var(--accent-brand);font-weight:600;">${escapeHtml(c.exams)}</span></div>
         </div>
-        <div style="margin-top:10px;">
-          <button type="button" class="btn btn-secondary btn-xs btn-pin-career" data-title="${escapeHtml(c.title)}" style="width:100%;font-weight:700;padding:6px 10px;">
-            ⭐ Pin to My Career Dossier
-          </button>
-        </div>
+
       `;
       container.appendChild(card);
     });
@@ -2420,20 +2411,11 @@ function renderCareers() {
       window.AppRouter.navigate('/careers', { silent: true });
     }
 
-    if (!btn) return; // If clicked card outside button, just updated URL
-
     if (!STATE.studentProfile) STATE.studentProfile = {};
     STATE.studentProfile.chosenCareer = careerObj;
     try {
       localStorage.setItem('cf_chosen_career', JSON.stringify(careerObj));
     } catch (err) {}
-
-    if (window.DopamineEngine) {
-      window.DopamineEngine.playChime('ding');
-      window.DopamineEngine.confetti(0.5, 0.4);
-      window.DopamineEngine.unlockBadge('career_explorer', 'Career Explorer', '🎯');
-    }
-    showToast(`⭐ ${careerObj.title} pinned to your official Career Dossier!`);
   });
 
   // Event bindings
@@ -2933,7 +2915,7 @@ async function evaluateSpeakAttempt() {
     localStorage.setItem('cf_user_scores', JSON.stringify(curScores));
   } catch (e) {}
 
-  // Persist speech profile for official 2-Page Dossier
+  // Persist speech profile
   if (!STATE.studentProfile) STATE.studentProfile = {};
   STATE.studentProfile.lastSpeech = {
     pack: speakPack,
@@ -3700,7 +3682,7 @@ function analyzeSpeechLabSample() {
   // Draw Spider/Radar Canvas
   drawSpiderRadar([pronunciation, fluency, clarity, vocab, grammar, confidence]);
 
-  // Persist 6D Speech evaluation for official 2-Page Dossier
+  // Persist 6D Speech evaluation
   if (!STATE.studentProfile) STATE.studentProfile = {};
   STATE.studentProfile.coach6D = {
     pronunciation,
@@ -3774,7 +3756,7 @@ function analyzeSpeechLabSample() {
     localStorage.setItem('cf_user_scores', JSON.stringify(curScores));
   } catch (e) {}
 
-  // Persist speech profile for official 2-Page Dossier
+  // Persist speech profile
   STATE.studentProfile.lastSpeech = {
     pack: 'Speech Lab',
     accuracy,
@@ -10398,12 +10380,7 @@ function renderAdminFeatureFlags() {
       category: 'Student Utilities & Community',
       icon: '🌟',
       items: [
-        {
-          key: 'pdf_export',
-          label: '2-Page Student Dossier PDF Export',
-          desc: 'Vector student report card export with scissors cutting-line, QR verification, and skills profile.',
-          badge: 'Export'
-        },
+
         {
           key: 'leaderboard',
           label: 'Exhibition Hall Leaderboards',
@@ -10568,15 +10545,7 @@ function applyFeatureFlags() {
     greetingBtn.style.display = isGuideEnabled ? '' : 'none';
   }
 
-  // 5. Header Dossier button encapsulation
-  const dossierBtn = $('#btn-header-dossier');
-  if (dossierBtn) {
-    const isPdfEnabled = flags.pdf_export !== false;
-    dossierBtn.hidden = !isPdfEnabled;
-    dossierBtn.style.display = isPdfEnabled ? '' : 'none';
-  }
-
-  // 6. If currently on a disabled tab, fallback cleanly to 'hero' (Overview)
+  // 5. If currently on a disabled tab, fallback cleanly to 'hero' (Overview)
   if (STATE.activeTab && STATE.activeTab !== 'hero') {
     const currentTabBtn = $(`.tab-btn[data-tab="${STATE.activeTab}"]`);
     if (currentTabBtn && (currentTabBtn.hidden || currentTabBtn.style.display === 'none')) {

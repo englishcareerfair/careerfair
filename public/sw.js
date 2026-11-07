@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v11.4-speechlab-name-flow';
+const CACHE_NAME = 'cf-cache-v11.5-streamlined';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -11,7 +11,6 @@ const STATIC_ASSETS = [
   '/voicelab.js',
   '/dopamine-engine.js',
   '/game-completion-detector.js',
-  '/dossier-pdf.js',
   '/guide-avatar.js',
   '/qrcode.min.js',
   '/logo.png',
