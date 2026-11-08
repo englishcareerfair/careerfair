@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v17.0-luxury-booklet';
+const CACHE_NAME = 'cf-cache-v18.0-two-mode-tutorial';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -32,6 +32,20 @@ const STATIC_ASSETS = [
   '/audio/tutorial/tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
   '/audio/tutorial/tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
   '/audio/tutorial/tutorial_IKne3meq5aSn9XLyUdCD.mp3',
+  '/audio/tutorial/tutorial_short_step0.mp3',
+  '/audio/tutorial/tutorial_short_step1.mp3',
+  '/audio/tutorial/tutorial_short_step2.mp3',
+  '/audio/tutorial/tutorial_short_step3.mp3',
+  '/audio/tutorial/tutorial_exp_step0.mp3',
+  '/audio/tutorial/tutorial_exp_step1.mp3',
+  '/audio/tutorial/tutorial_exp_step2.mp3',
+  '/audio/tutorial/tutorial_exp_step3.mp3',
+  '/audio/tutorial/tutorial_exp_step4.mp3',
+  '/audio/tutorial/tutorial_exp_step5.mp3',
+  '/audio/tutorial/tutorial_exp_step6.mp3',
+  '/audio/tutorial/tutorial_exp_step7.mp3',
+  '/audio/tutorial/tutorial_exp_step8.mp3',
+  '/audio/tutorial/tutorial_exp_step9.mp3',
 ];
 
 self.addEventListener('install', (event) => {

@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=14.0">
+  <link rel="stylesheet" href="styles.css?v=18.0">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -35,13 +35,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
-  <script src="dossier-pdf.js?v=17.0" defer></script>
+  <script src="dossier-pdf.js?v=18.0" defer></script>
   <script src="dopamine-engine.js?v=14.0" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
     <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=14.0"></script>
-  <script src="app.js?v=16.0" defer></script>
+  <script src="app.js?v=18.0" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -2139,19 +2139,88 @@
   })();
   </script>
 
+    <!-- ── 14.5. INTERACTIVE TUTORIAL MODE SELECTION MODAL ── -->
+  <div id="tutorial-choice-modal" class="mystery-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="tutorial-choice-title">
+    <div class="mystery-modal-card tutorial-choice-modal-card">
+      <button class="mystery-modal-close" id="btn-close-tutorial-choice" aria-label="Close tutorial mode selection">✕</button>
+      
+      <div class="tutorial-choice-header">
+        <div class="tutorial-choice-pill">
+          🎙️ Studio Voice Guided Experience
+        </div>
+        <h3 id="tutorial-choice-title" class="tutorial-choice-title">
+          Choose Your Exhibition Tutorial
+        </h3>
+        <p class="tutorial-choice-desc">
+          Select how you would like to explore Career Fair 2026. Both options feature studio pre-recorded audio, interactive practice timers, and hands-on participation!
+        </p>
+      </div>
+
+      <div class="tutorial-choice-grid">
+        <!-- Option 1: Short Tutorial (Quick Booklet Tour) -->
+        <div class="tutorial-option-card short-tour" id="card-tutorial-short" role="button" tabindex="0">
+          <div class="tutorial-card-top">
+            <span class="tutorial-card-icon">📖</span>
+            <span class="tutorial-card-badge short-badge">⚡ 4 FAST STEPS · ~60s</span>
+          </div>
+          <h4 class="tutorial-card-title">Quick Booklet Tour</h4>
+          <p class="tutorial-card-desc">
+            Focuses strictly on the essential features needed to customize and download your official <strong>2-Page Career Booklet &amp; Business Card</strong>.
+          </p>
+          <ul class="tutorial-card-features">
+            <li>🎯 Pick &amp; Pin Your Career Pathway</li>
+            <li>🎙️ Spoken English AI Diagnostic (Page 2)</li>
+            <li>🪪 Student Ambassador Business Card &amp; QR</li>
+            <li>📄 Instant 2-Page Executive PDF Download</li>
+          </ul>
+          <button type="button" class="btn btn-primary btn-start-tutorial-tour" id="btn-start-short-tutorial">
+            Start Short Tour ⚡
+          </button>
+        </div>
+
+        <!-- Option 2: Expanded Tutorial (Complete Platform Experience) -->
+        <div class="tutorial-option-card expanded-tour" id="card-tutorial-expanded" role="button" tabindex="0">
+          <div class="tutorial-card-top">
+            <span class="tutorial-card-icon">🌟</span>
+            <span class="tutorial-card-badge expanded-badge">🚀 10 STEPS · ALL FEATURES</span>
+          </div>
+          <h4 class="tutorial-card-title">Complete Exhibition Tour</h4>
+          <p class="tutorial-card-desc">
+            Comprehensive hands-on walkthrough showing <strong>every feature of the platform</strong>, from exams &amp; speech lab to teleprompter and arcade games.
+          </p>
+          <ul class="tutorial-card-features">
+            <li>⚡ Overview &amp; English Superpower Vision</li>
+            <li>🎯 32+ Careers Directory &amp; Filtering</li>
+            <li>🏛️ NAAC/NIRF Colleges &amp; Exam Guides</li>
+            <li>🎙️ Speech Lab &amp; Teleprompter Studio</li>
+            <li>🎮 11 Language Games &amp; Leaderboard</li>
+          </ul>
+          <button type="button" class="btn btn-primary btn-start-tutorial-tour" id="btn-start-expanded-tutorial">
+            Start Complete Tour 🌟
+          </button>
+        </div>
+      </div>
+
+      <div class="tutorial-choice-footer">
+        <span>💡 <em>You can switch steps or pause audio &amp; timer at any time.</em></span>
+        <span class="audio-badge">100% Studio Pre-Recorded Audio</span>
+      </div>
+    </div>
+  </div>
+
   <!-- ── 15. IN-WEBSITE INTERACTIVE TUTORIAL CONTROLLER HUD ── -->
   <div class="in-site-tutorial-hud" id="tutorial-hud" role="region" aria-label="Interactive Platform Tutorial Controller">
     <div class="tutorial-hud-header">
       <div class="tutorial-hud-title-wrap">
-        <span class="tutorial-hud-badge" id="tutorial-hud-badge">STEP 1 OF 5</span>
-        <h4 class="tutorial-hud-title" id="tutorial-hud-title">Explore Careers & Pin to Your Booklet</h4>
+        <span class="tutorial-hud-badge" id="tutorial-hud-badge">STEP 1 OF 4</span>
+        <h4 class="tutorial-hud-title" id="tutorial-hud-title">Explore Careers &amp; Pin to Your Booklet</h4>
       </div>
       <div class="tutorial-hud-status-wrap">
         <div class="tutorial-hud-status" id="tutorial-hud-status">
           <span class="tutorial-equalizer" id="tutorial-equalizer" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
           </span>
-          <span class="tutorial-voice-label" id="tutorial-voice-label">Speaking...</span>
+          <span class="tutorial-voice-label" id="tutorial-voice-label">River (Studio Pre-recorded)</span>
         </div>
         <button type="button" class="btn-tutorial-hud-close" id="btn-tutorial-hud-close" title="Stop and Close Tutorial" aria-label="Close tutorial">✕</button>
       </div>
@@ -2161,19 +2230,40 @@
       <div class="tutorial-hud-step-icon" id="tutorial-hud-icon" aria-hidden="true">🎯</div>
       <div class="tutorial-hud-text-wrap">
         <p class="tutorial-hud-instruction" id="tutorial-hud-instruction">
-          Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. I am waiting for you to pin a career!
+          Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career.
         </p>
         <div class="tutorial-hud-reaction" id="tutorial-hud-reaction" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Interactive Exploration & Practice Timer Bar -->
+    <div class="tutorial-hud-interaction-bar" id="tutorial-hud-interaction-bar">
+      <div class="tutorial-timer-controls">
+        <span class="tutorial-timer-pill" id="tutorial-timer-pill">
+          ⏱️ Explore: <strong id="tutorial-countdown-val">20s</strong>
+        </span>
+        <button type="button" class="btn btn-secondary btn-xs" id="btn-tutorial-add-time" title="Add 15 seconds to explore this feature">
+          +15s
+        </button>
+        <button type="button" class="btn btn-secondary btn-xs" id="btn-tutorial-timer-toggle" title="Pause or resume exploration timer">
+          <span id="tutorial-timer-toggle-icon">⏸️</span> <span id="tutorial-timer-toggle-text">Pause Timer</span>
+        </button>
+      </div>
+      <div class="tutorial-interactive-action-hint" id="tutorial-interactive-action-hint">
+        👉 Try this feature now!
       </div>
     </div>
 
     <div class="tutorial-hud-footer">
       <div class="tutorial-hud-controls-left">
         <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-stop" aria-label="Stop tutorial">
-          ⏹️ Stop Tutorial
+          ⏹️ Stop
         </button>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-pause" aria-label="Pause or resume tutorial speech">
-          <span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>
+          <span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-replay-audio" aria-label="Replay voice narration">
+          <span>🔊</span> <span>Replay</span>
         </button>
       </div>
       <div class="tutorial-hud-controls-right">

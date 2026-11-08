@@ -737,107 +737,207 @@ async function speakGreeting() {
   await fetchAndPlayGreetingWithCache(greetingText, chosenVoiceId, btn, sessionId, abortSignal);
 }
 
-// In-Website Interactive Platform Tutorial System
-// Pre-recorded tutorial audio registry for zero-credit, instant playback with studio voices
-const PRE_RECORDED_TUTORIALS = {
-  'SAz9YHcvj6GT2YYXdXww': {
-    url: '/audio/tutorial/tutorial_SAz9YHcvj6GT2YYXdXww.mp3',
-    name: 'River (Informative Studio)'
-  },
-  'JBFqnCBsd6RMkjVDRZzb': {
-    url: '/audio/tutorial/tutorial_JBFqnCBsd6RMkjVDRZzb.mp3',
-    name: 'George (Warm Storyteller)'
-  },
-  'EXAVITQu4vr4xnSDxMaL': {
-    url: '/audio/tutorial/tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
-    name: 'Sarah (Mature Reassuring)'
-  },
-  'Xb7hH8MSUJpSbSDYk0k2': {
-    url: '/audio/tutorial/tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
-    name: 'Alice (Engaging Educator)'
-  },
-  'IKne3meq5aSn9XLyUdCD': {
-    url: '/audio/tutorial/tutorial_IKne3meq5aSn9XLyUdCD.mp3',
-    name: 'Charlie (Confident Energetic)'
-  },
-  'default': {
-    url: '/audio/tutorial/tutorial_default.mp3',
-    name: 'River (Studio Default)'
-  }
-};
-
-function updateTutorialVoiceBadge() {
-  const vid = getSelectedGreetingVoice();
-  const item = PRE_RECORDED_TUTORIALS[vid] || PRE_RECORDED_TUTORIALS['default'];
-  const name = item ? item.name : 'Studio Voice';
-  const labelEl = document.getElementById('tutorial-voice-label');
-  if (labelEl && !isTutorialSpeechActive) {
-    labelEl.textContent = `${name} · Pre-recorded`;
-  }
-  const badgeEl = document.getElementById('tutorial-voice-badge-name');
-  if (badgeEl) badgeEl.textContent = name;
-}
-window.updateTutorialVoiceBadge = updateTutorialVoiceBadge;
-
-const IN_SITE_TUTORIAL_STEPS = [
+// In-Website Interactive Platform Tutorial System (Two-Mode: Short Booklet vs Expanded All-Feature)
+// Pre-recorded studio audio registry for zero-credit, instant playback with studio voices
+const TUTORIAL_SHORT_STEPS = [
   {
     step: 0,
     tab: 'careers',
     targetSelector: '#careers',
-    badge: 'STEP 1 OF 5',
-    title: 'Explore Careers & Pin to Your Booklet',
+    badge: 'SHORT TOUR · STEP 1 OF 4',
+    title: 'Choose & Pin Your Career',
     icon: '🎯',
-    instruction: 'Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. I am waiting for you to pin a career!',
-    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to Your Booklet on any career you like. I will wait for you to pin a career to your booklet!'
+    instruction: 'Explore 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. Pinning automatically generates your personalized college roadmap!',
+    actionHint: '👉 Click "⭐ Pin to Your Booklet" on any career card below',
+    audioUrl: '/audio/tutorial/tutorial_short_step0.mp3',
+    explorationSeconds: 20,
+    speechText: 'Welcome to the quick booklet tour! Start by choosing your target career from our thirty-two global pathways. When you pin a career, its academic roadmap and top colleges are automatically added to your booklet. Click Pin to Your Booklet on your favorite career!'
   },
   {
     step: 1,
     tab: 'speechLab',
     targetSelector: '#speech-lab',
-    badge: 'STEP 2 OF 5',
-    title: 'AI Speech Lab & Voice Coaching',
+    badge: 'SHORT TOUR · STEP 2 OF 4',
+    title: 'Spoken English AI Diagnostic',
     icon: '🎙️',
-    instruction: 'Practice speaking English in our AI Speech Lab! Click the microphone to test your pronunciation, cadence, and clarity with instant AI scoring.',
-    speechText: 'This is the AI Speech Lab. Here you can practice speaking English with instant pronunciation feedback. Try speaking into the microphone, or click Next Exhibit to continue!'
+    instruction: 'Spoken articulation is vital for career success. Test your speech below—your pronunciation, cadence, and fluency scores directly populate Section 4 of your printable booklet!',
+    actionHint: '👉 Tap the microphone or click "Try Demo" to test speech diagnostics',
+    audioUrl: '/audio/tutorial/tutorial_short_step1.mp3',
+    explorationSeconds: 22,
+    speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Tap the microphone to record your voice or test a phrase!'
   },
   {
     step: 2,
-    tab: 'teleprompter',
-    targetSelector: '#teleprompter',
-    badge: 'STEP 3 OF 5',
-    title: 'News Anchor Studio Rehearsals',
-    icon: '📹',
-    instruction: 'Rehearse breaking international news broadcast scripts in front of a live webcam teleprompter mirror just like a professional broadcast journalist.',
-    speechText: 'Welcome to the News Anchor Studio! Practice reading news broadcast scripts in front of the camera mirror just like a real news anchor.'
+    tab: 'roadmap',
+    targetSelector: '#student-card-preview',
+    badge: 'SHORT TOUR · STEP 3 OF 4',
+    title: 'Student Ambassador Business Card',
+    icon: '🪪',
+    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career title, and grade are encoded into a live verification QR code printed on Page 2 of your booklet.',
+    actionHint: '👉 Review your business card details and live verification QR code',
+    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
+    explorationSeconds: 18,
+    speechText: 'Here is your official Student Ambassador Business Card. Your name, career title, and class are encoded into a live verification QR code printed on Page Two of your booklet. Anyone scanning it can instantly verify your credentials!'
   },
   {
     step: 3,
-    tab: 'games',
-    targetSelector: '#games',
-    badge: 'STEP 4 OF 5',
-    title: 'Language Arcade & Leaderboard',
-    icon: '🎮',
-    instruction: 'Compete in 11 rapid-fire grammar and vocabulary arcade games like Wordle, Hangman, and Jobtris to boost your rank on the live exhibition leaderboard.',
-    speechText: 'Here is the Language Arcade! Play eleven fun games to practice your English vocabulary, spelling, and grammar while earning leaderboard points.'
-  },
-  {
-    step: 4,
     tab: 'roadmap',
     targetSelector: '#btn-header-dossier',
-    badge: 'STEP 5 OF 5',
+    badge: 'SHORT TOUR · STEP 4 OF 4',
     title: 'Download Your Official Career Booklet',
     icon: '📄',
-    instruction: 'Congratulations! You have completed the exhibition tour. Click "Download Booklet (PDF)" to get your official 2-Page printable Career Booklet and Business Card!',
-    speechText: 'Finally, here is your official Student Career Booklet! It has your career roadmap, college recommendations, speech diagnostics, and your printable Student Ambassador business card. Click Download Booklet to get your PDF!'
+    instruction: 'Congratulations! Your official 2-Page Executive Career Booklet is ready. Click "Download Booklet (PDF)" to get your personalized blueprint and cut-out business card!',
+    actionHint: '👉 Click "Download Booklet (PDF)" to generate your executive certificate',
+    audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
+    explorationSeconds: 15,
+    speechText: 'Congratulations! Your personalized Career Booklet is fully generated. It features your career profile, recommended colleges, speech diagnostics, and your cut-out business card. Click Download Booklet to get your print-ready PDF!'
   }
 ];
 
+const TUTORIAL_EXPANDED_STEPS = [
+  {
+    step: 0,
+    tab: 'hero',
+    targetSelector: '#overview',
+    badge: 'EXPANDED TOUR · STEP 1 OF 10',
+    title: 'Overview & The English Superpower',
+    icon: '⚡',
+    instruction: 'Welcome to Career Fair 2026! Discover how English fluency powers 32+ global careers, from commercial aviation to corporate law, and inspect our interactive exhibition stats.',
+    actionHint: '👉 Explore the fair stats and English superpower framework',
+    audioUrl: '/audio/tutorial/tutorial_exp_step0.mp3',
+    explorationSeconds: 18,
+    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! English is more than an exam subject—it is the superpower that unlocks thirty-two global careers, from commercial aviation to international law. Explore the interactive statistics and student exhibits!'
+  },
+  {
+    step: 1,
+    tab: 'careers',
+    targetSelector: '#careers',
+    badge: 'EXPANDED TOUR · STEP 2 OF 10',
+    title: '32+ Global Careers Directory',
+    icon: '🎯',
+    instruction: 'Explore 32 high-impact career pathways. Filter by Healthcare, Aviation, Tech, Corporate, or Law, inspect required skills and salary projections, and pin your dream career.',
+    actionHint: '👉 Click cluster filters (e.g. Healthcare, Aviation) or pin a career',
+    audioUrl: '/audio/tutorial/tutorial_exp_step1.mp3',
+    explorationSeconds: 22,
+    speechText: 'Here are thirty-two high-impact careers powered by English fluency. Filter by Healthcare, Aviation, Tech, Law, or Business, and click on any career card to view required skills and salary projections. Pin your dream career to your booklet!'
+  },
+  {
+    step: 2,
+    tab: 'colleges',
+    targetSelector: '#colleges',
+    badge: 'EXPANDED TOUR · STEP 3 OF 10',
+    title: 'NAAC "A++" & NIRF Premier Colleges',
+    icon: '🏛️',
+    instruction: 'Explore premier universities across India and abroad. Inspect NAAC accreditation grades, NIRF rankings, and English language entrance requirements for top degree programs.',
+    actionHint: '👉 Click any college card to inspect admission criteria & cut-offs',
+    audioUrl: '/audio/tutorial/tutorial_exp_step2.mp3',
+    explorationSeconds: 20,
+    speechText: 'Explore premier universities across India and abroad. Check NAAC accreditation ratings, NIRF rankings, and English language eligibility criteria. Click any college card to inspect admission pathways!'
+  },
+  {
+    step: 3,
+    tab: 'exams',
+    targetSelector: '#exams',
+    badge: 'EXPANDED TOUR · STEP 4 OF 10',
+    title: 'Competitive Entrance Exams Directory',
+    icon: '📝',
+    instruction: 'Prepare for national and global competitive exams including CUET, CLAT, SAT, GRE, IELTS, and civil service exams. Review English section breakdowns and preparation strategies.',
+    actionHint: '👉 Click an exam card to view its English syllabus breakdown',
+    audioUrl: '/audio/tutorial/tutorial_exp_step3.mp3',
+    explorationSeconds: 20,
+    speechText: 'Prepare for major national and international entrance exams, including CUET, CLAT, SAT, GRE, and IELTS. Inspect detailed English syllabus breakdowns and scoring strategies for each test.'
+  },
+  {
+    step: 4,
+    tab: 'speak',
+    targetSelector: '#sec-speak',
+    badge: 'EXPANDED TOUR · STEP 5 OF 10',
+    title: 'Speak & Pronunciation Studio',
+    icon: '🗣️',
+    instruction: 'Master international professional terminology! Practice pronouncing complex career terms with real-time phonetic breakdowns, syllable stress guides, and audio waveform feedback.',
+    actionHint: '👉 Listen to a native model pronunciation and speak the term aloud',
+    audioUrl: '/audio/tutorial/tutorial_exp_step4.mp3',
+    explorationSeconds: 20,
+    speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our visual phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
+  },
+  {
+    step: 5,
+    tab: 'speechLab',
+    targetSelector: '#speech-lab',
+    badge: 'EXPANDED TOUR · STEP 6 OF 10',
+    title: '6D AI Voice Coach & Speech Diagnostics',
+    icon: '🎙️',
+    instruction: 'Test your spoken articulation with multi-metric AI analysis: pace, pitch variation, lexical sophistication, and fluency. Your scores feed directly into Section 4 of your booklet!',
+    actionHint: '👉 Click the microphone to record your speech or test sample audio',
+    audioUrl: '/audio/tutorial/tutorial_exp_step5.mp3',
+    explorationSeconds: 22,
+    speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Your scores feed directly into your booklet!'
+  },
+  {
+    step: 6,
+    tab: 'teleprompter',
+    targetSelector: '#teleprompter',
+    badge: 'EXPANDED TOUR · STEP 7 OF 10',
+    title: 'News Anchor Studio & Live Teleprompter',
+    icon: '📹',
+    instruction: 'Experience broadcast journalism! Rehearse international breaking news broadcast scripts in front of a live webcam mirror with adjustable teleprompter scrolling speed.',
+    actionHint: '👉 Adjust the teleprompter scroll speed or practice reading a news script',
+    audioUrl: '/audio/tutorial/tutorial_exp_step6.mp3',
+    explorationSeconds: 20,
+    speechText: 'Step into the shoes of a broadcast news anchor! Practice reading breaking international news scripts with an adjustable teleprompter mirror and live webcam video. Master poise, speed control, and camera presence!'
+  },
+  {
+    step: 7,
+    tab: 'games',
+    targetSelector: '#games',
+    badge: 'EXPANDED TOUR · STEP 8 OF 10',
+    title: 'Language Arcade Games & Leaderboard',
+    icon: '🎮',
+    instruction: 'Compete in 11 rapid-fire vocabulary, spelling, and grammar games like Wordle, Hangman, Jobtris, and Phrasal Dash to earn points and climb the live exhibition leaderboard!',
+    actionHint: '👉 Click any arcade game card (Wordle, Hangman) to launch and play',
+    audioUrl: '/audio/tutorial/tutorial_exp_step7.mp3',
+    explorationSeconds: 22,
+    speechText: 'Have fun while sharpening your vocabulary! Play eleven interactive educational arcade games like Wordle, Hangman, Jobtris, and Phrasal Dash. Earn points and climb the live exhibition leaderboard!'
+  },
+  {
+    step: 8,
+    tab: 'roadmap',
+    targetSelector: '#student-card-preview',
+    badge: 'EXPANDED TOUR · STEP 9 OF 10',
+    title: 'Student Ambassador Business Card',
+    icon: '🪪',
+    instruction: 'Customize your Student Ambassador Business Card! Your name, chosen career title, and class are encoded into a live verification QR code ready to cut out from your booklet.',
+    actionHint: '👉 Update your student card details to generate your personal verification QR',
+    audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
+    explorationSeconds: 18,
+    speechText: 'Design your personalized Student Ambassador Business Card! Enter your name, title, and grade to generate your custom verification QR code. Your business card will be ready to cut out from Page Two of your booklet.'
+  },
+  {
+    step: 9,
+    tab: 'roadmap',
+    targetSelector: '#btn-header-dossier',
+    badge: 'EXPANDED TOUR · STEP 10 OF 10',
+    title: 'Download Official Career Booklet (PDF)',
+    icon: '📄',
+    instruction: 'Congratulations! You have completed every exhibit of Career Fair 2026. Click "Download Booklet (PDF)" to get your official 2-Page printable booklet with school accreditation seal!',
+    actionHint: '👉 Click "Download Booklet (PDF)" to export your official certificate',
+    audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
+    explorationSeconds: 15,
+    speechText: 'Congratulations on completing the full exhibition tour! Click Download Booklet to export your official 2-Page printable Career Booklet, certified by Kanakia International School Directorate. Keep reaching for your dreams!'
+  }
+];
+
+let currentTutorialMode = 'short'; // 'short' or 'expanded'
 let currentTutorialStepIndex = 0;
 let isTutorialRunning = false;
 let isTutorialPaused = false;
 let isTutorialSpeechActive = false;
 let waitingForCareerPin = false;
 let hasPinnedDuringActiveTutorial = false;
+let tutorialSecondsRemaining = 20;
+let isTutorialTimerPaused = false;
+let tutorialTimerInterval = null;
+let activeTutorialAudio = null;
 
 function updateTutorialHudStatus(state, label) {
   const statusEl = document.getElementById('tutorial-hud-status');
@@ -850,32 +950,62 @@ function updateTutorialHudStatus(state, label) {
   }
 }
 
-function playPreRecordedTutorialAudio() {
-  stopAllVoice();
-  if (window.currentTtsAudio) {
-    try {
-      window.currentTtsAudio.pause();
-      window.currentTtsAudio.currentTime = 0;
-    } catch (_) {}
-    window.currentTtsAudio = null;
+function openTutorialChoiceModal() {
+  const modal = document.getElementById('tutorial-choice-modal');
+  if (modal) {
+    modal.classList.add('active');
+  }
+}
+
+function closeTutorialChoiceModal() {
+  const modal = document.getElementById('tutorial-choice-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+}
+
+function startTutorialWithMode(mode) {
+  closeTutorialChoiceModal();
+  currentTutorialMode = (mode === 'expanded') ? 'expanded' : 'short';
+  isTutorialRunning = true;
+  isTutorialPaused = false;
+  isTutorialTimerPaused = false;
+  hasPinnedDuringActiveTutorial = false;
+  waitingForCareerPin = (currentTutorialMode === 'short');
+
+  const headerBtn = document.getElementById('btn-header-tutorial');
+  if (headerBtn) {
+    headerBtn.classList.add('playing', 'speaking-active');
+    headerBtn.innerHTML = '<span>⏹️</span> <span class="tutorial-btn-text">Stop Tutorial</span>';
   }
 
-  const chosenVoiceId = getSelectedGreetingVoice();
-  let item = PRE_RECORDED_TUTORIALS[chosenVoiceId] || PRE_RECORDED_TUTORIALS['default'];
-  if (!item || !item.url) item = PRE_RECORDED_TUTORIALS['default'];
+  renderInSiteTutorialStep(0);
+}
 
-  const voiceName = item.name || 'Studio Voice';
-  updateTutorialHudStatus('speaking', `Speaking (${voiceName})`);
+function playTutorialStepAudio(stepData) {
+  stopAllVoice();
+  if (activeTutorialAudio) {
+    try {
+      activeTutorialAudio.pause();
+      activeTutorialAudio.currentTime = 0;
+    } catch (_) {}
+    activeTutorialAudio = null;
+  }
+
+  if (!stepData || !stepData.audioUrl) return;
+
+  updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
   isTutorialSpeechActive = true;
 
   try {
-    const audio = new Audio(item.url);
+    const audio = new Audio(stepData.audioUrl);
+    activeTutorialAudio = audio;
     window.currentTtsAudio = audio;
 
     audio.onplay = () => {
       isTutorialSpeechActive = true;
       if (!isTutorialPaused) {
-        updateTutorialHudStatus('speaking', `Speaking (${voiceName})`);
+        updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
       }
     };
 
@@ -890,19 +1020,93 @@ function playPreRecordedTutorialAudio() {
       updateTutorialHudStatus('idle', 'Ready');
     };
 
-    audio.onerror = (e) => {
-      console.warn('Pre-recorded tutorial audio error:', e);
-      isTutorialSpeechActive = false;
-      updateTutorialHudStatus('idle', 'Ready');
+    audio.onerror = () => {
+      console.warn('Pre-recorded tutorial audio failed to load from:', stepData.audioUrl, 'Falling back to neural voice.');
+      if (stepData.speechText) {
+        fallbackIndianNeuralSpeech(stepData.speechText, null, currentSpeechSessionId);
+      }
     };
 
-    audio.play().catch(e => {
-      console.warn('Auto-play blocked or error:', e);
-      updateTutorialHudStatus('idle', 'Ready');
+    audio.play().catch(err => {
+      console.warn('Pre-recorded tutorial audio autoplay blocked:', err);
+      if (stepData.speechText) {
+        fallbackIndianNeuralSpeech(stepData.speechText, null, currentSpeechSessionId);
+      }
     });
-  } catch (err) {
-    console.warn('Audio construction error:', err);
-    updateTutorialHudStatus('idle', 'Ready');
+  } catch (e) {
+    console.warn('Audio construction exception:', e);
+    if (stepData.speechText) {
+      fallbackIndianNeuralSpeech(stepData.speechText, null, currentSpeechSessionId);
+    }
+  }
+}
+
+function startTutorialExplorationTimer(seconds) {
+  if (tutorialTimerInterval) {
+    clearInterval(tutorialTimerInterval);
+    tutorialTimerInterval = null;
+  }
+  tutorialSecondsRemaining = seconds || 20;
+  isTutorialTimerPaused = false;
+  updateTutorialTimerDisplay();
+
+  const toggleIcon = document.getElementById('tutorial-timer-toggle-icon');
+  const toggleText = document.getElementById('tutorial-timer-toggle-text');
+  if (toggleIcon) toggleIcon.textContent = '⏸️';
+  if (toggleText) toggleText.textContent = 'Pause Timer';
+
+  tutorialTimerInterval = setInterval(() => {
+    if (!isTutorialRunning) {
+      clearInterval(tutorialTimerInterval);
+      tutorialTimerInterval = null;
+      return;
+    }
+    if (isTutorialTimerPaused || isTutorialPaused) {
+      return;
+    }
+    tutorialSecondsRemaining--;
+    if (tutorialSecondsRemaining <= 0) {
+      clearInterval(tutorialTimerInterval);
+      tutorialTimerInterval = null;
+      const valEl = document.getElementById('tutorial-countdown-val');
+      if (valEl) valEl.textContent = 'Ready!';
+      const hintEl = document.getElementById('tutorial-interactive-action-hint');
+      if (hintEl) hintEl.textContent = '⏱️ Ready for next exhibit! Click Next when ready.';
+      return;
+    }
+    updateTutorialTimerDisplay();
+  }, 1000);
+}
+
+function updateTutorialTimerDisplay() {
+  const valEl = document.getElementById('tutorial-countdown-val');
+  if (valEl) valEl.textContent = `${tutorialSecondsRemaining}s`;
+}
+
+function addTutorialTime(seconds = 15) {
+  tutorialSecondsRemaining += seconds;
+  updateTutorialTimerDisplay();
+  showToast(`⏱️ Added +${seconds}s to explore this feature!`);
+  if (!tutorialTimerInterval && isTutorialRunning) {
+    startTutorialExplorationTimer(tutorialSecondsRemaining);
+  }
+}
+
+function toggleTutorialTimer() {
+  isTutorialTimerPaused = !isTutorialTimerPaused;
+  const toggleIcon = document.getElementById('tutorial-timer-toggle-icon');
+  const toggleText = document.getElementById('tutorial-timer-toggle-text');
+  if (toggleIcon) toggleIcon.textContent = isTutorialTimerPaused ? '▶️' : '⏸️';
+  if (toggleText) toggleText.textContent = isTutorialTimerPaused ? 'Resume Timer' : 'Pause Timer';
+  showToast(isTutorialTimerPaused ? '⏸️ Exploration timer paused' : '▶️ Exploration timer resumed');
+}
+
+function replayCurrentTutorialAudio() {
+  const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+  const data = steps[currentTutorialStepIndex];
+  if (data) {
+    playTutorialStepAudio(data);
+    showToast('🔊 Replaying studio narration...');
   }
 }
 
@@ -915,7 +1119,7 @@ function pauseTutorial() {
   updateTutorialHudStatus('paused', 'Paused');
   const pauseBtn = document.getElementById('btn-tutorial-pause');
   if (pauseBtn) {
-    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">▶️</span> <span id="tutorial-pause-text">Resume</span>';
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">▶️</span> <span id="tutorial-pause-text">Resume Voice</span>';
   }
 }
 
@@ -924,20 +1128,25 @@ function resumeTutorial() {
   isTutorialPaused = false;
   if (window.currentTtsAudio && window.currentTtsAudio.paused) {
     try { window.currentTtsAudio.play(); } catch (_) {}
-  } else if (!window.currentTtsAudio) {
-    playPreRecordedTutorialAudio();
+  } else {
+    replayCurrentTutorialAudio();
   }
-  const chosenVoiceId = getSelectedGreetingVoice();
-  const item = PRE_RECORDED_TUTORIALS[chosenVoiceId] || PRE_RECORDED_TUTORIALS['default'];
-  updateTutorialHudStatus('speaking', `Speaking (${item.name})`);
+  updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
   const pauseBtn = document.getElementById('btn-tutorial-pause');
   if (pauseBtn) {
-    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
   }
 }
 
 function stopTutorialSpeechOnly() {
   isTutorialSpeechActive = false;
+  if (activeTutorialAudio) {
+    try {
+      activeTutorialAudio.pause();
+      activeTutorialAudio.currentTime = 0;
+    } catch (_) {}
+    activeTutorialAudio = null;
+  }
   if (window.currentTtsAudio) {
     try {
       window.currentTtsAudio.pause();
@@ -953,8 +1162,14 @@ function stopTutorial() {
   isTutorialPaused = false;
   waitingForCareerPin = false;
   hasPinnedDuringActiveTutorial = false;
+  if (tutorialTimerInterval) {
+    clearInterval(tutorialTimerInterval);
+    tutorialTimerInterval = null;
+  }
   stopTutorialSpeechOnly();
   stopAllVoice();
+
+  closeTutorialChoiceModal();
 
   const hud = document.getElementById('tutorial-hud');
   if (hud) hud.classList.remove('active');
@@ -969,16 +1184,17 @@ function stopTutorial() {
   }
   const pauseBtn = document.getElementById('btn-tutorial-pause');
   if (pauseBtn) {
-    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
   }
 }
 
 function renderInSiteTutorialStep(stepIndex) {
+  const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
   if (stepIndex < 0) stepIndex = 0;
-  if (stepIndex >= IN_SITE_TUTORIAL_STEPS.length) stepIndex = IN_SITE_TUTORIAL_STEPS.length - 1;
+  if (stepIndex >= steps.length) stepIndex = steps.length - 1;
   currentTutorialStepIndex = stepIndex;
 
-  const data = IN_SITE_TUTORIAL_STEPS[stepIndex];
+  const data = steps[stepIndex];
   const hud = document.getElementById('tutorial-hud');
   if (hud) hud.classList.add('active');
 
@@ -986,6 +1202,7 @@ function renderInSiteTutorialStep(stepIndex) {
   const titleEl = document.getElementById('tutorial-hud-title');
   const iconEl = document.getElementById('tutorial-hud-icon');
   const instructionEl = document.getElementById('tutorial-hud-instruction');
+  const hintEl = document.getElementById('tutorial-interactive-action-hint');
   const reactionEl = document.getElementById('tutorial-hud-reaction');
   const prevBtn = document.getElementById('btn-tutorial-prev');
   const nextBtn = document.getElementById('btn-tutorial-next');
@@ -995,8 +1212,10 @@ function renderInSiteTutorialStep(stepIndex) {
   if (badgeEl) badgeEl.textContent = data.badge;
   if (titleEl) titleEl.textContent = data.title;
   if (iconEl) iconEl.textContent = data.icon;
+  if (instructionEl) instructionEl.textContent = data.instruction;
+  if (hintEl) hintEl.textContent = data.actionHint || '👉 Try this feature now!';
   if (reactionEl) reactionEl.style.display = 'none';
-  if (pauseBtn) pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
+  if (pauseBtn) pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
 
   // Navigate on page to target tab
   if (data.tab) {
@@ -1013,16 +1232,18 @@ function renderInSiteTutorialStep(stepIndex) {
     if (target) {
       target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, 150);
+  }, 180);
 
   // Remove pin glow
   document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 
-  if (data.step === 0) {
-    // Step 0: Careers & Dossier Integration
+  const isCareerStep = (currentTutorialMode === 'short' && stepIndex === 0) || (currentTutorialMode === 'expanded' && stepIndex === 1);
+  const isFinalStep = (stepIndex === steps.length - 1);
+
+  if (isCareerStep) {
     setTimeout(() => {
       document.querySelectorAll('.btn-pin-career').forEach(btn => btn.classList.add('tutorial-pin-glow'));
-    }, 300);
+    }, 350);
 
     let storedCareer = null;
     try {
@@ -1031,7 +1252,7 @@ function renderInSiteTutorialStep(stepIndex) {
     } catch (_) {}
 
     if (hasPinnedDuringActiveTutorial && storedCareer && storedCareer.title) {
-      if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to Your Booklet! You can pin another career below, or click Next Exhibit to continue.`;
+      if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to Your Booklet! Your academic roadmap and top colleges are ready. Click Next Exhibit to continue.`;
       if (reactionEl) {
         reactionEl.style.display = 'inline-flex';
         reactionEl.textContent = `✅ Pinned: ${storedCareer.title}`;
@@ -1043,46 +1264,44 @@ function renderInSiteTutorialStep(stepIndex) {
       }
       waitingForCareerPin = false;
     } else {
-      if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. I am waiting for you to pin a career!';
       if (nextBtn) {
         nextBtn.textContent = 'Waiting for Pin ⏳';
         nextBtn.style.opacity = '0.75';
       }
       waitingForCareerPin = true;
     }
-
-    if (downloadBtn) downloadBtn.style.display = 'none';
-    if (nextBtn) nextBtn.style.display = 'inline-block';
-  } else if (data.step === 4) {
-    // Step 4: Final Dossier Download
-    if (instructionEl) instructionEl.textContent = data.instruction;
-    waitingForCareerPin = false;
-    if (nextBtn) {
-      nextBtn.textContent = 'Finish Tutorial 🎉';
-      nextBtn.style.display = 'inline-block';
-    }
-    if (downloadBtn) downloadBtn.style.display = 'inline-block';
   } else {
-    if (instructionEl) instructionEl.textContent = data.instruction;
     waitingForCareerPin = false;
     if (nextBtn) {
-      nextBtn.textContent = 'Next Exhibit ▶';
-      nextBtn.style.display = 'inline-block';
+      nextBtn.textContent = isFinalStep ? 'Finish Tutorial 🎉' : 'Next Exhibit ▶';
+      nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
-    if (downloadBtn) downloadBtn.style.display = 'none';
+  }
+
+  if (downloadBtn) {
+    downloadBtn.style.display = isFinalStep ? 'inline-block' : 'none';
   }
 
   if (prevBtn) {
     prevBtn.disabled = (stepIndex === 0);
     prevBtn.style.opacity = (stepIndex === 0) ? '0.5' : '1';
   }
+
+  // Play pre-recorded studio audio for this step
+  playTutorialStepAudio(data);
+
+  // Start exploration practice timer
+  startTutorialExplorationTimer(data.explorationSeconds || 20);
 }
 
 function onCareerPinnedByStudent(careerObj) {
   if (!careerObj || !careerObj.title) return;
 
-  if (isTutorialRunning && currentTutorialStepIndex === 0) {
+  const isCareerStep = (currentTutorialMode === 'short' && currentTutorialStepIndex === 0) || 
+                       (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 1);
+
+  if (isTutorialRunning && isCareerStep) {
     hasPinnedDuringActiveTutorial = true;
     waitingForCareerPin = false;
     document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
@@ -1096,44 +1315,48 @@ function onCareerPinnedByStudent(careerObj) {
     }
     if (reactionEl) {
       reactionEl.style.display = 'inline-flex';
-      reactionEl.textContent = `✅ Career Pinned: ${careerObj.title}! Ready for next exhibit.`;
+      reactionEl.textContent = `🎉 Career Pinned: ${careerObj.title}! Requirement complete.`;
     }
     if (nextBtn) {
       nextBtn.textContent = 'Next Exhibit ▶';
       nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
+    showToast(`🎉 "${careerObj.title}" added to your official booklet!`);
   }
 }
 
-function startInSiteTutorial() {
-  isTutorialRunning = true;
-  isTutorialPaused = false;
-  hasPinnedDuringActiveTutorial = false;
-  waitingForCareerPin = true;
-
-  const headerBtn = document.getElementById('btn-header-tutorial');
-  if (headerBtn) {
-    headerBtn.classList.add('playing', 'speaking-active');
-    headerBtn.innerHTML = '<span>⏹️</span> <span class="tutorial-btn-text">Stop Tutorial</span>';
+function triggerTutorialInteractionFeedback(message) {
+  if (!isTutorialRunning) return;
+  const reactionEl = document.getElementById('tutorial-hud-reaction');
+  if (reactionEl) {
+    reactionEl.style.display = 'inline-flex';
+    reactionEl.textContent = `🎉 ${message}`;
   }
-
-  // Show Step 0 (Careers & Dossier Pin) in the HUD first
-  renderInSiteTutorialStep(0);
-
-  // Play pre-recorded studio audio matching chosen voice
-  playPreRecordedTutorialAudio();
+  const nextBtn = document.getElementById('btn-tutorial-next');
+  if (nextBtn && nextBtn.disabled) {
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '1';
+  }
 }
 
-// Backward-compatible global exports
-window.startInSiteTutorial = startInSiteTutorial;
+// Global exports
+window.openTutorialChoiceModal = openTutorialChoiceModal;
+window.closeTutorialChoiceModal = closeTutorialChoiceModal;
+window.startTutorialWithMode = startTutorialWithMode;
+window.startInSiteTutorial = openTutorialChoiceModal;
 window.stopTutorial = stopTutorial;
 window.pauseTutorial = pauseTutorial;
 window.resumeTutorial = resumeTutorial;
-window.openTutorialModal = startInSiteTutorial;
+window.openTutorialModal = openTutorialChoiceModal;
 window.closeTutorialModal = stopTutorial;
-window.playTutorialAudio = startInSiteTutorial;
+window.playTutorialAudio = openTutorialChoiceModal;
 window.onCareerPinnedByStudent = onCareerPinnedByStudent;
+window.addTutorialTime = addTutorialTime;
+window.toggleTutorialTimer = toggleTutorialTimer;
+window.replayCurrentTutorialAudio = replayCurrentTutorialAudio;
+window.triggerTutorialInteractionFeedback = triggerTutorialInteractionFeedback;
+
 Object.defineProperty(window, 'isTutorialPaused', { get: () => isTutorialPaused, configurable: true });
 Object.defineProperty(window, 'isTutorialRunning', { get: () => isTutorialRunning, configurable: true });
 
@@ -2245,13 +2468,24 @@ function initNavigation() {
     }
   });
 
-  // Interactive Platform In-Website Tutorial button
+  // Interactive Platform In-Website Tutorial button & Mode Choice Modal
   $('#btn-header-tutorial')?.addEventListener('click', () => {
     if (isTutorialRunning) {
       stopTutorial();
     } else {
-      startInSiteTutorial();
+      openTutorialChoiceModal();
     }
+  });
+
+  // Tutorial Mode Choice Modal Listeners
+  $('#btn-close-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
+  $('#btn-start-short-tutorial')?.addEventListener('click', () => startTutorialWithMode('short'));
+  $('#btn-start-expanded-tutorial')?.addEventListener('click', () => startTutorialWithMode('expanded'));
+  $('#card-tutorial-short')?.addEventListener('click', (e) => {
+    if (!e.target.closest('#btn-start-short-tutorial')) startTutorialWithMode('short');
+  });
+  $('#card-tutorial-expanded')?.addEventListener('click', (e) => {
+    if (!e.target.closest('#btn-start-expanded-tutorial')) startTutorialWithMode('expanded');
   });
 
   // In-Website Tutorial HUD controller events
@@ -2264,11 +2498,19 @@ function initNavigation() {
       pauseTutorial();
     }
   });
+  $('#btn-tutorial-replay-audio')?.addEventListener('click', replayCurrentTutorialAudio);
+  $('#btn-tutorial-add-time')?.addEventListener('click', () => addTutorialTime(15));
+  $('#btn-tutorial-timer-toggle')?.addEventListener('click', toggleTutorialTimer);
+
   $('#btn-tutorial-prev')?.addEventListener('click', () => {
     renderInSiteTutorialStep(currentTutorialStepIndex - 1);
   });
   $('#btn-tutorial-next')?.addEventListener('click', () => {
-    if (currentTutorialStepIndex === 0 && waitingForCareerPin) {
+    const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+    const isCareerStep = (currentTutorialMode === 'short' && currentTutorialStepIndex === 0) || 
+                         (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 1);
+
+    if (isCareerStep && waitingForCareerPin) {
       showToast('👉 Please click "⭐ Pin to Your Booklet" on any career card below!');
       const pinBtn = document.querySelector('.btn-pin-career');
       if (pinBtn) {
@@ -2276,7 +2518,7 @@ function initNavigation() {
       }
       return;
     }
-    if (currentTutorialStepIndex >= IN_SITE_TUTORIAL_STEPS.length - 1) {
+    if (currentTutorialStepIndex >= steps.length - 1) {
       if (window.DopamineEngine) {
         window.DopamineEngine.confetti(0.5, 0.4);
         window.DopamineEngine.playChime('fanfare');
