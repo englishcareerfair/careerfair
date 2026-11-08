@@ -726,18 +726,18 @@
 
     curY = 38;
 
-    // ── SECTION 4: COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION ────────
+    // ── SECTION 4: COGNITIVE AGILITY & ACADEMIC APTITUDE EVALUATION ──────────
     doc.setFillColor(236, 72, 153); // Pink Accent Bar
     doc.rect(12, curY, 3, 7, 'F');
     doc.setTextColor(C.secTitle[0], C.secTitle[1], C.secTitle[2]);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
-    doc.text('4. COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION', 18, curY + 5.2);
+    doc.text('4. COGNITIVE AGILITY & ACADEMIC APTITUDE EVALUATION', 18, curY + 5.2);
 
     curY += 9;
     doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
     doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 36, 2, 2, 'FD');
+    doc.roundedRect(12, curY, 186, 44, 2, 2, 'FD');
 
     // 4 Cognitive Appraisal Pillars
     let userGameScore1 = 'Proficient (CEFR C1)';
@@ -754,13 +754,13 @@
     const cognitivePillars = [
       {
         title: 'LEXICAL COMMAND',
-        desc: 'Academic vocabulary range & idiom recognition',
+        desc: 'Advanced vocabulary range & contextual recognition',
         score: userGameScore1,
         color: isDark ? [0, 240, 255] : [14, 165, 233]
       },
       {
         title: 'GRAMMAR & SYNTAX',
-        desc: 'Clause structures & executive drafting rigor',
+        desc: 'Structural precision & formal communication rigor',
         score: userGameScore2,
         color: [16, 185, 129]
       },
@@ -772,7 +772,7 @@
       },
       {
         title: 'ANALYTICAL DEDUCTION',
-        desc: 'Contextual inference & verbal problem solving',
+        desc: 'Inference logic, problem solving & articulation',
         score: userGameScore4,
         color: [168, 85, 247]
       }
@@ -782,158 +782,76 @@
     for (const cp of cognitivePillars) {
       doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
       doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-      doc.roundedRect(cpX, curY + 4, 42, 28, 1.5, 1.5, 'FD');
+      doc.roundedRect(cpX, curY + 4, 42, 36, 1.5, 1.5, 'FD');
 
       doc.setTextColor(cp.color[0], cp.color[1], cp.color[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7.0);
-      doc.text(cp.title, cpX + 21, curY + 9.5, { align: 'center' });
+      doc.text(cp.title, cpX + 21, curY + 10.0, { align: 'center' });
 
       doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.0);
       const splitDesc = doc.splitTextToSize(cp.desc, 38);
-      doc.text(splitDesc, cpX + 21, curY + 14.5, { align: 'center' });
+      doc.text(splitDesc, cpX + 21, curY + 16.0, { align: 'center' });
 
       doc.setFillColor(C.cardSubtleBg[0], C.cardSubtleBg[1], C.cardSubtleBg[2]);
-      doc.roundedRect(cpX + 3, curY + 23, 36, 6.5, 1, 1, 'F');
+      doc.roundedRect(cpX + 3, curY + 29, 36, 7.5, 1, 1, 'F');
       doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(6.2);
-      doc.text(cp.score, cpX + 21, curY + 27.2, { align: 'center' });
+      doc.text(cp.score, cpX + 21, curY + 34.0, { align: 'center' });
 
       cpX += 45;
     }
 
-    curY += 41;
+    curY += 50;
 
-    // ── SECTION 5: CEFR & GLOBAL OCCUPATIONAL ENGLISH ALIGNMENT ──────────────
-    doc.setFillColor(14, 116, 144);
-    doc.rect(12, curY, 3, 7, 'F');
-    doc.setTextColor(C.secTitle[0], C.secTitle[1], C.secTitle[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('5. GLOBAL OCCUPATIONAL ENGLISH FRAMEWORK ALIGNMENT', 18, curY + 5.2);
-
-    curY += 9;
-
-    const frameworks = [
-      {
-        standard: "CEFR GLOBAL STANDARD",
-        level: "Level C1 - Operational Proficiency",
-        desc: "Spontaneous, fluent articulation in international seminars and academic discourse."
-      },
-      {
-        standard: "ICAO / HEALTHCARE BENCHMARK",
-        level: "Level 5 - Operational Phraseology",
-        desc: "Zero-ambiguity standard required for commercial flight decks and clinical trauma consultation."
-      },
-      {
-        standard: "CORPORATE & LEGAL RHETORIC",
-        level: "Executive Competency Benchmark",
-        desc: "Rigorous clause drafting, cross-border negotiation poise, and commercial dispute resolution."
-      }
-    ];
-
-    for (const f of frameworks) {
-      doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-      doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-      doc.roundedRect(12, curY, 186, 10.5, 1.5, 1.5, 'FD');
-
-      // Left Standard Pill
-      doc.setFillColor(C.cardSubtleBg[0], C.cardSubtleBg[1], C.cardSubtleBg[2]);
-      doc.roundedRect(14, curY + 2, 48, 6.5, 1, 1, 'F');
-      doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.2);
-      doc.text(f.standard, 38, curY + 6.3, { align: 'center' });
-
-      // Middle Level Pill
-      doc.setFillColor(isDark ? 15 : 236, isDark ? 35 : 253, isDark ? 30 : 245);
-      doc.setDrawColor(16, 185, 129);
-      doc.roundedRect(65, curY + 2, 48, 6.5, 1, 1, 'FD');
-      doc.setTextColor(16, 185, 129);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.0);
-      doc.text(f.level, 89, curY + 6.3, { align: 'center' });
-
-      // Right Competency Description
-      doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.2);
-      const splitFDesc = doc.splitTextToSize(f.desc, 76);
-      doc.text(splitFDesc, 117, curY + 4.8);
-
-      curY += 13.0;
-    }
-
-    curY += 2;
-
-    // ── SECTION 6: INSTITUTIONAL ENDORSEMENT & ACCREDITATION SEAL ─────────────
+    // ── SECTION 5: OFFICIAL INSTITUTIONAL ACCREDITATION & FAIR ENDORSEMENT ────
     doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
     doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 38, 2, 2, 'FD');
+    doc.roundedRect(12, curY, 186, 28, 2, 2, 'FD');
 
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.2);
-    doc.text('OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION', 16, curY + 6.5);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-    doc.text('This digital booklet certifies that the student actively explored global career pathways, completed spoken', 16, curY + 12.0);
-    doc.text('articulation diagnostics, and demonstrated cognitive proficiency across international English benchmarks.', 16, curY + 16.0);
-
-    // Vector Circular Seal (Centered at X=172, Y=curY + 19)
-    const sealX = 172;
-    const sealY = curY + 19;
+    // Vector Circular Seal (Centered at X=28, Y=curY + 14)
+    const sealX = 28;
+    const sealY = curY + 14;
     doc.setDrawColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]); // Gold outer ring
     doc.setLineWidth(0.7);
-    doc.circle(sealX, sealY, 13, 'S');
+    doc.circle(sealX, sealY, 11, 'S');
 
     doc.setDrawColor(C.accentCyan[0], C.accentCyan[1], C.accentCyan[2]); // Cyan inner ring
     doc.setLineWidth(0.3);
-    doc.circle(sealX, sealY, 10.5, 'S');
+    doc.circle(sealX, sealY, 8.8, 'S');
 
     doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.5);
-    doc.text('KANAKIA INTL', sealX, sealY - 4.5, { align: 'center' });
+    doc.setFontSize(4.8);
+    doc.text('KANAKIA INTL', sealX, sealY - 3.8, { align: 'center' });
     doc.setTextColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.setFontSize(6.8);
+    doc.setFontSize(5.8);
     doc.text('VERIFIED', sealX, sealY, { align: 'center' });
     doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.setFontSize(5);
-    doc.text('OFFICIAL SEAL', sealX, sealY + 4.5, { align: 'center' });
+    doc.setFontSize(4.2);
+    doc.text('OFFICIAL SEAL', sealX, sealY + 3.8, { align: 'center' });
 
-    // Official Signature Blocks
-    doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-    doc.setLineWidth(0.4);
-
-    // Left Signature
-    doc.line(16, curY + 27.5, 65, curY + 27.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.2);
+    // Official Endorsement Content on Right
     doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.text('Head, Department of English', 16, curY + 31.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.2);
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.text(schoolName, 16, curY + 35.0);
-
-    // Right Signature
-    doc.line(85, curY + 27.5, 135, curY + 27.5);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.2);
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.text('Exhibition Convenor', 85, curY + 31.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.2);
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.text('Career Fair 2026 Directorate', 85, curY + 35.0);
+    doc.setFontSize(8.8);
+    doc.text('OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION', 44, curY + 6.8);
 
-    curY += 42;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
+    doc.text('This official digital booklet certifies that the candidate has actively explored global career pathways, completed oral', 44, curY + 12.0);
+    doc.text('articulation diagnostics, and demonstrated cognitive proficiency across multi-disciplinary career benchmarks.', 44, curY + 15.8);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(C.accentCyan[0], C.accentCyan[1], C.accentCyan[2]);
+    doc.text('Endorsed by Directorate of Career Guidance & Exhibition Convenors  |  Kanakia International School Mira Road', 44, curY + 22.0);
+
+    curY += 34;
 
     // ─────────────────────────────────────────────────────────────────────────
     // SECTION 7: OFFICIAL PRINTABLE STUDENT AMBASSADOR BUSINESS CARD
@@ -1004,7 +922,7 @@
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.0);
     doc.text(`Academic Class: ${studentClass}   |   Stream: ${cleanAscii(chosenCareer.cat || 'Science & Tech')}`, cardX + 8, cardY + 39.5);
-    doc.text(`English Superpower: ICAO / Clinical / Corporate Articulation`, cardX + 8, cardY + 44.5);
+    doc.text(`Career Superpower: Executive Presentation & Strategic Articulation`, cardX + 8, cardY + 44.5);
     doc.text(`Credential ID: ${docId}`, cardX + 8, cardY + 49.5);
 
     // Department Verification Badge Pill (100% Vector & Safe ASCII - NO garbled glyphs!)
@@ -1018,7 +936,7 @@
     doc.setTextColor(16, 185, 129);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.5);
-    doc.text('VERIFIED BY ENGLISH DEPARTMENT 2026', cardX + 18, cardY + 60.5);
+    doc.text('VERIFIED CAREER FAIR AMBASSADOR 2026', cardX + 18, cardY + 60.5);
 
     // Right Side: 100% Real Scannable Vector QR Code Box (Camera & Phone Scannable)
     const qrBoxSize = 30; // 30mm x 30mm
