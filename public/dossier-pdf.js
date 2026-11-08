@@ -448,7 +448,7 @@
 
     // Resolve Student & Career Data
     const state = window.STATE || {};
-    let studentName = (customData?.name || customData?.studentName || state.studentName || localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name') || localStorage.getItem('cf_student_name') || 'Tanmay Sharma').trim();
+    let studentName = (customData?.name || customData?.studentName || state.studentName || localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name') || localStorage.getItem('cf_student_name') || 'Student').trim();
     let className = customData?.className || state.studentClass || localStorage.getItem('cf_student_class') || 'Grade 10';
     let chosenCareer = customData?.chosenCareer || state.chosenCareer || null;
 

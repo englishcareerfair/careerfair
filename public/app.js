@@ -999,9 +999,14 @@ function openTutorialChoiceModal() {
   if (modal) {
     const nameInp = document.getElementById('tutorial-student-name-input');
     if (nameInp) {
-      nameInp.value = localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name') || '';
+      nameInp.value = '';
+      nameInp.style.borderColor = '';
+      nameInp.style.boxShadow = '';
     }
     modal.classList.add('active');
+    setTimeout(() => {
+      if (nameInp) nameInp.focus();
+    }, 150);
   }
 }
 
@@ -1015,14 +1020,28 @@ function closeTutorialChoiceModal() {
 function startTutorialWithMode(mode) {
   const nameInp = document.getElementById('tutorial-student-name-input');
   const enteredName = nameInp ? capitalizeName(nameInp.value.trim()) : '';
-  if (enteredName) {
-    localStorage.setItem('ecf_student_name', enteredName);
-    localStorage.setItem('ecf_bizcard_name', enteredName);
-    syncStudentNameToAllSections(enteredName);
-  } else {
-    const existing = localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name');
-    if (existing) syncStudentNameToAllSections(existing);
+
+  if (!enteredName) {
+    if (nameInp) {
+      nameInp.style.borderColor = '#ef4444';
+      nameInp.style.boxShadow = '0 0 14px rgba(239, 68, 68, 0.6)';
+      nameInp.focus();
+    }
+    showToast('⚠️ Please enter your name first (mandatory to personalize your tour & booklet)!');
+    return;
   }
+
+  if (nameInp) {
+    nameInp.value = enteredName;
+    nameInp.style.borderColor = '';
+    nameInp.style.boxShadow = '';
+  }
+
+  localStorage.setItem('ecf_student_name', enteredName);
+  localStorage.setItem('ecf_bizcard_name', enteredName);
+  localStorage.setItem('cf_student_name', enteredName);
+  STATE.studentName = enteredName;
+  syncStudentNameToAllSections(enteredName);
 
   closeTutorialChoiceModal();
   currentTutorialMode = (mode === 'expanded') ? 'expanded' : 'short';
@@ -2605,6 +2624,10 @@ function initNavigation() {
 
   // Tutorial Mode Choice Modal Listeners
   $('#btn-close-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
+  $('#tutorial-student-name-input')?.addEventListener('input', (e) => {
+    e.target.style.borderColor = '';
+    e.target.style.boxShadow = '';
+  });
   $('#btn-start-short-tutorial')?.addEventListener('click', () => startTutorialWithMode('short'));
   $('#btn-start-expanded-tutorial')?.addEventListener('click', () => startTutorialWithMode('expanded'));
   $('#card-tutorial-short')?.addEventListener('click', (e) => {
