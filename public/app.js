@@ -741,6 +741,47 @@ async function speakGreeting() {
 }
 
 // In-Website Interactive Platform Tutorial System
+// Pre-recorded tutorial audio registry for zero-credit, instant playback with studio voices
+const PRE_RECORDED_TUTORIALS = {
+  'SAz9YHcvj6GT2YYXdXww': {
+    url: '/audio/tutorial/tutorial_SAz9YHcvj6GT2YYXdXww.mp3',
+    name: 'River (Informative Studio)'
+  },
+  'JBFqnCBsd6RMkjVDRZzb': {
+    url: '/audio/tutorial/tutorial_JBFqnCBsd6RMkjVDRZzb.mp3',
+    name: 'George (Warm Storyteller)'
+  },
+  'EXAVITQu4vr4xnSDxMaL': {
+    url: '/audio/tutorial/tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
+    name: 'Sarah (Mature Reassuring)'
+  },
+  'Xb7hH8MSUJpSbSDYk0k2': {
+    url: '/audio/tutorial/tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
+    name: 'Alice (Engaging Educator)'
+  },
+  'IKne3meq5aSn9XLyUdCD': {
+    url: '/audio/tutorial/tutorial_IKne3meq5aSn9XLyUdCD.mp3',
+    name: 'Charlie (Confident Energetic)'
+  },
+  'default': {
+    url: '/audio/tutorial/tutorial_default.mp3',
+    name: 'River (Studio Default)'
+  }
+};
+
+function updateTutorialVoiceBadge() {
+  const vid = getSelectedGreetingVoice();
+  const item = PRE_RECORDED_TUTORIALS[vid] || PRE_RECORDED_TUTORIALS['default'];
+  const name = item ? item.name : 'Studio Voice';
+  const labelEl = document.getElementById('tutorial-voice-label');
+  if (labelEl && !isTutorialSpeechActive) {
+    labelEl.textContent = `${name} · Pre-recorded`;
+  }
+  const badgeEl = document.getElementById('tutorial-voice-badge-name');
+  if (badgeEl) badgeEl.textContent = name;
+}
+window.updateTutorialVoiceBadge = updateTutorialVoiceBadge;
+
 const IN_SITE_TUTORIAL_STEPS = [
   {
     step: 0,
@@ -750,8 +791,7 @@ const IN_SITE_TUTORIAL_STEPS = [
     title: 'Explore Careers & Pin to Dossier',
     icon: '🎯',
     instruction: 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!',
-    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to My Career Dossier on any career you like. I will wait for you to pin a career to your dossier!',
-    speechOnPinned: (title) => `Awesome! You pinned ${title} to your Career Dossier! Your academic roadmap and top colleges are now ready. Let's move to the next exhibit!`
+    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to My Career Dossier on any career you like. I will wait for you to pin a career to your dossier!'
   },
   {
     step: 1,
@@ -761,8 +801,7 @@ const IN_SITE_TUTORIAL_STEPS = [
     title: 'AI Speech Lab & Voice Coaching',
     icon: '🎙️',
     instruction: 'Practice speaking English in our AI Speech Lab! Click the microphone to test your pronunciation, cadence, and clarity with instant AI scoring.',
-    speechText: 'This is the AI Speech Lab. Here you can practice speaking English with instant pronunciation feedback. Try speaking into the microphone, or click Next Exhibit to continue!',
-    speechOnPinned: null
+    speechText: 'This is the AI Speech Lab. Here you can practice speaking English with instant pronunciation feedback. Try speaking into the microphone, or click Next Exhibit to continue!'
   },
   {
     step: 2,
@@ -772,8 +811,7 @@ const IN_SITE_TUTORIAL_STEPS = [
     title: 'News Anchor Studio Rehearsals',
     icon: '📹',
     instruction: 'Rehearse breaking international news broadcast scripts in front of a live webcam teleprompter mirror just like a professional broadcast journalist.',
-    speechText: 'Welcome to the News Anchor Studio! Practice reading news broadcast scripts in front of the camera mirror just like a real news anchor.',
-    speechOnPinned: null
+    speechText: 'Welcome to the News Anchor Studio! Practice reading news broadcast scripts in front of the camera mirror just like a real news anchor.'
   },
   {
     step: 3,
@@ -783,8 +821,7 @@ const IN_SITE_TUTORIAL_STEPS = [
     title: 'Language Arcade & Leaderboard',
     icon: '🎮',
     instruction: 'Compete in 11 rapid-fire grammar and vocabulary arcade games like Wordle, Hangman, and Jobtris to boost your rank on the live exhibition leaderboard.',
-    speechText: 'Here is the Language Arcade! Play eleven fun games to practice your English vocabulary, spelling, and grammar while earning leaderboard points.',
-    speechOnPinned: null
+    speechText: 'Here is the Language Arcade! Play eleven fun games to practice your English vocabulary, spelling, and grammar while earning leaderboard points.'
   },
   {
     step: 4,
@@ -794,8 +831,7 @@ const IN_SITE_TUTORIAL_STEPS = [
     title: 'Download Your Official Career Dossier',
     icon: '📄',
     instruction: 'Congratulations! You have completed the exhibition tour. Click "Download Dossier PDF" to get your official 2-Page printable Student Dossier and Business Card!',
-    speechText: 'Finally, here is your official Student Career Dossier! It has your career roadmap, college recommendations, and your printable Student Ambassador business card. Click Download Dossier to get your PDF!',
-    speechOnPinned: null
+    speechText: 'Finally, here is your official Student Career Dossier! It has your career roadmap, college recommendations, and your printable Student Ambassador business card. Click Download Dossier to get your PDF!'
   }
 ];
 
@@ -803,10 +839,8 @@ let currentTutorialStepIndex = 0;
 let isTutorialRunning = false;
 let isTutorialPaused = false;
 let isTutorialSpeechActive = false;
-let tutorialSpeechSessionId = 0;
 let waitingForCareerPin = false;
 let hasPinnedDuringActiveTutorial = false;
-let lastTutorialUtteranceText = '';
 
 function updateTutorialHudStatus(state, label) {
   const statusEl = document.getElementById('tutorial-hud-status');
@@ -819,73 +853,65 @@ function updateTutorialHudStatus(state, label) {
   }
 }
 
-function speakTutorialSpeech(text, onEnded = null) {
-  stopTutorialSpeechOnly();
-  if (!text) return;
-
-  lastTutorialUtteranceText = text;
-  const sessionId = ++tutorialSpeechSessionId;
-  isTutorialSpeechActive = true;
-  updateTutorialHudStatus('speaking', 'Speaking...');
-
-  if ('speechSynthesis' in window) {
+function playPreRecordedTutorialAudio() {
+  stopAllVoice();
+  if (window.currentTtsAudio) {
     try {
-      window.speechSynthesis.cancel();
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
+      window.currentTtsAudio.pause();
+      window.currentTtsAudio.currentTime = 0;
     } catch (_) {}
+    window.currentTtsAudio = null;
+  }
 
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'en-IN';
-    utt.rate = 0.95;
-    utt.pitch = 1.0;
+  const chosenVoiceId = getSelectedGreetingVoice();
+  let item = PRE_RECORDED_TUTORIALS[chosenVoiceId] || PRE_RECORDED_TUTORIALS['default'];
+  if (!item || !item.url) item = PRE_RECORDED_TUTORIALS['default'];
 
-    const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length) {
-      const bestVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')))
-        || voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN')
-        || voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google')))
-        || voices.find(v => v.lang.startsWith('en'));
-      if (bestVoice) utt.voice = bestVoice;
-    }
+  const voiceName = item.name || 'Studio Voice';
+  updateTutorialHudStatus('speaking', `Speaking (${voiceName})`);
+  isTutorialSpeechActive = true;
 
-    utt.onend = () => {
-      if (sessionId === tutorialSpeechSessionId) {
-        isTutorialSpeechActive = false;
-        updateTutorialHudStatus('idle', 'Ready');
-        if (typeof onEnded === 'function') onEnded();
+  try {
+    const audio = new Audio(item.url);
+    window.currentTtsAudio = audio;
+
+    audio.onplay = () => {
+      isTutorialSpeechActive = true;
+      if (!isTutorialPaused) {
+        updateTutorialHudStatus('speaking', `Speaking (${voiceName})`);
       }
     };
 
-    utt.onerror = () => {
-      if (sessionId === tutorialSpeechSessionId) {
-        isTutorialSpeechActive = false;
-        updateTutorialHudStatus('idle', 'Ready');
+    audio.onpause = () => {
+      if (isTutorialPaused) {
+        updateTutorialHudStatus('paused', 'Paused');
       }
     };
 
-    setTimeout(() => {
-      if (sessionId === tutorialSpeechSessionId && !isTutorialPaused) {
-        try {
-          window.speechSynthesis.speak(utt);
-        } catch (_) {}
-      }
-    }, 50);
-  } else {
+    audio.onended = () => {
+      isTutorialSpeechActive = false;
+      updateTutorialHudStatus('idle', 'Ready');
+    };
+
+    audio.onerror = (e) => {
+      console.warn('Pre-recorded tutorial audio error:', e);
+      isTutorialSpeechActive = false;
+      updateTutorialHudStatus('idle', 'Ready');
+    };
+
+    audio.play().catch(e => {
+      console.warn('Auto-play blocked or error:', e);
+      updateTutorialHudStatus('idle', 'Ready');
+    });
+  } catch (err) {
+    console.warn('Audio construction error:', err);
     updateTutorialHudStatus('idle', 'Ready');
-    if (typeof onEnded === 'function') onEnded();
   }
 }
 
 function pauseTutorial() {
   if (!isTutorialRunning) return;
   isTutorialPaused = true;
-  try {
-    if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
-      window.speechSynthesis.pause();
-    }
-  } catch (_) {}
   if (window.currentTtsAudio && !window.currentTtsAudio.paused) {
     try { window.currentTtsAudio.pause(); } catch (_) {}
   }
@@ -899,22 +925,14 @@ function pauseTutorial() {
 function resumeTutorial() {
   if (!isTutorialRunning) return;
   isTutorialPaused = false;
-  try {
-    if ('speechSynthesis' in window && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    } else if (!isTutorialSpeechActive || ('speechSynthesis' in window && !window.speechSynthesis.speaking)) {
-      if (lastTutorialUtteranceText) {
-        speakTutorialSpeech(lastTutorialUtteranceText);
-      } else {
-        const stepData = IN_SITE_TUTORIAL_STEPS[currentTutorialStepIndex];
-        if (stepData) speakTutorialSpeech(stepData.speechText);
-      }
-    }
-  } catch (_) {}
   if (window.currentTtsAudio && window.currentTtsAudio.paused) {
     try { window.currentTtsAudio.play(); } catch (_) {}
+  } else if (!window.currentTtsAudio) {
+    playPreRecordedTutorialAudio();
   }
-  updateTutorialHudStatus('speaking', 'Speaking...');
+  const chosenVoiceId = getSelectedGreetingVoice();
+  const item = PRE_RECORDED_TUTORIALS[chosenVoiceId] || PRE_RECORDED_TUTORIALS['default'];
+  updateTutorialHudStatus('speaking', `Speaking (${item.name})`);
   const pauseBtn = document.getElementById('btn-tutorial-pause');
   if (pauseBtn) {
     pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
@@ -922,16 +940,14 @@ function resumeTutorial() {
 }
 
 function stopTutorialSpeechOnly() {
-  tutorialSpeechSessionId++;
   isTutorialSpeechActive = false;
-  try {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-    }
-  } catch (_) {}
+  if (window.currentTtsAudio) {
+    try {
+      window.currentTtsAudio.pause();
+      window.currentTtsAudio.currentTime = 0;
+    } catch (_) {}
+    window.currentTtsAudio = null;
+  }
   updateTutorialHudStatus('idle', 'Ready');
 }
 
@@ -988,9 +1004,9 @@ function renderInSiteTutorialStep(stepIndex) {
   // Navigate on page to target tab
   if (data.tab) {
     if (window.AppRouter) {
-      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab));
+      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab), { keepVoice: true });
     } else if (typeof window.switchTab === 'function') {
-      window.switchTab(data.tab);
+      window.switchTab(data.tab, { keepVoice: true });
     }
   }
 
@@ -1017,7 +1033,6 @@ function renderInSiteTutorialStep(stepIndex) {
       if (stored) storedCareer = JSON.parse(stored);
     } catch (_) {}
 
-    // If student has already pinned during THIS active tutorial session
     if (hasPinnedDuringActiveTutorial && storedCareer && storedCareer.title) {
       if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to your Career Dossier! You can pin another career below, or click Next Exhibit to continue.`;
       if (reactionEl) {
@@ -1030,16 +1045,13 @@ function renderInSiteTutorialStep(stepIndex) {
         nextBtn.disabled = false;
       }
       waitingForCareerPin = false;
-      speakTutorialSpeech(`Welcome to Career Fair 2026! You currently have ${storedCareer.title} pinned to your Career Dossier. You can choose another career below or click Next Exhibit to continue!`);
     } else {
-      // Must wait for user response to pin a career to their career dossier
       if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!';
       if (nextBtn) {
         nextBtn.textContent = 'Waiting for Pin ⏳';
         nextBtn.style.opacity = '0.75';
       }
       waitingForCareerPin = true;
-      speakTutorialSpeech(data.speechText);
     }
 
     if (downloadBtn) downloadBtn.style.display = 'none';
@@ -1053,7 +1065,6 @@ function renderInSiteTutorialStep(stepIndex) {
       nextBtn.style.display = 'inline-block';
     }
     if (downloadBtn) downloadBtn.style.display = 'inline-block';
-    speakTutorialSpeech(data.speechText);
   } else {
     if (instructionEl) instructionEl.textContent = data.instruction;
     waitingForCareerPin = false;
@@ -1063,7 +1074,6 @@ function renderInSiteTutorialStep(stepIndex) {
       nextBtn.disabled = false;
     }
     if (downloadBtn) downloadBtn.style.display = 'none';
-    speakTutorialSpeech(data.speechText);
   }
 
   if (prevBtn) {
@@ -1096,10 +1106,6 @@ function onCareerPinnedByStudent(careerObj) {
       nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
-
-    const stepData = IN_SITE_TUTORIAL_STEPS[0];
-    const spokenCongrat = stepData.speechOnPinned(careerObj.title);
-    speakTutorialSpeech(spokenCongrat);
   }
 }
 
@@ -1115,7 +1121,11 @@ function startInSiteTutorial() {
     headerBtn.innerHTML = '<span>⏹️</span> <span class="tutorial-btn-text">Stop Tutorial</span>';
   }
 
+  // Show Step 0 (Careers & Dossier Pin) in the HUD first
   renderInSiteTutorialStep(0);
+
+  // Play pre-recorded studio audio matching chosen voice
+  playPreRecordedTutorialAudio();
 }
 
 // Backward-compatible global exports
@@ -2972,8 +2982,10 @@ function switchTab(tabId, options = {}) {
     tabId = 'roadmap';
   }
 
-  // Stop all active voice playback when navigating
-  stopAllVoice();
+  // Stop all active voice playback when navigating, except if tutorial is active or keepVoice option passed
+  if (!isTutorialRunning && !options.keepVoice) {
+    stopAllVoice();
+  }
 
   STATE.activeTab = tabId;
 
@@ -3018,6 +3030,7 @@ function switchTab(tabId, options = {}) {
 
   // Trigger lazy section initializers (only if not already handled by router sub-initializer)
   if (!options.skipSubInit) {
+    if (tabId === 'hero') renderHeroStream();
     if (tabId === 'careers') renderCareers();
     if (tabId === 'colleges') renderColleges();
     if (tabId === 'exams') renderExams();
@@ -12215,20 +12228,23 @@ function renderHeroStream() {
   const linkEl = $('#hero-stream-external-link');
   if (!iframe || !standby) return;
 
-  const rawUrl = STATE.config.stream_url || '';
-  const isActive = STATE.config.stream_active !== false;
-  const isAutoplay = STATE.config.stream_autoplay !== false;
-  const title = STATE.config.stream_title || 'Career Fair 2026 — Live Stage Broadcast';
-  const videoId = extractYouTubeId(rawUrl);
+  const rawUrl = (STATE.config && STATE.config.stream_url) || localStorage.getItem('cf_stream_url') || 'https://youtube.com/live/3Hn-jH3up9Y';
+  const isActive = STATE.config ? (STATE.config.stream_active !== false) : true;
+  const isAutoplay = STATE.config ? (STATE.config.stream_autoplay !== false) : true;
+  const title = (STATE.config && STATE.config.stream_title) || 'Career Fair 2026 — Live Stage Broadcast';
+  const videoId = extractYouTubeId(rawUrl) || '3Hn-jH3up9Y';
 
   if (isActive && videoId) {
     const embedUrl = buildYouTubeEmbedUrl(videoId, isAutoplay);
-    if (iframe.dataset.currentSrc !== embedUrl) {
+    if (iframe.dataset.currentSrc !== embedUrl || !iframe.src || !iframe.src.includes(videoId)) {
       iframe.src = embedUrl;
       iframe.dataset.currentSrc = embedUrl;
     }
+    iframe.removeAttribute('hidden');
     iframe.hidden = false;
+    iframe.style.display = 'block';
     standby.hidden = true;
+    standby.style.display = 'none';
 
     if (badge) {
       badge.className = 'badge-live-pulse';
@@ -12240,6 +12256,7 @@ function renderHeroStream() {
     if (linkEl) {
       linkEl.href = `https://www.youtube.com/watch?v=${videoId}`;
       linkEl.hidden = false;
+      linkEl.style.display = 'inline-flex';
     }
   } else {
     // Standby mode
@@ -12248,7 +12265,9 @@ function renderHeroStream() {
       iframe.dataset.currentSrc = '';
     }
     iframe.hidden = true;
+    iframe.style.display = 'none';
     standby.hidden = false;
+    standby.style.display = 'flex';
 
     if (badge) {
       badge.className = 'badge-standby';
@@ -12259,9 +12278,11 @@ function renderHeroStream() {
     }
     if (linkEl) {
       linkEl.hidden = true;
+      linkEl.style.display = 'none';
     }
   }
 }
+window.renderHeroStream = renderHeroStream;
 
 // Listen for voiceschanged on Chromium/Android browsers where voices load asynchronously
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
