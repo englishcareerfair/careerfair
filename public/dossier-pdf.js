@@ -306,7 +306,42 @@
 
     // Resolve Student & Career Data
     const state = window.STATE || {};
-    let studentName = customData?.name || state.studentName || localStorage.getItem('cf_student_name') || 'Student Ambassador';
+    let studentName = (customData?.name || customData?.studentName || state.studentName || localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name') || localStorage.getItem('cf_student_name') || 'Tanmay Sharma').trim();
+
+    // Skipped sections tracking
+    let skippedSections = {};
+    try {
+      skippedSections = (options && options.skippedSections) || JSON.parse(localStorage.getItem('ecf_skipped_sections') || '{}');
+    } catch (_) {}
+
+    // Student reflection & fair feedback data
+    let studentFeedback = null;
+    try {
+      if (customData && customData.feedback) {
+        studentFeedback = customData.feedback;
+      } else {
+        const rawFb = localStorage.getItem('ecf_student_feedback');
+        if (rawFb) {
+          studentFeedback = JSON.parse(rawFb);
+        } else {
+          const localFbs = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
+          const found = localFbs.find(f => f.name && (f.name.toLowerCase() === studentName.toLowerCase() || f.role === 'Student'));
+          if (found) {
+            studentFeedback = {
+              stars: found.stars || 5,
+              comment: found.comment,
+              date: found.time ? new Date(Number(found.time)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null
+            };
+          } else {
+            studentFeedback = {
+              stars: 5,
+              comment: 'The Career Fair provided invaluable insights into professional English benchmarks, global career pathways, and university entrance criteria.',
+              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            };
+          }
+        }
+      }
+    } catch (_) {}
     let className = customData?.className || state.studentClass || localStorage.getItem('cf_student_class') || 'Grade 10';
     let chosenCareer = customData?.chosenCareer || state.chosenCareer || null;
 
@@ -634,8 +669,12 @@
     ctx.restore();
 
     // 5. SECTION 2: COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION
-    const s2Y = 725;
-    drawSectionHeader(ctx, '2', 'COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION',
+    const isCognitiveSkipped = Boolean(skippedSections.section_quiz || skippedSections.section_cognitive);
+    let p1CurY = 725;
+
+    if (!isCognitiveSkipped) {
+      const s2Y = p1CurY;
+      drawSectionHeader(ctx, '2', 'COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION',
       'Standardized Spoken Articulation & Executive Verbal Competence Diagnostic', 65, s2Y, CW - 130, isDark);
 
     const pillars = [
@@ -727,9 +766,15 @@
       ctx.restore();
     });
 
+      p1CurY += 465;
+    }
+
     // 6. SECTION 3: PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS
-    const s3Y = 1205;
-    drawSectionHeader(ctx, '3', 'PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS',
+    const isRoadmapSkipped = Boolean(skippedSections.section_colleges || skippedSections.section_myplan || skippedSections.section_roadmap);
+    if (!isRoadmapSkipped) {
+      const s3Y = p1CurY;
+      const s3Num = isCognitiveSkipped ? '2' : '3';
+      drawSectionHeader(ctx, s3Num, 'PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS',
       'Accredited Degree Benchmarks, NAAC "A++" Universities & Licensing Directorate', 65, s3Y, CW - 130, isDark);
 
     const mY = s3Y + 54;
@@ -814,6 +859,8 @@
       ctx.restore();
     });
 
+    }
+
     // Render Page 1 to Image & Add to jsPDF
     const page1Data = canvas.toDataURL('image/jpeg', 0.95);
     doc.addImage(page1Data, 'JPEG', 0, 0, 210, 297);
@@ -856,8 +903,12 @@
     ctx.fillText('CAREER FAIR 2026', CW - 55, CH - 20);
 
     // 3. SECTION 4: AI SPEECH LAB (6-DIMENSIONAL ACOUSTIC TELEMETRY)
-    const p2s4Y = 65;
-    drawSectionHeader(ctx, '4', 'AI SPEECH LAB: 6-DIMENSIONAL ACOUSTIC TELEMETRY',
+    const isSpeechSkipped = Boolean(skippedSections.section_speech);
+    let p2CurY = 65;
+
+    if (!isSpeechSkipped) {
+      const p2s4Y = p2CurY;
+      drawSectionHeader(ctx, '4', 'AI SPEECH LAB: 6-DIMENSIONAL ACOUSTIC TELEMETRY',
       'Real-Time Neural Spoken Articulation & Fluency Diagnostic Metrics', 65, p2s4Y, CW - 130, isDark);
 
     const speechMetrics = [
@@ -959,9 +1010,13 @@
       ctx.restore();
     });
 
+      p2CurY += 470;
+    }
+
     // 4. SECTION 5: OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION
-    const s5Y = 535;
-    drawSectionHeader(ctx, '5', 'OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION',
+    const s5Y = p2CurY;
+    const s5Num = isSpeechSkipped ? '4' : '5';
+    drawSectionHeader(ctx, s5Num, 'OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION',
       'Certified Educational Record Validated by School Directorate & Convenors', 65, s5Y, CW - 130, isDark);
 
     const eCardX = 65, eCardY = s5Y + 50, eCardW = CW - 130, eCardH = 265;
@@ -1025,9 +1080,93 @@
     // Right Official Radial Seal
     drawOfficialSeal(ctx, eCardX + eCardW - 130, eCardY + eCardH / 2 + 5, 82, isDark);
     ctx.restore();
+    p2CurY = eCardY + eCardH + 30;
 
-    // 5. SECTION 6: DETACHABLE STUDENT AMBASSADOR BUSINESS CARD
-    const cutY = 890;
+    // 5. SECTION 6: STUDENT REFLECTION & FAIR EXPERIENCE FEEDBACK (Rendered Before Business Card)
+    const isFeedbackSkipped = Boolean(skippedSections.section_feedback);
+    if (!isFeedbackSkipped && studentFeedback) {
+      const fbSecNum = isSpeechSkipped ? '5' : '6';
+      drawSectionHeader(ctx, fbSecNum, 'STUDENT REFLECTION & FAIR EXPERIENCE FEEDBACK',
+        'Official Exhibitor Review & Commendation Endorsement', 65, p2CurY, CW - 130, isDark);
+
+      const fbX = 65, fbY = p2CurY + 50, fbW = CW - 130, fbH = 175;
+      ctx.save();
+      ctx.fillStyle = C.cardBg;
+      ctx.strokeStyle = C.cardBorder;
+      ctx.lineWidth = 1.4;
+      drawRoundRect(ctx, fbX, fbY, fbW, fbH, 16, true, true);
+
+      // Gradient accent top edge
+      const fbTopGrad = ctx.createLinearGradient(fbX, fbY, fbX + fbW, fbY);
+      fbTopGrad.addColorStop(0, '#f59e0b');
+      fbTopGrad.addColorStop(0.5, '#fbbf24');
+      fbTopGrad.addColorStop(1, '#00f0ff');
+      ctx.fillStyle = fbTopGrad;
+      drawRoundRect(ctx, fbX, fbY, fbW, 6, { tl: 16, tr: 16, br: 0, bl: 0 }, true, false);
+
+      // Golden Stars (Rating 1 to 5)
+      const starsCount = Math.max(1, Math.min(5, Number(studentFeedback.stars || studentFeedback.rating || 5)));
+      ctx.font = '800 22px "Space Grotesk", sans-serif';
+      ctx.fillStyle = '#fbbf24';
+      const starsStr = '★ '.repeat(starsCount) + '☆ '.repeat(5 - starsCount);
+      ctx.fillText(starsStr, fbX + 28, fbY + 36);
+
+      // Rating Label & Badge
+      ctx.font = '700 13px "JetBrains Mono", monospace';
+      ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+      const ratingLabel = `${starsCount}.0 / 5.0 · ${starsCount >= 5 ? 'EXCEPTIONAL' : 'INSPIRING'} FAIR RATING`;
+      ctx.fillText(ratingLabel, fbX + 160, fbY + 34);
+
+      // Student Quote / Comment
+      ctx.font = 'italic 500 15px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMain;
+      const rawComment = studentFeedback.comment || studentFeedback.text || 'The Career Fair provided invaluable insights into professional English benchmarks, global career pathways, and university entrance criteria.';
+      const quoteText = `"${rawComment}"`;
+
+      // Word wrap quote across card width
+      const maxQW = fbW - 56;
+      const qWords = quoteText.split(' ');
+      let qLine = '', qLines = [];
+      qWords.forEach(w => {
+        const test = qLine + w + ' ';
+        if (ctx.measureText(test).width > maxQW && qLines.length < 2) {
+          qLines.push(qLine);
+          qLine = w + ' ';
+        } else {
+          qLine = test;
+        }
+      });
+      qLines.push(qLine);
+      qLines.forEach((ql, qi) => {
+        ctx.fillText(ql, fbX + 28, fbY + 74 + qi * 24);
+      });
+
+      // Attribution footer
+      ctx.font = '600 12.5px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textDim;
+      const fbDate = studentFeedback.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      ctx.fillText(`Verified Exhibitor Reflection • ${studentName} (${className}) • Endorsed on ${fbDate}`, fbX + 28, fbY + 145);
+
+      // Right Side Commendation Badge
+      const commW = 210, commH = 34;
+      const commX = fbX + fbW - commW - 24;
+      const commY = fbY + 22;
+      ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(217, 119, 6, 0.12)';
+      ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
+      ctx.lineWidth = 1;
+      drawRoundRect(ctx, commX, commY, commW, commH, 8, true, true);
+      ctx.font = '800 11px "Space Grotesk", sans-serif';
+      ctx.fillStyle = isDark ? '#fbbf24' : '#b45309';
+      ctx.textAlign = 'center';
+      ctx.fillText('★ COMMENDED EXHIBITOR', commX + commW / 2, commY + 22);
+      ctx.textAlign = 'left';
+
+      ctx.restore();
+      p2CurY = fbY + fbH + 30;
+    }
+
+    // 6. DETACHABLE STUDENT AMBASSADOR BUSINESS CARD
+    const cutY = p2CurY + 15;
     ctx.save();
     // Dashed Scissor Guide
     ctx.setLineDash([8, 6]);

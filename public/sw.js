@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v19.0-ultra-luxury-booklet';
+const CACHE_NAME = 'cf-cache-v20.0-ultra-luxury-booklet';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

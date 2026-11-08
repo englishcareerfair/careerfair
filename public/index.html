@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=19.0">
+  <link rel="stylesheet" href="styles.css?v=20.0">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -35,13 +35,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
-  <script src="dossier-pdf.js?v=19.0" defer></script>
+  <script src="dossier-pdf.js?v=20.0" defer></script>
   <script src="dopamine-engine.js?v=14.0" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
     <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=14.0"></script>
-  <script src="app.js?v=19.0" defer></script>
+  <script src="app.js?v=20.0" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -1580,11 +1580,11 @@
           <div style="margin-bottom:14px;">
             <label style="font-size:13px;font-weight:700;display:block;margin-bottom:4px;">Select Account Voice (Indian Accent):</label>
             <select id="admin-eleven-voice-select" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;margin-bottom:6px;">
-              <option value="SAz9YHcvj6GT2YYXdXww">🌟 River - Relaxed, Neutral, Informative (Pre-Recorded Zero-Credit Instant)</option>
-              <option value="JBFqnCBsd6RMkjVDRZzb">🎙️ George - Warm, Captivating Storyteller (Pre-Recorded Zero-Credit Instant)</option>
-              <option value="EXAVITQu4vr4xnSDxMaL">🎙️ Sarah - Mature, Reassuring, Confident (Pre-Recorded Zero-Credit Instant)</option>
-              <option value="Xb7hH8MSUJpSbSDYk0k2">🎙️ Alice - Clear, Engaging Educator (Pre-Recorded Zero-Credit Instant)</option>
-              <option value="IKne3meq5aSn9XLyUdCD">🎙️ Charlie - Deep, Confident, Energetic (Pre-Recorded Zero-Credit Instant)</option>
+              <option value="SAz9YHcvj6GT2YYXdXww">🌟 River - Relaxed, Neutral, Informative</option>
+              <option value="JBFqnCBsd6RMkjVDRZzb">🎙️ George - Warm, Captivating Storyteller</option>
+              <option value="EXAVITQu4vr4xnSDxMaL">🎙️ Sarah - Mature, Reassuring, Confident</option>
+              <option value="Xb7hH8MSUJpSbSDYk0k2">🎙️ Alice - Clear, Engaging Educator</option>
+              <option value="IKne3meq5aSn9XLyUdCD">🎙️ Charlie - Deep, Confident, Energetic</option>
               <option value="">🇮🇳 Authentic Indian Neural Voice (en-IN · Free &amp; Unlimited)</option>
               <option value="voiceforge-local">⚡ VoiceForge Local Studio Engine (Offline-First 127.0.0.1:8765)</option>
             </select>
@@ -2146,14 +2146,22 @@
       
       <div class="tutorial-choice-header">
         <div class="tutorial-choice-pill">
-          🎙️ Studio Voice Guided Experience
+          🎙️ Voice Guided Exhibition Tour
         </div>
         <h3 id="tutorial-choice-title" class="tutorial-choice-title">
           Choose Your Exhibition Tutorial
         </h3>
         <p class="tutorial-choice-desc">
-          Select how you would like to explore Career Fair 2026. Both options feature studio pre-recorded audio, interactive practice timers, and hands-on participation!
+          Select how you would like to explore Career Fair 2026. Both options feature interactive voice guidance, hands-on participation, and personal booklet customization!
         </p>
+      </div>
+
+      <!-- Personalized Student Name Input at Tutorial Start -->
+      <div class="tutorial-name-input-wrap" style="margin-bottom:16px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.25);border-radius:12px;padding:12px 14px;">
+        <label for="tutorial-student-name-input" style="display:block;font-size:13px;font-weight:700;color:var(--accent-cyan);margin-bottom:6px;">
+          👤 Enter Your Name to Personalize Your Booklet &amp; Pass:
+        </label>
+        <input type="text" id="tutorial-student-name-input" class="form-input" placeholder="e.g. Tanmay Sharma" autocomplete="name" style="width:100%;box-sizing:border-box;padding:9px 12px;border-radius:8px;font-size:14px;font-weight:600;background:rgba(15,23,42,0.7);border:1px solid var(--border-strong);color:#ffffff;" />
       </div>
 
       <div class="tutorial-choice-grid">
@@ -2161,17 +2169,18 @@
         <div class="tutorial-option-card short-tour" id="card-tutorial-short" role="button" tabindex="0">
           <div class="tutorial-card-top">
             <span class="tutorial-card-icon">📖</span>
-            <span class="tutorial-card-badge short-badge">⚡ 4 FAST STEPS · ~60s</span>
+            <span class="tutorial-card-badge short-badge">⚡ 5 FAST STEPS · ~60s</span>
           </div>
           <h4 class="tutorial-card-title">Quick Booklet Tour</h4>
           <p class="tutorial-card-desc">
-            Focuses strictly on the essential features needed to customize and download your official <strong>2-Page Career Booklet &amp; Business Card</strong>.
+            Focuses strictly on essential highlights: <strong>Live Stream</strong>, target career pinning, speech lab, fair reflection, and official booklet download.
           </p>
           <ul class="tutorial-card-features">
+            <li>🔴 Welcome &amp; Live Stage Broadcast</li>
             <li>🎯 Pick &amp; Pin Your Career Pathway</li>
             <li>🎙️ Spoken English AI Diagnostic (Page 2)</li>
+            <li>⭐ Student Reflection &amp; Fair Feedback</li>
             <li>🪪 Student Ambassador Business Card &amp; QR</li>
-            <li>📄 Instant 2-Page Executive PDF Download</li>
           </ul>
           <button type="button" class="btn btn-primary btn-start-tutorial-tour" id="btn-start-short-tutorial">
             Start Short Tour ⚡
@@ -2182,18 +2191,19 @@
         <div class="tutorial-option-card expanded-tour" id="card-tutorial-expanded" role="button" tabindex="0">
           <div class="tutorial-card-top">
             <span class="tutorial-card-icon">🌟</span>
-            <span class="tutorial-card-badge expanded-badge">🚀 10 STEPS · ALL FEATURES</span>
+            <span class="tutorial-card-badge expanded-badge">🚀 12 STEPS · ALL EXHIBITS</span>
           </div>
           <h4 class="tutorial-card-title">Complete Exhibition Tour</h4>
           <p class="tutorial-card-desc">
-            Comprehensive hands-on walkthrough showing <strong>every feature of the platform</strong>, from exams &amp; speech lab to teleprompter and arcade games.
+            Comprehensive hands-on walkthrough showing <strong>every feature of the platform</strong>: live stream, 32+ careers, colleges, quiz, my plan, speech lab, and all games.
           </p>
           <ul class="tutorial-card-features">
-            <li>⚡ Overview &amp; English Superpower Vision</li>
-            <li>🎯 32+ Careers Directory &amp; Filtering</li>
+            <li>🔴 Live Stage Broadcast &amp; 32+ Careers</li>
             <li>🏛️ NAAC/NIRF Colleges &amp; Exam Guides</li>
-            <li>🎙️ Speech Lab &amp; Teleprompter Studio</li>
-            <li>🎮 11 Language Games &amp; Leaderboard</li>
+            <li>🧩 Career Aptitude Discovery Quiz</li>
+            <li>🗺️ "My Plan" Strategic Career Blueprint</li>
+            <li>🎙️ Speech Lab, Teleprompter &amp; All Games</li>
+            <li>⭐ Student Reflection &amp; Fair Feedback</li>
           </ul>
           <button type="button" class="btn btn-primary btn-start-tutorial-tour" id="btn-start-expanded-tutorial">
             Start Complete Tour 🌟
@@ -2202,8 +2212,8 @@
       </div>
 
       <div class="tutorial-choice-footer">
-        <span>💡 <em>You can switch steps or pause audio &amp; timer at any time.</em></span>
-        <span class="audio-badge">100% Studio Pre-Recorded Audio</span>
+        <span>💡 <em>You can switch or skip steps at any time.</em></span>
+        <span class="audio-badge">Interactive Voice Guidance</span>
       </div>
     </div>
   </div>
@@ -2212,45 +2222,27 @@
   <div class="in-site-tutorial-hud" id="tutorial-hud" role="region" aria-label="Interactive Platform Tutorial Controller">
     <div class="tutorial-hud-header">
       <div class="tutorial-hud-title-wrap">
-        <span class="tutorial-hud-badge" id="tutorial-hud-badge">STEP 1 OF 4</span>
-        <h4 class="tutorial-hud-title" id="tutorial-hud-title">Explore Careers &amp; Pin to Your Booklet</h4>
+        <span class="tutorial-hud-badge" id="tutorial-hud-badge">STEP 1 OF 5</span>
+        <h4 class="tutorial-hud-title" id="tutorial-hud-title">Live Stage Broadcast &amp; Overview</h4>
       </div>
       <div class="tutorial-hud-status-wrap">
         <div class="tutorial-hud-status" id="tutorial-hud-status">
           <span class="tutorial-equalizer" id="tutorial-equalizer" aria-hidden="true">
             <span></span><span></span><span></span><span></span>
           </span>
-          <span class="tutorial-voice-label" id="tutorial-voice-label">River (Studio Pre-recorded)</span>
+          <span class="tutorial-voice-label" id="tutorial-voice-label">River</span>
         </div>
         <button type="button" class="btn-tutorial-hud-close" id="btn-tutorial-hud-close" title="Stop and Close Tutorial" aria-label="Close tutorial">✕</button>
       </div>
     </div>
 
     <div class="tutorial-hud-body">
-      <div class="tutorial-hud-step-icon" id="tutorial-hud-icon" aria-hidden="true">🎯</div>
+      <div class="tutorial-hud-step-icon" id="tutorial-hud-icon" aria-hidden="true">🔴</div>
       <div class="tutorial-hud-text-wrap">
         <p class="tutorial-hud-instruction" id="tutorial-hud-instruction">
-          Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career.
+          Welcome to Career Fair 2026! Watch our official Live Stream broadcasting keynotes and student presentations from the school auditorium.
         </p>
         <div class="tutorial-hud-reaction" id="tutorial-hud-reaction" style="display:none;"></div>
-      </div>
-    </div>
-
-    <!-- Interactive Exploration & Practice Timer Bar -->
-    <div class="tutorial-hud-interaction-bar" id="tutorial-hud-interaction-bar">
-      <div class="tutorial-timer-controls">
-        <span class="tutorial-timer-pill" id="tutorial-timer-pill">
-          ⏱️ Explore: <strong id="tutorial-countdown-val">20s</strong>
-        </span>
-        <button type="button" class="btn btn-secondary btn-xs" id="btn-tutorial-add-time" title="Add 15 seconds to explore this feature">
-          +15s
-        </button>
-        <button type="button" class="btn btn-secondary btn-xs" id="btn-tutorial-timer-toggle" title="Pause or resume exploration timer">
-          <span id="tutorial-timer-toggle-icon">⏸️</span> <span id="tutorial-timer-toggle-text">Pause Timer</span>
-        </button>
-      </div>
-      <div class="tutorial-interactive-action-hint" id="tutorial-interactive-action-hint">
-        👉 Try this feature now!
       </div>
     </div>
 
@@ -2270,11 +2262,11 @@
         <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-prev" aria-label="Previous step">
           ◀ Previous
         </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-skip" aria-label="Skip this tutorial step" title="Skip this step and omit from booklet">
+          Skip ⏭
+        </button>
         <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-next" aria-label="Next step">
           Next Exhibit ▶
-        </button>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-dossier-download" style="display:none;font-weight:800;background:linear-gradient(135deg,#00f0ff,#8b5cf6);color:#07090e;" aria-label="Download student career booklet PDF">
-          📖 Download Your Booklet (PDF)
         </button>
       </div>
     </div>
