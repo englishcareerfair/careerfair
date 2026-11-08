@@ -1412,12 +1412,16 @@ function renderInSiteTutorialStep(stepIndex) {
     if (nextBtn) {
       nextBtn.style.display = 'none';
     }
-    // Place Skip Step button right there so users can skip if they choose
-    if (skipBtn) {
-      skipBtn.style.display = 'inline-flex';
-      skipBtn.className = 'btn btn-primary btn-sm';
-      skipBtn.textContent = 'Skip Step ⏭️';
-      skipBtn.title = 'Skip this step and omit from booklet';
+    // Remove skip step button in quick tutorial; show only in expanded tour
+    if (currentTutorialMode === 'short') {
+      if (skipBtn) skipBtn.style.display = 'none';
+    } else {
+      if (skipBtn) {
+        skipBtn.style.display = 'inline-flex';
+        skipBtn.className = 'btn btn-primary btn-sm';
+        skipBtn.textContent = 'Skip Step ⏭️';
+        skipBtn.title = 'Skip this step and omit from booklet';
+      }
     }
     if (closeBtn) closeBtn.style.display = '';
   } else {
@@ -1429,11 +1433,16 @@ function renderInSiteTutorialStep(stepIndex) {
       nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
-    if (skipBtn) {
-      skipBtn.style.display = 'inline-flex';
-      skipBtn.className = 'btn btn-secondary btn-sm';
-      skipBtn.textContent = 'Skip ⏭️';
-      skipBtn.title = 'Skip this step and omit from booklet';
+    // Remove skip step button in quick tutorial
+    if (currentTutorialMode === 'short') {
+      if (skipBtn) skipBtn.style.display = 'none';
+    } else {
+      if (skipBtn) {
+        skipBtn.style.display = 'inline-flex';
+        skipBtn.className = 'btn btn-secondary btn-sm';
+        skipBtn.textContent = 'Skip ⏭️';
+        skipBtn.title = 'Skip this step and omit from booklet';
+      }
     }
     if (closeBtn) closeBtn.style.display = '';
   }
