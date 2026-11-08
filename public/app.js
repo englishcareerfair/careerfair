@@ -223,6 +223,13 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
 // Humanoid Studio Voice Engine & Unified Global Speech Toggle (Indian Accent ElevenLabs & Neural en-IN)
 let isGreetingPlaying = false;
 let currentTtsAudio = null;
+try {
+  Object.defineProperty(window, 'currentTtsAudio', {
+    get: () => currentTtsAudio,
+    set: (val) => { currentTtsAudio = val; },
+    configurable: true
+  });
+} catch (_) {}
 let activeSpeechButton = null;
 let activeSpeechUtterance = null;
 let currentSpeechSessionId = 0;
@@ -261,6 +268,27 @@ function resetAllTtsButtonsToNormal() {
     testBtn.innerHTML = testBtn.dataset.origHtml || 'Test Humanoid Voice 🔊';
     testBtn.classList.remove('speaking-active', 'playing');
   }
+
+  const tutorialHeaderBtn = document.getElementById('btn-header-tutorial');
+  if (tutorialHeaderBtn && (tutorialHeaderBtn.textContent.includes('Stop') || tutorialHeaderBtn.classList.contains('speaking-active') || tutorialHeaderBtn.classList.contains('playing'))) {
+    tutorialHeaderBtn.innerHTML = tutorialHeaderBtn.dataset.origHtml || '<span>💡</span> <span class="tutorial-btn-text">Tutorial</span>';
+    tutorialHeaderBtn.classList.remove('speaking-active', 'playing');
+  }
+
+  const tutorialToggleBtn = document.getElementById('btn-tutorial-audio-toggle');
+  if (tutorialToggleBtn) {
+    tutorialToggleBtn.classList.remove('playing');
+    const audioText = document.getElementById('tutorial-audio-text');
+    const audioIcon = document.getElementById('tutorial-audio-icon');
+    if (audioText) audioText.textContent = 'Listen AI Audio Guide';
+    if (audioIcon) audioIcon.textContent = '🔊';
+  }
+
+  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
+  if (loaderAudioBtn) {
+    loaderAudioBtn.textContent = '🔊 Listen';
+  }
+  isTutorialAudioPlaying = false;
 }
 
 function stopAllVoice() {
@@ -721,6 +749,328 @@ async function speakGreeting() {
   // 2. Custom voice ID not in static registry: check cache or fetch ONCE and cache
   await fetchAndPlayGreetingWithCache(greetingText, chosenVoiceId, btn, sessionId, abortSignal);
 }
+
+// Pre-recorded tutorial audio registry for zero-credit, instant playback
+const PRE_RECORDED_TUTORIALS = {
+  'SAz9YHcvj6GT2YYXdXww': {
+    url: '/audio/tutorial/tutorial_SAz9YHcvj6GT2YYXdXww.mp3',
+    name: 'River (Informative Studio)'
+  },
+  'JBFqnCBsd6RMkjVDRZzb': {
+    url: '/audio/tutorial/tutorial_JBFqnCBsd6RMkjVDRZzb.mp3',
+    name: 'George (Warm Storyteller)'
+  },
+  'EXAVITQu4vr4xnSDxMaL': {
+    url: '/audio/tutorial/tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
+    name: 'Sarah (Mature Reassuring)'
+  },
+  'Xb7hH8MSUJpSbSDYk0k2': {
+    url: '/audio/tutorial/tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
+    name: 'Alice (Engaging Educator)'
+  },
+  'IKne3meq5aSn9XLyUdCD': {
+    url: '/audio/tutorial/tutorial_IKne3meq5aSn9XLyUdCD.mp3',
+    name: 'Charlie (Confident Energetic)'
+  },
+  'default': {
+    url: '/audio/tutorial/tutorial_default.mp3',
+    name: 'River (Studio Default)'
+  }
+};
+
+const tutorialAudioMemoryCache = new Map();
+let isTutorialAudioPlaying = false;
+
+const TUTORIAL_STEPS_DATA = [
+  {
+    step: 0,
+    tab: 'careers',
+    badge: 'EXHIBIT 1 OF 5',
+    title: '32+ Global Careers & Pathways',
+    icon: '🌐',
+    desc: 'Explore 32 modern global professions that rely on English fluency—from Commercial Aviation and Chief Surgical Residency to International Corporate Law. Inspect NAAC Grade A++ colleges, competitive entrance exams (CUET, CLAT, NEET, DGCA), and salary trajectories.',
+    actionLabel: 'Pin to Dossier & Explore Careers ➔',
+    tip: 'Click "⭐ Pin to My Career Dossier" on any career card to include it in your official 2-Page printable Student Dossier.'
+  },
+  {
+    step: 1,
+    tab: 'speechLab',
+    badge: 'EXHIBIT 2 OF 5',
+    title: 'AI Speech Lab & 6D Voice Articulation',
+    icon: '🎙️',
+    desc: 'Test your spoken pronunciation, cadence, clarity, vocabulary, grammar, and professional poise against our 6-Dimensional acoustic radar coach. Receive real-time phoneme scoring and personalized fluency suggestions.',
+    actionLabel: 'Launch AI Speech Lab ➔',
+    tip: 'Your speech scores and 6D radar metrics are saved locally and mapped directly into your Career Dossier report card.'
+  },
+  {
+    step: 2,
+    tab: 'teleprompter',
+    badge: 'EXHIBIT 3 OF 5',
+    title: 'News Anchor Studio & Live Teleprompter',
+    icon: '📹',
+    desc: 'Rehearse breaking international news broadcast scripts in front of a live webcam teleprompter mirror. Adjust scroll speeds, practice broadcast articulation, and record video takes saved directly to your device.',
+    actionLabel: 'Enter Studio Broadcast ➔',
+    tip: 'All camera and video processing occurs 100% locally in your browser sandbox for strict student educational privacy.'
+  },
+  {
+    step: 3,
+    tab: 'games',
+    badge: 'EXHIBIT 4 OF 5',
+    title: 'Language Arcade & Live Exhibition Leaderboard',
+    icon: '🎮',
+    desc: 'Compete across 11 rapid-fire grammar and vocabulary games—including Jobtris, Wordle, Hangman, and Hot Potato Rush. Track real-time high scores on our exhibition leaderboard verified on Cloudflare D1.',
+    actionLabel: 'Play 11 Arcade Games ➔',
+    tip: 'Achieve top accuracy in arcade games to earn collectible achievement badges and boost your overall exhibition rank.'
+  },
+  {
+    step: 4,
+    tab: 'roadmap',
+    badge: 'EXHIBIT 5 OF 5',
+    title: '2-Page Student Dossier & Business Card Keepsake',
+    icon: '📄',
+    desc: 'Download your official two-page printable Student Dossier complete with your chosen career roadmap, college matches, competitive exam milestones, and cut-out Ambassador Business Card with scissor guidelines.',
+    actionLabel: 'Generate & Download Dossier PDF ➔',
+    tip: 'Your dossier is rendered in vector-crisp PDF format ready for print, framing, or submission as an official academic portfolio.'
+  }
+];
+
+let currentTutorialStepIndex = 0;
+
+function updateTutorialVoiceBadge() {
+  const badge = document.getElementById('tutorial-voice-badge-name');
+  if (!badge) return;
+  const vid = getSelectedGreetingVoice();
+  const item = PRE_RECORDED_TUTORIALS[vid] || PRE_RECORDED_TUTORIALS['default'];
+  badge.textContent = item ? item.name : (vid ? `Voice: ${vid.slice(0, 8)}...` : 'Studio Voice');
+}
+
+function renderTutorialStep(stepIndex) {
+  if (stepIndex < 0) stepIndex = 0;
+  if (stepIndex >= TUTORIAL_STEPS_DATA.length) stepIndex = TUTORIAL_STEPS_DATA.length - 1;
+  currentTutorialStepIndex = stepIndex;
+
+  const data = TUTORIAL_STEPS_DATA[stepIndex];
+  const stepCounter = document.getElementById('tutorial-step-counter');
+  if (stepCounter) {
+    stepCounter.textContent = `Step ${stepIndex + 1} of ${TUTORIAL_STEPS_DATA.length}`;
+  }
+
+  // Update tabs active class
+  document.querySelectorAll('.tutorial-nav-tab').forEach((tab, idx) => {
+    tab.classList.toggle('active', idx === stepIndex);
+  });
+
+  const cardBody = document.getElementById('tutorial-card-body');
+  if (cardBody) {
+    cardBody.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="font-size:32px;line-height:1;padding:8px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.25);border-radius:12px;">
+          ${data.icon}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10.5px;font-weight:700;color:var(--accent-magenta);letter-spacing:0.06em;margin-bottom:3px;">
+            ${data.badge}
+          </div>
+          <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:6px;">
+            ${escapeHtml(data.title)}
+          </h4>
+          <p style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;">
+            ${escapeHtml(data.desc)}
+          </p>
+          <div style="background:rgba(255,255,255,0.04);border-left:3px solid var(--accent-magenta);padding:8px 10px;border-radius:0 8px 8px 0;font-size:11.5px;color:var(--text-dim);line-height:1.45;">
+            <strong style="color:#ff2a85;">PRO-TIP:</strong> ${escapeHtml(data.tip)}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const actionBtn = document.getElementById('btn-tutorial-explore-action');
+  if (actionBtn) {
+    actionBtn.textContent = data.actionLabel;
+  }
+}
+
+function openTutorialModal() {
+  const modal = document.getElementById('tutorial-modal');
+  if (!modal) return;
+  modal.classList.add('active');
+  updateTutorialVoiceBadge();
+  renderTutorialStep(currentTutorialStepIndex);
+}
+
+function closeTutorialModal() {
+  const modal = document.getElementById('tutorial-modal');
+  if (!modal) return;
+  modal.classList.remove('active');
+}
+
+async function playTutorialAudio() {
+  const headerBtn = document.getElementById('btn-header-tutorial');
+  const modalAudioBtn = document.getElementById('btn-tutorial-audio-toggle');
+  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
+  const audioText = document.getElementById('tutorial-audio-text');
+  const audioIcon = document.getElementById('tutorial-audio-icon');
+
+  const tutorialText = "Welcome to the Career Fair 2026 Interactive Platform Tutorial. Explore thirty-two global careers requiring English fluency, complete with accredited colleges, entrance exams, and admission pathways. You can pin your chosen career directly to your official dossier. Next, practice spoken articulation in the AI Speech Lab with real-time phoneme scoring and six-dimensional vocal coaching. Step into the News Anchor Studio to rehearse teleprompter scripts with a live video mirror. Challenge yourself across eleven Language Arcade games and compete on the live exhibition leaderboard. Finally, generate and download your official two-page Student Career Dossier complete with your cut-out ambassador business card. Take your time to explore and interact with every exhibit at your own pace.";
+
+  if (isTutorialAudioPlaying) {
+    stopAllVoice();
+    resetTutorialAudioButtons();
+    return;
+  }
+
+  stopAllVoice();
+  isTutorialAudioPlaying = true;
+
+  const sessionId = ++currentSpeechSessionId;
+  currentTtsAbortController = new AbortController();
+  const abortSignal = currentTtsAbortController.signal;
+
+  if (headerBtn) {
+    headerBtn.classList.add('playing', 'speaking-active');
+    headerBtn.innerHTML = `<span>⏹️</span> <span class="tutorial-btn-text">Stop Audio</span>`;
+    activeSpeechButton = headerBtn;
+  }
+  if (modalAudioBtn) {
+    modalAudioBtn.classList.add('playing');
+    if (audioText) audioText.textContent = 'Stop Audio Guide';
+    if (audioIcon) audioIcon.textContent = '⏹️';
+  }
+  if (loaderAudioBtn) {
+    loaderAudioBtn.textContent = '⏹️ Stop';
+  }
+
+  const chosenVoiceId = getSelectedGreetingVoice();
+
+  let preRecordedItem = PRE_RECORDED_TUTORIALS[chosenVoiceId];
+  if (!preRecordedItem && (!chosenVoiceId || chosenVoiceId === 'default' || chosenVoiceId === 'indian-neural')) {
+    preRecordedItem = PRE_RECORDED_TUTORIALS['default'];
+  }
+
+  if (preRecordedItem && preRecordedItem.url) {
+    try {
+      const audio = new Audio(preRecordedItem.url);
+      currentTtsAudio = audio;
+
+      audio.onended = () => {
+        if (sessionId === currentSpeechSessionId) {
+          stopAllVoice();
+          resetTutorialAudioButtons();
+        }
+      };
+
+      audio.onerror = () => {
+        if (sessionId === currentSpeechSessionId) {
+          fetchAndPlayTutorialWithCache(tutorialText, chosenVoiceId, sessionId, abortSignal);
+        }
+      };
+
+      if (sessionId !== currentSpeechSessionId) return;
+      await audio.play();
+      return;
+    } catch (e) {
+      if (sessionId !== currentSpeechSessionId) return;
+      console.warn('Pre-recorded tutorial audio play error:', e);
+    }
+  }
+
+  await fetchAndPlayTutorialWithCache(tutorialText, chosenVoiceId, sessionId, abortSignal);
+}
+
+function resetTutorialAudioButtons() {
+  isTutorialAudioPlaying = false;
+  const headerBtn = document.getElementById('btn-header-tutorial');
+  const modalAudioBtn = document.getElementById('btn-tutorial-audio-toggle');
+  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
+  const audioText = document.getElementById('tutorial-audio-text');
+  const audioIcon = document.getElementById('tutorial-audio-icon');
+
+  if (headerBtn) {
+    headerBtn.classList.remove('playing', 'speaking-active');
+    headerBtn.innerHTML = `<span>💡</span> <span class="tutorial-btn-text">Tutorial</span>`;
+    if (activeSpeechButton === headerBtn) activeSpeechButton = null;
+  }
+  if (modalAudioBtn) {
+    modalAudioBtn.classList.remove('playing');
+    if (audioText) audioText.textContent = 'Listen AI Audio Guide';
+    if (audioIcon) audioIcon.textContent = '🔊';
+  }
+  if (loaderAudioBtn) {
+    loaderAudioBtn.textContent = '🔊 Listen';
+  }
+}
+
+async function fetchAndPlayTutorialWithCache(text, voiceId, sessionId, abortSignal) {
+  if (tutorialAudioMemoryCache.has(voiceId)) {
+    const blobUrl = tutorialAudioMemoryCache.get(voiceId);
+    playGreetingAudioSource(blobUrl, sessionId);
+    return;
+  }
+
+  try {
+    if ('caches' in window) {
+      const cache = await caches.open('cf-tutorial-cache-v1');
+      const cacheKey = `/cached-tutorial/${encodeURIComponent(voiceId || 'default')}.mp3`;
+      const cachedResp = await cache.match(cacheKey);
+      if (cachedResp) {
+        const blob = await cachedResp.blob();
+        if (sessionId !== currentSpeechSessionId) return;
+        const blobUrl = URL.createObjectURL(blob);
+        tutorialAudioMemoryCache.set(voiceId, blobUrl);
+        playGreetingAudioSource(blobUrl, sessionId);
+        return;
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const res = await fetch(getApiUrl('api/tts'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text,
+        voiceId: voiceId,
+        accent: 'indian',
+        isTutorial: true
+      }),
+      signal: abortSignal
+    });
+
+    if (sessionId !== currentSpeechSessionId) return;
+
+    if (res.ok && (res.headers.get('content-type') || '').includes('audio')) {
+      const blob = await res.blob();
+      if (sessionId !== currentSpeechSessionId) return;
+
+      try {
+        if ('caches' in window) {
+          const cache = await caches.open('cf-tutorial-cache-v1');
+          const cacheKey = `/cached-tutorial/${encodeURIComponent(voiceId || 'default')}.mp3`;
+          await cache.put(cacheKey, new Response(blob.slice(0), {
+            headers: { 'Content-Type': 'audio/mpeg' }
+          }));
+        }
+      } catch (_) {}
+
+      const blobUrl = URL.createObjectURL(blob);
+      tutorialAudioMemoryCache.set(voiceId, blobUrl);
+      playGreetingAudioSource(blobUrl, sessionId);
+      return;
+    }
+  } catch (e) {
+    if (sessionId !== currentSpeechSessionId) return;
+    if (e.name === 'AbortError') return;
+  }
+
+  if (sessionId === currentSpeechSessionId) {
+    fallbackIndianNeuralSpeech(text, document.getElementById('btn-header-tutorial'), sessionId);
+  }
+}
+
+window.playTutorialAudio = playTutorialAudio;
+window.openTutorialModal = openTutorialModal;
+
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
 
@@ -1798,6 +2148,68 @@ function initNavigation() {
     speakGreeting();
   });
 
+  // Official 2-Page Student Career Dossier & Business Card button
+  $('#btn-header-dossier')?.addEventListener('click', () => {
+    if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
+      window.DossierPDF.generate();
+    } else {
+      showToast('⚠️ Preparing Career Dossier generator...');
+    }
+  });
+
+  // Interactive Platform Tutorial button
+  $('#btn-header-tutorial')?.addEventListener('click', () => {
+    const headerBtn = document.getElementById('btn-header-tutorial');
+    if (isTutorialAudioPlaying || (headerBtn && (headerBtn.classList.contains('playing') || headerBtn.classList.contains('speaking-active') || headerBtn.textContent.includes('Stop')))) {
+      stopAllVoice();
+      resetTutorialAudioButtons();
+    } else {
+      openTutorialModal();
+    }
+  });
+
+  // Tutorial modal navigation & interaction
+  $('#btn-close-tutorial')?.addEventListener('click', closeTutorialModal);
+  $('#btn-tutorial-done')?.addEventListener('click', closeTutorialModal);
+  $('#btn-tutorial-prev-step')?.addEventListener('click', () => {
+    renderTutorialStep(currentTutorialStepIndex - 1);
+  });
+  $('#btn-tutorial-next-step')?.addEventListener('click', () => {
+    renderTutorialStep(currentTutorialStepIndex + 1);
+  });
+  $('#btn-tutorial-audio-toggle')?.addEventListener('click', () => {
+    playTutorialAudio();
+  });
+  $('#btn-tutorial-explore-action')?.addEventListener('click', () => {
+    const data = TUTORIAL_STEPS_DATA[currentTutorialStepIndex];
+    closeTutorialModal();
+    if (data.step === 4) {
+      if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
+        window.DossierPDF.generate();
+      }
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/roadmap');
+      } else if (typeof window.switchTab === 'function') {
+        window.switchTab('roadmap');
+      }
+    } else if (data.tab) {
+      if (window.AppRouter) {
+        window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab));
+      } else {
+        switchTab(data.tab);
+      }
+    }
+  });
+
+  $$('.tutorial-nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const step = parseInt(tab.dataset.step, 10);
+      if (!isNaN(step)) {
+        renderTutorialStep(step);
+      }
+    });
+  });
+
 
 
   // Legal Modal (Terms of Service & Privacy Policy)
@@ -2642,6 +3054,11 @@ function renderCareers() {
           <div><strong style="color:var(--text-main);">Required Path:</strong> ${escapeHtml(c.degrees)}</div>
           <div><strong style="color:var(--text-main);">Entrance Tests:</strong> <span style="color:var(--accent-brand);font-weight:600;">${escapeHtml(c.exams)}</span></div>
         </div>
+        <div style="margin-top:10px;">
+          <button type="button" class="btn btn-secondary btn-xs btn-pin-career" data-title="${escapeHtml(c.title)}" style="width:100%;font-weight:700;padding:6px 10px;">
+            ⭐ Pin to My Career Dossier
+          </button>
+        </div>
 
       `;
       container.appendChild(card);
@@ -2663,11 +3080,20 @@ function renderCareers() {
       window.AppRouter.navigate('/careers', { silent: true });
     }
 
+    if (!btn) return;
+
     if (!STATE.studentProfile) STATE.studentProfile = {};
     STATE.studentProfile.chosenCareer = careerObj;
     try {
       localStorage.setItem('cf_chosen_career', JSON.stringify(careerObj));
     } catch (err) {}
+
+    if (window.DopamineEngine) {
+      window.DopamineEngine.playChime('ding');
+      window.DopamineEngine.confetti(0.5, 0.4);
+      window.DopamineEngine.unlockBadge('career_explorer', 'Career Explorer', '🎯');
+    }
+    showToast(`⭐ ${careerObj.title} pinned to your official Career Dossier!`);
   });
 
   // Event bindings
@@ -10642,7 +11068,18 @@ function renderAdminFeatureFlags() {
       category: 'Student Utilities & Community',
       icon: '🌟',
       items: [
-
+        {
+          key: 'pdf_export',
+          label: '2-Page Student Dossier PDF Export',
+          desc: 'Vector student report card export with scissors cutting-line, QR verification, and skills profile.',
+          badge: 'Export'
+        },
+        {
+          key: 'tutorial',
+          label: 'Interactive Platform Tutorial & Voice Guide',
+          desc: 'Interactive platform tutorial walkthrough with pre-recorded studio voice audio and zero-credit caching.',
+          badge: 'Tutorial'
+        },
         {
           key: 'leaderboard',
           label: 'Exhibition Hall Leaderboards',
@@ -10807,7 +11244,23 @@ function applyFeatureFlags() {
     greetingBtn.style.display = isGuideEnabled ? '' : 'none';
   }
 
-  // 5. If currently on a disabled tab, fallback cleanly to 'hero' (Overview)
+  // 5. Header Dossier button encapsulation
+  const dossierBtn = $('#btn-header-dossier');
+  if (dossierBtn) {
+    const isPdfEnabled = flags.pdf_export !== false;
+    dossierBtn.hidden = !isPdfEnabled;
+    dossierBtn.style.display = isPdfEnabled ? '' : 'none';
+  }
+
+  // 6. Header Tutorial button encapsulation
+  const tutorialBtn = $('#btn-header-tutorial');
+  if (tutorialBtn) {
+    const isTutorialEnabled = flags.tutorial !== false;
+    tutorialBtn.hidden = !isTutorialEnabled;
+    tutorialBtn.style.display = isTutorialEnabled ? '' : 'none';
+  }
+
+  // 7. If currently on a disabled tab, fallback cleanly to 'hero' (Overview)
   if (STATE.activeTab && STATE.activeTab !== 'hero') {
     const currentTabBtn = $(`.tab-btn[data-tab="${STATE.activeTab}"]`);
     if (currentTabBtn && (currentTabBtn.hidden || currentTabBtn.style.display === 'none')) {
@@ -11099,6 +11552,7 @@ function initAdminWorkspace() {
       STATE.config.eleven_voice = v;
     }
     updateGreetingButtonTitle();
+    updateTutorialVoiceBadge();
   });
 
   $('#btn-verify-eleven')?.addEventListener('click', () => {
@@ -11706,6 +12160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize navigation & core handlers
   initNavigation();
   updateGreetingButtonTitle();
+  updateTutorialVoiceBadge();
   initSpeakLadder();
   initGamePicker();
   initPlanTools();

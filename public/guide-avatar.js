@@ -54,6 +54,14 @@
       return window.STATE?.config?.flags?.guide_presentation_mode || 'floating';
     }
 
+    setPresentationMode(mode) {
+      if (!window.STATE) window.STATE = {};
+      if (!window.STATE.config) window.STATE.config = {};
+      if (!window.STATE.config.flags) window.STATE.config.flags = {};
+      window.STATE.config.flags.guide_presentation_mode = mode;
+      this.renderGuideUI();
+    }
+
     getMlEngine() {
       return window.STATE?.config?.flags?.guide_ml_engine || 'client';
     }
@@ -173,7 +181,8 @@
               <div class="dg-check-item" data-step="6"><span>7.</span> News Anchor & Teleprompter</div>
               <div class="dg-check-item" data-step="7"><span>8.</span> Language Arcade & OCR</div>
               <div class="dg-check-item" data-step="8"><span>9.</span> Leaderboard & Reviews</div>
-                          </div>
+              <div class="dg-check-item" data-step="9"><span>10.</span> 2-Page Printable Dossier</div>
+            </div>
 
             <div class="dg-drawer-caption" id="dg-caption-text">
               Welcome! Let me guide you through every interactive exhibit.
@@ -194,7 +203,7 @@
                 <span class="dg-status-dot"></span>
                 <span class="dg-hud-title">AI Guide</span>
               </div>
-              <div class="dg-hud-step-pill" id="dg-step-indicator">Step 1/9</div>
+              <div class="dg-hud-step-pill" id="dg-step-indicator">Step 1/10</div>
               <button class="dg-hud-skip" id="dg-btn-skip" title="Skip Tour (✕)">✕</button>
             </div>
 
@@ -238,6 +247,17 @@
           window.STATE.config.flags.guide_presentation_mode = 'floating';
         }
         this.renderGuideUI();
+      });
+
+      root.querySelectorAll('.dg-check-item').forEach(item => {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', () => {
+          const s = parseInt(item.dataset.step, 10);
+          if (!isNaN(s)) {
+            if (this.tourTimeout) clearTimeout(this.tourTimeout);
+            this.executeStep(s);
+          }
+        });
       });
 
       // Make draggable if floating
@@ -347,7 +367,7 @@
     }
 
     async executeStep(stepIndex) {
-      if (!this.isActive) return;
+      this.isActive = true;
       this.currentStep = stepIndex;
 
       // Update indicator
@@ -371,7 +391,6 @@
           await this.speakGuideLine(
             "Hello! I see you! Welcome to the Career Fair 2026 at Kanakia International School Mira Road. I am your realistic digital guide. Let's find out how English unlocks your dream career!"
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(1), 7500);
           break;
 
         case 1:
@@ -380,7 +399,6 @@
             "Tell me, what are your favorite subjects or what do you dream of becoming? Click the microphone to speak, or click Next to explore our 32 global careers!"
           );
           document.getElementById('dg-btn-mic')?.classList.add('pulse-glow');
-          this.tourTimeout = setTimeout(() => this.executeStep(2), 7000);
           break;
 
         case 2:
@@ -398,7 +416,6 @@
           if (window.DopamineEngine && typeof window.DopamineEngine.openMysteryTrajectory === 'function') {
             window.DopamineEngine.openMysteryTrajectory();
           }
-          this.tourTimeout = setTimeout(() => this.executeStep(3), 8500);
           break;
 
         case 3:
@@ -413,7 +430,6 @@
           await this.speakGuideLine(
             "Here are India and the world's premier accredited institutions—featuring official NAAC Grade A++ scores, NIRF top ranks, and regulatory approvals."
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(4), 8000);
           break;
 
         case 4:
@@ -428,7 +444,6 @@
           await this.speakGuideLine(
             "Master every major competitive entrance test: CUET, CLAT, NEET, and DGCA Commercial Pilot exams. Clear English comprehension is essential for top percentile rankings!"
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(5), 8000);
           break;
 
         case 5:
@@ -443,7 +458,6 @@
           await this.speakGuideLine(
             "This is our AI Speech Lab! Test your voice articulation against our 6D coach to measure pronunciation, cadence, fluency, and professional poise."
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(6), 8500);
           break;
 
         case 6:
@@ -458,7 +472,6 @@
           await this.speakGuideLine(
             "Step into the live studio broadcast! Practice teleprompter pacing and executive interview simulations with real-time feedback."
           );
-          this.tourTimeout = setTimeout(() => this.executeStep(7), 8000);
           break;
 
         case 7:
@@ -476,7 +489,6 @@
           if (window.GameCompletionDetector) {
             window.GameCompletionDetector.setActiveGame('jobtris');
           }
-          this.tourTimeout = setTimeout(() => this.executeStep(8), 9000);
           break;
 
         case 8:
@@ -491,22 +503,40 @@
           await this.speakGuideLine(
             "Check out our real-time Leaderboard and parent reflections! See how students across all grades are excelling today."
           );
-          this.tourTimeout = setTimeout(() => this.finishTour(), 7500);
           break;
 
         case 9:
-          this.finishTour();
+          // Step 10: 2-Page Printable Dossier & Business Card
+          if (flags.pdf_export === false) {
+            this.finishTour();
+            return;
+          }
+          if (typeof window.switchTab === 'function') {
+            window.switchTab('roadmap');
+          }
+          await this.speakGuideLine(
+            "Congratulations! Your entire journey, career roadmap, and official student business card are ready in an official two-page printable PDF. Download it now!"
+          );
+          if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
+            window.DossierPDF.generate();
+          }
           break;
 
         default:
           this.finishTour();
           break;
       }
+
+      // Update Next button label for final step
+      const nextBtn = document.getElementById('dg-btn-next');
+      if (nextBtn) {
+        nextBtn.textContent = stepIndex >= 9 ? 'Finish Tour ➔' : 'Next Exhibit ➡️';
+      }
     }
 
     advanceToNextStep() {
       if (this.tourTimeout) clearTimeout(this.tourTimeout);
-      if (this.currentStep < 8) {
+      if (this.currentStep < 9) {
         this.executeStep(this.currentStep + 1);
       } else {
         this.finishTour();
@@ -663,6 +693,8 @@
   }
 
   // Export Singleton
-  window.DigitalHumanGuide = new DigitalHumanGuideEngine();
+  const guideInstance = new DigitalHumanGuideEngine();
+  window.DigitalHumanGuide = guideInstance;
+  window.GuideAvatar = guideInstance;
 
 })(window);

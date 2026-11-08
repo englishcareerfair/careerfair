@@ -2492,7 +2492,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         'JBFqnCBsd6RMkjVDRZzb': 'greeting_JBFqnCBsd6RMkjVDRZzb.mp3',
         'EXAVITQu4vr4xnSDxMaL': 'greeting_EXAVITQu4vr4xnSDxMaL.mp3',
         'Xb7hH8MSUJpSbSDYk0k2': 'greeting_Xb7hH8MSUJpSbSDYk0k2.mp3',
-        'IKne3meq5aSn9XLyUdCD': 'greeting_IKne3meq5aSn9XLyUdCD.mp3'
+        'IKne3meq5aSn9XLyUdCD': 'greeting_IKne3meq5aSn9XLyUdCD.mp3',
+        'default': 'greeting_default.mp3'
       };
       let requestedVoice = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
       const fname = PRE_RECORDED_FILES[requestedVoice] || PRE_RECORDED_FILES['SAz9YHcvj6GT2YYXdXww'] || 'greeting_default.mp3';
@@ -2515,7 +2516,40 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
       } catch (_) {}
     }
-    
+
+    // Zero-Credit Optimization: Check if this is the platform tutorial voice guide
+    const isTutorialRequest = Boolean(body.isTutorial || (text && text.includes('Interactive Platform Tutorial')));
+    if (isTutorialRequest) {
+      const PRE_RECORDED_TUTORIAL_FILES = {
+        'SAz9YHcvj6GT2YYXdXww': 'tutorial_SAz9YHcvj6GT2YYXdXww.mp3',
+        'JBFqnCBsd6RMkjVDRZzb': 'tutorial_JBFqnCBsd6RMkjVDRZzb.mp3',
+        'EXAVITQu4vr4xnSDxMaL': 'tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
+        'Xb7hH8MSUJpSbSDYk0k2': 'tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
+        'IKne3meq5aSn9XLyUdCD': 'tutorial_IKne3meq5aSn9XLyUdCD.mp3',
+        'default': 'tutorial_default.mp3'
+      };
+      let requestedVoice = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
+      const fname = PRE_RECORDED_TUTORIAL_FILES[requestedVoice] || PRE_RECORDED_TUTORIAL_FILES['SAz9YHcvj6GT2YYXdXww'] || 'tutorial_default.mp3';
+      try {
+        const audioAssetUrl = new URL(`/audio/tutorial/${fname}`, request.url);
+        const assetResp = env.ASSETS ? await env.ASSETS.fetch(audioAssetUrl) : await fetch(audioAssetUrl);
+        if (assetResp && assetResp.ok) {
+          const ab = await assetResp.arrayBuffer();
+          return new Response(ab, {
+            status: 200,
+            headers: {
+              'Content-Type': 'audio/mpeg',
+              'Content-Length': String(ab.byteLength),
+              'Access-Control-Allow-Origin': '*',
+              'Cache-Control': 'public, max-age=31536000, immutable',
+              'x-pre-recorded': 'true',
+              'x-eleven-voice-id': requestedVoice || 'SAz9YHcvj6GT2YYXdXww'
+            }
+          });
+        }
+      } catch (_) {}
+    }
+
     // Resolve key from body, header, database KV, or env
     let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
     if (elevenKey && elevenKey.includes('\n')) {

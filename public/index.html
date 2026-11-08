@@ -35,6 +35,7 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
+  <script src="dossier-pdf.js?v=11.9" defer></script>
   <script src="dopamine-engine.js?v=7.7" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
     <script src="guide-avatar.js?v=7.8" defer></script>
@@ -276,7 +277,40 @@
     [data-theme="light"] .loader-status-pct {
       color: #0284c7 !important;
     }
-    [data-theme="light"]
+    .loader-tutorial-panel {
+      width: 100% !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      border-radius: 14px !important;
+      padding: 12px 14px !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      text-align: left !important;
+      box-sizing: border-box !important;
+    }
+    [data-theme="light"] .loader-tutorial-panel {
+      background: rgba(255, 255, 255, 0.9) !important;
+      border-color: rgba(0, 0, 0, 0.08) !important;
+    }
+    .loader-tutorial-header {
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.06em !important;
+      color: #ff2a85 !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    .loader-tutorial-icon {
+      font-size: 14px !important;
+    }
+    .loader-tutorial-badge {
+      flex: 1 !important;
+    }
     .loader-dots-indicator {
       display: flex !important;
       gap: 4px !important;
@@ -288,6 +322,8 @@
       border-radius: 50% !important;
       background: rgba(255, 255, 255, 0.2) !important;
       display: inline-block !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
     }
     [data-theme="light"] .loader-dot {
       background: rgba(0, 0, 0, 0.2) !important;
@@ -297,14 +333,66 @@
       width: 14px !important;
       border-radius: 99px !important;
     }
+    .loader-tutorial-text {
+      margin: 0 !important;
+      font-size: 12.5px !important;
+      line-height: 1.5 !important;
+      color: #e2e8f0 !important;
+      font-weight: 500 !important;
+      min-height: 38px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    }
+    [data-theme="light"] .loader-tutorial-text {
+      color: #1e293b !important;
+    }
+    .loader-tips-nav {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin-left: auto !important;
+    }
+    .btn-loader-nav {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+      color: #00f0ff !important;
+      border-radius: 99px !important;
+      padding: 4px 10px !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      transition: all 0.2s ease !important;
+      line-height: 1.2 !important;
+      touch-action: manipulation !important;
+      user-select: none !important;
+    }
+    .btn-loader-enter {
+      background: linear-gradient(135deg, #00f0ff, #8b5cf6) !important;
+      color: #07090e !important;
+      font-weight: 800 !important;
+      border: none !important;
+      border-radius: 99px !important;
+      padding: 8px 22px !important;
+      font-size: 13px !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4) !important;
+      transition: all 0.2s ease !important;
+      touch-action: manipulation !important;
+      user-select: none !important;
+    }
     @media (max-width: 480px) {
       .loader-card { gap: 12px !important; }
       .loader-orbital-system { width: 76px !important; height: 76px !important; }
       .loader-emblem { width: 36px !important; height: 36px !important; }
       .loader-logo-icon { width: 36px !important; height: 36px !important; }
+      .loader-tutorial-panel { padding: 10px 12px !important; }
+      .loader-tutorial-text { font-size: 12px !important; }
     }
-    [data-theme="light"]
-    [data-theme="light"]
   </style>
 </head>
 <body>
@@ -341,6 +429,34 @@
         </div>
         <h1 class="loader-heading">Career Fair <span class="loader-year">2026</span></h1>
         <p class="loader-tagline">Every Modern Profession Speaks English</p>
+      </div>
+
+      <div class="loader-tutorial-panel" id="loader-tips-panel">
+        <div class="loader-tutorial-header">
+          <span class="loader-tutorial-icon">💡</span>
+          <span class="loader-tutorial-badge">TIPS</span>
+          <div class="loader-dots-indicator" id="loader-dots-indicator">
+            <span class="loader-dot active" data-tip="0"></span>
+            <span class="loader-dot" data-tip="1"></span>
+            <span class="loader-dot" data-tip="2"></span>
+            <span class="loader-dot" data-tip="3"></span>
+            <span class="loader-dot" data-tip="4"></span>
+            <span class="loader-dot" data-tip="5"></span>
+          </div>
+          <div class="loader-tips-nav">
+            <button type="button" class="btn-loader-nav" id="btn-loader-prev-tip" aria-label="Previous tip">◀</button>
+            <button type="button" class="btn-loader-nav" id="btn-loader-next-tip" aria-label="Next tip">Next Tip ▶</button>
+            <button type="button" class="btn-loader-nav" id="btn-loader-tutorial-audio" aria-label="Listen tutorial audio">🔊 Listen</button>
+          </div>
+        </div>
+        <p class="loader-tutorial-text" id="loader-tutorial-text">
+          Explore 32+ Global Careers with AI-verified eligibility, top colleges, and admission pathways.
+        </p>
+        <div style="margin-top:6px;display:flex;justify-content:center;width:100%;">
+          <button type="button" class="btn-loader-enter" id="btn-loader-enter" style="background:linear-gradient(135deg,#00f0ff,#8b5cf6);color:#07090e;font-weight:800;border:none;border-radius:99px;padding:8px 22px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 0 16px rgba(0,240,255,0.4);transition:all 0.2s ease;">
+            Explore Career Fair ➔
+          </button>
+        </div>
       </div>
 
       </div>
@@ -380,6 +496,16 @@
         <!-- Spoken Greeting Button -->
         <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
           <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>
+        </button>
+
+        <!-- Official 2-Page Student Career Dossier & Business Card Download Button -->
+        <button class="header-dossier-btn" id="btn-header-dossier" type="button" aria-label="Download official 2-page printable student dossier">
+          <span>📄</span> <span class="dossier-btn-text">Student Dossier</span>
+        </button>
+
+        <!-- Interactive Platform Tutorial Button -->
+        <button class="header-tutorial-btn" id="btn-header-tutorial" type="button" aria-label="Open interactive platform tutorial walkthrough">
+          <span>💡</span> <span class="tutorial-btn-text">Tutorial</span>
         </button>
 
               </div>
@@ -2011,6 +2137,57 @@
     window.setParticleColor = window.setParticleColors;
   })();
   </script>
+
+  <!-- ── 15. INTERACTIVE PLATFORM TUTORIAL MODAL ── -->
+  <div class="tutorial-modal-overlay" id="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-modal-title">
+    <div class="tutorial-modal-card">
+      <div class="tutorial-modal-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">🎓</span>
+          <div>
+            <h3 id="tutorial-modal-title" style="margin:0;font-size:16px;font-weight:800;color:var(--text-main);">
+              Career Fair 2026 Interactive Tutorial
+            </h3>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
+              <span style="font-size:11px;color:var(--text-muted);" id="tutorial-step-counter">Step 1 of 5</span>
+              <span style="font-size:11px;color:var(--accent-cyan);background:rgba(0,240,255,0.1);padding:1px 6px;border-radius:99px;border:1px solid rgba(0,240,255,0.25);" id="tutorial-voice-badge-name">
+                Voice: River (Informative Studio)
+              </span>
+            </div>
+          </div>
+        </div>
+        <button type="button" id="btn-close-tutorial" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px;" aria-label="Close tutorial">✕</button>
+      </div>
+
+      <div class="tutorial-nav-tabs" role="tablist">
+        <button type="button" class="tutorial-nav-tab active" data-step="0">1. Careers (32+)</button>
+        <button type="button" class="tutorial-nav-tab" data-step="1">2. AI Speech Lab</button>
+        <button type="button" class="tutorial-nav-tab" data-step="2">3. Studio Teleprompter</button>
+        <button type="button" class="tutorial-nav-tab" data-step="3">4. Language Arcade</button>
+        <button type="button" class="tutorial-nav-tab" data-step="4">5. 2-Page Dossier</button>
+      </div>
+
+      <div class="tutorial-modal-body">
+        <div id="tutorial-card-body"></div>
+      </div>
+
+      <div class="tutorial-modal-footer">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-audio-toggle" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
+            <span id="tutorial-audio-icon">🔊</span> <span id="tutorial-audio-text">Listen AI Audio Guide</span>
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-prev-step">◀ Previous</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-next-step">Next Exhibit ▶</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-explore-action" style="font-weight:800;">
+            Explore Exhibit ➔
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-done">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>

@@ -401,6 +401,92 @@
 
 
 
+
+.loader-tutorial-panel {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .loader-tutorial-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.loader-tutorial-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #ff2a85;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.loader-tutorial-icon {
+  font-size: 14px;
+}
+
+.loader-tutorial-badge {
+  flex: 1;
+}
+
+.loader-dots-indicator {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.loader-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-block;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+[data-theme="light"] .loader-dot {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.loader-dot.active {
+  background: #ff2a85;
+  width: 14px;
+  border-radius: 99px;
+}
+
+.loader-tutorial-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #e2e8f0;
+  font-weight: 500;
+  min-height: 38px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+[data-theme="light"] .loader-tutorial-text {
+  color: #1e293b;
+}
+
+.btn-loader-enter:hover {
+  transform: translateY(-1px) scale(1.02);
+  filter: brightness(1.15);
+  box-shadow: 0 0 24px rgba(0, 240, 255, 0.7);
+}
+
 @media (max-width: 480px) {
   .loader-card {
     gap: 14px;
@@ -831,6 +917,38 @@ button, input, select, textarea {
 .audio-greeting-btn:hover {
   background: rgba(0, 240, 255, 0.2);
   transform: translateY(-1px);
+}
+
+
+/* Header Dossier & Tutorial Buttons */
+.header-dossier-btn,
+.header-tutorial-btn {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid var(--border-strong);
+  color: var(--accent-cyan);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.header-dossier-btn:hover,
+.header-tutorial-btn:hover {
+  background: rgba(0, 240, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.header-tutorial-btn.playing {
+  background: rgba(255, 42, 133, 0.15);
+  border-color: var(--accent-magenta);
+  color: var(--accent-magenta);
+  animation: pulseGreeting 1.4s infinite alternate;
 }
 
 .audio-greeting-btn.playing {
@@ -5126,4 +5244,108 @@ input[data-capitalize="name"] {
   ::view-transition-new(*) {
     animation: none !important;
   }
+}
+
+
+/* =========================================================================
+   INTERACTIVE PLATFORM TUTORIAL MODAL
+   ========================================================================= */
+.tutorial-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(7, 9, 14, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.tutorial-modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tutorial-modal-card {
+  background: var(--surface-raised, #0f172a);
+  border: 1px solid var(--border-strong, rgba(0, 240, 255, 0.25));
+  border-radius: var(--radius-lg, 16px);
+  max-width: 640px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 240, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tutorial-modal-overlay.active .tutorial-modal-card {
+  transform: translateY(0) scale(1);
+}
+
+.tutorial-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+}
+
+.tutorial-nav-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  overflow-x: auto;
+}
+
+.tutorial-nav-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  color: var(--text-muted, #94a3b8);
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.tutorial-nav-tab:hover {
+  background: rgba(0, 240, 255, 0.1);
+  color: #00f0ff;
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+.tutorial-nav-tab.active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(255, 42, 133, 0.2));
+  color: #ffffff;
+  border-color: #00f0ff;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+}
+
+.tutorial-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tutorial-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  background: rgba(0, 0, 0, 0.15);
+  flex-wrap: wrap;
+  gap: 10px;
 }
