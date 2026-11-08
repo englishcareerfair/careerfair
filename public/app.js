@@ -11331,10 +11331,107 @@ function applyFeatureFlags() {
   }
 }
 
+// ─── ADMIN: D1 DATABASE CONNECTION STATUS & LIVE TESTER ────────────────────
+function renderAdminDbStatus(cfg) {
+  const dbStatusWrap = $('#admin-db-status-pill');
+  if (!dbStatusWrap) return;
+
+  if (cfg) {
+    if (cfg.db_connected !== undefined) STATE.config.db_connected = Boolean(cfg.db_connected);
+    if (cfg.total_scores !== undefined) STATE.config.total_scores = cfg.total_scores;
+    if (cfg.total_feedback !== undefined) STATE.config.total_feedback = cfg.total_feedback;
+  }
+
+  const isConnected = Boolean(STATE.config && STATE.config.db_connected);
+  const totalScores = (STATE.config && STATE.config.total_scores) || 0;
+  const totalFeedback = (STATE.config && STATE.config.total_feedback) || 0;
+
+  if (isConnected) {
+    dbStatusWrap.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:6px;">
+        <span class="badge-pill" style="background:rgba(16,185,129,0.15);color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.4);font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12.5px;">
+          🟢 Cloudflare D1 Database Active · Global Multi-System Storage Synchronized (${totalScores} scores, ${totalFeedback} reviews)
+        </span>
+        <button type="button" id="btn-admin-test-db-conn" class="btn btn-secondary btn-sm" style="padding:4px 10px;font-size:11.5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="Test live Cloudflare D1 database connection">
+          🔄 Test Connection
+        </button>
+      </div>
+    `;
+  } else {
+    dbStatusWrap.innerHTML = `
+      <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.38);border-radius:var(--radius-sm, 8px);padding:14px 16px;margin-top:8px;font-size:12.5px;color:var(--text-main);line-height:1.55;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+          <div>
+            <strong style="color:#f59e0b;font-size:13.5px;">🟡 Global D1 Database Not Linked in Cloudflare Pages:</strong>
+            <div style="margin-top:3px;color:var(--text-dim, #64748b);">
+              Currently storing data in transient browser/memory cache. Connect Cloudflare D1 to persist YouTube URL, speech scores, and feedback across all devices worldwide:
+            </div>
+          </div>
+          <button type="button" id="btn-admin-test-db-conn" class="btn btn-secondary btn-sm" style="padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.1);" title="Test live connection to Cloudflare D1">
+            🔄 Test Connection
+          </button>
+        </div>
+        <ol style="margin:10px 0 6px 18px;padding:0;">
+          <li style="margin-bottom:5px;">
+            In Cloudflare Dashboard → <strong>Storage &amp; Databases</strong> → <strong>D1 SQL Database</strong> → Click <strong>Create</strong> (e.g. Name: <code>careerfair</code>)
+          </li>
+          <li style="margin-bottom:5px;">
+            In <strong>Workers &amp; Pages</strong> → Select your Pages Project (e.g. <code>careerwithenglish</code> or <code>careerfair</code>) → <strong>Settings</strong> → <strong>Functions</strong> → <strong>D1 database bindings</strong> → Click <strong>Add binding</strong>:
+            <div style="margin:4px 0;background:rgba(0,0,0,0.06);padding:4px 10px;border-radius:4px;font-family:monospace;font-size:11.5px;display:inline-block;">
+              Variable name: <strong>DB</strong> &nbsp;|&nbsp; D1 database: <strong>careerfair</strong>
+            </div>
+          </li>
+          <li style="margin-top:6px;color:#d97706;font-weight:700;">
+            ⚡ <strong>Mandatory Step to Activate:</strong> Cloudflare Pages builds bindings into each deployment. If you added the binding just now, go to <strong>Deployments</strong> → Click <strong>··· (Options)</strong> on your latest deployment → Click <strong>Retry deployment</strong> (or push a commit) so the binding is attached!
+          </li>
+        </ol>
+      </div>
+    `;
+  }
+
+  // Wire up the Test Connection button
+  const testBtn = $('#btn-admin-test-db-conn');
+  if (testBtn) {
+    testBtn.onclick = async () => {
+      const origText = testBtn.innerHTML;
+      testBtn.disabled = true;
+      testBtn.innerHTML = `⏳ Testing...`;
+      try {
+        const liveCfg = await fetchApi(`config?_t=${Date.now()}`);
+        if (liveCfg && liveCfg.db_connected !== undefined) {
+          STATE.config.db_connected = Boolean(liveCfg.db_connected);
+          if (liveCfg.total_scores !== undefined) STATE.config.total_scores = liveCfg.total_scores;
+          if (liveCfg.total_feedback !== undefined) STATE.config.total_feedback = liveCfg.total_feedback;
+          renderAdminDbStatus(liveCfg);
+          if (liveCfg.db_connected) {
+            showToast('✅ Cloudflare D1 Database connected and active! Multi-system storage synchronized.');
+          } else {
+            showToast('⚠️ D1 is still unbound on this deployment. Go to Cloudflare Pages → Deployments → Retry deployment!');
+          }
+        } else {
+          showToast('⚠️ Could not verify D1 status from server.');
+          testBtn.innerHTML = origText;
+          testBtn.disabled = false;
+        }
+      } catch (err) {
+        showToast('❌ Connection test error: ' + (err.message || 'Network error'));
+        testBtn.innerHTML = origText;
+        testBtn.disabled = false;
+      }
+    };
+  }
+}
+window.renderAdminDbStatus = renderAdminDbStatus;
+
 function initAdminWorkspace() {
   // Authoritative global API key sync from Cloudflare D1 to synchronize keys across all admin devices
   fetchApi('admin/config').then(adminCfg => {
     if (adminCfg && adminCfg.ok) {
+      if (adminCfg.db_connected !== undefined) {
+        STATE.config.db_connected = Boolean(adminCfg.db_connected);
+        if (adminCfg.total_scores !== undefined) STATE.config.total_scores = adminCfg.total_scores;
+        if (adminCfg.total_feedback !== undefined) STATE.config.total_feedback = adminCfg.total_feedback;
+      }
       if (adminCfg.gemini_keys) {
         STATE.config.gemini_keys = adminCfg.gemini_keys;
         STATE.config.gemini_key = adminCfg.gemini_keys.split(/[\r\n,]+/)[0].trim();
@@ -11358,31 +11455,12 @@ function initAdminWorkspace() {
       if (typeof window.syncAdminGeminiKeyBoxes === 'function') window.syncAdminGeminiKeyBoxes();
       if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
       if (typeof verifyAndLoadElevenVoices === 'function') verifyAndLoadElevenVoices(true);
+      renderAdminDbStatus(adminCfg);
     }
   }).catch(() => {});
 
   if (typeof window.initDynamicApiPools === 'function') window.initDynamicApiPools();
-  const dbStatusWrap = $('#admin-db-status-pill');
-  if (dbStatusWrap && STATE.config) {
-    if (STATE.config.db_connected) {
-      dbStatusWrap.innerHTML = `
-        <span class="badge-pill" style="background:rgba(16,185,129,0.15);color:var(--accent-green, #10b981);border:1px solid rgba(16,185,129,0.4);font-weight:700;">
-          🟢 Cloudflare D1 Database Active · Global Multi-System Storage Synchronized (${STATE.config.total_scores || 0} scores, ${STATE.config.total_feedback || 0} reviews)
-        </span>
-      `;
-    } else {
-      dbStatusWrap.innerHTML = `
-        <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:var(--radius-sm);padding:10px 14px;margin-top:8px;font-size:12.5px;color:var(--text-main);line-height:1.5;">
-          <strong style="color:#f59e0b;">🟡 Global D1 Database Not Linked in Cloudflare Pages:</strong>
-          Currently storing in local browser cache. To replicate YouTube URL, scores, and feedback across all devices worldwide:
-          <ol style="margin:6px 0 2px 18px;padding:0;">
-            <li>In Cloudflare Dashboard → <strong>Storage &amp; Databases</strong> → <strong>D1</strong> → Click <strong>Create</strong> (Name: <code>careerfair</code>)</li>
-            <li>In <strong>Workers &amp; Pages</strong> → <code>careerfair</code> → <strong>Settings</strong> → <strong>Functions</strong> → <strong>D1 Database Bindings</strong> → Add binding: Variable name: <code>DB</code>, Database: <code>careerfair</code></li>
-          </ol>
-        </div>
-      `;
-    }
-  }
+  renderAdminDbStatus(STATE.config);
 
   // Admin tabs switching
   $$('#admin-tab-row .filter-chip').forEach(btn => {
@@ -12247,6 +12325,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const localElevenVoice = localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '';
 
     STATE.config = Object.assign({}, STATE.config, cfg);
+    renderAdminDbStatus(STATE.config);
 
     // Synchronize authoritative user titles from Cloudflare D1
     if (cfg.user_titles && typeof cfg.user_titles === 'object') {
@@ -12393,7 +12472,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const liveCfg = await fetchApi('config');
       if (liveCfg) {
-        if (liveCfg.db_connected !== undefined) STATE.config.db_connected = liveCfg.db_connected;
+        if (liveCfg.db_connected !== undefined) STATE.config.db_connected = Boolean(liveCfg.db_connected);
+        if (liveCfg.total_scores !== undefined) STATE.config.total_scores = liveCfg.total_scores;
+        if (liveCfg.total_feedback !== undefined) STATE.config.total_feedback = liveCfg.total_feedback;
+        renderAdminDbStatus(liveCfg);
         if (liveCfg.user_titles && typeof liveCfg.user_titles === 'object') {
           try {
             localStorage.setItem('cf_user_titles', JSON.stringify(liveCfg.user_titles));

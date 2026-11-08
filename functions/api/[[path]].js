@@ -327,6 +327,49 @@ const DEFAULT_FLAGS = {
   feedback: true
 };
 
+/**
+ * Dynamic resolution of Cloudflare D1 Database binding with duck typing.
+ * Checks known binding candidates, and dynamically scans all properties in env
+ * for any D1 database instance (object with prepare and batch/exec methods).
+ */
+function resolveD1Database(env) {
+  if (!env || typeof env !== 'object') return null;
+
+  // 1. Direct candidate names
+  const candidateKeys = [
+    'DB', 'db', 'DATABASE', 'database', 'D1', 'd1',
+    'careerfair-db', 'careerfair_db', 'CAREERFAIR_DB', 'careerfair', 'CAREERFAIR',
+    'CF_DB', 'cf_db', 'careerwithenglish', 'careerwithenglish_db', 'CAREERWITHENGLISH_DB',
+    'CAREERWITHENGLISH', 'PROD_DB', 'prod_db', 'SQLITE_DB', 'sqlite_db'
+  ];
+
+  for (const k of candidateKeys) {
+    const val = env[k];
+    if (val && typeof val === 'object' && typeof val.prepare === 'function') {
+      return val;
+    }
+  }
+
+  // 2. Dynamic discovery scan across all keys in env for an object with prepare and batch
+  try {
+    for (const key of Object.keys(env)) {
+      const val = env[key];
+      if (val && typeof val === 'object' && typeof val.prepare === 'function' && typeof val.batch === 'function') {
+        return val;
+      }
+    }
+    // Fallback: any object in env with prepare function
+    for (const key of Object.keys(env)) {
+      const val = env[key];
+      if (val && typeof val === 'object' && typeof val.prepare === 'function') {
+        return val;
+      }
+    }
+  } catch (e) {}
+
+  return null;
+}
+
 // ─── Main Router ─────────────────────────────────────────────────────────────
 
 export async function onRequest(ctx) {
@@ -347,8 +390,8 @@ export async function onRequest(ctx) {
     });
   }
 
-  // Flexible multi-binding resolution for Cloudflare D1
-  const db = env.DB || env.db || env.DATABASE || env.database || env.D1 || env.d1 || env["careerfair-db"] || env.careerfair || env.careerfair_db || env.CAREERFAIR_DB || env.CF_DB;
+  // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
+  const db = resolveD1Database(env);
   await ensureDbSchema(db);
 
   // ── IP Ban Enforcement ──
@@ -458,7 +501,7 @@ export async function onRequest(ctx) {
     });
   }
 
-    // ── 2a. GET /admin/config (Authenticated admin configuration & key sync across all devices) ────
+  // ── 2a. GET /admin/config (Authenticated admin configuration & key sync across all devices) ────
   if (path === '/admin/config' && method === 'GET') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);
@@ -467,11 +510,26 @@ export async function onRequest(ctx) {
     const eleven_keys = (await kvGet(db, 'eleven_keys', '')) || (await kvGet(db, 'eleven_key', '')) || env.ELEVEN_KEY || env.ELEVEN_API_KEY || '';
     const eleven_voice = (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '';
 
+    let totalScores = 0;
+    let totalFeedback = 0;
+    if (db) {
+      try {
+        const sRow = await db.prepare('SELECT COUNT(*) as c FROM scores').first();
+        totalScores = sRow?.c || 0;
+        const fRow = await db.prepare('SELECT COUNT(*) as c FROM feedback WHERE approved=1').first();
+        totalFeedback = fRow?.c || 0;
+      } catch {}
+    }
+
     return json({
       ok: true,
       gemini_keys,
       eleven_keys,
-      eleven_voice
+      eleven_voice,
+      db_connected: Boolean(db),
+      db_status: db ? 'connected' : 'unbound',
+      total_scores: totalScores || GLOBAL_CACHE.scores.length,
+      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length
     });
   }
 
