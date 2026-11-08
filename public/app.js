@@ -1851,6 +1851,8 @@ const CAREERS_DATA = [
 ];
 
 // Colleges Dataset with Verified Official Accreditation
+window.CAREERS_DATA = CAREERS_DATA;
+
 const COLLEGES_DATA = {
   Maharashtra: [
     {
