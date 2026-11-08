@@ -14,6 +14,9 @@ const json = (data, status = 200) =>
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
   });
 
@@ -329,8 +332,8 @@ const DEFAULT_FLAGS = {
 
 /**
  * Dynamic resolution of Cloudflare D1 Database binding with duck typing.
- * Checks known binding candidates, and dynamically scans all properties in env
- * for any D1 database instance (object with prepare and batch/exec methods).
+ * Checks known binding candidates, scans prototype-chain properties, and checks
+ * all keys for an object implementing SQLite prepare().
  */
 function resolveD1Database(env) {
   if (!env || typeof env !== 'object') return null;
@@ -338,32 +341,59 @@ function resolveD1Database(env) {
   // 1. Direct candidate names
   const candidateKeys = [
     'DB', 'db', 'DATABASE', 'database', 'D1', 'd1',
-    'careerfair-db', 'careerfair_db', 'CAREERFAIR_DB', 'careerfair', 'CAREERFAIR',
-    'CF_DB', 'cf_db', 'careerwithenglish', 'careerwithenglish_db', 'CAREERWITHENGLISH_DB',
-    'CAREERWITHENGLISH', 'PROD_DB', 'prod_db', 'SQLITE_DB', 'sqlite_db'
+    'careerfair', 'CAREERFAIR',
+    'careerfair_db', 'careerfair-db', 'CAREERFAIR_DB', 'careerfairdb', 'CAREERFAIRDB',
+    'career_fair', 'career-fair', 'CAREER_FAIR',
+    'career_fair_db', 'career-fair-db', 'CAREER_FAIR_DB',
+    'careerfair_d1', 'careerfair-d1', 'CAREERFAIR_D1',
+    'd1_careerfair', 'd1-careerfair', 'D1_CAREERFAIR',
+    'careerfair_database', 'careerfair-database', 'CAREERFAIR_DATABASE',
+    'DB_CAREERFAIR', 'db_careerfair',
+    'CF_DB', 'cf_db', 'CF_D1', 'cf_d1',
+    'careerwithenglish', 'careerwithenglish_db', 'careerwithenglish-db',
+    'CAREERWITHENGLISH', 'CAREERWITHENGLISH_DB',
+    'PROD_DB', 'prod_db', 'SQLITE_DB', 'sqlite_db',
+    'D1_DATABASE', 'd1_database', 'DATABASE_D1', 'database_d1'
   ];
 
   for (const k of candidateKeys) {
-    const val = env[k];
-    if (val && typeof val === 'object' && typeof val.prepare === 'function') {
-      return val;
-    }
-  }
-
-  // 2. Dynamic discovery scan across all keys in env for an object with prepare and batch
-  try {
-    for (const key of Object.keys(env)) {
-      const val = env[key];
-      if (val && typeof val === 'object' && typeof val.prepare === 'function' && typeof val.batch === 'function') {
-        return val;
-      }
-    }
-    // Fallback: any object in env with prepare function
-    for (const key of Object.keys(env)) {
-      const val = env[key];
+    try {
+      const val = env[k];
       if (val && typeof val === 'object' && typeof val.prepare === 'function') {
         return val;
       }
+    } catch (e) {}
+  }
+
+  // 2. Prototype & enumerable property scan (for..in)
+  try {
+    for (const key in env) {
+      try {
+        const val = env[key];
+        if (val && typeof val === 'object' && typeof val.prepare === 'function') {
+          return val;
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+
+  // 3. Deep prototype-chain inspection via getOwnPropertyNames / Reflect.ownKeys
+  try {
+    let curr = env;
+    let depth = 0;
+    while (curr && curr !== Object.prototype && depth < 5) {
+      const keys = typeof Reflect !== 'undefined' && Reflect.ownKeys ? Reflect.ownKeys(curr) : Object.getOwnPropertyNames(curr);
+      for (const key of keys) {
+        if (typeof key !== 'string' || key === 'constructor') continue;
+        try {
+          const val = env[key];
+          if (val && typeof val === 'object' && typeof val.prepare === 'function') {
+            return val;
+          }
+        } catch (e) {}
+      }
+      curr = Object.getPrototypeOf(curr);
+      depth++;
     }
   } catch (e) {}
 
@@ -494,8 +524,8 @@ export async function onRequest(ctx) {
       has_eleven_key,
       db_connected: Boolean(db),
       db_status: db ? 'connected' : 'unbound',
-      total_scores: totalScores || GLOBAL_CACHE.scores.length,
-      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length,
+      total_scores: db ? totalScores : (GLOBAL_CACHE.scores?.length || 0),
+      total_feedback: db ? totalFeedback : (GLOBAL_CACHE.feedback?.length || 0),
       avg_feedback: avgFeedback,
       top_score: topScore
     });
@@ -528,8 +558,8 @@ export async function onRequest(ctx) {
       eleven_voice,
       db_connected: Boolean(db),
       db_status: db ? 'connected' : 'unbound',
-      total_scores: totalScores || GLOBAL_CACHE.scores.length,
-      total_feedback: totalFeedback || GLOBAL_CACHE.feedback.length
+      total_scores: db ? totalScores : (GLOBAL_CACHE.scores?.length || 0),
+      total_feedback: db ? totalFeedback : (GLOBAL_CACHE.feedback?.length || 0)
     });
   }
 

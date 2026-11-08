@@ -161,9 +161,8 @@ const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 
 function getApiUrl(path) {
   const clean = path.replace(/^\/+/, '');
-  const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
-  const isLocal = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'));
-  return (isPrimary || isLocal) ? `/${clean}` : `${PRIMARY_D1_ORIGIN}/${clean}`;
+  const isFile = (typeof window !== 'undefined' && window.location.protocol === 'file:');
+  return isFile ? `${PRIMARY_D1_ORIGIN}/${clean}` : `/${clean}`;
 }
 
 async function fetchApi(endpoint, options = {}, maybeBody = null) {
@@ -187,14 +186,12 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     headers['Authorization'] = 'Bearer botschool';
   }
 
-  // X-Gemini-Keys header removed: API keys are securely kept and resolved on the backend
+  // API keys are securely kept and resolved on the backend
   opts.headers = headers;
 
   const cleanEndpoint = endpoint.replace(/^\/+/, '');
-  // Route through local relative path on localhost / 127.0.0.1 / primary domain, or PRIMARY_D1_ORIGIN otherwise
-  const isPrimary = (typeof window !== 'undefined' && window.location.hostname === 'careerwithenglish.pages.dev');
-  const isLocal = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:'));
-  const targetUrl = (isPrimary || isLocal) ? `/api/${cleanEndpoint}` : `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`;
+  const isFile = (typeof window !== 'undefined' && window.location.protocol === 'file:');
+  const primaryUrl = isFile ? `${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}` : `/api/${cleanEndpoint}`;
 
   // Robust timeout handler for slow/school Wi-Fi networks (10s default)
   const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -204,16 +201,16 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   if (controller && !fetchOpts.signal) fetchOpts.signal = controller.signal;
 
   try {
-    const res = await fetch(targetUrl, fetchOpts);
+    const res = await fetch(primaryUrl, fetchOpts);
     if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
   } catch (err) {
     if (timeoutId) clearTimeout(timeoutId);
-    // If external cross-origin call fails (e.g. offline or slow network), try local relative path
-    if (!isPrimary) {
+    // If local relative call failed and we're not already targeting PRIMARY_D1_ORIGIN, try fallback to PRIMARY_D1_ORIGIN
+    if (!isFile && typeof window !== 'undefined' && window.location.hostname !== 'careerwithenglish.pages.dev') {
       try {
-        const localRes = await fetch(`/api/${cleanEndpoint}`, fetchOpts);
-        if (localRes.ok) return await localRes.json();
+        const fallbackRes = await fetch(`${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`, fetchOpts);
+        if (fallbackRes.ok) return await fallbackRes.json();
       } catch (e) {}
     }
   }
@@ -11386,16 +11383,16 @@ function renderAdminDbStatus(cfg) {
         </div>
         <ol style="margin:10px 0 6px 18px;padding:0;">
           <li style="margin-bottom:5px;">
-            In Cloudflare Dashboard → <strong>Storage &amp; Databases</strong> → <strong>D1 SQL Database</strong> → Click <strong>Create</strong> (e.g. Name: <code>careerfair</code>)
+            In Cloudflare Dashboard → <strong>Storage &amp; Databases</strong> → <strong>D1 SQL Database</strong> → Click <strong>Create</strong> (e.g. Name: <code>careerfair</code> or <code>careerfair-db</code>)
           </li>
           <li style="margin-bottom:5px;">
             In <strong>Workers &amp; Pages</strong> → Select your Pages Project (e.g. <code>careerwithenglish</code> or <code>careerfair</code>) → <strong>Settings</strong> → <strong>Functions</strong> → <strong>D1 database bindings</strong> → Click <strong>Add binding</strong>:
             <div style="margin:4px 0;background:rgba(0,0,0,0.06);padding:4px 10px;border-radius:4px;font-family:monospace;font-size:11.5px;display:inline-block;">
-              Variable name: <strong>DB</strong> &nbsp;|&nbsp; D1 database: <strong>careerfair</strong>
+              Variable name: <strong>DB</strong> &nbsp;|&nbsp; D1 database: <strong>careerfair</strong> (or <strong>careerfair-db</strong>)
             </div>
           </li>
           <li style="margin-top:6px;color:#d97706;font-weight:700;">
-            ⚡ <strong>Mandatory Step to Activate:</strong> Cloudflare Pages builds bindings into each deployment. If you added the binding just now, go to <strong>Deployments</strong> → Click <strong>··· (Options)</strong> on your latest deployment → Click <strong>Retry deployment</strong> (or push a commit) so the binding is attached!
+            ⚡ <strong>Mandatory Step to Activate:</strong> Cloudflare Pages builds bindings into each deployment at compile time. Existing deployments DO NOT automatically hot-reload new bindings! Go to <strong>Deployments</strong> → Click <strong>··· (Options)</strong> on your latest deployment → Click <strong>Retry deployment</strong> (or push a git commit) so Cloudflare rebuilds with the binding attached!
           </li>
         </ol>
       </div>
@@ -11410,7 +11407,11 @@ function renderAdminDbStatus(cfg) {
       testBtn.disabled = true;
       testBtn.innerHTML = `⏳ Testing...`;
       try {
-        const liveCfg = await fetchApi(`config?_t=${Date.now()}`);
+        const endpoint = STATE.adminKey ? `admin/config?_t=${Date.now()}` : `config?_t=${Date.now()}`;
+        let liveCfg = await fetchApi(endpoint);
+        if (!liveCfg || liveCfg.db_connected === undefined) {
+          liveCfg = await fetchApi(`config?_t=${Date.now()}`);
+        }
         if (liveCfg && liveCfg.db_connected !== undefined) {
           STATE.config.db_connected = Boolean(liveCfg.db_connected);
           if (liveCfg.total_scores !== undefined) STATE.config.total_scores = liveCfg.total_scores;
