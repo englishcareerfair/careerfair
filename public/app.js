@@ -225,13 +225,58 @@ let isGreetingPlaying = false;
 let currentTtsAudio = null;
 let activeSpeechButton = null;
 let activeSpeechUtterance = null;
+let currentSpeechSessionId = 0;
+let currentTtsAbortController = null;
+
+function resetAllTtsButtonsToNormal() {
+  // 1. Reset all elements styled with speaking-active or playing
+  document.querySelectorAll('.speaking-active, button.playing').forEach(btn => {
+    if (btn.dataset.origHtml) {
+      btn.innerHTML = btn.dataset.origHtml;
+    }
+    btn.classList.remove('speaking-active', 'playing');
+  });
+
+  // 2. Explicitly ensure key primary TTS buttons are restored to natural default
+  const listenTarget = document.getElementById('btn-listen-target');
+  if (listenTarget && (listenTarget.textContent.includes('Stop') || listenTarget.classList.contains('speaking-active'))) {
+    listenTarget.innerHTML = listenTarget.dataset.origHtml || '<span>🔊</span> <span>Listen Reference Audio</span>';
+    listenTarget.classList.remove('speaking-active', 'playing');
+  }
+
+  const speechLabListen = document.getElementById('btn-speech-lab-listen');
+  if (speechLabListen && (speechLabListen.textContent.includes('Stop') || speechLabListen.classList.contains('speaking-active'))) {
+    speechLabListen.innerHTML = speechLabListen.dataset.origHtml || '<span>🔊</span> <span class="btn-listen-text">Listen</span>';
+    speechLabListen.classList.remove('speaking-active', 'playing');
+  }
+
+  const greetingBtn = document.getElementById('btn-greeting');
+  if (greetingBtn && (greetingBtn.textContent.includes('Stop') || greetingBtn.classList.contains('speaking-active') || greetingBtn.classList.contains('playing'))) {
+    greetingBtn.innerHTML = greetingBtn.dataset.origHtml || '<span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>';
+    greetingBtn.classList.remove('speaking-active', 'playing');
+  }
+
+  const testBtn = document.getElementById('btn-test-tts-voice');
+  if (testBtn && (testBtn.textContent.includes('Stop') || testBtn.classList.contains('speaking-active'))) {
+    testBtn.innerHTML = testBtn.dataset.origHtml || 'Test Humanoid Voice 🔊';
+    testBtn.classList.remove('speaking-active', 'playing');
+  }
+}
 
 function stopAllVoice() {
+  currentSpeechSessionId++; // Invalidate any in-flight fetch, audio buffering, or utterance
+  if (currentTtsAbortController) {
+    try { currentTtsAbortController.abort(); } catch (_) {}
+    currentTtsAbortController = null;
+  }
   if (currentTtsAudio) {
     try {
       currentTtsAudio.pause();
       currentTtsAudio.currentTime = 0;
-    } catch {}
+      currentTtsAudio.onended = null;
+      currentTtsAudio.onerror = null;
+      currentTtsAudio.src = '';
+    } catch (_) {}
     currentTtsAudio = null;
   }
   isGreetingPlaying = false;
@@ -239,24 +284,15 @@ function stopAllVoice() {
   if ('speechSynthesis' in window) {
     try {
       window.speechSynthesis.cancel();
-    } catch {}
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    } catch (_) {}
   }
   activeSpeechUtterance = null;
+  activeSpeechButton = null;
 
-  if (activeSpeechButton) {
-    if (activeSpeechButton.dataset.origHtml) {
-      activeSpeechButton.innerHTML = activeSpeechButton.dataset.origHtml;
-    }
-    activeSpeechButton.classList.remove('speaking-active', 'playing');
-    activeSpeechButton = null;
-  }
-
-  // Check greeting button specifically
-  const greetingBtn = $('#btn-greeting');
-  if (greetingBtn && (greetingBtn.classList.contains('playing') || greetingBtn.classList.contains('speaking-active') || greetingBtn.textContent.includes('Stop'))) {
-    greetingBtn.innerHTML = '<span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>';
-    greetingBtn.classList.remove('playing', 'speaking-active');
-  }
+  resetAllTtsButtonsToNormal();
 }
 
 async function speak(text, btn = null) {
@@ -273,33 +309,47 @@ async function speak(text, btn = null) {
     }
   }
 
-  // Check if voice is already speaking
-  const isSpeaking = (window.speechSynthesis && (window.speechSynthesis.speaking || window.speechSynthesis.pending)) || currentTtsAudio || activeSpeechButton;
+  // Check if this exact target button is ALREADY playing or in active Stop state
+  const isTargetAlreadyPlaying = targetBtn && (
+    targetBtn === activeSpeechButton ||
+    (targetBtn.id && activeSpeechButton && targetBtn.id === activeSpeechButton.id) ||
+    targetBtn.classList.contains('speaking-active') ||
+    targetBtn.classList.contains('playing') ||
+    targetBtn.textContent.includes('Stop')
+  );
 
-  if (isSpeaking) {
-    const wasSame = (targetBtn && (targetBtn === activeSpeechButton || (targetBtn.id && targetBtn.id === activeSpeechButton?.id)));
+  // If clicked while playing -> user explicitly requested STOP
+  if (isTargetAlreadyPlaying) {
     stopAllVoice();
-    // If the user clicked the same button that was speaking, stop and return!
-    if (wasSame) {
-      return;
-    }
-  } else if (activeSpeechButton) {
-    stopAllVoice();
+    return;
   }
 
-  // Set target button into active playing state
-  if (targetBtn) {
-    if (!targetBtn.dataset.origHtml) {
-      targetBtn.dataset.origHtml = targetBtn.innerHTML;
-    }
-    const btnText = targetBtn.textContent.toLowerCase();
-    let stopLabel = 'Stop';
-    if (btnText.includes('greeting')) stopLabel = 'Stop Audio';
-    else if (btnText.includes('word')) stopLabel = 'Stop Word';
-    else if (btnText.includes('scenario')) stopLabel = 'Stop Scenario';
-    else if (btnText.includes('sample') || btnText.includes('sentence')) stopLabel = 'Stop Voice';
+  // Stop any other currently playing speech / audio before starting new voice
+  stopAllVoice();
 
-    targetBtn.innerHTML = `<span>⏹️</span> <span>${stopLabel}</span>`;
+  // Create new session tracking ID and abort controller
+  const sessionId = ++currentSpeechSessionId;
+  currentTtsAbortController = new AbortController();
+  const abortSignal = currentTtsAbortController.signal;
+
+  // Set target button into active Stop state
+  if (targetBtn) {
+    if (!targetBtn.dataset.origHtml || targetBtn.dataset.origHtml.includes('Stop')) {
+      if (!targetBtn.innerHTML.includes('Stop')) {
+        targetBtn.dataset.origHtml = targetBtn.innerHTML;
+      }
+    }
+
+    // Set Stop text with square stop icon
+    if (targetBtn.id === 'btn-speech-lab-listen') {
+      targetBtn.innerHTML = `<span>⏹️</span> <span class="btn-listen-text">Stop</span>`;
+    } else if (targetBtn.id === 'btn-greeting') {
+      targetBtn.innerHTML = `<span>⏹️</span> <span class="greeting-btn-text">Stop Audio</span>`;
+    } else if (targetBtn.id === 'btn-listen-target') {
+      targetBtn.innerHTML = `<span>⏹️</span> <span>Stop</span>`;
+    } else {
+      targetBtn.innerHTML = `<span>⏹️</span> <span>Stop</span>`;
+    }
     targetBtn.classList.add('speaking-active', 'playing');
     activeSpeechButton = targetBtn;
   }
@@ -310,8 +360,6 @@ async function speak(text, btn = null) {
   const savedVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Backend (/api/tts)
-  // Backend securely resolves keys from Cloudflare D1/env with zero keys exposed in Network tab
-  let playedSuccessfully = false;
   const canAttemptTts = Boolean(elevenKeyList.length > 0 || STATE.config?.has_eleven_key || STATE.config?.eleven_keys);
 
   if (canAttemptTts) {
@@ -325,27 +373,40 @@ async function speak(text, btn = null) {
           text: text,
           voiceId: savedVoiceId,
           accent: 'indian'
-        })
+        }),
+        signal: abortSignal
       });
+
+      // Discard if stopped or changed during in-flight fetch
+      if (sessionId !== currentSpeechSessionId) return;
 
       if (res.status === 401 || res.status === 402 || res.status === 429) {
         console.warn(`ElevenLabs TTS response status: ${res.status}. Falling back smoothly to high-fidelity Indian Neural Speech.`);
-        fallbackIndianNeuralSpeech(text, targetBtn);
+        if (sessionId === currentSpeechSessionId) {
+          fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
+        }
         return;
       }
-      
+
       const contentType = res.headers.get('content-type') || '';
       if (res.ok && contentType.includes('audio')) {
         const audioBlob = await res.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        currentTtsAudio = new Audio(audioUrl);
+        if (sessionId !== currentSpeechSessionId) return;
 
-        currentTtsAudio.onended = () => {
-          stopAllVoice();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        currentTtsAudio = audio;
+
+        audio.onended = () => {
+          if (sessionId === currentSpeechSessionId) {
+            stopAllVoice();
+          }
         };
 
-        currentTtsAudio.onerror = () => {
-          fallbackIndianNeuralSpeech(text, targetBtn);
+        audio.onerror = () => {
+          if (sessionId === currentSpeechSessionId) {
+            fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
+          }
         };
 
         if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
@@ -356,63 +417,46 @@ async function speak(text, btn = null) {
           }
         }
 
-        await currentTtsAudio.play();
-        playedSuccessfully = true;
+        if (sessionId !== currentSpeechSessionId) return;
+        await audio.play();
         return;
-      } else {
-        let errInfo = '';
-        let errStatus = '';
-        try {
-          const errJson = await res.json();
-          errInfo = errJson.message || errJson.error || errJson.details || '';
-          errStatus = errJson.status || '';
-        } catch (e) {}
-
-        if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
-          const testStatus = $('#admin-tts-test-status');
-          if (testStatus) {
-            if (errStatus === 'free_tier_library_notice' || errInfo.includes('Free users') || errInfo.includes('library voices')) {
-              testStatus.textContent = `⚠️ Playing On-Device Indian Voice (en-IN) — Free Plan Notice`;
-              testStatus.style.color = 'var(--accent-cyan)';
-              showToast('ℹ️ ElevenLabs Free Plan restricts Community VoiceLab voices via API. Playing Indian Neural Voice.', 4000);
-            } else {
-              testStatus.textContent = `ℹ️ Playing On-Device Indian Voice (en-IN)`;
-              testStatus.style.color = 'var(--accent-cyan)';
-            }
-          }
-        }
       }
     } catch (e) {
+      if (sessionId !== currentSpeechSessionId) return;
+      if (e.name === 'AbortError') return;
       console.warn('TTS attempt exception:', e);
     }
   }
 
   // 2. Fallback to High-Fidelity Indian English Browser Neural Speech (en-IN)
-  fallbackIndianNeuralSpeech(text, targetBtn);
+  if (sessionId === currentSpeechSessionId) {
+    fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
+  }
 }
 
-function fallbackIndianNeuralSpeech(text, targetBtn) {
+function fallbackIndianNeuralSpeech(text, targetBtn, sessionId = null) {
+  if (sessionId && sessionId !== currentSpeechSessionId) return;
   if (!('speechSynthesis' in window)) {
     showToast('Speech synthesis not supported in this browser.');
-    if (targetBtn && targetBtn.dataset.origHtml) {
-      targetBtn.innerHTML = targetBtn.dataset.origHtml;
-      targetBtn.classList.remove('speaking-active', 'playing');
-    }
+    stopAllVoice();
     return;
   }
 
   // Cancel any lingering utterance to avoid repeating queue
-  window.speechSynthesis.cancel();
+  try {
+    window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  } catch (_) {}
 
   const utt = new SpeechSynthesisUtterance(text);
-  // STRICT INDIAN ACCENT: en-IN ensures accurate pronunciation of Indian names, vocabulary, and phrasing
   utt.lang = 'en-IN';
-  utt.rate = 0.92; // Natural, articulate Indian English pacing
+  utt.rate = 0.92;
   utt.pitch = 1.0;
 
   const voices = window.speechSynthesis.getVoices();
   if (voices.length) {
-    // Select an authentic Indian English accent voice
     const indianVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')))
       || voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN')
       || voices.find(v => v.lang.toLowerCase().includes('in') && v.lang.toLowerCase().startsWith('en'))
@@ -420,7 +464,6 @@ function fallbackIndianNeuralSpeech(text, targetBtn) {
         const n = v.name.toLowerCase();
         return n.includes('india') || n.includes('heera') || n.includes('neerja') || n.includes('ravi') || n.includes('prabhat') || n.includes('veena') || n.includes('kavita') || n.includes('aarav') || n.includes('ananya');
       })
-      // Bilingual Indian voices (Hindi) that speak accented English natively
       || voices.find(v => v.lang === 'hi-IN' || v.lang === 'hi_IN')
       || voices.find(v => {
         const n = v.name.toLowerCase();
@@ -429,37 +472,32 @@ function fallbackIndianNeuralSpeech(text, targetBtn) {
 
     if (indianVoice) {
       utt.voice = indianVoice;
-      utt.lang = 'en-IN';
-    } else {
-      // If no explicit Indian voice pack installed, KEEP utt.lang = 'en-IN'
-      // DO NOT force utt.voice to American David or Zira!
-      utt.lang = 'en-IN';
     }
   }
 
   activeSpeechUtterance = utt;
 
-  const cleanup = () => {
-    if (targetBtn && targetBtn.dataset.origHtml) {
-      targetBtn.innerHTML = targetBtn.dataset.origHtml;
-      targetBtn.classList.remove('speaking-active', 'playing');
-    }
-    if (activeSpeechButton === targetBtn) {
-      activeSpeechButton = null;
-    }
-    activeSpeechUtterance = null;
-    try { window.speechSynthesis.cancel(); } catch {}
-  };
-
   utt.onend = () => {
-    cleanup();
+    if (!sessionId || sessionId === currentSpeechSessionId) {
+      stopAllVoice();
+    }
   };
 
   utt.onerror = () => {
-    cleanup();
+    if (!sessionId || sessionId === currentSpeechSessionId) {
+      stopAllVoice();
+    }
   };
 
-  setTimeout(() => window.speechSynthesis.speak(utt), 40);
+  setTimeout(() => {
+    if (sessionId && sessionId !== currentSpeechSessionId) return;
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.speak(utt);
+    } catch (_) {}
+  }, 20);
 }
 
 function fallbackNeuralSpeech(text, btn) {
@@ -470,7 +508,14 @@ async function speakGreeting() {
   const btn = $('#btn-greeting');
   const greetingText = "Welcome to the Career Fair 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
 
-  if (activeSpeechButton && (activeSpeechButton === btn || activeSpeechButton.id === 'btn-greeting')) {
+  const isGreetingActive = btn && (
+    btn === activeSpeechButton ||
+    btn.classList.contains('playing') ||
+    btn.classList.contains('speaking-active') ||
+    btn.textContent.includes('Stop')
+  );
+
+  if (isGreetingActive) {
     stopAllVoice();
     return;
   }
@@ -2249,6 +2294,7 @@ window.setTheme = setTheme;
 window.stopAllVoice = stopAllVoice;
 window.speak = speak;
 window.speakGreeting = speakGreeting;
+window.getCurrentTtsAudio = () => currentTtsAudio;
 
 function switchTab(tabId, options = {}) {
   // Alias protection: map 'plan', 'myplan', 'bizcard' to 'roadmap'
@@ -2657,58 +2703,64 @@ const AI_SENTENCE_LIBRARY = {
   ]
 };
 
+let isSpeakLadderBound = false;
 function initSpeakLadder() {
-  const packFilters = $$('#speak-pack-filters .filter-chip');
-  packFilters.forEach(btn => {
-    btn.addEventListener('click', () => {
-      packFilters.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      speakPack = btn.dataset.pack || 'Everyday';
-      const packTag = $('#active-challenge-pack-tag');
-      if (packTag) packTag.textContent = btn.textContent;
-      changeSpeechSentence();
-      if (window.AppRouter) {
-        window.AppRouter.navigate('/speak', { silent: true });
-      }
-    });
-  });
-
-  $('#btn-listen-target')?.addEventListener('click', function() {
-    const text = $('#speak-target-sentence')?.textContent;
-    if (text) speak(text, this);
-  });
-
-  $('#btn-show-phonetics')?.addEventListener('click', () => {
-    const box = $('#phonetic-breakdown-box');
-    if (!box) return;
-    if (box.style.display === 'none') {
-      const text = $('#speak-target-sentence')?.textContent || '';
-      const words = text.split(/\s+/).slice(0, 6);
-      box.innerHTML = `<strong>Phonetic Syllable Breakdown:</strong><br>` +
-        words.map(w => `<span style="display:inline-block;margin:4px 10px 4px 0;"><strong>${escapeHtml(w)}</strong>: <code style="color:var(--accent-cyan);font-family:var(--font-mono);">${generateIpaApprox(w)}</code></span>`).join('');
-      box.style.display = 'block';
-    } else {
-      box.style.display = 'none';
-    }
-  });
-
-  // CHANGE SENTENCE BUTTON
-  $('#btn-change-sentence')?.addEventListener('click', () => {
-    changeSpeechSentence(true);
-  });
-
-  $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
-
   const nameInput = $('#speak-student-name');
   if (nameInput && STATE.studentName) {
     nameInput.value = STATE.studentName;
   }
 
-  // Initial sentence load
-  changeSpeechSentence();
+  if (!isSpeakLadderBound) {
+    isSpeakLadderBound = true;
+
+    const packFilters = $$('#speak-pack-filters .filter-chip');
+    packFilters.forEach(btn => {
+      btn.addEventListener('click', () => {
+        packFilters.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        speakPack = btn.dataset.pack || 'Everyday';
+        const packTag = $('#active-challenge-pack-tag');
+        if (packTag) packTag.textContent = btn.textContent;
+        changeSpeechSentence();
+        if (window.AppRouter) {
+          window.AppRouter.navigate('/speak', { silent: true });
+        }
+      });
+    });
+
+    $('#btn-listen-target')?.addEventListener('click', function() {
+      const text = $('#speak-target-sentence')?.textContent;
+      if (text) speak(text, this);
+    });
+
+    $('#btn-show-phonetics')?.addEventListener('click', () => {
+      const box = $('#phonetic-breakdown-box');
+      if (!box) return;
+      if (box.style.display === 'none') {
+        const text = $('#speak-target-sentence')?.textContent || '';
+        const words = text.split(/\s+/).slice(0, 6);
+        box.innerHTML = `<strong>Phonetic Syllable Breakdown:</strong><br>` +
+          words.map(w => `<span style="display:inline-block;margin:4px 10px 4px 0;"><strong>${escapeHtml(w)}</strong>: <code style="color:var(--accent-cyan);font-family:var(--font-mono);">${generateIpaApprox(w)}</code></span>`).join('');
+        box.style.display = 'block';
+      } else {
+        box.style.display = 'none';
+      }
+    });
+
+    // CHANGE SENTENCE BUTTON
+    $('#btn-change-sentence')?.addEventListener('click', () => {
+      changeSpeechSentence(true);
+    });
+
+    $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
+
+    // Initial sentence load
+    changeSpeechSentence();
+  }
 }
 
 async function changeSpeechSentence(userTriggered = false) {
+  stopAllVoice();
   const sentenceEl = $('#speak-target-sentence');
   const transcriptEl = $('#speak-transcript-preview');
   const resultBox = $('#speak-eval-result');
@@ -2793,6 +2845,7 @@ function toggleSpeakLadderRecord() {
   }
 
   // Start recording
+  stopAllVoice();
   const nameInput = $('#speak-student-name');
   const rawNameVal = (nameInput ? nameInput.value : STATE.studentName || '').trim();
   const nameVal = capitalizeName(rawNameVal);
@@ -3229,6 +3282,7 @@ function changeSpeechLabSentence(userTriggered = false) {
 }
 
 function passAwaySpeechLabSentence(manualSkip = false) {
+  stopAllVoice();
   if (isPassingSentence) return;
   isPassingSentence = true;
 
@@ -3464,6 +3518,7 @@ function initSpeechLab() {
 }
 
 async function startSpeechLabAudio() {
+  stopAllVoice();
   const status = $('#speech-session-state');
 
   try {
