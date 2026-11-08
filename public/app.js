@@ -2200,12 +2200,30 @@ function initNavigation() {
     });
   });
 
-  // Theme switcher buttons
+  // Theme switcher buttons & mobile circle toggle
+  const themeSwitcher = $('.theme-switcher');
+  themeSwitcher?.addEventListener('click', (e) => {
+    // If mobile circle (<=768px) or clicking on the switcher outside specific desktop button
+    if (window.innerWidth <= 768 || e.target === themeSwitcher || !e.target.closest('.theme-btn')) {
+      e.stopPropagation();
+      const currentTheme = STATE.theme || document.documentElement.getAttribute('data-theme') || 'dark';
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(nextTheme);
+      if (window.DopamineEngine) window.DopamineEngine.playChime('ding');
+      return;
+    }
+  });
+
   const themeBtns = $$('.theme-btn');
   themeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768) {
+        // Handled by circular themeSwitcher click toggle
+        return;
+      }
       const chosenTheme = btn.dataset.themeVal;
       setTheme(chosenTheme);
+      if (window.DopamineEngine) window.DopamineEngine.playChime('ding');
     });
   });
 
@@ -3058,6 +3076,8 @@ function setTheme(themeName, silent = false) {
   const switcher = $('.theme-switcher');
   if (switcher) {
     switcher.setAttribute('data-active-theme', mode);
+    switcher.setAttribute('title', mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
+    switcher.setAttribute('aria-label', mode === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode');
   }
 
   $$('.theme-btn').forEach(btn => {

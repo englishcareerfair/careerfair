@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=12.0">
+  <link rel="stylesheet" href="styles.css?v=13.0">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -41,7 +41,7 @@
     <script src="guide-avatar.js?v=7.8" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=12.0"></script>
-  <script src="app.js?v=12.0" defer></script>
+  <script src="app.js?v=13.0" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -506,19 +506,19 @@
 
         <!-- Official 2-Page Student Career Booklet & Business Card Download Button -->
         <button class="header-dossier-btn" id="btn-header-dossier" type="button" aria-label="Download official 2-page printable student career booklet">
-          <span>📖</span> <span class="dossier-btn-text">Your Booklet</span>
+          <span>📖</span> <span class="dossier-btn-text"><span class="dossier-btn-prefix">Your </span>Booklet</span>
         </button>
 
         <!-- Interactive Platform In-Website Tutorial Button -->
         <button class="header-tutorial-btn" id="btn-header-tutorial" type="button" aria-label="Start interactive website tutorial">
-          <span>💡</span> <span class="tutorial-btn-text">Start Tutorial</span>
+          <span>💡</span> <span class="tutorial-btn-text"><span class="tutorial-btn-prefix">Start </span>Tutorial</span>
         </button>
 
               </div>
       
       <div class="header-actions-row">
         <!-- Interactive Animated Theme Switcher (Light / Dark) -->
-        <div class="theme-switcher" role="radiogroup" aria-label="Select visual theme" data-active-theme="dark">
+        <div class="theme-switcher" role="radiogroup" aria-label="Toggle visual theme" title="Toggle visual theme" tabindex="0" data-active-theme="dark">
           <div class="theme-switcher-slider" aria-hidden="true"></div>
           <button class="theme-btn" data-theme-val="light" title="Light Corporate Mode" type="button">
             <span class="theme-btn-icon">☀️</span> <span class="theme-btn-text">Light</span>
