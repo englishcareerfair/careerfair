@@ -1178,7 +1178,91 @@ function resumeTutorial() {
   }
 }
 
+let tutorialAutoAdvanceTimer = null;
+
+function isTutorialInteractiveStep(mode, stepIndex) {
+  if (mode === 'short') {
+    // In Short Tour:
+    // Step 1: Choose & Pin Your Career
+    // Step 2: Spoken English AI Diagnostic (Speech Lab)
+    // Step 3: Student Reflection & Fair Feedback
+    return stepIndex === 1 || stepIndex === 2 || stepIndex === 3;
+  } else if (mode === 'expanded') {
+    // In Complete Tour:
+    // Only steps that are same in both tutorials OR require user interference:
+    // Step 1: Careers (Pin career - same in both & requires user action)
+    // Step 4: Quiz (Answer aptitude questions - requires user action)
+    // Step 5: My Plan (Generate blueprint - requires user action)
+    // Step 6: Pronunciation Studio (Speak / listen - requires user action)
+    // Step 7: Speech Lab (Test speech - same in both & requires user action)
+    // Step 8: Teleprompter (Rehearse roleplay - requires user action)
+    // Step 9: Language Arcade Games (Launch / play arcade - requires user action)
+    // Step 10: Feedback (Review / rate - same in both & requires user action)
+    return [1, 4, 5, 6, 7, 8, 9, 10].includes(stepIndex);
+  }
+  return false;
+}
+
+function triggerTutorialAutoAdvance(actionTitle, confirmationMsg, celebrationType = 'success') {
+  if (!isTutorialRunning) return;
+  const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+  const currentStep = steps[currentTutorialStepIndex];
+  if (!currentStep) return;
+
+  // Prevent multiple overlapping advance timers on rapid clicks
+  if (tutorialAutoAdvanceTimer) return;
+
+  // Unmark skipped section since user actively performed the task
+  if (currentStep.sectionKey) {
+    try {
+      const skipped = JSON.parse(localStorage.getItem('ecf_skipped_sections') || '{}');
+      if (skipped[currentStep.sectionKey]) {
+        delete skipped[currentStep.sectionKey];
+        localStorage.setItem('ecf_skipped_sections', JSON.stringify(skipped));
+      }
+    } catch (_) {}
+  }
+
+  // Update HUD instruction and reaction banner smoothly
+  const instructionEl = document.getElementById('tutorial-hud-instruction');
+  const reactionEl = document.getElementById('tutorial-hud-reaction');
+  
+  if (reactionEl) {
+    reactionEl.style.display = 'inline-flex';
+    reactionEl.textContent = `🎉 ${actionTitle}! Advancing to next exhibit...`;
+  }
+  if (instructionEl && confirmationMsg) {
+    instructionEl.textContent = `${confirmationMsg} Moving to next exhibition automatically...`;
+  }
+
+  // Play auditory and visual dopamine celebration
+  if (window.DopamineEngine) {
+    window.DopamineEngine.playChime(celebrationType === 'fanfare' ? 'fanfare' : 'success');
+    if (celebrationType !== 'quiet') {
+      window.DopamineEngine.confetti(0.5, 0.4);
+    }
+  }
+
+  showToast(`🎉 ${actionTitle}! Auto-advancing to next exhibit...`);
+
+  // Auto-advance after 1.35 seconds so user sees confirmation and visual feedback
+  const targetStep = currentTutorialStepIndex + 1;
+  tutorialAutoAdvanceTimer = setTimeout(() => {
+    tutorialAutoAdvanceTimer = null;
+    if (!isTutorialRunning) return;
+    if (targetStep < steps.length) {
+      renderInSiteTutorialStep(targetStep);
+    } else {
+      stopTutorial();
+    }
+  }, 1350);
+}
+
 function stopTutorial() {
+  if (tutorialAutoAdvanceTimer) {
+    clearTimeout(tutorialAutoAdvanceTimer);
+    tutorialAutoAdvanceTimer = null;
+  }
   isTutorialRunning = false;
   isTutorialPaused = false;
   stopAllVoice();
@@ -1203,6 +1287,11 @@ function stopTutorial() {
 }
 
 function renderInSiteTutorialStep(stepIndex) {
+  if (tutorialAutoAdvanceTimer) {
+    clearTimeout(tutorialAutoAdvanceTimer);
+    tutorialAutoAdvanceTimer = null;
+  }
+
   const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
   if (stepIndex < 0) stepIndex = 0;
   if (stepIndex >= steps.length) stepIndex = steps.length - 1;
@@ -1257,6 +1346,7 @@ function renderInSiteTutorialStep(stepIndex) {
 
   const isCareerStep = (currentTutorialMode === 'short' && stepIndex === 1) || (currentTutorialMode === 'expanded' && stepIndex === 1);
   const isFinalStep = (stepIndex === steps.length - 1);
+  const isInteractive = isTutorialInteractiveStep(currentTutorialMode, stepIndex);
 
   if (isCareerStep) {
     setTimeout(() => {
@@ -1270,10 +1360,10 @@ function renderInSiteTutorialStep(stepIndex) {
     } catch (_) {}
 
     if (hasPinnedDuringActiveTutorial && storedCareer && storedCareer.title) {
-      if (instructionEl) instructionEl.textContent = `You pinned "${storedCareer.title}" to Your Booklet! Academic roadmap and top colleges are ready. Click Next Exhibit to continue.`;
+      if (instructionEl) instructionEl.textContent = `You pinned "${storedCareer.title}" to Your Booklet! Academic roadmap and top colleges are ready.`;
       if (reactionEl) {
         reactionEl.style.display = 'inline-flex';
-        reactionEl.textContent = `✓ Pinned: ${storedCareer.title}`;
+        reactionEl.textContent = `🎉 Pinned: ${storedCareer.title}`;
       }
     }
   }
@@ -1284,19 +1374,49 @@ function renderInSiteTutorialStep(stepIndex) {
     prevBtn.style.opacity = (stepIndex === 0) ? '0.5' : '1';
   }
 
-  // Next and Skip button states
-  if (nextBtn) {
-    nextBtn.textContent = isFinalStep ? 'Finish Tutorial 🎉' : 'Next Exhibit ▶';
-    nextBtn.style.opacity = '1';
-    nextBtn.disabled = false;
-  }
-
-  // Hide close (X) and skip buttons on the final step
-  if (closeBtn) {
-    closeBtn.style.display = isFinalStep ? 'none' : '';
-  }
-  if (skipBtn) {
-    skipBtn.style.display = isFinalStep ? 'none' : '';
+  // Button layout state:
+  // On final step: show Finish Tutorial button
+  // On interactive steps: auto-detect user action and auto-advance! Place "Skip Step ⏭️" in place of Next Exhibit
+  // On non-interactive informational steps: keep manual "Next Exhibit ▶" and standard "Skip ⏭️"
+  if (isFinalStep) {
+    if (nextBtn) {
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.className = 'btn btn-primary btn-sm';
+      nextBtn.textContent = 'Finish Tutorial 🎉';
+      nextBtn.style.opacity = '1';
+      nextBtn.disabled = false;
+    }
+    if (skipBtn) skipBtn.style.display = 'none';
+    if (closeBtn) closeBtn.style.display = 'none';
+  } else if (isInteractive) {
+    // Hide Next Exhibit button because doing the task auto-advances automatically!
+    if (nextBtn) {
+      nextBtn.style.display = 'none';
+    }
+    // Place Skip Step button right there so users can skip if they choose
+    if (skipBtn) {
+      skipBtn.style.display = 'inline-flex';
+      skipBtn.className = 'btn btn-primary btn-sm';
+      skipBtn.textContent = 'Skip Step ⏭️';
+      skipBtn.title = 'Skip this step and omit from booklet';
+    }
+    if (closeBtn) closeBtn.style.display = '';
+  } else {
+    // Non-interactive informational step (e.g. Colleges, Exams in Complete Tour):
+    if (nextBtn) {
+      nextBtn.style.display = 'inline-flex';
+      nextBtn.className = 'btn btn-primary btn-sm';
+      nextBtn.textContent = 'Next Exhibit ▶';
+      nextBtn.style.opacity = '1';
+      nextBtn.disabled = false;
+    }
+    if (skipBtn) {
+      skipBtn.style.display = 'inline-flex';
+      skipBtn.className = 'btn btn-secondary btn-sm';
+      skipBtn.textContent = 'Skip ⏭️';
+      skipBtn.title = 'Skip this step and omit from booklet';
+    }
+    if (closeBtn) closeBtn.style.display = '';
   }
 
   // Highlight top download booklet button on final step
@@ -1321,28 +1441,10 @@ function onCareerPinnedByStudent(careerObj) {
     waitingForCareerPin = false;
     document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 
-    const instructionEl = document.getElementById('tutorial-hud-instruction');
-    const reactionEl = document.getElementById('tutorial-hud-reaction');
-    const nextBtn = document.getElementById('btn-tutorial-next');
-
-    if (instructionEl) {
-      instructionEl.textContent = `Awesome! You pinned "${careerObj.title}" to Your Booklet! Your academic roadmap and top colleges are now ready.`;
-    }
-    if (reactionEl) {
-      reactionEl.style.display = 'inline-flex';
-      reactionEl.textContent = `✓ Career Pinned: ${careerObj.title}!`;
-    }
-    if (nextBtn) {
-      nextBtn.textContent = 'Next Exhibit ▶';
-      nextBtn.style.opacity = '1';
-      nextBtn.disabled = false;
-    }
-
-    if (window.DopamineEngine) {
-      window.DopamineEngine.confetti(0.5, 0.4);
-      window.DopamineEngine.playChime('success');
-    }
-    showToast(`⭐ Pinned "${careerObj.title}" to Your Booklet!`);
+    triggerTutorialAutoAdvance(
+      `Career Pinned: ${careerObj.title}`,
+      `Awesome! You pinned "${careerObj.title}" to Your Booklet!`
+    );
   }
 }
 
@@ -1362,6 +1464,8 @@ function triggerTutorialInteractionFeedback(stepIndex) {
 }
 
 // Global exports
+window.getCurrentTutorialStepIndex = () => currentTutorialStepIndex;
+window.getCurrentTutorialMode = () => currentTutorialMode;
 window.openTutorialChoiceModal = openTutorialChoiceModal;
 window.closeTutorialChoiceModal = closeTutorialChoiceModal;
 window.startTutorialWithMode = startTutorialWithMode;
@@ -2523,9 +2627,17 @@ function initNavigation() {
   $('#btn-tutorial-replay-audio')?.addEventListener('click', replayCurrentTutorialAudio);
 
   $('#btn-tutorial-prev')?.addEventListener('click', () => {
+    if (tutorialAutoAdvanceTimer) {
+      clearTimeout(tutorialAutoAdvanceTimer);
+      tutorialAutoAdvanceTimer = null;
+    }
     renderInSiteTutorialStep(currentTutorialStepIndex - 1);
   });
   $('#btn-tutorial-skip')?.addEventListener('click', () => {
+    if (tutorialAutoAdvanceTimer) {
+      clearTimeout(tutorialAutoAdvanceTimer);
+      tutorialAutoAdvanceTimer = null;
+    }
     const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
     const currentStep = steps[currentTutorialStepIndex];
     if (currentStep && currentStep.sectionKey) {
@@ -3750,6 +3862,9 @@ function initSpeakLadder() {
     $('#btn-listen-target')?.addEventListener('click', function() {
       const text = $('#speak-target-sentence')?.textContent;
       if (text) speak(text, this);
+      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 6) {
+        triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
+      }
     });
 
     $('#btn-show-phonetics')?.addEventListener('click', () => {
@@ -3771,7 +3886,12 @@ function initSpeakLadder() {
       changeSpeechSentence(true);
     });
 
-    $('#speak-record-orb')?.addEventListener('click', toggleSpeakLadderRecord);
+    $('#speak-record-orb')?.addEventListener('click', () => {
+      toggleSpeakLadderRecord();
+      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 6) {
+        triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
+      }
+    });
 
     // Initial sentence load
     changeSpeechSentence();
@@ -4506,7 +4626,12 @@ function initSpeechLab() {
 
   if (recBtn && !recBtn.dataset.bound) {
     recBtn.dataset.bound = 'true';
-    recBtn.addEventListener('click', startSpeechLabAudio);
+    recBtn.addEventListener('click', () => {
+      startSpeechLabAudio();
+      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+        triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
+      }
+    });
   }
   if (stopBtn && !stopBtn.dataset.bound) {
     stopBtn.dataset.bound = 'true';
@@ -4525,6 +4650,9 @@ function initSpeechLab() {
     listenSentBtn.addEventListener('click', function() {
       if (currentSpeechLabSentence) {
         speak(currentSpeechLabSentence, this);
+      }
+      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+        triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
       }
     });
   }
@@ -4770,6 +4898,9 @@ function analyzeSpeechLabSample() {
   try {
     localStorage.setItem('cf_coach_6d', JSON.stringify(STATE.studentProfile.coach6D));
   } catch (e) {}
+  if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+    triggerTutorialAutoAdvance('Speech Diagnostic Evaluated', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
+  }
 
   // Resolve Student Name for Exhibition Leaderboard mapping
   const speechLabNameInput = $('#speech-lab-student-name');
@@ -5668,6 +5799,9 @@ function initTeleprompter() {
       teleprompterState.isPrompterPaused = false;
       updatePrompterButtonUI();
       showToast('Teleprompter started! 📜');
+      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 8) {
+        triggerTutorialAutoAdvance('Teleprompter Studio Active', 'Poise and camera presence looking great! Roleplay session started.');
+      }
     } else if (!teleprompterState.isPrompterPaused) {
       teleprompterState.isPrompterPaused = true;
       updatePrompterButtonUI();
@@ -6278,6 +6412,9 @@ function initGamePicker() {
     btn.onclick = () => {
       const gameKey = btn.dataset.game;
       renderGameArena(gameKey);
+      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 9) {
+        triggerTutorialAutoAdvance('Arcade Game Selected', 'Game launched! Cognitive scores and vocabulary challenge active.');
+      }
       if (window.AppRouter) {
         window.AppRouter.navigate('/games', { silent: true });
       }
@@ -9337,6 +9474,9 @@ function renderMyPlan(mount) {
     }
 
     displayBlueprint(blueprint, provider);
+    if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 5) {
+      triggerTutorialAutoAdvance('Strategic Roadmap Blueprint Generated', 'Awesome! Your multi-year academic progression is now generated!');
+    }
   });
 }
 // TOOL 2: 5-Question Career Curiosity Quiz
@@ -9460,6 +9600,9 @@ function renderCareerQuiz(mount) {
         const sector = btn.dataset.sector;
         scores[sector] = (scores[sector] || 0) + 1;
         currentQ++;
+        if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 4) {
+          triggerTutorialAutoAdvance('Aptitude Question Answered', 'Great choice! Your career alignment dimension is recorded.');
+        }
         showQuestion();
       };
     });
@@ -10973,6 +11116,9 @@ async function loadFeedbackWall() {
         starContainer.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedStars = parseInt(btn.dataset.val || '5', 10);
+        if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 3) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 10))) {
+          triggerTutorialAutoAdvance('Exhibition Rating Selected', 'Thank you for rating our exhibits! Your reflection is saved for Page 2 of your booklet.');
+        }
       });
     });
   }
@@ -11222,6 +11368,9 @@ async function loadFeedbackWall() {
 
       // Re-fetch authoritative global list immediately
       setTimeout(loadFeedbackWall, 300);
+      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 3) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 10))) {
+        triggerTutorialAutoAdvance('Exhibition Review Submitted', 'Thank you for your review! Your reflection is saved for Page 2 of your booklet.');
+      }
     });
   }
 
