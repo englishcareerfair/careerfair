@@ -2560,13 +2560,14 @@ tr:hover td { background: var(--surface-hover); }
     overflow: hidden;
   }
   .brand-copy .brand-name {
-    font-size: clamp(11.5px, 3.4vw, 13.5px);
+    font-size: clamp(11.5px, 3.2vw, 13.5px);
     font-weight: 700;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 95px;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
     line-height: 1.2;
+    flex-shrink: 0;
   }
   .brand-copy .brand-subtitle {
     display: none;
@@ -2601,6 +2602,10 @@ tr:hover td { background: var(--surface-hover); }
     white-space: nowrap;
     gap: 4px;
     border-radius: var(--radius-full);
+  }
+  .dossier-btn-prefix,
+  .tutorial-btn-prefix {
+    display: none !important;
   }
 
   /* Small Mobile Circular Theme Chooser Circle */
@@ -2689,17 +2694,15 @@ tr:hover td { background: var(--surface-hover); }
     filter: drop-shadow(0 0 3px rgba(251, 191, 36, 0.7));
   }
   @media (max-width: 420px) {
-    .dossier-btn-prefix,
-    .tutorial-btn-prefix {
-      display: none !important;
-    }
     .brand-copy .brand-name {
-      max-width: 82px;
+      font-size: 12px;
+      max-width: none;
     }
   }
   @media (max-width: 345px) {
     .brand-copy .brand-name {
-      max-width: 60px;
+      font-size: 11px;
+      max-width: none;
     }
     .header-dossier-btn,
     .header-tutorial-btn {
