@@ -270,25 +270,15 @@ function resetAllTtsButtonsToNormal() {
   }
 
   const tutorialHeaderBtn = document.getElementById('btn-header-tutorial');
-  if (tutorialHeaderBtn && (tutorialHeaderBtn.textContent.includes('Stop') || tutorialHeaderBtn.classList.contains('speaking-active') || tutorialHeaderBtn.classList.contains('playing'))) {
-    tutorialHeaderBtn.innerHTML = tutorialHeaderBtn.dataset.origHtml || '<span>💡</span> <span class="tutorial-btn-text">Tutorial</span>';
-    tutorialHeaderBtn.classList.remove('speaking-active', 'playing');
+  if (tutorialHeaderBtn) {
+    if (typeof isTutorialRunning !== 'undefined' && isTutorialRunning) {
+      tutorialHeaderBtn.classList.add('playing', 'speaking-active');
+      tutorialHeaderBtn.innerHTML = '<span>⏹️</span> <span class="tutorial-btn-text">Stop Tutorial</span>';
+    } else if (tutorialHeaderBtn.textContent.includes('Stop') || tutorialHeaderBtn.classList.contains('speaking-active') || tutorialHeaderBtn.classList.contains('playing')) {
+      tutorialHeaderBtn.innerHTML = '<span>💡</span> <span class="tutorial-btn-text">Start Tutorial</span>';
+      tutorialHeaderBtn.classList.remove('speaking-active', 'playing');
+    }
   }
-
-  const tutorialToggleBtn = document.getElementById('btn-tutorial-audio-toggle');
-  if (tutorialToggleBtn) {
-    tutorialToggleBtn.classList.remove('playing');
-    const audioText = document.getElementById('tutorial-audio-text');
-    const audioIcon = document.getElementById('tutorial-audio-icon');
-    if (audioText) audioText.textContent = 'Listen AI Audio Guide';
-    if (audioIcon) audioIcon.textContent = '🔊';
-  }
-
-  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
-  if (loaderAudioBtn) {
-    loaderAudioBtn.textContent = '🔊 Listen';
-  }
-  isTutorialAudioPlaying = false;
 }
 
 function stopAllVoice() {
@@ -750,326 +740,381 @@ async function speakGreeting() {
   await fetchAndPlayGreetingWithCache(greetingText, chosenVoiceId, btn, sessionId, abortSignal);
 }
 
-// Pre-recorded tutorial audio registry for zero-credit, instant playback
-const PRE_RECORDED_TUTORIALS = {
-  'SAz9YHcvj6GT2YYXdXww': {
-    url: '/audio/tutorial/tutorial_SAz9YHcvj6GT2YYXdXww.mp3',
-    name: 'River (Informative Studio)'
-  },
-  'JBFqnCBsd6RMkjVDRZzb': {
-    url: '/audio/tutorial/tutorial_JBFqnCBsd6RMkjVDRZzb.mp3',
-    name: 'George (Warm Storyteller)'
-  },
-  'EXAVITQu4vr4xnSDxMaL': {
-    url: '/audio/tutorial/tutorial_EXAVITQu4vr4xnSDxMaL.mp3',
-    name: 'Sarah (Mature Reassuring)'
-  },
-  'Xb7hH8MSUJpSbSDYk0k2': {
-    url: '/audio/tutorial/tutorial_Xb7hH8MSUJpSbSDYk0k2.mp3',
-    name: 'Alice (Engaging Educator)'
-  },
-  'IKne3meq5aSn9XLyUdCD': {
-    url: '/audio/tutorial/tutorial_IKne3meq5aSn9XLyUdCD.mp3',
-    name: 'Charlie (Confident Energetic)'
-  },
-  'default': {
-    url: '/audio/tutorial/tutorial_default.mp3',
-    name: 'River (Studio Default)'
-  }
-};
-
-const tutorialAudioMemoryCache = new Map();
-let isTutorialAudioPlaying = false;
-
-const TUTORIAL_STEPS_DATA = [
+// In-Website Interactive Platform Tutorial System
+const IN_SITE_TUTORIAL_STEPS = [
   {
     step: 0,
     tab: 'careers',
-    badge: 'EXHIBIT 1 OF 5',
-    title: '32+ Global Careers & Pathways',
-    icon: '🌐',
-    desc: 'Explore 32 modern global professions that rely on English fluency—from Commercial Aviation and Chief Surgical Residency to International Corporate Law. Inspect NAAC Grade A++ colleges, competitive entrance exams (CUET, CLAT, NEET, DGCA), and salary trajectories.',
-    actionLabel: 'Pin to Dossier & Explore Careers ➔',
-    tip: 'Click "⭐ Pin to My Career Dossier" on any career card to include it in your official 2-Page printable Student Dossier.'
+    targetSelector: '#careers',
+    badge: 'STEP 1 OF 5',
+    title: 'Explore Careers & Pin to Dossier',
+    icon: '🎯',
+    instruction: 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!',
+    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to My Career Dossier on any career you like. I will wait for you to pin a career to your dossier!',
+    speechOnPinned: (title) => `Awesome! You pinned ${title} to your Career Dossier! Your academic roadmap and top colleges are now ready. Let's move to the next exhibit!`
   },
   {
     step: 1,
     tab: 'speechLab',
-    badge: 'EXHIBIT 2 OF 5',
-    title: 'AI Speech Lab & 6D Voice Articulation',
+    targetSelector: '#speech-lab',
+    badge: 'STEP 2 OF 5',
+    title: 'AI Speech Lab & Voice Coaching',
     icon: '🎙️',
-    desc: 'Test your spoken pronunciation, cadence, clarity, vocabulary, grammar, and professional poise against our 6-Dimensional acoustic radar coach. Receive real-time phoneme scoring and personalized fluency suggestions.',
-    actionLabel: 'Launch AI Speech Lab ➔',
-    tip: 'Your speech scores and 6D radar metrics are saved locally and mapped directly into your Career Dossier report card.'
+    instruction: 'Practice speaking English in our AI Speech Lab! Click the microphone to test your pronunciation, cadence, and clarity with instant AI scoring.',
+    speechText: 'This is the AI Speech Lab. Here you can practice speaking English with instant pronunciation feedback. Try speaking into the microphone, or click Next Exhibit to continue!',
+    speechOnPinned: null
   },
   {
     step: 2,
     tab: 'teleprompter',
-    badge: 'EXHIBIT 3 OF 5',
-    title: 'News Anchor Studio & Live Teleprompter',
+    targetSelector: '#teleprompter',
+    badge: 'STEP 3 OF 5',
+    title: 'News Anchor Studio Rehearsals',
     icon: '📹',
-    desc: 'Rehearse breaking international news broadcast scripts in front of a live webcam teleprompter mirror. Adjust scroll speeds, practice broadcast articulation, and record video takes saved directly to your device.',
-    actionLabel: 'Enter Studio Broadcast ➔',
-    tip: 'All camera and video processing occurs 100% locally in your browser sandbox for strict student educational privacy.'
+    instruction: 'Rehearse breaking international news broadcast scripts in front of a live webcam teleprompter mirror just like a professional broadcast journalist.',
+    speechText: 'Welcome to the News Anchor Studio! Practice reading news broadcast scripts in front of the camera mirror just like a real news anchor.',
+    speechOnPinned: null
   },
   {
     step: 3,
     tab: 'games',
-    badge: 'EXHIBIT 4 OF 5',
-    title: 'Language Arcade & Live Exhibition Leaderboard',
+    targetSelector: '#games',
+    badge: 'STEP 4 OF 5',
+    title: 'Language Arcade & Leaderboard',
     icon: '🎮',
-    desc: 'Compete across 11 rapid-fire grammar and vocabulary games—including Jobtris, Wordle, Hangman, and Hot Potato Rush. Track real-time high scores on our exhibition leaderboard verified on Cloudflare D1.',
-    actionLabel: 'Play 11 Arcade Games ➔',
-    tip: 'Achieve top accuracy in arcade games to earn collectible achievement badges and boost your overall exhibition rank.'
+    instruction: 'Compete in 11 rapid-fire grammar and vocabulary arcade games like Wordle, Hangman, and Jobtris to boost your rank on the live exhibition leaderboard.',
+    speechText: 'Here is the Language Arcade! Play eleven fun games to practice your English vocabulary, spelling, and grammar while earning leaderboard points.',
+    speechOnPinned: null
   },
   {
     step: 4,
     tab: 'roadmap',
-    badge: 'EXHIBIT 5 OF 5',
-    title: '2-Page Student Dossier & Business Card Keepsake',
+    targetSelector: '#btn-header-dossier',
+    badge: 'STEP 5 OF 5',
+    title: 'Download Your Official Career Dossier',
     icon: '📄',
-    desc: 'Download your official two-page printable Student Dossier complete with your chosen career roadmap, college matches, competitive exam milestones, and cut-out Ambassador Business Card with scissor guidelines.',
-    actionLabel: 'Generate & Download Dossier PDF ➔',
-    tip: 'Your dossier is rendered in vector-crisp PDF format ready for print, framing, or submission as an official academic portfolio.'
+    instruction: 'Congratulations! You have completed the exhibition tour. Click "Download Dossier PDF" to get your official 2-Page printable Student Dossier and Business Card!',
+    speechText: 'Finally, here is your official Student Career Dossier! It has your career roadmap, college recommendations, and your printable Student Ambassador business card. Click Download Dossier to get your PDF!',
+    speechOnPinned: null
   }
 ];
 
 let currentTutorialStepIndex = 0;
+let isTutorialRunning = false;
+let isTutorialPaused = false;
+let isTutorialSpeechActive = false;
+let tutorialSpeechSessionId = 0;
+let waitingForCareerPin = false;
 
-function updateTutorialVoiceBadge() {
-  const badge = document.getElementById('tutorial-voice-badge-name');
-  if (!badge) return;
-  const vid = getSelectedGreetingVoice();
-  const item = PRE_RECORDED_TUTORIALS[vid] || PRE_RECORDED_TUTORIALS['default'];
-  badge.textContent = item ? item.name : (vid ? `Voice: ${vid.slice(0, 8)}...` : 'Studio Voice');
-}
-
-function renderTutorialStep(stepIndex) {
-  if (stepIndex < 0) stepIndex = 0;
-  if (stepIndex >= TUTORIAL_STEPS_DATA.length) stepIndex = TUTORIAL_STEPS_DATA.length - 1;
-  currentTutorialStepIndex = stepIndex;
-
-  const data = TUTORIAL_STEPS_DATA[stepIndex];
-  const stepCounter = document.getElementById('tutorial-step-counter');
-  if (stepCounter) {
-    stepCounter.textContent = `Step ${stepIndex + 1} of ${TUTORIAL_STEPS_DATA.length}`;
-  }
-
-  // Update tabs active class
-  document.querySelectorAll('.tutorial-nav-tab').forEach((tab, idx) => {
-    tab.classList.toggle('active', idx === stepIndex);
-  });
-
-  const cardBody = document.getElementById('tutorial-card-body');
-  if (cardBody) {
-    cardBody.innerHTML = `
-      <div style="display:flex;align-items:flex-start;gap:14px;">
-        <div style="font-size:32px;line-height:1;padding:8px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.25);border-radius:12px;">
-          ${data.icon}
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:10.5px;font-weight:700;color:var(--accent-magenta);letter-spacing:0.06em;margin-bottom:3px;">
-            ${data.badge}
-          </div>
-          <h4 style="font-size:16px;font-weight:800;color:var(--text-main);margin-bottom:6px;">
-            ${escapeHtml(data.title)}
-          </h4>
-          <p style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:10px;">
-            ${escapeHtml(data.desc)}
-          </p>
-          <div style="background:rgba(255,255,255,0.04);border-left:3px solid var(--accent-magenta);padding:8px 10px;border-radius:0 8px 8px 0;font-size:11.5px;color:var(--text-dim);line-height:1.45;">
-            <strong style="color:#ff2a85;">PRO-TIP:</strong> ${escapeHtml(data.tip)}
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  const actionBtn = document.getElementById('btn-tutorial-explore-action');
-  if (actionBtn) {
-    actionBtn.textContent = data.actionLabel;
+function updateTutorialHudStatus(state, label) {
+  const statusEl = document.getElementById('tutorial-hud-status');
+  const labelEl = document.getElementById('tutorial-voice-label');
+  if (labelEl) labelEl.textContent = label;
+  if (statusEl) {
+    statusEl.classList.toggle('paused', state === 'paused');
+    statusEl.classList.toggle('idle', state === 'idle');
+    statusEl.classList.toggle('speaking', state === 'speaking');
   }
 }
 
-function openTutorialModal() {
-  const modal = document.getElementById('tutorial-modal');
-  if (!modal) return;
-  modal.classList.add('active');
-  updateTutorialVoiceBadge();
-  renderTutorialStep(currentTutorialStepIndex);
-}
+function speakTutorialSpeech(text, onEnded = null) {
+  stopTutorialSpeechOnly();
+  if (!text) return;
 
-function closeTutorialModal() {
-  const modal = document.getElementById('tutorial-modal');
-  if (!modal) return;
-  modal.classList.remove('active');
-}
+  const sessionId = ++tutorialSpeechSessionId;
+  isTutorialSpeechActive = true;
+  updateTutorialHudStatus('speaking', 'Speaking...');
 
-async function playTutorialAudio() {
-  const headerBtn = document.getElementById('btn-header-tutorial');
-  const modalAudioBtn = document.getElementById('btn-tutorial-audio-toggle');
-  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
-  const audioText = document.getElementById('tutorial-audio-text');
-  const audioIcon = document.getElementById('tutorial-audio-icon');
-
-  const tutorialText = "Welcome to the Career Fair 2026 Interactive Platform Tutorial. Explore thirty-two global careers requiring English fluency, complete with accredited colleges, entrance exams, and admission pathways. You can pin your chosen career directly to your official dossier. Next, practice spoken articulation in the AI Speech Lab with real-time phoneme scoring and six-dimensional vocal coaching. Step into the News Anchor Studio to rehearse teleprompter scripts with a live video mirror. Challenge yourself across eleven Language Arcade games and compete on the live exhibition leaderboard. Finally, generate and download your official two-page Student Career Dossier complete with your cut-out ambassador business card. Take your time to explore and interact with every exhibit at your own pace.";
-
-  if (isTutorialAudioPlaying) {
-    stopAllVoice();
-    resetTutorialAudioButtons();
-    return;
-  }
-
-  stopAllVoice();
-  isTutorialAudioPlaying = true;
-
-  const sessionId = ++currentSpeechSessionId;
-  currentTtsAbortController = new AbortController();
-  const abortSignal = currentTtsAbortController.signal;
-
-  if (headerBtn) {
-    headerBtn.classList.add('playing', 'speaking-active');
-    headerBtn.innerHTML = `<span>⏹️</span> <span class="tutorial-btn-text">Stop Audio</span>`;
-    activeSpeechButton = headerBtn;
-  }
-  if (modalAudioBtn) {
-    modalAudioBtn.classList.add('playing');
-    if (audioText) audioText.textContent = 'Stop Audio Guide';
-    if (audioIcon) audioIcon.textContent = '⏹️';
-  }
-  if (loaderAudioBtn) {
-    loaderAudioBtn.textContent = '⏹️ Stop';
-  }
-
-  const chosenVoiceId = getSelectedGreetingVoice();
-
-  let preRecordedItem = PRE_RECORDED_TUTORIALS[chosenVoiceId];
-  if (!preRecordedItem && (!chosenVoiceId || chosenVoiceId === 'default' || chosenVoiceId === 'indian-neural')) {
-    preRecordedItem = PRE_RECORDED_TUTORIALS['default'];
-  }
-
-  if (preRecordedItem && preRecordedItem.url) {
+  if ('speechSynthesis' in window) {
     try {
-      const audio = new Audio(preRecordedItem.url);
-      currentTtsAudio = audio;
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    } catch (_) {}
 
-      audio.onended = () => {
-        if (sessionId === currentSpeechSessionId) {
-          stopAllVoice();
-          resetTutorialAudioButtons();
-        }
-      };
+    const utt = new SpeechSynthesisUtterance(text);
+    utt.lang = 'en-IN';
+    utt.rate = 0.95;
+    utt.pitch = 1.0;
 
-      audio.onerror = () => {
-        if (sessionId === currentSpeechSessionId) {
-          fetchAndPlayTutorialWithCache(tutorialText, chosenVoiceId, sessionId, abortSignal);
-        }
-      };
-
-      if (sessionId !== currentSpeechSessionId) return;
-      await audio.play();
-      return;
-    } catch (e) {
-      if (sessionId !== currentSpeechSessionId) return;
-      console.warn('Pre-recorded tutorial audio play error:', e);
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length) {
+      const bestVoice = voices.find(v => (v.lang === 'en-IN' || v.lang === 'en_IN') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Online')))
+        || voices.find(v => v.lang === 'en-IN' || v.lang === 'en_IN')
+        || voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Neural') || v.name.includes('Google')))
+        || voices.find(v => v.lang.startsWith('en'));
+      if (bestVoice) utt.voice = bestVoice;
     }
-  }
 
-  await fetchAndPlayTutorialWithCache(tutorialText, chosenVoiceId, sessionId, abortSignal);
+    utt.onend = () => {
+      if (sessionId === tutorialSpeechSessionId) {
+        isTutorialSpeechActive = false;
+        updateTutorialHudStatus('idle', 'Ready');
+        if (typeof onEnded === 'function') onEnded();
+      }
+    };
+
+    utt.onerror = () => {
+      if (sessionId === tutorialSpeechSessionId) {
+        isTutorialSpeechActive = false;
+        updateTutorialHudStatus('idle', 'Ready');
+      }
+    };
+
+    setTimeout(() => {
+      if (sessionId === tutorialSpeechSessionId && !isTutorialPaused) {
+        window.speechSynthesis.speak(utt);
+      }
+    }, 50);
+  } else {
+    updateTutorialHudStatus('idle', 'Ready');
+    if (typeof onEnded === 'function') onEnded();
+  }
 }
 
-function resetTutorialAudioButtons() {
-  isTutorialAudioPlaying = false;
-  const headerBtn = document.getElementById('btn-header-tutorial');
-  const modalAudioBtn = document.getElementById('btn-tutorial-audio-toggle');
-  const loaderAudioBtn = document.getElementById('btn-loader-tutorial-audio');
-  const audioText = document.getElementById('tutorial-audio-text');
-  const audioIcon = document.getElementById('tutorial-audio-icon');
-
-  if (headerBtn) {
-    headerBtn.classList.remove('playing', 'speaking-active');
-    headerBtn.innerHTML = `<span>💡</span> <span class="tutorial-btn-text">Tutorial</span>`;
-    if (activeSpeechButton === headerBtn) activeSpeechButton = null;
-  }
-  if (modalAudioBtn) {
-    modalAudioBtn.classList.remove('playing');
-    if (audioText) audioText.textContent = 'Listen AI Audio Guide';
-    if (audioIcon) audioIcon.textContent = '🔊';
-  }
-  if (loaderAudioBtn) {
-    loaderAudioBtn.textContent = '🔊 Listen';
-  }
-}
-
-async function fetchAndPlayTutorialWithCache(text, voiceId, sessionId, abortSignal) {
-  if (tutorialAudioMemoryCache.has(voiceId)) {
-    const blobUrl = tutorialAudioMemoryCache.get(voiceId);
-    playGreetingAudioSource(blobUrl, sessionId);
-    return;
-  }
-
+function pauseTutorial() {
+  if (!isTutorialRunning) return;
+  isTutorialPaused = true;
   try {
-    if ('caches' in window) {
-      const cache = await caches.open('cf-tutorial-cache-v1');
-      const cacheKey = `/cached-tutorial/${encodeURIComponent(voiceId || 'default')}.mp3`;
-      const cachedResp = await cache.match(cacheKey);
-      if (cachedResp) {
-        const blob = await cachedResp.blob();
-        if (sessionId !== currentSpeechSessionId) return;
-        const blobUrl = URL.createObjectURL(blob);
-        tutorialAudioMemoryCache.set(voiceId, blobUrl);
-        playGreetingAudioSource(blobUrl, sessionId);
-        return;
+    if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+    }
+  } catch (_) {}
+  if (window.currentTtsAudio && !window.currentTtsAudio.paused) {
+    try { window.currentTtsAudio.pause(); } catch (_) {}
+  }
+  updateTutorialHudStatus('paused', 'Paused');
+  const pauseBtn = document.getElementById('btn-tutorial-pause');
+  if (pauseBtn) {
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">▶️</span> <span id="tutorial-pause-text">Resume</span>';
+  }
+}
+
+function resumeTutorial() {
+  if (!isTutorialRunning) return;
+  isTutorialPaused = false;
+  try {
+    if ('speechSynthesis' in window && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    } else if (!isTutorialSpeechActive) {
+      const stepData = IN_SITE_TUTORIAL_STEPS[currentTutorialStepIndex];
+      if (stepData) {
+        speakTutorialSpeech(stepData.speechText);
       }
     }
   } catch (_) {}
-
-  try {
-    const res = await fetch(getApiUrl('api/tts'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: text,
-        voiceId: voiceId,
-        accent: 'indian',
-        isTutorial: true
-      }),
-      signal: abortSignal
-    });
-
-    if (sessionId !== currentSpeechSessionId) return;
-
-    if (res.ok && (res.headers.get('content-type') || '').includes('audio')) {
-      const blob = await res.blob();
-      if (sessionId !== currentSpeechSessionId) return;
-
-      try {
-        if ('caches' in window) {
-          const cache = await caches.open('cf-tutorial-cache-v1');
-          const cacheKey = `/cached-tutorial/${encodeURIComponent(voiceId || 'default')}.mp3`;
-          await cache.put(cacheKey, new Response(blob.slice(0), {
-            headers: { 'Content-Type': 'audio/mpeg' }
-          }));
-        }
-      } catch (_) {}
-
-      const blobUrl = URL.createObjectURL(blob);
-      tutorialAudioMemoryCache.set(voiceId, blobUrl);
-      playGreetingAudioSource(blobUrl, sessionId);
-      return;
-    }
-  } catch (e) {
-    if (sessionId !== currentSpeechSessionId) return;
-    if (e.name === 'AbortError') return;
+  if (window.currentTtsAudio && window.currentTtsAudio.paused) {
+    try { window.currentTtsAudio.play(); } catch (_) {}
   }
-
-  if (sessionId === currentSpeechSessionId) {
-    fallbackIndianNeuralSpeech(text, document.getElementById('btn-header-tutorial'), sessionId);
+  updateTutorialHudStatus('speaking', 'Speaking...');
+  const pauseBtn = document.getElementById('btn-tutorial-pause');
+  if (pauseBtn) {
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
   }
 }
 
-window.playTutorialAudio = playTutorialAudio;
-window.openTutorialModal = openTutorialModal;
+function stopTutorialSpeechOnly() {
+  tutorialSpeechSessionId++;
+  isTutorialSpeechActive = false;
+  try {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }
+  } catch (_) {}
+  updateTutorialHudStatus('idle', 'Ready');
+}
+
+function stopTutorial() {
+  isTutorialRunning = false;
+  isTutorialPaused = false;
+  waitingForCareerPin = false;
+  stopTutorialSpeechOnly();
+  stopAllVoice();
+
+  const hud = document.getElementById('tutorial-hud');
+  if (hud) hud.classList.remove('active');
+
+  document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
+  document.querySelectorAll('.tutorial-spotlight-active').forEach(el => el.classList.remove('tutorial-spotlight-active'));
+
+  const headerBtn = document.getElementById('btn-header-tutorial');
+  if (headerBtn) {
+    headerBtn.classList.remove('playing', 'speaking-active');
+    headerBtn.innerHTML = '<span>💡</span> <span class="tutorial-btn-text">Start Tutorial</span>';
+  }
+  const pauseBtn = document.getElementById('btn-tutorial-pause');
+  if (pauseBtn) {
+    pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
+  }
+}
+
+function renderInSiteTutorialStep(stepIndex) {
+  if (stepIndex < 0) stepIndex = 0;
+  if (stepIndex >= IN_SITE_TUTORIAL_STEPS.length) stepIndex = IN_SITE_TUTORIAL_STEPS.length - 1;
+  currentTutorialStepIndex = stepIndex;
+
+  const data = IN_SITE_TUTORIAL_STEPS[stepIndex];
+  const hud = document.getElementById('tutorial-hud');
+  if (hud) hud.classList.add('active');
+
+  const badgeEl = document.getElementById('tutorial-hud-badge');
+  const titleEl = document.getElementById('tutorial-hud-title');
+  const iconEl = document.getElementById('tutorial-hud-icon');
+  const instructionEl = document.getElementById('tutorial-hud-instruction');
+  const reactionEl = document.getElementById('tutorial-hud-reaction');
+  const prevBtn = document.getElementById('btn-tutorial-prev');
+  const nextBtn = document.getElementById('btn-tutorial-next');
+  const downloadBtn = document.getElementById('btn-tutorial-dossier-download');
+  const pauseBtn = document.getElementById('btn-tutorial-pause');
+
+  if (badgeEl) badgeEl.textContent = data.badge;
+  if (titleEl) titleEl.textContent = data.title;
+  if (iconEl) iconEl.textContent = data.icon;
+  if (reactionEl) reactionEl.style.display = 'none';
+  if (pauseBtn) pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>';
+
+  // Navigate on page to target tab
+  if (data.tab) {
+    if (window.AppRouter) {
+      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab));
+    } else if (typeof window.switchTab === 'function') {
+      window.switchTab(data.tab);
+    }
+  }
+
+  // Scroll smoothly to target element
+  setTimeout(() => {
+    const target = data.targetSelector ? document.querySelector(data.targetSelector) : null;
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 150);
+
+  // Remove pin glow
+  document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
+
+  if (data.step === 0) {
+    // Step 0: Careers & Dossier Integration
+    setTimeout(() => {
+      document.querySelectorAll('.btn-pin-career').forEach(btn => btn.classList.add('tutorial-pin-glow'));
+    }, 300);
+
+    let storedCareer = null;
+    try {
+      const stored = localStorage.getItem('cf_chosen_career');
+      if (stored) storedCareer = JSON.parse(stored);
+    } catch (_) {}
+
+    if (storedCareer && storedCareer.title) {
+      if (instructionEl) instructionEl.textContent = `You currently have "${storedCareer.title}" pinned to your Career Dossier! You can pin another career below, or click Next Exhibit to continue.`;
+      if (reactionEl) {
+        reactionEl.style.display = 'inline-flex';
+        reactionEl.textContent = `✅ Pinned: ${storedCareer.title}`;
+      }
+      if (nextBtn) {
+        nextBtn.textContent = 'Next Exhibit ▶';
+        nextBtn.style.opacity = '1';
+        nextBtn.disabled = false;
+      }
+      waitingForCareerPin = false;
+      speakTutorialSpeech(`Welcome to Career Fair 2026! You currently have ${storedCareer.title} pinned to your Career Dossier. You can choose another career below or click Next Exhibit to continue!`);
+    } else {
+      if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!';
+      if (nextBtn) {
+        nextBtn.textContent = 'Waiting for Pin ⏳';
+      }
+      waitingForCareerPin = true;
+      speakTutorialSpeech(data.speechText);
+    }
+
+    if (downloadBtn) downloadBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'inline-block';
+  } else if (data.step === 4) {
+    // Step 4: Final Dossier Download
+    if (instructionEl) instructionEl.textContent = data.instruction;
+    waitingForCareerPin = false;
+    if (nextBtn) {
+      nextBtn.textContent = 'Finish Tutorial 🎉';
+      nextBtn.style.display = 'inline-block';
+    }
+    if (downloadBtn) downloadBtn.style.display = 'inline-block';
+    speakTutorialSpeech(data.speechText);
+  } else {
+    if (instructionEl) instructionEl.textContent = data.instruction;
+    waitingForCareerPin = false;
+    if (nextBtn) {
+      nextBtn.textContent = 'Next Exhibit ▶';
+      nextBtn.style.display = 'inline-block';
+      nextBtn.disabled = false;
+    }
+    if (downloadBtn) downloadBtn.style.display = 'none';
+    speakTutorialSpeech(data.speechText);
+  }
+
+  if (prevBtn) {
+    prevBtn.disabled = (stepIndex === 0);
+    prevBtn.style.opacity = (stepIndex === 0) ? '0.5' : '1';
+  }
+}
+
+function onCareerPinnedByStudent(careerObj) {
+  if (!careerObj || !careerObj.title) return;
+
+  if (isTutorialRunning && currentTutorialStepIndex === 0) {
+    waitingForCareerPin = false;
+    document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
+
+    const instructionEl = document.getElementById('tutorial-hud-instruction');
+    const reactionEl = document.getElementById('tutorial-hud-reaction');
+    const nextBtn = document.getElementById('btn-tutorial-next');
+
+    if (instructionEl) {
+      instructionEl.textContent = `Awesome! You pinned "${careerObj.title}" to your Career Dossier! Your academic roadmap and top colleges are now ready.`;
+    }
+    if (reactionEl) {
+      reactionEl.style.display = 'inline-flex';
+      reactionEl.textContent = `✅ Career Pinned: ${careerObj.title}! Ready for next exhibit.`;
+    }
+    if (nextBtn) {
+      nextBtn.textContent = 'Next Exhibit ▶';
+      nextBtn.style.opacity = '1';
+      nextBtn.disabled = false;
+    }
+
+    const stepData = IN_SITE_TUTORIAL_STEPS[0];
+    const spokenCongrat = stepData.speechOnPinned(careerObj.title);
+    speakTutorialSpeech(spokenCongrat);
+  }
+}
+
+function startInSiteTutorial() {
+  isTutorialRunning = true;
+  isTutorialPaused = false;
+
+  const headerBtn = document.getElementById('btn-header-tutorial');
+  if (headerBtn) {
+    headerBtn.classList.add('playing', 'speaking-active');
+    headerBtn.innerHTML = '<span>⏹️</span> <span class="tutorial-btn-text">Stop Tutorial</span>';
+  }
+
+  renderInSiteTutorialStep(0);
+}
+
+// Backward-compatible global exports
+window.startInSiteTutorial = startInSiteTutorial;
+window.stopTutorial = stopTutorial;
+window.pauseTutorial = pauseTutorial;
+window.resumeTutorial = resumeTutorial;
+window.openTutorialModal = startInSiteTutorial;
+window.closeTutorialModal = stopTutorial;
+window.playTutorialAudio = startInSiteTutorial;
+window.onCareerPinnedByStudent = onCareerPinnedByStudent;
+Object.defineProperty(window, 'isTutorialPaused', { get: () => isTutorialPaused, configurable: true });
+Object.defineProperty(window, 'isTutorialRunning', { get: () => isTutorialRunning, configurable: true });
 
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
@@ -2143,9 +2188,13 @@ function initNavigation() {
     });
   });
 
-  // Spoken greeting button (Normal Audio Greeting)
+  // Spoken greeting button / alias -> starts In-Website Tutorial
   $('#btn-greeting')?.addEventListener('click', () => {
-    speakGreeting();
+    if (isTutorialRunning) {
+      stopTutorial();
+    } else {
+      startInSiteTutorial();
+    }
   });
 
   // Official 2-Page Student Career Dossier & Business Card button
@@ -2157,57 +2206,50 @@ function initNavigation() {
     }
   });
 
-  // Interactive Platform Tutorial button
+  // Interactive Platform In-Website Tutorial button
   $('#btn-header-tutorial')?.addEventListener('click', () => {
-    const headerBtn = document.getElementById('btn-header-tutorial');
-    if (isTutorialAudioPlaying || (headerBtn && (headerBtn.classList.contains('playing') || headerBtn.classList.contains('speaking-active') || headerBtn.textContent.includes('Stop')))) {
-      stopAllVoice();
-      resetTutorialAudioButtons();
+    if (isTutorialRunning) {
+      stopTutorial();
     } else {
-      openTutorialModal();
+      startInSiteTutorial();
     }
   });
 
-  // Tutorial modal navigation & interaction
-  $('#btn-close-tutorial')?.addEventListener('click', closeTutorialModal);
-  $('#btn-tutorial-done')?.addEventListener('click', closeTutorialModal);
-  $('#btn-tutorial-prev-step')?.addEventListener('click', () => {
-    renderTutorialStep(currentTutorialStepIndex - 1);
-  });
-  $('#btn-tutorial-next-step')?.addEventListener('click', () => {
-    renderTutorialStep(currentTutorialStepIndex + 1);
-  });
-  $('#btn-tutorial-audio-toggle')?.addEventListener('click', () => {
-    playTutorialAudio();
-  });
-  $('#btn-tutorial-explore-action')?.addEventListener('click', () => {
-    const data = TUTORIAL_STEPS_DATA[currentTutorialStepIndex];
-    closeTutorialModal();
-    if (data.step === 4) {
-      if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
-        window.DossierPDF.generate();
-      }
-      if (window.AppRouter) {
-        window.AppRouter.navigate('/roadmap');
-      } else if (typeof window.switchTab === 'function') {
-        window.switchTab('roadmap');
-      }
-    } else if (data.tab) {
-      if (window.AppRouter) {
-        window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab));
-      } else {
-        switchTab(data.tab);
-      }
+  // In-Website Tutorial HUD controller events
+  $('#btn-tutorial-hud-close')?.addEventListener('click', stopTutorial);
+  $('#btn-tutorial-stop')?.addEventListener('click', stopTutorial);
+  $('#btn-tutorial-pause')?.addEventListener('click', () => {
+    if (isTutorialPaused) {
+      resumeTutorial();
+    } else {
+      pauseTutorial();
     }
   });
-
-  $$('.tutorial-nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const step = parseInt(tab.dataset.step, 10);
-      if (!isNaN(step)) {
-        renderTutorialStep(step);
+  $('#btn-tutorial-prev')?.addEventListener('click', () => {
+    renderInSiteTutorialStep(currentTutorialStepIndex - 1);
+  });
+  $('#btn-tutorial-next')?.addEventListener('click', () => {
+    if (currentTutorialStepIndex === 0 && waitingForCareerPin) {
+      showToast('👉 Please click "⭐ Pin to My Career Dossier" on any career card below!');
+      return;
+    }
+    if (currentTutorialStepIndex >= IN_SITE_TUTORIAL_STEPS.length - 1) {
+      if (window.DopamineEngine) {
+        window.DopamineEngine.confetti(0.5, 0.4);
+        window.DopamineEngine.playChime('fanfare');
       }
-    });
+      showToast('🎉 Congratulations on completing the Career Fair tutorial tour!');
+      stopTutorial();
+      return;
+    }
+    renderInSiteTutorialStep(currentTutorialStepIndex + 1);
+  });
+  $('#btn-tutorial-dossier-download')?.addEventListener('click', () => {
+    if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
+      window.DossierPDF.generate();
+    } else {
+      showToast('⚠️ Preparing Career Dossier generator...');
+    }
   });
 
 
@@ -3094,6 +3136,9 @@ function renderCareers() {
       window.DopamineEngine.unlockBadge('career_explorer', 'Career Explorer', '🎯');
     }
     showToast(`⭐ ${careerObj.title} pinned to your official Career Dossier!`);
+    if (typeof onCareerPinnedByStudent === 'function') {
+      onCareerPinnedByStudent(careerObj);
+    }
   });
 
   // Event bindings

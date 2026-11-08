@@ -446,7 +446,6 @@
           <div class="loader-tips-nav">
             <button type="button" class="btn-loader-nav" id="btn-loader-prev-tip" aria-label="Previous tip">◀</button>
             <button type="button" class="btn-loader-nav" id="btn-loader-next-tip" aria-label="Next tip">Next Tip ▶</button>
-            <button type="button" class="btn-loader-nav" id="btn-loader-tutorial-audio" aria-label="Listen tutorial audio">🔊 Listen</button>
           </div>
         </div>
         <p class="loader-tutorial-text" id="loader-tutorial-text">
@@ -494,7 +493,8 @@
         </div>
 
         <!-- Spoken Greeting Button -->
-        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting">
+        <!-- Spoken Greeting Alias (Hidden to eliminate redundant greeting audio) -->
+        <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting" style="display:none;">
           <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>
         </button>
 
@@ -503,9 +503,9 @@
           <span>📄</span> <span class="dossier-btn-text">Student Dossier</span>
         </button>
 
-        <!-- Interactive Platform Tutorial Button -->
-        <button class="header-tutorial-btn" id="btn-header-tutorial" type="button" aria-label="Open interactive platform tutorial walkthrough">
-          <span>💡</span> <span class="tutorial-btn-text">Tutorial</span>
+        <!-- Interactive Platform In-Website Tutorial Button -->
+        <button class="header-tutorial-btn" id="btn-header-tutorial" type="button" aria-label="Start interactive website tutorial">
+          <span>💡</span> <span class="tutorial-btn-text">Start Tutorial</span>
         </button>
 
               </div>
@@ -2138,53 +2138,53 @@
   })();
   </script>
 
-  <!-- ── 15. INTERACTIVE PLATFORM TUTORIAL MODAL ── -->
-  <div class="tutorial-modal-overlay" id="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-modal-title">
-    <div class="tutorial-modal-card">
-      <div class="tutorial-modal-header">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:22px;">🎓</span>
-          <div>
-            <h3 id="tutorial-modal-title" style="margin:0;font-size:16px;font-weight:800;color:var(--text-main);">
-              Career Fair 2026 Interactive Tutorial
-            </h3>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:2px;">
-              <span style="font-size:11px;color:var(--text-muted);" id="tutorial-step-counter">Step 1 of 5</span>
-              <span style="font-size:11px;color:var(--accent-cyan);background:rgba(0,240,255,0.1);padding:1px 6px;border-radius:99px;border:1px solid rgba(0,240,255,0.25);" id="tutorial-voice-badge-name">
-                Voice: River (Informative Studio)
-              </span>
-            </div>
-          </div>
-        </div>
-        <button type="button" id="btn-close-tutorial" style="background:transparent;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;padding:4px;" aria-label="Close tutorial">✕</button>
+  <!-- ── 15. IN-WEBSITE INTERACTIVE TUTORIAL CONTROLLER HUD ── -->
+  <div class="in-site-tutorial-hud" id="tutorial-hud" role="region" aria-label="Interactive Platform Tutorial Controller">
+    <div class="tutorial-hud-header">
+      <div class="tutorial-hud-title-wrap">
+        <span class="tutorial-hud-badge" id="tutorial-hud-badge">STEP 1 OF 5</span>
+        <h4 class="tutorial-hud-title" id="tutorial-hud-title">Explore Careers & Pin to Dossier</h4>
       </div>
-
-      <div class="tutorial-nav-tabs" role="tablist">
-        <button type="button" class="tutorial-nav-tab active" data-step="0">1. Careers (32+)</button>
-        <button type="button" class="tutorial-nav-tab" data-step="1">2. AI Speech Lab</button>
-        <button type="button" class="tutorial-nav-tab" data-step="2">3. Studio Teleprompter</button>
-        <button type="button" class="tutorial-nav-tab" data-step="3">4. Language Arcade</button>
-        <button type="button" class="tutorial-nav-tab" data-step="4">5. 2-Page Dossier</button>
-      </div>
-
-      <div class="tutorial-modal-body">
-        <div id="tutorial-card-body"></div>
-      </div>
-
-      <div class="tutorial-modal-footer">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-audio-toggle" style="display:inline-flex;align-items:center;gap:6px;font-weight:700;">
-            <span id="tutorial-audio-icon">🔊</span> <span id="tutorial-audio-text">Listen AI Audio Guide</span>
-          </button>
+      <div class="tutorial-hud-status-wrap">
+        <div class="tutorial-hud-status" id="tutorial-hud-status">
+          <span class="tutorial-equalizer" id="tutorial-equalizer" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </span>
+          <span class="tutorial-voice-label" id="tutorial-voice-label">Speaking...</span>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-prev-step">◀ Previous</button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-next-step">Next Exhibit ▶</button>
-          <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-explore-action" style="font-weight:800;">
-            Explore Exhibit ➔
-          </button>
-          <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-done">Done</button>
-        </div>
+        <button type="button" class="btn-tutorial-hud-close" id="btn-tutorial-hud-close" title="Stop and Close Tutorial" aria-label="Close tutorial">✕</button>
+      </div>
+    </div>
+
+    <div class="tutorial-hud-body">
+      <div class="tutorial-hud-step-icon" id="tutorial-hud-icon" aria-hidden="true">🎯</div>
+      <div class="tutorial-hud-text-wrap">
+        <p class="tutorial-hud-instruction" id="tutorial-hud-instruction">
+          Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!
+        </p>
+        <div class="tutorial-hud-reaction" id="tutorial-hud-reaction" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="tutorial-hud-footer">
+      <div class="tutorial-hud-controls-left">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-stop" aria-label="Stop tutorial">
+          ⏹️ Stop Tutorial
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-pause" aria-label="Pause or resume tutorial speech">
+          <span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause</span>
+        </button>
+      </div>
+      <div class="tutorial-hud-controls-right">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-tutorial-prev" aria-label="Previous step">
+          ◀ Previous
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-next" aria-label="Next step">
+          Next Exhibit ▶
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-tutorial-dossier-download" style="display:none;font-weight:800;background:linear-gradient(135deg,#00f0ff,#8b5cf6);color:#07090e;" aria-label="Download student career dossier PDF">
+          📄 Download Dossier PDF
+        </button>
       </div>
     </div>
   </div>

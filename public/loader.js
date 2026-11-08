@@ -58,8 +58,6 @@
     });
   }
 
-  let loaderFallbackAudio = null;
-
   function nextTip() {
     userInteracted = true;
     showTip(currentTipIndex + 1);
@@ -97,7 +95,6 @@
     const nextBtn = document.getElementById('btn-loader-next-tip');
     const prevBtn = document.getElementById('btn-loader-prev-tip');
     const enterBtn = document.getElementById('btn-loader-enter');
-    const audioBtn = document.getElementById('btn-loader-tutorial-audio');
     const panel = document.getElementById('loader-tips-panel');
 
     if (nextBtn) {
@@ -121,37 +118,6 @@
         e.preventDefault();
         e.stopPropagation();
         dismissLoader();
-      });
-    }
-
-    if (audioBtn) {
-      audioBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        userInteracted = true;
-        if (typeof window.playTutorialAudio === 'function') {
-          if (loaderFallbackAudio) {
-            try { loaderFallbackAudio.pause(); } catch (_) {}
-            loaderFallbackAudio = null;
-          }
-          window.playTutorialAudio();
-        } else {
-          // If app.js not fully loaded yet, play or toggle default audio directly
-          if (loaderFallbackAudio && !loaderFallbackAudio.paused) {
-            loaderFallbackAudio.pause();
-            loaderFallbackAudio = null;
-            audioBtn.textContent = '🔊 Listen';
-            return;
-          }
-          loaderFallbackAudio = new Audio('/audio/tutorial/tutorial_default.mp3');
-          window.currentTtsAudio = loaderFallbackAudio;
-          loaderFallbackAudio.play().catch(() => {});
-          audioBtn.textContent = '⏹️ Stop';
-          loaderFallbackAudio.onended = () => {
-            audioBtn.textContent = '🔊 Listen';
-            loaderFallbackAudio = null;
-          };
-        }
       });
     }
 
