@@ -232,7 +232,7 @@
 
             <div class="mystery-actions">
               <button class="btn btn-primary btn-sm" id="btn-mystery-add-dossier" style="background:${tier.color};color:#000;font-weight:800;">
-                ⭐ Pin to My Career Dossier
+                ⭐ Pin to Your Booklet
               </button>
               <button class="btn btn-secondary btn-sm" id="btn-mystery-story-card">
                 📸 Download Story Card
@@ -266,7 +266,7 @@
       playSynthesizedChime('ding');
       triggerConfettiBurst(0.5, 0.4);
       if (typeof window.showToast === 'function') {
-        window.showToast(`✨ ${resolvedCareer.title} added to your official Dossier!`);
+        window.showToast(`✨ ${resolvedCareer.title} added to Your Booklet!`);
       }
       modal.classList.remove('active');
     };

@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=13.0">
+  <link rel="stylesheet" href="styles.css?v=14.0">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -35,13 +35,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
-  <script src="dossier-pdf.js?v=13.0" defer></script>
-  <script src="dopamine-engine.js?v=7.7" defer></script>
+  <script src="dossier-pdf.js?v=14.0" defer></script>
+  <script src="dopamine-engine.js?v=14.0" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
-    <script src="guide-avatar.js?v=7.8" defer></script>
+    <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
-  <script src="loader.js?v=12.0"></script>
-  <script src="app.js?v=13.0" defer></script>
+  <script src="loader.js?v=14.0"></script>
+  <script src="app.js?v=14.0" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -487,18 +487,17 @@
   <!-- ── 2. SITE HEADER ── -->
   <header class="site-header" id="top">
     <div class="header-container">
-      <div class="header-brand-row">
-        <div class="site-brand" onclick="switchTab('hero')" role="button" tabindex="0">
-          <div class="brand-icon" aria-hidden="true">
-            <img src="logo.png" alt="Career Fair Logo" class="brand-logo-img">
-          </div>
-          <div class="brand-copy">
-            <div class="brand-name">Career Fair <span style="color:var(--accent-cyan);font-weight:700;">2026</span></div>
-            <div class="brand-subtitle">KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD</div>
-          </div>
+      <div class="site-brand" onclick="switchTab('hero')" role="button" tabindex="0">
+        <div class="brand-icon" aria-hidden="true">
+          <img src="logo.png" alt="Career Fair Logo" class="brand-logo-img">
         </div>
-
-        <!-- Spoken Greeting Button -->
+        <div class="brand-copy">
+          <div class="brand-name">Career Fair <span style="color:var(--accent-cyan);font-weight:700;">2026</span></div>
+          <div class="brand-subtitle">KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD</div>
+        </div>
+      </div>
+      
+      <div class="header-actions-row">
         <!-- Spoken Greeting Alias (Hidden to eliminate redundant greeting audio) -->
         <button class="audio-greeting-btn" id="btn-greeting" type="button" aria-label="Listen to humanoid audio greeting" style="display:none;">
           <span>🔊</span> <span class="greeting-btn-text"><span class="greeting-prefix">Listen AI </span>Greeting</span>
@@ -514,9 +513,6 @@
           <span>💡</span> <span class="tutorial-btn-text"><span class="tutorial-btn-prefix">Start </span>Tutorial</span>
         </button>
 
-              </div>
-      
-      <div class="header-actions-row">
         <!-- Interactive Animated Theme Switcher (Light / Dark) -->
         <div class="theme-switcher" role="radiogroup" aria-label="Toggle visual theme" title="Toggle visual theme" tabindex="0" data-active-theme="dark">
           <div class="theme-switcher-slider" aria-hidden="true"></div>

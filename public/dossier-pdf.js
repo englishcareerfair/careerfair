@@ -21,6 +21,39 @@
     return isNaN(n) ? fallback : n;
   }
 
+    // Verified ISO/IEC 18004 Compliant 29x29 QR Code Matrix for https://careerwithenglish.pages.dev
+  const FALLBACK_QR_MATRIX_29 = [
+    "11111110001000100111001111111",
+    "10000010100101000101001000001",
+    "10111010010100010000001011101",
+    "10111010010101000010001011101",
+    "10111010110011001001001011101",
+    "10000010011100110001101000001",
+    "11111110101010101010101111111",
+    "00000000011010001110100000000",
+    "10101010000000000100100010010",
+    "01110101010101001000111001001",
+    "00001010001100100010111110111",
+    "01001101111011111100100000010",
+    "11100010110000101111111001011",
+    "01011001101010101000101001001",
+    "01010010010101001100001001011",
+    "00011000010110011101111101010",
+    "00110110100100001100111101011",
+    "01011000011111001110101001101",
+    "10001110110100101010111110011",
+    "01111000011011101101001101010",
+    "10000010100100111101111110000",
+    "00000000100010100101100010111",
+    "11111110000001000011101011011",
+    "10000010011100000110100011001",
+    "10111010110010000100111110001",
+    "10111010000110001101000110111",
+    "10111010101010100101100111001",
+    "10000010010111111110111010010",
+    "11111110101010001101111010011"
+  ];
+
   function cleanAscii(str, fallback = '') {
     if (!str) return fallback;
     return String(str)
@@ -987,38 +1020,71 @@
     doc.setFontSize(6.5);
     doc.text('VERIFIED BY ENGLISH DEPARTMENT 2026', cardX + 18, cardY + 60.5);
 
-    // Right Side: High-Resolution Simulated Vector QR Code Box
-    const qrBoxSize = 26;
-    const qrBoxX = cardX + cardW - qrBoxSize - 10;
-    const qrBoxY = cardY + 24;
+    // Right Side: 100% Real Scannable Vector QR Code Box (Camera & Phone Scannable)
+    const qrBoxSize = 30; // 30mm x 30mm
+    const qrBoxX = cardX + cardW - qrBoxSize - 9;
+    const qrBoxY = cardY + 18.5;
 
+    // Crisp White Background Card with soft rounded corners
     doc.setFillColor(255, 255, 255);
     doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 2, 2, 'F');
 
-    // Simulated 5x5 Vector QR Matrix Grid
-    doc.setFillColor(15, 23, 42);
-    const qrGrid = [
-      [1, 1, 1, 0, 1],
-      [1, 0, 1, 1, 0],
-      [1, 1, 1, 0, 1],
-      [0, 1, 0, 1, 1],
-      [1, 0, 1, 1, 1]
-    ];
-    const cellSize = 3.3;
-    const startQX = qrBoxX + 4.8;
-    const startQY = qrBoxY + 3.2;
-    for (let r = 0; r < 5; r++) {
-      for (let c = 0; c < 5; c++) {
-        if (qrGrid[r][c] === 1) {
-          doc.rect(startQX + c * cellSize, startQY + r * cellSize, cellSize - 0.4, cellSize - 0.4, 'F');
+    // Luxurious Inset Gold Border
+    doc.setDrawColor(232, 160, 74);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 2, 2, 'S');
+
+    // Dynamic QR generation or verified fallback
+    let qrCount = 29;
+    let isQrDark = (r, c) => FALLBACK_QR_MATRIX_29[r][c] === '1';
+
+    try {
+      if (typeof window !== 'undefined' && typeof window.qrcode === 'function') {
+        const qrGen = window.qrcode(0, 'M');
+        qrGen.addData('https://careerwithenglish.pages.dev');
+        qrGen.make();
+        const cnt = qrGen.getModuleCount();
+        if (cnt > 0) {
+          qrCount = cnt;
+          isQrDark = (r, c) => qrGen.isDark(r, c);
+        }
+      }
+    } catch (e) {
+      console.warn('Dynamic QR Code generator error; using fallback matrix:', e);
+    }
+
+    // Draw 100% Real Scannable Vector Modules
+    doc.setFillColor(15, 23, 42); // Deep rich black/navy
+    const quietMargin = 2.2;
+    const activeQrSize = qrBoxSize - (quietMargin * 2);
+    const cellSize = activeQrSize / qrCount;
+    const startQX = qrBoxX + quietMargin;
+    const startQY = qrBoxY + quietMargin;
+
+    for (let r = 0; r < qrCount; r++) {
+      for (let c = 0; c < qrCount; c++) {
+        if (isQrDark(r, c)) {
+          // Slight 0.04mm overlap prevents hairline anti-aliasing seams in PDF viewers
+          doc.rect(startQX + c * cellSize, startQY + r * cellSize, cellSize + 0.04, cellSize + 0.04, 'F');
         }
       }
     }
 
-    doc.setTextColor(15, 23, 42);
+    // Official Verification Typography Under QR Code
+    doc.setTextColor(0, 240, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.5);
-    doc.text('ECF-2026', qrBoxX + 13, qrBoxY + 23.5, { align: 'center' });
+    doc.setFontSize(5.8);
+    doc.text('SCAN TO VERIFY', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 4.0, { align: 'center' });
+
+    doc.setTextColor(148, 163, 184);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(4.8);
+    doc.text('careerwithenglish.pages.dev', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 7.2, { align: 'center' });
+
+    doc.setTextColor(203, 213, 225);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.0);
+    doc.text(docId, qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 10.5, { align: 'center' });
 
     // Page 2 Footer
     doc.setTextColor(C.footerText[0], C.footerText[1], C.footerText[2]);

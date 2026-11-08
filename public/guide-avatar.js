@@ -181,7 +181,7 @@
               <div class="dg-check-item" data-step="6"><span>7.</span> News Anchor & Teleprompter</div>
               <div class="dg-check-item" data-step="7"><span>8.</span> Language Arcade & OCR</div>
               <div class="dg-check-item" data-step="8"><span>9.</span> Leaderboard & Reviews</div>
-              <div class="dg-check-item" data-step="9"><span>10.</span> 2-Page Printable Dossier</div>
+              <div class="dg-check-item" data-step="9"><span>10.</span> 2-Page Printable Booklet</div>
             </div>
 
             <div class="dg-drawer-caption" id="dg-caption-text">
@@ -506,7 +506,7 @@
           break;
 
         case 9:
-          // Step 10: 2-Page Printable Dossier & Business Card
+          // Step 10: 2-Page Printable Booklet & Business Card
           if (flags.pdf_export === false) {
             this.finishTour();
             return;
