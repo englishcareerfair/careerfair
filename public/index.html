@@ -35,13 +35,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
-  <script src="dossier-pdf.js?v=20.3" defer></script>
+  <script src="dossier-pdf.js?v=20.4" defer></script>
   <script src="dopamine-engine.js?v=14.0" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
     <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=14.0"></script>
-  <script src="app.js?v=20.3" defer></script>
+  <script src="app.js?v=20.4" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -1032,8 +1032,9 @@
           <div style="margin-bottom:12px;">
             <label style="font-size:13px;font-weight:600;">Select Script / Roleplay:</label>
             <select id="anchor-script-select" class="form-select">
+              <option value="" disabled selected>-- Select Script / Roleplay (Mandatory) --</option>
               <optgroup label="🎙️ MEDIA, BROADCASTING & PUBLIC LIFE">
-                <option value="breaking" selected>📰 Breaking News Bulletin (Media Anchor)</option>
+                <option value="breaking">📰 Breaking News Bulletin (Media Anchor)</option>
                 <option value="cricket">🏏 Cricket World Cup Final Over (Live Sports Broadcaster)</option>
                 <option value="diplomat">🌐 UN General Assembly Climate Address (Chief Diplomat)</option>
                 <option value="pr">📢 Corporate Crisis Press Briefing (PR Spokesperson)</option>
@@ -1244,7 +1245,7 @@
             </div>
           </div>
 
-          <form id="feedback-form" style="margin-top:16px;">
+          <form id="feedback-form" novalidate style="margin-top:16px;">
             <div class="form-group" style="margin-bottom:14px;">
               <label for="fb-name" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">
                 Your Name <span style="color:#ef4444;">*</span>
@@ -1256,6 +1257,7 @@
               <div class="form-group">
                 <label for="fb-role" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Your Role:</label>
                 <select id="fb-role">
+                  <option value="" disabled selected>-- Select Your Role (Mandatory) --</option>
                   <option value="Student">Student</option>
                   <option value="Parent">Parent</option>
                   <option value="Teacher">Teacher / Faculty</option>
@@ -1265,9 +1267,10 @@
               <div class="form-group">
                 <label for="fb-class" style="font-size:13px;font-weight:600;display:block;margin-bottom:6px;">Class / Section / Affiliation:</label>
                 <select id="fb-class">
+                  <option value="" disabled selected>-- Select Class / Affiliation (Mandatory) --</option>
                   <option value="Class 8 & below">Class 8 &amp; below</option>
                   <option value="Class 9">Class 9</option>
-                  <option value="Class 10" selected>Class 10</option>
+                  <option value="Class 10">Class 10</option>
                   <option value="Class 11">Class 11</option>
                   <option value="Class 12">Class 12</option>
                   <option value="Parent / Guest">Parent / Guest</option>
@@ -1922,6 +1925,7 @@
         <div>
           <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Issue Category:</label>
           <select id="issue-category" style="width:100%;font-size:13px;padding:8px 12px;background:var(--bg-subtle);color:var(--text-main);border:1px solid var(--border);border-radius:var(--radius-sm);">
+            <option value="" disabled selected>-- Select Issue Category (Mandatory) --</option>
             <option value="Audio / Speech Recognition">🎙️ Audio / Speech Recognition</option>
             <option value="Camera / Presence Detection">📷 Camera / Presence Detection</option>
             <option value="Game Completion OCR">🎮 Game Scoring &amp; OCR</option>

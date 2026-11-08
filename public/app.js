@@ -62,8 +62,8 @@ const initialResolvedTheme = savedInitialTheme ? (savedInitialTheme === 'light' 
 const STATE = window.STATE = {
   theme: initialResolvedTheme,
   activeTab: 'hero',
-  studentName: localStorage.getItem('cf_student_name') || '',
-  studentClass: localStorage.getItem('cf_student_class') || 'Class 10',
+  studentName: '',
+  studentClass: '',
   adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '',
   config: {
     pass: 70,
@@ -2616,15 +2616,48 @@ function initNavigation() {
       $('#user-issue-modal').classList.remove('active');
     }
   });
+  ['#issue-user-name', '#issue-category', '#issue-description'].forEach(sel => {
+    $(sel)?.addEventListener('input', (e) => { e.target.style.borderColor = ''; });
+    $(sel)?.addEventListener('change', (e) => { e.target.style.borderColor = ''; });
+  });
+
   $('#btn-submit-user-issue')?.addEventListener('click', async () => {
-    const rawVisitorName = ($('#issue-user-name')?.value || STATE.studentName || 'Visitor').trim();
-    const visitorName = capitalizeName(rawVisitorName) || 'Visitor';
-    if ($('#issue-user-name') && rawVisitorName) $('#issue-user-name').value = visitorName;
-    const issueType = ($('#issue-category')?.value || 'general').trim();
+    const rawVisitorName = ($('#issue-user-name')?.value || '').trim();
+    const visitorName = capitalizeName(rawVisitorName);
+    if ($('#issue-user-name') && visitorName) $('#issue-user-name').value = visitorName;
+    const issueType = ($('#issue-category')?.value || '').trim();
     const description = ($('#issue-description')?.value || '').trim();
 
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!visitorName) {
+      if ($('#issue-user-name')) $('#issue-user-name').style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = $('#issue-user-name');
+      hasError = true;
+    } else {
+      if ($('#issue-user-name')) $('#issue-user-name').style.borderColor = '';
+    }
+
+    if (!issueType || issueType === '') {
+      if ($('#issue-category')) $('#issue-category').style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = $('#issue-category');
+      hasError = true;
+    } else {
+      if ($('#issue-category')) $('#issue-category').style.borderColor = '';
+    }
+
     if (!description) {
-      showToast('⚠️ Please describe the issue before submitting.');
+      if ($('#issue-description')) $('#issue-description').style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = $('#issue-description');
+      hasError = true;
+    } else {
+      if ($('#issue-description')) $('#issue-description').style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Name, Category, and Description are all mandatory!');
+      firstErrorEl?.focus();
       return;
     }
 
@@ -3692,8 +3725,8 @@ const AI_SENTENCE_LIBRARY = {
 let isSpeakLadderBound = false;
 function initSpeakLadder() {
   const nameInput = $('#speak-student-name');
-  if (nameInput && STATE.studentName) {
-    nameInput.value = STATE.studentName;
+  if (nameInput) {
+    nameInput.value = '';
   }
 
   if (!isSpeakLadderBound) {
@@ -4428,9 +4461,7 @@ function initSpeechLab() {
   // Wire Student Name in Speech Lab (Synchronized with Speak Ladder & Leaderboard)
   const labNameInput = $('#speech-lab-student-name');
   if (labNameInput) {
-    if (!labNameInput.value) {
-      labNameInput.value = STATE.studentName || localStorage.getItem('cf_student_name') || '';
-    }
+    labNameInput.value = '';
     if (!labNameInput.dataset.bound) {
       labNameInput.dataset.bound = 'true';
       labNameInput.addEventListener('keydown', (e) => {
@@ -4743,9 +4774,7 @@ function analyzeSpeechLabSample() {
   // Resolve Student Name for Exhibition Leaderboard mapping
   const speechLabNameInput = $('#speech-lab-student-name');
   let rawName = (speechLabNameInput ? speechLabNameInput.value : '').trim() ||
-                ($('#speak-student-name')?.value || '').trim() ||
-                (STATE.studentName || '').trim() ||
-                (localStorage.getItem('cf_student_name') || '').trim();
+                ($('#speak-student-name')?.value || '').trim();
 
   // If student hasn't entered their name, highlight the input at the top and prompt them
   if (!rawName) {
@@ -5301,10 +5330,24 @@ function initTeleprompter() {
 
   // Helper to update displayed script and lower-third copy
   const applyScript = key => {
-    const data = SCRIPTS[key] || SCRIPTS.breaking;
+    const data = SCRIPTS[key];
     const activeS1 = $('#teleprompter-sentence-1') || s1;
     const activeS2 = $('#teleprompter-sentence-2') || s2;
     const activeTrack = $('#anchor-teleprompter-track') || track;
+
+    if (!data) {
+      if (activeS1) activeS1.textContent = '"Select a script above to begin teleprompter roleplay."';
+      if (activeS2) activeS2.textContent = '"Select a script above to begin teleprompter roleplay."';
+      if (lowerTag) lowerTag.textContent = 'STUDIO READY';
+      const nameVal = capitalizeName(nameInput?.value.trim() || '') || 'STUDENT';
+      if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · SELECT SCRIPT ABOVE · KANAKIA INTERNATIONAL SCHOOL`;
+      teleprompterState.tickerOffset = 0;
+      if (activeTrack) activeTrack.style.transform = 'translateX(0px)';
+      teleprompterState.isPrompterPaused = true;
+      teleprompterState.prompterStarted = false;
+      updatePrompterButtonUI();
+      return;
+    }
 
     if (activeS1) activeS1.textContent = `"${data.text}"`;
     if (activeS2) activeS2.textContent = `"${data.text}"`;
@@ -5552,7 +5595,8 @@ function initTeleprompter() {
   };
 
   // Prepare initial script & keep prompter stationary until started by user
-  applyScript(scriptSelect?.value || 'breaking');
+  if (nameInput) nameInput.value = '';
+  applyScript(scriptSelect?.value || '');
   teleprompterState.isPrompterPaused = true;
   teleprompterState.prompterStarted = false;
   updatePrompterButtonUI();
@@ -5591,6 +5635,34 @@ function initTeleprompter() {
 
   // 4. Start / Pause / Resume Teleprompter Scroll Button
   const togglePrompter = () => {
+    const studentName = capitalizeName(nameInput?.value.trim() || '');
+    const scriptKey = scriptSelect?.value || '';
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!studentName) {
+      if (nameInput) nameInput.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = nameInput;
+      hasError = true;
+    } else {
+      if (nameInput) nameInput.style.borderColor = '';
+    }
+
+    if (!scriptKey || scriptKey === '') {
+      if (scriptSelect) scriptSelect.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = scriptSelect;
+      hasError = true;
+    } else {
+      if (scriptSelect) scriptSelect.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Name and Script / Roleplay are mandatory to start the teleprompter!');
+      firstErrorEl?.focus();
+      return;
+    }
+
     if (!teleprompterState.prompterStarted) {
       teleprompterState.prompterStarted = true;
       teleprompterState.isPrompterPaused = false;
@@ -5612,6 +5684,7 @@ function initTeleprompter() {
 
   // 5. Script / Roleplay Dropdown Selection
   scriptSelect?.addEventListener('change', e => {
+    scriptSelect.style.borderColor = '';
     applyScript(e.target.value);
     if (window.AppRouter) {
       window.AppRouter.navigate('/teleprompter', { silent: true });
@@ -5620,7 +5693,8 @@ function initTeleprompter() {
 
   // 6. Name input listener
   nameInput?.addEventListener('input', () => {
-    const scriptKey = scriptSelect?.value || 'breaking';
+    nameInput.style.borderColor = '';
+    const scriptKey = scriptSelect?.value || '';
     applyScript(scriptKey);
   });
 
@@ -5894,9 +5968,29 @@ function initTeleprompter() {
     }
 
     // START RECORDING
+    const scriptKey = scriptSelect?.value || '';
+    let hasError = false;
+    let firstErrorEl = null;
+
     if (!studentName) {
-      showToast('Please enter your name before recording your broadcast clip!');
-      nameInput?.focus();
+      if (nameInput) nameInput.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = nameInput;
+      hasError = true;
+    } else {
+      if (nameInput) nameInput.style.borderColor = '';
+    }
+
+    if (!scriptKey || scriptKey === '') {
+      if (scriptSelect) scriptSelect.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = scriptSelect;
+      hasError = true;
+    } else {
+      if (scriptSelect) scriptSelect.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Please enter your name and select a script / roleplay before recording!');
+      firstErrorEl?.focus();
       return;
     }
 
@@ -7054,6 +7148,7 @@ function launchQuestBard(mount) {
     <div style="margin-bottom:12px;">
       <label style="font-size:13px;font-weight:600;display:block;margin-bottom:4px;">Select Inscription Mode:</label>
       <select id="bard-mode-select" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13.5px;">
+        <option value="" disabled selected>-- Select Inscription Mode (Mandatory) --</option>
         <option value="Write a Shakespearean sonnet">Shakespearean Sonnet (14 lines iambic pentameter)</option>
         <option value="Write a Gothic Romantic poem">Gothic Romantic Ballad (Atmospheric &amp; haunting)</option>
         <option value="Critique my writing style">Literary Style Critique (Actionable rhetoric insights)</option>
@@ -7066,12 +7161,44 @@ function launchQuestBard(mount) {
     <div id="bard-result-mount" style="margin-top:16px;"></div>
   `;
 
+  $('#bard-mode-select')?.addEventListener('change', () => {
+    const el = $('#bard-mode-select');
+    if (el) el.style.borderColor = '';
+  });
+  $('#bard-input-text')?.addEventListener('input', () => {
+    const el = $('#bard-input-text');
+    if (el) el.style.borderColor = '';
+  });
+
   $('#btn-bard-go')?.addEventListener('click', async () => {
-    const text = $('#bard-input-text')?.value.trim();
-    const mode = $('#bard-mode-select')?.value;
+    const modeEl = $('#bard-mode-select');
+    const textEl = $('#bard-input-text');
+    const text = textEl?.value.trim();
+    const mode = modeEl?.value;
     const resBox = $('#bard-result-mount');
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!mode || mode === '') {
+      if (modeEl) modeEl.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = modeEl;
+      hasError = true;
+    } else {
+      if (modeEl) modeEl.style.borderColor = '';
+    }
+
     if (!text) {
-      showToast('Please enter a theme or writing snippet.');
+      if (textEl) textEl.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = textEl;
+      hasError = true;
+    } else {
+      if (textEl) textEl.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Please select an Inscription Mode and enter a theme or writing snippet (both mandatory)!');
+      firstErrorEl?.focus();
       return;
     }
 
@@ -7111,6 +7238,7 @@ function launchQuestOracle(mount) {
       <div>
         <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">1. A cherished place?</label>
         <select id="oracle-q1" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option value="" disabled selected>-- Select a cherished place (Mandatory) --</option>
           <option>Ancient university library</option>
           <option>Stormy coastal sea cliff</option>
           <option>Bustling international city</option>
@@ -7120,6 +7248,7 @@ function launchQuestOracle(mount) {
       <div>
         <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">2. Your strongest gift?</label>
         <select id="oracle-q2" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option value="" disabled selected>-- Select your strongest gift (Mandatory) --</option>
           <option>Telling unforgettable stories</option>
           <option>Spotting hidden inconsistencies</option>
           <option>Persuading and inspiring listeners</option>
@@ -7129,6 +7258,7 @@ function launchQuestOracle(mount) {
       <div>
         <label style="font-size:12.5px;font-weight:600;display:block;margin-bottom:4px;">3. A perfect evening?</label>
         <select id="oracle-q3" style="width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;">
+          <option value="" disabled selected>-- Select a perfect evening (Mandatory) --</option>
           <option>Reading deeply without interruption</option>
           <option>Engaging in passionate friendly debate</option>
           <option>Crafting or writing something original</option>
@@ -7143,11 +7273,53 @@ function launchQuestOracle(mount) {
     <div id="oracle-result-mount" style="margin-top:16px;"></div>
   `;
 
+  ['#oracle-q1', '#oracle-q2', '#oracle-q3'].forEach(sel => {
+    $(sel)?.addEventListener('change', (e) => {
+      e.target.style.borderColor = '';
+    });
+  });
+
   $('#btn-oracle-go')?.addEventListener('click', async () => {
-    const q1 = $('#oracle-q1')?.value;
-    const q2 = $('#oracle-q2')?.value;
-    const q3 = $('#oracle-q3')?.value;
+    const q1El = $('#oracle-q1');
+    const q2El = $('#oracle-q2');
+    const q3El = $('#oracle-q3');
+    const q1 = q1El?.value;
+    const q2 = q2El?.value;
+    const q3 = q3El?.value;
     const bio = $('#oracle-bio')?.value.trim();
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!q1 || q1 === '') {
+      if (q1El) q1El.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = q1El;
+      hasError = true;
+    } else {
+      if (q1El) q1El.style.borderColor = '';
+    }
+
+    if (!q2 || q2 === '') {
+      if (q2El) q2El.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = q2El;
+      hasError = true;
+    } else {
+      if (q2El) q2El.style.borderColor = '';
+    }
+
+    if (!q3 || q3 === '') {
+      if (q3El) q3El.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = q3El;
+      hasError = true;
+    } else {
+      if (q3El) q3El.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Please answer all 3 mandatory divination questions to reveal your destiny!');
+      firstErrorEl?.focus();
+      return;
+    }
     const resBox = $('#oracle-result-mount');
 
     resBox.innerHTML = '<div style="color:var(--accent-cyan);padding:14px;"><span class="spinner-sm"></span> The astrological astrolabe aligns with your answers...</div>';
@@ -8888,9 +9060,10 @@ function renderMyPlan(mount) {
       <div class="form-group">
         <label for="plan-class-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Your Current Class / Grade:</label>
         <select id="plan-class-select" style="width:100%;">
+          <option value="" disabled selected>-- Select Your Current Class / Grade (Mandatory) --</option>
           <option value="Class 8 & below">Class 8 &amp; below</option>
           <option value="Class 9">Class 9</option>
-          <option value="Class 10" selected>Class 10 (ICSE / CBSE)</option>
+          <option value="Class 10">Class 10 (ICSE / CBSE)</option>
           <option value="Class 11">Class 11</option>
           <option value="Class 12">Class 12</option>
           <option value="College">College / Exploring</option>
@@ -8900,6 +9073,7 @@ function renderMyPlan(mount) {
       <div class="form-group">
         <label for="plan-career-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Target Career Track (32 Careers):</label>
         <select id="plan-career-select" style="width:100%;">
+          <option value="" disabled selected>-- Select Target Career Track (Mandatory) --</option>
           ${careerOptions}
         </select>
       </div>
@@ -8907,8 +9081,9 @@ function renderMyPlan(mount) {
       <div class="form-group">
         <label for="plan-time-select" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px;">Daily Practice Commitment:</label>
         <select id="plan-time-select" style="width:100%;">
+          <option value="" disabled selected>-- Select Daily Practice Commitment (Mandatory) --</option>
           <option value="15">15 mins / day (Focused Sprint)</option>
-          <option value="30" selected>30 mins / day (Balanced Habit)</option>
+          <option value="30">30 mins / day (Balanced Habit)</option>
           <option value="45">45 mins / day (Accelerated Mastery)</option>
           <option value="60">60 mins / day (Deep Immersion)</option>
         </select>
@@ -9063,11 +9238,56 @@ function renderMyPlan(mount) {
     out.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
+  ['#plan-class-select', '#plan-career-select', '#plan-time-select'].forEach(sel => {
+    $(sel)?.addEventListener('change', (e) => {
+      e.target.style.borderColor = '';
+    });
+  });
+
   // Handle Generate Roadmap Button Click
   $('#btn-generate-plan')?.addEventListener('click', async () => {
-    const cls = $('#plan-class-select')?.value || 'Class 10';
-    const car = $('#plan-career-select')?.value || 'Commercial Airline Pilot';
-    const time = parseInt($('#plan-time-select')?.value || '30', 10);
+    const classEl = $('#plan-class-select');
+    const careerEl = $('#plan-career-select');
+    const timeEl = $('#plan-time-select');
+
+    const cls = classEl?.value;
+    const car = careerEl?.value;
+    const timeRaw = timeEl?.value;
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!cls || cls === '') {
+      if (classEl) classEl.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = classEl;
+      hasError = true;
+    } else {
+      if (classEl) classEl.style.borderColor = '';
+    }
+
+    if (!car || car === '') {
+      if (careerEl) careerEl.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = careerEl;
+      hasError = true;
+    } else {
+      if (careerEl) careerEl.style.borderColor = '';
+    }
+
+    if (!timeRaw || timeRaw === '') {
+      if (timeEl) timeEl.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = timeEl;
+      hasError = true;
+    } else {
+      if (timeEl) timeEl.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ Please select your Class, Target Career, and Daily Practice Commitment (all mandatory)!');
+      firstErrorEl?.focus();
+      return;
+    }
+
+    const time = parseInt(timeRaw, 10);
     const out = $('#plan-output-container');
     if (!out) return;
 
@@ -9867,11 +10087,11 @@ function renderFutureBusinessCard(mount) {
   const totalCareerCount = CAREERS_DATA.length;
 
   // Build career options HTML grouped by category
-  let careerOptionsHtml = '';
+  let careerOptionsHtml = '<option value="" disabled selected>-- Select Your Dream Career (Mandatory) --</option>';
   for (const [catName, list] of Object.entries(categories)) {
     careerOptionsHtml += `<optgroup label="── ${escapeHtml(catName)} ──">`;
     list.forEach(c => {
-      const isSel = c.title === initialCareer ? 'selected' : '';
+      const isSel = '';
       careerOptionsHtml += `<option value="${escapeHtml(c.title)}" ${isSel}>${c.icon} ${escapeHtml(c.title)}</option>`;
     });
     careerOptionsHtml += `</optgroup>`;
@@ -9899,7 +10119,7 @@ function renderFutureBusinessCard(mount) {
             <span>Your Name:</span>
             <span style="font-size:11.5px;color:#f87171;font-weight:700;padding:1px 6px;background:rgba(239,68,68,0.1);border-radius:4px;">Mandatory *</span>
           </label>
-          <input type="text" id="biz-name" value="${escapeHtml(STATE.studentName || '')}" placeholder="Enter your full name">
+          <input type="text" id="biz-name" value="" placeholder="Enter your full name">
         </div>
 
         <div style="margin-bottom:12px;">
@@ -10022,6 +10242,11 @@ function renderFutureBusinessCard(mount) {
   // Helper to populate credentials select based on chosen career
   const populateCredentialsForCareer = (careerName) => {
     if (!credsSelect) return;
+    if (!careerName || careerName === '') {
+      credsSelect.innerHTML = '<option value="" disabled selected>-- Select Credentials / Honors (Mandatory) --</option>';
+      if (credsCustomInput) credsCustomInput.style.display = 'none';
+      return;
+    }
     const credsList = CAREER_CREDENTIALS_MAP[careerName] || [
       "B.A. / B.Sc Honors · Distinguished Scholar Alum",
       "Executive Masters · Leadership Board Certified",
@@ -10029,9 +10254,9 @@ function renderFutureBusinessCard(mount) {
       "Class of 2040 · International Honors Graduate"
     ];
 
-    let opts = '';
-    credsList.forEach((c, idx) => {
-      opts += `<option value="${escapeHtml(c)}" ${idx === 0 ? 'selected' : ''}>🎖️ ${escapeHtml(c)}</option>`;
+    let opts = '<option value="" disabled selected>-- Select Credentials / Honors (Mandatory) --</option>';
+    credsList.forEach((c) => {
+      opts += `<option value="${escapeHtml(c)}">🎖️ ${escapeHtml(c)}</option>`;
     });
     opts += `<option value="__custom__">✍️ Custom / Type My Own Honors...</option>`;
 
@@ -10045,18 +10270,18 @@ function renderFutureBusinessCard(mount) {
   // Helper to update the card preview live
   const updateCard = (animatePulse = false) => {
     const rawName = (nameInput?.value || '').trim();
-    const name = capitalizeName(rawName) || 'Explorer';
-    if (nameInput && rawName) nameInput.value = capitalizeName(rawName);
+    const name = capitalizeName(rawName);
+    if (nameInput && rawName) nameInput.value = name;
 
-    let career = careerSelect?.value || 'Commercial Airline Pilot';
+    let career = careerSelect?.value || '';
     if (career === '__custom__') {
       const customTitle = (careerCustomInput?.value || '').trim();
-      career = customTitle || 'Chief Innovation Officer';
+      career = customTitle || '';
     }
 
     let creds = credsSelect?.value || '';
     if (creds === '__custom__') {
-      creds = (credsCustomInput?.value || '').trim() || 'Class of 2040 · Executive Honors';
+      creds = (credsCustomInput?.value || '').trim();
     }
 
     const email = (emailInput?.value || '').trim();
@@ -10071,9 +10296,17 @@ function renderFutureBusinessCard(mount) {
     const bcContactRow = $('#bc-contact-row');
     const bcPhone = $('#bc-phone');
 
-    if (bcName) bcName.textContent = name;
-    if (bcTitle) bcTitle.textContent = career;
-    if (bcCreds) bcCreds.textContent = creds;
+    if (bcName) bcName.textContent = name || 'YOUR FULL NAME';
+    if (bcTitle) {
+      if (career) {
+        const found = CAREERS_DATA.find(c => c.title === career);
+        const icon = found?.icon || '🌐';
+        bcTitle.innerHTML = `<span>${icon}</span> <span>${escapeHtml(career)}</span>`;
+      } else {
+        bcTitle.innerHTML = `<span>✨</span> <span>Select Your Dream Career</span>`;
+      }
+    }
+    if (bcCreds) bcCreds.textContent = creds || '🎓 Select Your Honors / Degrees';
 
     if (bcEmailRow && bcEmail) {
       if (email) {
@@ -10149,8 +10382,8 @@ function renderFutureBusinessCard(mount) {
     return { name, career, creds, email, phone, verifyUrl };
   };
 
-  // 1. Initial population of credentials for default career
-  populateCredentialsForCareer(initialCareer);
+  // 1. Initial population with disabled prompt
+  populateCredentialsForCareer('');
   updateCard(false);
 
   // 2. Wire career selection change
@@ -10217,13 +10450,79 @@ function renderFutureBusinessCard(mount) {
   nameInput?.addEventListener('change', () => updateCard(false));
   credsCustomInput?.addEventListener('input', () => updateCard(false));
 
+  // Validation helper to enforce mandatory fields on Business Card
+  const validateBizCardInputs = () => {
+    const rawName = (nameInput?.value || '').trim();
+    const career = careerSelect?.value || '';
+    const customCareer = (careerCustomInput?.value || '').trim();
+    const creds = credsSelect?.value || '';
+    const customCreds = (credsCustomInput?.value || '').trim();
+
+    let hasError = false;
+    let firstErrorEl = null;
+
+    if (!rawName) {
+      if (nameInput) nameInput.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = nameInput;
+      hasError = true;
+    } else {
+      if (nameInput) nameInput.style.borderColor = '';
+    }
+
+    if (!career || career === '' || (career === '__custom__' && !customCareer)) {
+      const el = (career === '__custom__') ? careerCustomInput : careerSelect;
+      if (el) el.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = el;
+      hasError = true;
+    } else {
+      if (careerSelect) careerSelect.style.borderColor = '';
+      if (careerCustomInput) careerCustomInput.style.borderColor = '';
+    }
+
+    if (!creds || creds === '' || (creds === '__custom__' && !customCreds)) {
+      const el = (creds === '__custom__') ? credsCustomInput : credsSelect;
+      if (el) el.style.borderColor = '#ef4444';
+      if (!firstErrorEl) firstErrorEl = el;
+      hasError = true;
+    } else {
+      if (credsSelect) credsSelect.style.borderColor = '';
+      if (credsCustomInput) credsCustomInput.style.borderColor = '';
+    }
+
+    if (hasError) {
+      showToast('⚠️ All fields (Name, Career, and Credentials) are mandatory!');
+      firstErrorEl?.focus();
+      return false;
+    }
+    return true;
+  };
+
+  // Clear errors on input
+  nameInput?.addEventListener('input', () => {
+    if (nameInput) nameInput.style.borderColor = '';
+  });
+  careerSelect?.addEventListener('change', () => {
+    if (careerSelect) careerSelect.style.borderColor = '';
+  });
+  careerCustomInput?.addEventListener('input', () => {
+    if (careerCustomInput) careerCustomInput.style.borderColor = '';
+  });
+  credsSelect?.addEventListener('change', () => {
+    if (credsSelect) credsSelect.style.borderColor = '';
+  });
+  credsCustomInput?.addEventListener('input', () => {
+    if (credsCustomInput) credsCustomInput.style.borderColor = '';
+  });
+
   // 6. Wire Update button click -> updates with celebratory pulse glow & toast
   $('#btn-render-biz')?.addEventListener('click', () => {
+    if (!validateBizCardInputs()) return;
     updateCard(true);
   });
 
   // 7. Wire Copy Share Link button
   $('#btn-share-biz')?.addEventListener('click', () => {
+    if (!validateBizCardInputs()) return;
     const { verifyUrl } = updateCard(false);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(verifyUrl);
@@ -10233,6 +10532,7 @@ function renderFutureBusinessCard(mount) {
 
   // 8. Wire Download Card PNG button
   $('#btn-download-biz')?.addEventListener('click', () => {
+    if (!validateBizCardInputs()) return;
     const { name, career, creds, email, phone } = updateCard(false);
     downloadBusinessCardImage(name, career, creds, phone, email);
   });
@@ -10822,23 +11122,58 @@ async function loadFeedbackWall() {
   // Handle feedback form submission (bound once)
   if (form && !form._boundFeedback) {
     form._boundFeedback = true;
+    ['#fb-name', '#fb-role', '#fb-class', '#fb-comment'].forEach(sel => {
+      $(sel)?.addEventListener('input', (e) => { e.target.style.borderColor = ''; });
+      $(sel)?.addEventListener('change', (e) => { e.target.style.borderColor = ''; });
+    });
+
     form.addEventListener('submit', async e => {
       e.preventDefault();
       const rawName = ($('#fb-name')?.value || '').trim();
       const name = capitalizeName(rawName);
       if ($('#fb-name') && name) $('#fb-name').value = name;
-      const role = $('#fb-role')?.value || 'Student';
-      const classInfo = $('#fb-class')?.value || '';
+      const role = $('#fb-role')?.value;
+      const classInfo = $('#fb-class')?.value;
       const comment = ($('#fb-comment')?.value || '').trim();
 
+      let hasError = false;
+      let firstErrorEl = null;
+
       if (!name) {
-        showToast('Please enter your name');
-        $('#fb-name')?.focus();
-        return;
+        if ($('#fb-name')) $('#fb-name').style.borderColor = '#ef4444';
+        if (!firstErrorEl) firstErrorEl = $('#fb-name');
+        hasError = true;
+      } else {
+        if ($('#fb-name')) $('#fb-name').style.borderColor = '';
       }
+
+      if (!role || role === '') {
+        if ($('#fb-role')) $('#fb-role').style.borderColor = '#ef4444';
+        if (!firstErrorEl) firstErrorEl = $('#fb-role');
+        hasError = true;
+      } else {
+        if ($('#fb-role')) $('#fb-role').style.borderColor = '';
+      }
+
+      if (!classInfo || classInfo === '') {
+        if ($('#fb-class')) $('#fb-class').style.borderColor = '#ef4444';
+        if (!firstErrorEl) firstErrorEl = $('#fb-class');
+        hasError = true;
+      } else {
+        if ($('#fb-class')) $('#fb-class').style.borderColor = '';
+      }
+
       if (!comment) {
-        showToast('Please enter your feedback comment');
-        $('#fb-comment')?.focus();
+        if ($('#fb-comment')) $('#fb-comment').style.borderColor = '#ef4444';
+        if (!firstErrorEl) firstErrorEl = $('#fb-comment');
+        hasError = true;
+      } else {
+        if ($('#fb-comment')) $('#fb-comment').style.borderColor = '';
+      }
+
+      if (hasError) {
+        showToast('⚠️ All fields (Name, Role, Class, and Feedback) are mandatory!');
+        firstErrorEl?.focus();
         return;
       }
 
