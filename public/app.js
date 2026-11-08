@@ -5384,6 +5384,7 @@ function renderGameArena(gameKey) {
     mount.innerHTML = `<div style="text-align:center;padding:40px;">Select a game to begin playing!</div>`;
   }
 }
+window.renderGameArena = renderGameArena;
 
 function initGamePicker() {
   const tabsContainer = $('#game-picker-tabs');
