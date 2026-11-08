@@ -785,10 +785,10 @@ const IN_SITE_TUTORIAL_STEPS = [
     tab: 'careers',
     targetSelector: '#careers',
     badge: 'STEP 1 OF 5',
-    title: 'Explore Careers & Pin to Dossier',
+    title: 'Explore Careers & Pin to Your Booklet',
     icon: '🎯',
-    instruction: 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!',
-    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to My Career Dossier on any career you like. I will wait for you to pin a career to your dossier!'
+    instruction: 'Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. I am waiting for you to pin a career!',
+    speechText: 'Welcome to Career Fair 2026! Here are thirty-two global careers powered by English fluency. Browse through them below, and click Pin to Your Booklet on any career you like. I will wait for you to pin a career to your booklet!'
   },
   {
     step: 1,
@@ -825,10 +825,10 @@ const IN_SITE_TUTORIAL_STEPS = [
     tab: 'roadmap',
     targetSelector: '#btn-header-dossier',
     badge: 'STEP 5 OF 5',
-    title: 'Download Your Official Career Dossier',
+    title: 'Download Your Official Career Booklet',
     icon: '📄',
-    instruction: 'Congratulations! You have completed the exhibition tour. Click "Download Dossier PDF" to get your official 2-Page printable Student Dossier and Business Card!',
-    speechText: 'Finally, here is your official Student Career Dossier! It has your career roadmap, college recommendations, and your printable Student Ambassador business card. Click Download Dossier to get your PDF!'
+    instruction: 'Congratulations! You have completed the exhibition tour. Click "Download Booklet (PDF)" to get your official 2-Page printable Career Booklet and Business Card!',
+    speechText: 'Finally, here is your official Student Career Booklet! It has your career roadmap, college recommendations, speech diagnostics, and your printable Student Ambassador business card. Click Download Booklet to get your PDF!'
   }
 ];
 
@@ -1031,7 +1031,7 @@ function renderInSiteTutorialStep(stepIndex) {
     } catch (_) {}
 
     if (hasPinnedDuringActiveTutorial && storedCareer && storedCareer.title) {
-      if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to your Career Dossier! You can pin another career below, or click Next Exhibit to continue.`;
+      if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to Your Booklet! You can pin another career below, or click Next Exhibit to continue.`;
       if (reactionEl) {
         reactionEl.style.display = 'inline-flex';
         reactionEl.textContent = `✅ Pinned: ${storedCareer.title}`;
@@ -1043,7 +1043,7 @@ function renderInSiteTutorialStep(stepIndex) {
       }
       waitingForCareerPin = false;
     } else {
-      if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!';
+      if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. I am waiting for you to pin a career!';
       if (nextBtn) {
         nextBtn.textContent = 'Waiting for Pin ⏳';
         nextBtn.style.opacity = '0.75';
@@ -1092,7 +1092,7 @@ function onCareerPinnedByStudent(careerObj) {
     const nextBtn = document.getElementById('btn-tutorial-next');
 
     if (instructionEl) {
-      instructionEl.textContent = `Awesome! You pinned "${careerObj.title}" to your Career Dossier! Your academic roadmap and top colleges are now ready.`;
+      instructionEl.textContent = `Awesome! You pinned "${careerObj.title}" to Your Booklet! Your academic roadmap and top colleges are now ready.`;
     }
     if (reactionEl) {
       reactionEl.style.display = 'inline-flex';
@@ -2223,7 +2223,7 @@ function initNavigation() {
     if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
       window.DossierPDF.generate();
     } else {
-      showToast('⚠️ Preparing Career Dossier generator...');
+      showToast('⚠️ Preparing Your Career Booklet generator...');
     }
   });
 
@@ -2251,7 +2251,7 @@ function initNavigation() {
   });
   $('#btn-tutorial-next')?.addEventListener('click', () => {
     if (currentTutorialStepIndex === 0 && waitingForCareerPin) {
-      showToast('👉 Please click "⭐ Pin to My Career Dossier" on any career card below!');
+      showToast('👉 Please click "⭐ Pin to Your Booklet" on any career card below!');
       const pinBtn = document.querySelector('.btn-pin-career');
       if (pinBtn) {
         pinBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2273,7 +2273,7 @@ function initNavigation() {
     if (window.DossierPDF && typeof window.DossierPDF.generate === 'function') {
       window.DossierPDF.generate();
     } else {
-      showToast('⚠️ Preparing Career Dossier generator...');
+      showToast('⚠️ Preparing Your Career Booklet generator...');
     }
   });
 
@@ -3126,7 +3126,7 @@ function renderCareers() {
         </div>
         <div style="margin-top:10px;">
           <button type="button" class="btn btn-secondary btn-xs btn-pin-career" data-title="${escapeHtml(c.title)}" style="width:100%;font-weight:700;padding:6px 10px;">
-            ⭐ Pin to My Career Dossier
+            ⭐ Pin to Your Booklet
           </button>
         </div>
 
@@ -3163,7 +3163,7 @@ function renderCareers() {
       window.DopamineEngine.confetti(0.5, 0.4);
       window.DopamineEngine.unlockBadge('career_explorer', 'Career Explorer', '🎯');
     }
-    showToast(`⭐ ${careerObj.title} pinned to your official Career Dossier!`);
+    showToast(`⭐ ${careerObj.title} pinned to Your Booklet!`);
     if (typeof onCareerPinnedByStudent === 'function') {
       onCareerPinnedByStudent(careerObj);
     }
@@ -11143,7 +11143,7 @@ function renderAdminFeatureFlags() {
       items: [
         {
           key: 'pdf_export',
-          label: '2-Page Student Dossier PDF Export',
+          label: '2-Page Student Career Booklet PDF Export',
           desc: 'Vector student report card export with scissors cutting-line, QR verification, and skills profile.',
           badge: 'Export'
         },

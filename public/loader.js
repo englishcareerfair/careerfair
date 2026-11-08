@@ -29,8 +29,8 @@
       text: 'Compete in 11 vocabulary, grammar, and speed-typing arcade games with OCR verification on Cloudflare D1.'
     },
     {
-      badge: 'STUDENT DOSSIER',
-      text: 'Generate and print an official 2-Page Career Dossier featuring your tailored roadmap and cut-out business card.'
+      badge: 'YOUR BOOKLET',
+      text: 'Generate and print an official 2-Page Career Booklet featuring your tailored roadmap and cut-out business card.'
     },
     {
       badge: 'AI GUIDE AVATAR',
