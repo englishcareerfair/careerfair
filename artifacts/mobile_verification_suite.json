@@ -1,0 +1,310 @@
+{
+  "iPhone 14": {
+    "viewport": [
+      390,
+      664
+    ],
+    "tabs": {
+      "hero": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "careers": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "speechLab": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "teleprompter": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "games": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {
+          "wordle_overflow": false,
+          "gaming_hall_overflow": false
+        }
+      },
+      "colleges": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "exams": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "roadmap": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "feedback": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "leaderboard": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "admin": {
+        "scrollWidth": 390,
+        "innerWidth": 390,
+        "has_overflow": false,
+        "game_check": {}
+      }
+    }
+  },
+  "iPhone 14 Pro Max": {
+    "viewport": [
+      430,
+      740
+    ],
+    "tabs": {
+      "hero": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "careers": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "speechLab": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "teleprompter": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "games": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {
+          "wordle_overflow": false,
+          "gaming_hall_overflow": false
+        }
+      },
+      "colleges": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "exams": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "roadmap": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "feedback": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "leaderboard": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "admin": {
+        "scrollWidth": 430,
+        "innerWidth": 430,
+        "has_overflow": false,
+        "game_check": {}
+      }
+    }
+  },
+  "Pixel 7": {
+    "viewport": [
+      412,
+      839
+    ],
+    "tabs": {
+      "hero": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "careers": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "speechLab": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "teleprompter": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "games": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {
+          "wordle_overflow": false,
+          "gaming_hall_overflow": false
+        }
+      },
+      "colleges": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "exams": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "roadmap": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "feedback": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "leaderboard": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "admin": {
+        "scrollWidth": 412,
+        "innerWidth": 412,
+        "has_overflow": false,
+        "game_check": {}
+      }
+    }
+  },
+  "Galaxy S9+": {
+    "viewport": [
+      320,
+      658
+    ],
+    "tabs": {
+      "hero": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "careers": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "speechLab": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "teleprompter": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "games": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {
+          "wordle_overflow": false,
+          "gaming_hall_overflow": false
+        }
+      },
+      "colleges": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "exams": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "roadmap": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "feedback": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "leaderboard": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      },
+      "admin": {
+        "scrollWidth": 320,
+        "innerWidth": 320,
+        "has_overflow": false,
+        "game_check": {}
+      }
+    }
+  }
+}
