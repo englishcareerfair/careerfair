@@ -9372,7 +9372,7 @@ function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '', email = 
   });
 }
 
-function showVerifiedCredentialModal(student, title, creds, phone = '', email = '') {
+function showVerifiedCredentialModal(student, title, creds, phone = '', email = '', credentialId = '') {
   let modalBackdrop = $('#modal-verified-credential');
   if (!modalBackdrop) {
     modalBackdrop = document.createElement('div');
@@ -9392,6 +9392,13 @@ function showVerifiedCredentialModal(student, title, creds, phone = '', email = 
     <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Executive Contact Line</div>
     <div style="font-family:var(--font-mono);font-size:13px;color:#38bdf8;font-weight:600;display:flex;align-items:center;gap:6px;word-break:break-word;">
       <span>📱</span> <span>${escapeHtml(phone)}</span>
+    </div>
+  ` : '';
+
+  const idRowHtml = credentialId ? `
+    <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Official Credential ID</div>
+    <div style="font-family:var(--font-mono);font-size:12.5px;color:#e8a04a;font-weight:700;display:flex;align-items:center;gap:6px;word-break:break-word;">
+      <span>🪪</span> <span>${escapeHtml(credentialId)}</span>
     </div>
   ` : '';
 
@@ -9416,6 +9423,7 @@ function showVerifiedCredentialModal(student, title, creds, phone = '', email = 
         </div>
         ${emailRowHtml}
         ${phoneRowHtml}
+        ${idRowHtml}
         <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;margin-top:10px;margin-bottom:4px;">Issuing Academy</div>
         <div style="font-size:12px;color:var(--text-muted);line-height:1.4;">
           🏛️ Kanakia International School Mira Road · Career Fair
@@ -9505,6 +9513,16 @@ function checkIncomingCardVerification() {
     const hasTitle = params.has('title') || params.has('t');
 
     if (hasVerify || (hasStudent && hasTitle)) {
+      // Immediately dismiss site loader so verified card modal is clearly visible
+      if (window.SiteLoader && typeof window.SiteLoader.dismiss === 'function') {
+        window.SiteLoader.dismiss();
+      }
+      const loaderEl = document.getElementById('site-loader');
+      if (loaderEl) {
+        loaderEl.classList.add('loader-hidden');
+        try { loaderEl.remove(); } catch (_) {}
+      }
+
       const student = params.get('student') || params.get('s') || 'Executive Explorer';
       const title = params.get('title') || params.get('t') || 'Future Career Leader';
       let creds = params.get('creds') || params.get('c') || '';
@@ -9514,10 +9532,14 @@ function checkIncomingCardVerification() {
       if (!creds) creds = 'Class of 2040 · Executive Honors';
       const phone = params.get('phone') || params.get('p') || '';
       const email = params.get('email') || params.get('e') || '';
+      const credentialId = params.get('id') || '';
 
       // Prepare target career state so card and roadmap reflect student verified profile
       if (title) {
         STATE.targetCareer = title;
+      }
+      if (student && student !== 'Executive Explorer') {
+        STATE.studentName = student;
       }
       
       // Auto-switch view to Roadmap/Bizcard in the background
@@ -9528,25 +9550,39 @@ function checkIncomingCardVerification() {
 
       // Pre-fill business card form if present
       setTimeout(() => {
-        const nameInput = $('#bc-input-name');
+        const nameInput = $('#biz-name') || $('#bc-input-name');
         if (nameInput && student) nameInput.value = student;
-        const phoneInput = $('#bc-input-phone');
+        const phoneInput = $('#biz-phone') || $('#bc-input-phone');
         if (phoneInput && phone) phoneInput.value = phone;
-        const emailInput = $('#bc-input-email');
+        const emailInput = $('#biz-email') || $('#bc-input-email');
         if (emailInput && email) emailInput.value = email;
-        const careerSel = $('#bizcard-career-select');
+        const careerSel = $('#biz-career-select') || $('#bizcard-career-select');
         if (careerSel && title) {
           const opts = Array.from(careerSel.options);
           const found = opts.find(o => o.value.toLowerCase() === title.toLowerCase());
           if (found) {
             careerSel.value = found.value;
             careerSel.dispatchEvent(new Event('change'));
+          } else {
+            const customInput = $('#biz-career-custom');
+            if (customInput) {
+              customInput.value = title;
+              const cont = $('#biz-custom-career-container');
+              if (cont) cont.style.display = 'block';
+              careerSel.value = '__custom__';
+            }
           }
         }
+        const bcName = $('#bc-name');
+        const bcTitle = $('#bc-title');
+        const bcCreds = $('#bc-creds');
+        if (bcName) bcName.textContent = student;
+        if (bcTitle) bcTitle.textContent = title;
+        if (bcCreds) bcCreds.textContent = creds;
       }, 50);
 
-      // Show verified executive credential modal on top
-      showVerifiedCredentialModal(student, title, creds, phone, email);
+      // Show verified executive credential modal on top with credentialId
+      showVerifiedCredentialModal(student, title, creds, phone, email, credentialId);
     }
   } catch (e) {
     console.error('Error handling card verification:', e);
@@ -9797,7 +9833,8 @@ function renderFutureBusinessCard(mount) {
     }
 
     // Generate ultra-compact dynamic verification URL (<100 chars -> instant camera scan)
-    const baseOrigin = (window.location.origin && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
+    const isLocalhost = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    const baseOrigin = (window.location.origin && !isLocalhost && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
       ? window.location.origin
       : 'https://careerwithenglish.pages.dev';
     const pathname = window.location.pathname || '/';
@@ -9811,6 +9848,25 @@ function renderFutureBusinessCard(mount) {
     if (phone) {
       verifyUrl += `&p=${encodeURIComponent(phone)}`;
     }
+
+    // Persist active business card information so Booklet PDF and QR code stay 100% in sync
+    try {
+      localStorage.setItem('cf_bizcard_data', JSON.stringify({
+        name,
+        career,
+        creds,
+        email,
+        phone,
+        verifyUrl
+      }));
+      if (name && name !== 'Explorer') {
+        localStorage.setItem('cf_student_name', name);
+        if (window.STATE) window.STATE.studentName = name;
+      }
+      if (career) {
+        if (window.STATE) window.STATE.targetCareer = career;
+      }
+    } catch (_) {}
 
     // Render crisp scan-ready vector QR code
     const qrMount = $('#bc-qr-mount');

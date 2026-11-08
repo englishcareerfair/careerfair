@@ -221,6 +221,34 @@
     ];
   }
 
+  async function ensureQrCodeLoaded() {
+    if (typeof window !== 'undefined' && typeof window.qrcode === 'function') return true;
+    return new Promise((resolve) => {
+      const existing = document.querySelector('script[src*="qrcode"]');
+      if (existing) {
+        let count = 0;
+        const interval = setInterval(() => {
+          count++;
+          if (typeof window.qrcode === 'function') {
+            clearInterval(interval);
+            resolve(true);
+          } else if (count > 30) {
+            clearInterval(interval);
+            resolve(false);
+          }
+        }, 100);
+        existing.addEventListener('load', () => { clearInterval(interval); resolve(typeof window.qrcode === 'function'); }, { once: true });
+        existing.addEventListener('error', () => { clearInterval(interval); resolve(false); }, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = '/qrcode.min.js';
+      script.onload = () => resolve(typeof window.qrcode === 'function');
+      script.onerror = () => resolve(false);
+      document.head.appendChild(script);
+    });
+  }
+
   async function ensureJsPdfLoaded() {
     if (window.jspdf && window.jspdf.jsPDF) return true;
     return new Promise((resolve) => {
@@ -262,6 +290,7 @@
       }
     }
 
+    await ensureQrCodeLoaded();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
       orientation: 'portrait',
@@ -876,6 +905,38 @@
     const cardX = (210 - cardW) / 2; // X = 21
     const cardY = cutLineY + 6.5;
 
+    // Retrieve active business card details from live DOM, studentData, or localStorage
+    let bizData = {};
+    try {
+      const storedBiz = localStorage.getItem('cf_bizcard_data');
+      if (storedBiz) bizData = JSON.parse(storedBiz);
+    } catch (_) {}
+
+    const domBizName = typeof document !== 'undefined' ? (document.getElementById('biz-name')?.value || document.getElementById('bc-input-name')?.value || '') : '';
+    const domBizCareer = typeof document !== 'undefined' ? (
+      (document.getElementById('biz-career-select')?.value === '__custom__' ? document.getElementById('biz-career-custom')?.value : document.getElementById('biz-career-select')?.value) || ''
+    ) : '';
+    const domBizCreds = typeof document !== 'undefined' ? (
+      (document.getElementById('biz-creds-select')?.value === '__custom__' ? document.getElementById('biz-creds-custom')?.value : document.getElementById('biz-creds-select')?.value) || ''
+    ) : '';
+    const domBizEmail = typeof document !== 'undefined' ? (document.getElementById('biz-email')?.value || '') : '';
+    const domBizPhone = typeof document !== 'undefined' ? (document.getElementById('biz-phone')?.value || '') : '';
+
+    const effectiveBizName = cleanAscii(
+      domBizName || studentData?.name || bizData.name || studentName,
+      studentName
+    );
+    const effectiveBizCareer = cleanAscii(
+      domBizCareer || chosenCareer.title || bizData.career || 'Commercial Airline Pilot',
+      'Commercial Airline Pilot'
+    );
+    const effectiveBizCreds = cleanAscii(
+      domBizCreds || bizData.creds || `Class ${studentClass} · Executive Honors`,
+      `Class ${studentClass} · Executive Honors`
+    );
+    const effectiveBizEmail = cleanAscii(domBizEmail || bizData.email || studentData?.email || '');
+    const effectiveBizPhone = cleanAscii(domBizPhone || bizData.phone || studentData?.phone || '');
+
     // Card Background & Sleek Dual Border (Executive Dark Luxury Aesthetic in both themes)
     doc.setFillColor(15, 23, 42); // Deep Navy Slate
     doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'F');
@@ -910,12 +971,12 @@
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
-    doc.text(studentName.toUpperCase(), cardX + 8, cardY + 26.5);
+    doc.text(effectiveBizName.toUpperCase(), cardX + 8, cardY + 26.5);
 
     doc.setTextColor(0, 240, 255);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9.2);
-    const futureTitle = cleanAscii(chosenCareer.title ? `Future ${chosenCareer.title}` : 'Future Global Professional');
+    const futureTitle = cleanAscii(effectiveBizCareer ? `Future ${effectiveBizCareer}` : 'Future Global Professional');
     doc.text(futureTitle, cardX + 8, cardY + 33.5);
 
     doc.setTextColor(203, 213, 225);
@@ -952,6 +1013,18 @@
     doc.setLineWidth(0.35);
     doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 2, 2, 'S');
 
+    // Generate full verification URL encoding student business card data
+    const isLocalhost = (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
+    const baseOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && !isLocalhost && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
+      ? window.location.origin
+      : 'https://careerwithenglish.pages.dev';
+
+    let cardVerifyUrl = `${baseOrigin}/?v=1&s=${encodeURIComponent(effectiveBizName)}&t=${encodeURIComponent(effectiveBizCareer)}`;
+    if (studentClass) cardVerifyUrl += `&c=${encodeURIComponent(studentClass)}`;
+    if (docId) cardVerifyUrl += `&id=${encodeURIComponent(docId)}`;
+    if (effectiveBizEmail) cardVerifyUrl += `&e=${encodeURIComponent(effectiveBizEmail)}`;
+    if (effectiveBizPhone) cardVerifyUrl += `&p=${encodeURIComponent(effectiveBizPhone)}`;
+
     // Dynamic QR generation or verified fallback
     let qrCount = 29;
     let isQrDark = (r, c) => FALLBACK_QR_MATRIX_29[r][c] === '1';
@@ -959,7 +1032,7 @@
     try {
       if (typeof window !== 'undefined' && typeof window.qrcode === 'function') {
         const qrGen = window.qrcode(0, 'M');
-        qrGen.addData('https://careerwithenglish.pages.dev');
+        qrGen.addData(cardVerifyUrl);
         qrGen.make();
         const cnt = qrGen.getModuleCount();
         if (cnt > 0) {
