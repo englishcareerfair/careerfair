@@ -5929,3 +5929,71 @@ input[data-capitalize="name"] {
   z-index: 10001 !important;
   position: relative;
 }
+
+/* Feedback Section Header QR Code Pill (Prominent Fair Scan Badge) */
+.feedback-section-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+}
+
+.feedback-head-text {
+  flex: 1;
+  min-width: 260px;
+}
+
+.feedback-qr-pill {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  background: var(--surface-card) !important;
+  padding: 8px 14px !important;
+  border: 1.5px solid var(--border-strong) !important;
+  border-radius: var(--radius-lg, 14px) !important;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.feedback-qr-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-cyan, #00f0ff) !important;
+  box-shadow: 0 6px 20px rgba(0, 240, 255, 0.22);
+}
+
+#fb-qr-code-box {
+  width: 46px;
+  height: 46px;
+  background: #ffffff;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 2px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.feedback-qr-copy {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.feedback-qr-copy strong {
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.feedback-qr-copy span {
+  color: var(--text-muted);
+  font-size: 11px;
+}

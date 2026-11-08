@@ -2050,6 +2050,89 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     return json({ ok: true, message: 'Feedback deleted' });
   }
 
+  // ── Admin: Rename Feedback User ──
+  if (path === '/admin/update-feedback-user' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const { id, comment, oldName, newName } = body;
+    if (!newName || !newName.trim()) return err('newName is required');
+
+    const cleanNewName = String(newName).trim().slice(0, 50);
+
+    // Update in-memory persistent cache
+    (GLOBAL_CACHE.feedback || []).forEach(f => {
+      if (id && String(f.id).trim() === String(id).trim()) {
+        f.name = cleanNewName;
+      } else if (comment && (f.comment || '').trim() === String(comment).trim()) {
+        f.name = cleanNewName;
+      } else if (oldName && (f.name || '').trim().toLowerCase() === String(oldName).trim().toLowerCase()) {
+        f.name = cleanNewName;
+      }
+    });
+
+    // Update Cloudflare D1 database
+    if (db) {
+      try {
+        if (id && !isNaN(Number(id))) {
+          await db.prepare('UPDATE feedback SET name = ? WHERE id = ?').bind(cleanNewName, Number(id)).run();
+        } else if (id) {
+          await db.prepare('UPDATE feedback SET name = ? WHERE id = ?').bind(cleanNewName, String(id)).run();
+        }
+        if (comment) {
+          await db.prepare('UPDATE feedback SET name = ? WHERE TRIM(comment) = ?').bind(cleanNewName, String(comment).trim()).run();
+        }
+        if (oldName) {
+          await db.prepare('UPDATE feedback SET name = ? WHERE TRIM(LOWER(name)) = ?').bind(cleanNewName, String(oldName).trim().toLowerCase()).run();
+        }
+      } catch (e) {
+        console.warn('D1 feedback name update error:', e);
+      }
+    }
+
+    return json({ ok: true, message: 'User name updated', name: cleanNewName });
+  }
+
+  // ── Admin: Rename Leaderboard Player ──
+  if (path === '/admin/update-score-user' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const { id, oldName, newName } = body;
+    if (!newName || !newName.trim()) return err('newName is required');
+
+    const cleanNewName = String(newName).trim().slice(0, 50);
+
+    // Update in-memory persistent cache
+    (GLOBAL_CACHE.scores || []).forEach(s => {
+      if (id && String(s.id).trim() === String(id).trim()) {
+        s.name = cleanNewName;
+      } else if (oldName && (s.name || '').trim().toLowerCase() === String(oldName).trim().toLowerCase()) {
+        s.name = cleanNewName;
+      }
+    });
+
+    // Update Cloudflare D1 database
+    if (db) {
+      try {
+        if (id && !isNaN(Number(id))) {
+          await db.prepare('UPDATE scores SET name = ? WHERE id = ?').bind(cleanNewName, Number(id)).run();
+        } else if (id) {
+          await db.prepare('UPDATE scores SET name = ? WHERE id = ?').bind(cleanNewName, String(id)).run();
+        }
+        if (oldName) {
+          await db.prepare('UPDATE scores SET name = ? WHERE TRIM(LOWER(name)) = ?').bind(cleanNewName, String(oldName).trim().toLowerCase()).run();
+        }
+      } catch (e) {
+        console.warn('D1 score name update error:', e);
+      }
+    }
+
+    return json({ ok: true, message: 'Player name updated', name: cleanNewName });
+  }
+
   if (path === '/admin/reset' && method === 'POST') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);

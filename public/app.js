@@ -10513,8 +10513,11 @@ async function loadLeaderboard(filterPack = 'All') {
   scores.forEach((sc, i) => {
     const tr = document.createElement('tr');
     const medal = i === 0 ? '🥇 1st' : i === 1 ? '🥈 2nd' : i === 2 ? '🥉 3rd' : `#${i + 1}`;
+    const renameBtnHtml = isAdmin
+      ? `<button type="button" class="btn btn-sm" title="Change Player Name (Admin)" style="margin-left:6px;padding:2px 6px;font-size:11px;background:rgba(0,240,255,0.12);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:4px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminChangeScoreName(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">✏️</button>`
+      : '';
     const delBtnHtml = isAdmin
-      ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:8px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️</button>`
+      ? `<button type="button" class="btn btn-sm" title="Delete Score Attempt (Admin)" style="margin-left:4px;padding:2px 6px;font-size:11px;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️</button>`
       : '';
 
     let userTitlesMap = {};
@@ -10536,7 +10539,7 @@ async function loadLeaderboard(filterPack = 'All') {
         <div class="leaderboard-name-wrap">
           <strong class="leaderboard-name-text" title="${escapeHtml(sc.name)}">${escapeHtml(sc.name)}</strong>
           ${titleBadgeHtml}
-          ${(titleBtnHtml || delBtnHtml) ? `<span class="admin-score-actions">${titleBtnHtml}${delBtnHtml}</span>` : ''}
+          ${(titleBtnHtml || delBtnHtml) ? `<span class="admin-score-actions">${titleBtnHtml}${renameBtnHtml}${delBtnHtml}</span>` : ''}
         </div>
       </td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'Everyday')}</span></td>
@@ -10742,6 +10745,9 @@ async function loadFeedbackWall() {
       const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
       const adminActionsHtml = isAdmin
         ? `<div class="admin-feedback-actions">
+             <button type="button" class="btn btn-sm btn-admin-feedback" title="Change User Name (Admin)" style="background:rgba(0,240,255,0.12);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-name="${encodeURIComponent(f.name || '')}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminChangeFeedbackName(this.dataset.id, decodeURIComponent(this.dataset.name || ''), decodeURIComponent(this.dataset.comment || ''))">
+               ✏️ Rename
+             </button>
              <button type="button" class="btn btn-sm btn-admin-feedback" title="${isPinned ? 'Unpin Reflection' : 'Pin Reflection to Top'}" style="background:${isPinned ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)'};color:${isPinned ? '#f59e0b' : 'var(--text-muted)'};border:1px solid ${isPinned ? '#f59e0b' : 'var(--border)'};border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-pinned="${isPinned ? 0 : 1}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminTogglePinFeedback(this.dataset.id, Number(this.dataset.pinned), decodeURIComponent(this.dataset.comment || ''))">
                ${isPinned ? '📌 Pinned' : '📍 Pin'}
              </button>
@@ -10934,6 +10940,99 @@ function renderAdminView() {
 
 
 // ─── ADMIN MODERATION ACTIONS & DELETION HANDLERS ─────────────────────────
+window.adminChangeFeedbackName = async function(id, currentName, comment) {
+  const promptVal = currentName || 'Visitor';
+  const newName = prompt(`Enter new name for this user reflection (currently: "${promptVal}"):`, promptVal);
+  if (!newName || !newName.trim() || newName.trim() === promptVal.trim()) return;
+
+  const trimmedName = (typeof capitalizeName === 'function') ? capitalizeName(newName.trim()) : newName.trim();
+
+  try {
+    await fetchApi('admin/update-feedback-user', {
+      method: 'POST',
+      body: JSON.stringify({ id, comment, oldName: currentName, newName: trimmedName })
+    });
+  } catch (e) {
+    console.error('Update feedback user error:', e);
+  }
+
+  // Update localStorage cache
+  try {
+    const raw = localStorage.getItem('cf_user_feedbacks');
+    if (raw) {
+      let items = JSON.parse(raw);
+      items.forEach(f => {
+        if (id && String(f.id).trim() === String(id).trim()) {
+          f.name = trimmedName;
+        } else if (comment && String(f.comment).trim() === String(comment).trim()) {
+          f.name = trimmedName;
+        } else if ((f.name || '').trim().toLowerCase() === (currentName || '').trim().toLowerCase()) {
+          f.name = trimmedName;
+        }
+      });
+      localStorage.setItem('cf_user_feedbacks', JSON.stringify(items));
+    }
+  } catch (e) {}
+
+  // Update user custom titles if mapped to old name
+  try {
+    const rawTitles = localStorage.getItem('cf_user_titles');
+    if (rawTitles) {
+      let titles = JSON.parse(rawTitles);
+      if (titles[currentName]) {
+        titles[trimmedName] = titles[currentName];
+        delete titles[currentName];
+        localStorage.setItem('cf_user_titles', JSON.stringify(titles));
+      }
+    }
+  } catch (e) {}
+
+  showToast(`Feedback user name updated to "${trimmedName}" ✅`);
+  await loadFeedbackWall();
+  if (typeof renderAdminModeration === 'function') {
+    await renderAdminModeration();
+  }
+};
+
+window.adminChangeScoreName = async function(id, currentName) {
+  const promptVal = currentName || 'Explorer';
+  const newName = prompt(`Enter new player name for this leaderboard attempt (currently: "${promptVal}"):`, promptVal);
+  if (!newName || !newName.trim() || newName.trim() === promptVal.trim()) return;
+
+  const trimmedName = (typeof capitalizeName === 'function') ? capitalizeName(newName.trim()) : newName.trim();
+
+  try {
+    await fetchApi('admin/update-score-user', {
+      method: 'POST',
+      body: JSON.stringify({ id, oldName: currentName, newName: trimmedName })
+    });
+  } catch (e) {
+    console.error('Update score user error:', e);
+  }
+
+  // Update localStorage cache
+  try {
+    const raw = localStorage.getItem('cf_user_scores');
+    if (raw) {
+      let items = JSON.parse(raw);
+      items.forEach(s => {
+        if (id && String(s.id).trim() === String(id).trim()) {
+          s.name = trimmedName;
+        } else if ((s.name || '').trim().toLowerCase() === (currentName || '').trim().toLowerCase()) {
+          s.name = trimmedName;
+        }
+      });
+      localStorage.setItem('cf_user_scores', JSON.stringify(items));
+    }
+  } catch (e) {}
+
+  showToast(`Leaderboard player name updated to "${trimmedName}" ✅`);
+  await loadLeaderboard();
+  if (typeof renderAdminModeration === 'function') {
+    await renderAdminModeration();
+  }
+};
+
 window.adminDeleteFeedback = async function(id, comment) {
   if (!confirm('Are you sure you want to delete this visitor reflection?')) return;
   
@@ -11153,7 +11252,10 @@ async function renderAdminModeration() {
               </div>
               <div style="font-size:13.5px;color:var(--text-main);font-style:italic;">"${escapeHtml(f.comment || '')}"</div>
             </div>
-            <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">🗑️ Delete</button>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="btn btn-sm" style="background:rgba(0,240,255,0.15);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" data-id="${escapeHtml(String(f.id || ''))}" data-name="${encodeURIComponent(f.name || '')}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminChangeFeedbackName(this.dataset.id, decodeURIComponent(this.dataset.name || ''), decodeURIComponent(this.dataset.comment || ''))">✏️ Rename</button>
+              <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap;" data-id="${escapeHtml(String(f.id || ''))}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminDeleteFeedback(this.dataset.id, decodeURIComponent(this.dataset.comment || ''))">🗑️ Delete</button>
+            </div>
           </div>
         `;
       }).join('');
@@ -11190,7 +11292,8 @@ async function renderAdminModeration() {
             <td>${sc.fluency || '--'}%</td>
             <td>${sc.wpm || 130}</td>
             <td style="font-size:12px;color:var(--text-dim);">${timeStr}</td>
-            <td style="text-align:center;">
+            <td style="text-align:center;white-space:nowrap;">
+              <button type="button" class="btn btn-sm" style="background:rgba(0,240,255,0.15);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;margin-right:4px;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminChangeScoreName(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">✏️ Rename</button>
               <button type="button" class="btn btn-sm" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:4px;padding:2px 8px;font-size:11.5px;cursor:pointer;" data-id="${escapeHtml(String(sc.id || ''))}" data-name="${encodeURIComponent(sc.name || '')}" onclick="window.adminDeleteScore(this.dataset.id, decodeURIComponent(this.dataset.name || ''))">🗑️ Delete</button>
             </td>
           </tr>
