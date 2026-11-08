@@ -805,6 +805,8 @@ let isTutorialPaused = false;
 let isTutorialSpeechActive = false;
 let tutorialSpeechSessionId = 0;
 let waitingForCareerPin = false;
+let hasPinnedDuringActiveTutorial = false;
+let lastTutorialUtteranceText = '';
 
 function updateTutorialHudStatus(state, label) {
   const statusEl = document.getElementById('tutorial-hud-status');
@@ -821,6 +823,7 @@ function speakTutorialSpeech(text, onEnded = null) {
   stopTutorialSpeechOnly();
   if (!text) return;
 
+  lastTutorialUtteranceText = text;
   const sessionId = ++tutorialSpeechSessionId;
   isTutorialSpeechActive = true;
   updateTutorialHudStatus('speaking', 'Speaking...');
@@ -864,7 +867,9 @@ function speakTutorialSpeech(text, onEnded = null) {
 
     setTimeout(() => {
       if (sessionId === tutorialSpeechSessionId && !isTutorialPaused) {
-        window.speechSynthesis.speak(utt);
+        try {
+          window.speechSynthesis.speak(utt);
+        } catch (_) {}
       }
     }, 50);
   } else {
@@ -897,10 +902,12 @@ function resumeTutorial() {
   try {
     if ('speechSynthesis' in window && window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
-    } else if (!isTutorialSpeechActive) {
-      const stepData = IN_SITE_TUTORIAL_STEPS[currentTutorialStepIndex];
-      if (stepData) {
-        speakTutorialSpeech(stepData.speechText);
+    } else if (!isTutorialSpeechActive || ('speechSynthesis' in window && !window.speechSynthesis.speaking)) {
+      if (lastTutorialUtteranceText) {
+        speakTutorialSpeech(lastTutorialUtteranceText);
+      } else {
+        const stepData = IN_SITE_TUTORIAL_STEPS[currentTutorialStepIndex];
+        if (stepData) speakTutorialSpeech(stepData.speechText);
       }
     }
   } catch (_) {}
@@ -932,6 +939,7 @@ function stopTutorial() {
   isTutorialRunning = false;
   isTutorialPaused = false;
   waitingForCareerPin = false;
+  hasPinnedDuringActiveTutorial = false;
   stopTutorialSpeechOnly();
   stopAllVoice();
 
@@ -1009,8 +1017,9 @@ function renderInSiteTutorialStep(stepIndex) {
       if (stored) storedCareer = JSON.parse(stored);
     } catch (_) {}
 
-    if (storedCareer && storedCareer.title) {
-      if (instructionEl) instructionEl.textContent = `You currently have "${storedCareer.title}" pinned to your Career Dossier! You can pin another career below, or click Next Exhibit to continue.`;
+    // If student has already pinned during THIS active tutorial session
+    if (hasPinnedDuringActiveTutorial && storedCareer && storedCareer.title) {
+      if (instructionEl) instructionEl.textContent = `You have pinned "${storedCareer.title}" to your Career Dossier! You can pin another career below, or click Next Exhibit to continue.`;
       if (reactionEl) {
         reactionEl.style.display = 'inline-flex';
         reactionEl.textContent = `✅ Pinned: ${storedCareer.title}`;
@@ -1023,9 +1032,11 @@ function renderInSiteTutorialStep(stepIndex) {
       waitingForCareerPin = false;
       speakTutorialSpeech(`Welcome to Career Fair 2026! You currently have ${storedCareer.title} pinned to your Career Dossier. You can choose another career below or click Next Exhibit to continue!`);
     } else {
+      // Must wait for user response to pin a career to their career dossier
       if (instructionEl) instructionEl.textContent = 'Look through the 32 global careers below and click "⭐ Pin to My Career Dossier" on your favorite career. I am waiting for you to pin a career!';
       if (nextBtn) {
         nextBtn.textContent = 'Waiting for Pin ⏳';
+        nextBtn.style.opacity = '0.75';
       }
       waitingForCareerPin = true;
       speakTutorialSpeech(data.speechText);
@@ -1065,6 +1076,7 @@ function onCareerPinnedByStudent(careerObj) {
   if (!careerObj || !careerObj.title) return;
 
   if (isTutorialRunning && currentTutorialStepIndex === 0) {
+    hasPinnedDuringActiveTutorial = true;
     waitingForCareerPin = false;
     document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 
@@ -1094,6 +1106,8 @@ function onCareerPinnedByStudent(careerObj) {
 function startInSiteTutorial() {
   isTutorialRunning = true;
   isTutorialPaused = false;
+  hasPinnedDuringActiveTutorial = false;
+  waitingForCareerPin = true;
 
   const headerBtn = document.getElementById('btn-header-tutorial');
   if (headerBtn) {
@@ -2231,6 +2245,10 @@ function initNavigation() {
   $('#btn-tutorial-next')?.addEventListener('click', () => {
     if (currentTutorialStepIndex === 0 && waitingForCareerPin) {
       showToast('👉 Please click "⭐ Pin to My Career Dossier" on any career card below!');
+      const pinBtn = document.querySelector('.btn-pin-career');
+      if (pinBtn) {
+        pinBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     if (currentTutorialStepIndex >= IN_SITE_TUTORIAL_STEPS.length - 1) {
@@ -11281,12 +11299,11 @@ function applyFeatureFlags() {
     });
   });
 
-  // 4. Greeting button encapsulation
+  // 4. Greeting button encapsulation (Permanently hidden per prompt: voice starts only from Start Tutorial)
   const greetingBtn = $('#btn-greeting');
   if (greetingBtn) {
-    const isGuideEnabled = flags.guide_enabled !== false;
-    greetingBtn.hidden = !isGuideEnabled;
-    greetingBtn.style.display = isGuideEnabled ? '' : 'none';
+    greetingBtn.hidden = true;
+    greetingBtn.style.display = 'none';
   }
 
   // 5. Header Dossier button encapsulation
