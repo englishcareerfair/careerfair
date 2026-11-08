@@ -11692,7 +11692,7 @@ function initAdminWorkspace() {
       STATE.config.eleven_voice = v;
     }
     updateGreetingButtonTitle();
-    updateTutorialVoiceBadge();
+    if (typeof updateTutorialVoiceBadge === 'function') updateTutorialVoiceBadge();
   });
 
   $('#btn-verify-eleven')?.addEventListener('click', () => {
@@ -12300,7 +12300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Initialize navigation & core handlers
   initNavigation();
   updateGreetingButtonTitle();
-  updateTutorialVoiceBadge();
+  if (typeof updateTutorialVoiceBadge === 'function') updateTutorialVoiceBadge();
   initSpeakLadder();
   initGamePicker();
   initPlanTools();
