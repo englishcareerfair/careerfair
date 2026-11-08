@@ -1,7 +1,7 @@
 /**
  * Career Fair 2026 - Interactive Platform Tutorial Loader
  * Provides an active animated progress bar (0% -> 100%), smooth automated dismissal,
- * interactive exhibition tips, and instant user entry ("Explore Career Fair ➔").
+ * interactive exhibition tips, and smooth automated entry into the fair.
  */
 (function() {
   let isDismissed = false;
@@ -138,7 +138,6 @@
   function initLoaderUI() {
     const nextBtn = document.getElementById('btn-loader-next-tip');
     const prevBtn = document.getElementById('btn-loader-prev-tip');
-    const enterBtn = document.getElementById('btn-loader-enter');
     const panel = document.getElementById('loader-tips-panel');
 
     if (nextBtn) {
@@ -154,14 +153,6 @@
         e.preventDefault();
         e.stopPropagation();
         prevTip();
-      });
-    }
-
-    if (enterBtn) {
-      enterBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dismissLoader();
       });
     }
 
