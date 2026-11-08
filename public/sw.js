@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v11.6-tts-toggle';
+const CACHE_NAME = 'cf-cache-v11.7-prerecorded-greeting';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -18,7 +18,13 @@ const STATIC_ASSETS = [
   '/icon-512.png',
   '/icon-512-maskable.png',
   '/favicon.svg',
-  '/manifest.json'
+  '/manifest.json',
+  '/audio/greeting/greeting_default.mp3',
+  '/audio/greeting/greeting_SAz9YHcvj6GT2YYXdXww.mp3',
+  '/audio/greeting/greeting_JBFqnCBsd6RMkjVDRZzb.mp3',
+  '/audio/greeting/greeting_EXAVITQu4vr4xnSDxMaL.mp3',
+  '/audio/greeting/greeting_Xb7hH8MSUJpSbSDYk0k2.mp3',
+  '/audio/greeting/greeting_IKne3meq5aSn9XLyUdCD.mp3'
 ];
 
 self.addEventListener('install', (event) => {

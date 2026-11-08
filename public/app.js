@@ -504,6 +504,149 @@ function fallbackNeuralSpeech(text, btn) {
   fallbackIndianNeuralSpeech(text, btn);
 }
 
+// Pre-recorded greeting audio registry for zero-credit, instant playback
+const PRE_RECORDED_GREETINGS = {
+  'SAz9YHcvj6GT2YYXdXww': {
+    url: '/audio/greeting/greeting_SAz9YHcvj6GT2YYXdXww.mp3',
+    name: 'River (Informative Studio)'
+  },
+  'JBFqnCBsd6RMkjVDRZzb': {
+    url: '/audio/greeting/greeting_JBFqnCBsd6RMkjVDRZzb.mp3',
+    name: 'George (Warm Storyteller)'
+  },
+  'EXAVITQu4vr4xnSDxMaL': {
+    url: '/audio/greeting/greeting_EXAVITQu4vr4xnSDxMaL.mp3',
+    name: 'Sarah (Mature Reassuring)'
+  },
+  'Xb7hH8MSUJpSbSDYk0k2': {
+    url: '/audio/greeting/greeting_Xb7hH8MSUJpSbSDYk0k2.mp3',
+    name: 'Alice (Engaging Educator)'
+  },
+  'IKne3meq5aSn9XLyUdCD': {
+    url: '/audio/greeting/greeting_IKne3meq5aSn9XLyUdCD.mp3',
+    name: 'Charlie (Confident Energetic)'
+  },
+  'default': {
+    url: '/audio/greeting/greeting_default.mp3',
+    name: 'River (Studio Default)'
+  }
+};
+
+function getSelectedGreetingVoice() {
+  const customVoice = $('#admin-eleven-voice')?.value?.trim();
+  const selectVoice = $('#admin-eleven-voice-select')?.value?.trim();
+  const savedVoice = (localStorage.getItem('cf_eleven_voice') || STATE.config?.eleven_voice || '').trim();
+
+  return customVoice || selectVoice || savedVoice || 'SAz9YHcvj6GT2YYXdXww';
+}
+
+function updateGreetingButtonTitle() {
+  const btn = $('#btn-greeting');
+  if (!btn) return;
+  const vid = getSelectedGreetingVoice();
+  const item = PRE_RECORDED_GREETINGS[vid] || PRE_RECORDED_GREETINGS['default'];
+  const voiceName = item ? item.name : (vid ? `Voice: ${vid.slice(0, 8)}...` : 'Studio Voice');
+  btn.title = `Listen AI Greeting (${voiceName} · Pre-recorded Zero-Credit)`;
+}
+
+const greetingAudioMemoryCache = new Map();
+
+async function fetchAndPlayGreetingWithCache(text, voiceId, btn, sessionId, abortSignal) {
+  // Check in-memory cache
+  if (greetingAudioMemoryCache.has(voiceId)) {
+    const blobUrl = greetingAudioMemoryCache.get(voiceId);
+    playGreetingAudioSource(blobUrl, sessionId);
+    return;
+  }
+
+  // Check persistent CacheStorage
+  try {
+    if ('caches' in window) {
+      const cache = await caches.open('cf-greeting-cache-v1');
+      const cacheKey = `/cached-greeting/${encodeURIComponent(voiceId || 'default')}.mp3`;
+      const cachedResp = await cache.match(cacheKey);
+      if (cachedResp) {
+        const blob = await cachedResp.blob();
+        if (sessionId !== currentSpeechSessionId) return;
+        const blobUrl = URL.createObjectURL(blob);
+        greetingAudioMemoryCache.set(voiceId, blobUrl);
+        playGreetingAudioSource(blobUrl, sessionId);
+        return;
+      }
+    }
+  } catch (_) {}
+
+  // Fetch ONCE from /api/tts with isGreeting: true
+  try {
+    const res = await fetch(getApiUrl('api/tts'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: text,
+        voiceId: voiceId,
+        accent: 'indian',
+        isGreeting: true
+      }),
+      signal: abortSignal
+    });
+
+    if (sessionId !== currentSpeechSessionId) return;
+
+    if (res.ok && (res.headers.get('content-type') || '').includes('audio')) {
+      const blob = await res.blob();
+      if (sessionId !== currentSpeechSessionId) return;
+
+      try {
+        if ('caches' in window) {
+          const cache = await caches.open('cf-greeting-cache-v1');
+          const cacheKey = `/cached-greeting/${encodeURIComponent(voiceId || 'default')}.mp3`;
+          await cache.put(cacheKey, new Response(blob.slice(0), {
+            headers: { 'Content-Type': 'audio/mpeg' }
+          }));
+        }
+      } catch (_) {}
+
+      const blobUrl = URL.createObjectURL(blob);
+      greetingAudioMemoryCache.set(voiceId, blobUrl);
+      playGreetingAudioSource(blobUrl, sessionId);
+      return;
+    }
+  } catch (e) {
+    if (sessionId !== currentSpeechSessionId) return;
+    if (e.name === 'AbortError') return;
+  }
+
+  // Fallback to browser Indian neural speech if network/API unavailable
+  if (sessionId === currentSpeechSessionId) {
+    fallbackIndianNeuralSpeech(text, btn, sessionId);
+  }
+}
+
+function playGreetingAudioSource(audioSrc, sessionId) {
+  if (sessionId !== currentSpeechSessionId) return;
+  const audio = new Audio(audioSrc);
+  currentTtsAudio = audio;
+
+  audio.onended = () => {
+    if (sessionId === currentSpeechSessionId) {
+      stopAllVoice();
+    }
+  };
+
+  audio.onerror = () => {
+    if (sessionId === currentSpeechSessionId) {
+      stopAllVoice();
+    }
+  };
+
+  audio.play().catch(e => {
+    console.warn('Audio play exception:', e);
+    if (sessionId === currentSpeechSessionId) {
+      stopAllVoice();
+    }
+  });
+}
+
 async function speakGreeting() {
   const btn = $('#btn-greeting');
   const greetingText = "Welcome to the Career Fair 2026 at Kanakia International School Mira Road. Good English is not merely an examination subject—it is the universal language that powers thirty-two global careers, from commercial aviation and surgical consults to corporate law and international diplomacy. Explore the interactive exhibits, test your spoken articulation, and discover your path!";
@@ -520,8 +663,63 @@ async function speakGreeting() {
     return;
   }
 
+  // Stop any other currently playing speech / audio before starting
+  stopAllVoice();
+
   isGreetingPlaying = true;
-  await speak(greetingText, btn);
+  const sessionId = ++currentSpeechSessionId;
+  currentTtsAbortController = new AbortController();
+  const abortSignal = currentTtsAbortController.signal;
+
+  // Toggle greeting button to active Stop state
+  if (btn) {
+    if (!btn.dataset.origHtml || btn.dataset.origHtml.includes('Stop')) {
+      if (!btn.innerHTML.includes('Stop')) {
+        btn.dataset.origHtml = btn.innerHTML;
+      }
+    }
+    btn.innerHTML = `<span>⏹️</span> <span class="greeting-btn-text">Stop Audio</span>`;
+    btn.classList.add('speaking-active', 'playing');
+    activeSpeechButton = btn;
+  }
+
+  const chosenVoiceId = getSelectedGreetingVoice();
+
+  // 1. Check if chosen voice has a static pre-recorded audio file
+  let preRecordedItem = PRE_RECORDED_GREETINGS[chosenVoiceId];
+  if (!preRecordedItem && (!chosenVoiceId || chosenVoiceId === 'default' || chosenVoiceId === 'indian-neural')) {
+    preRecordedItem = PRE_RECORDED_GREETINGS['default'];
+  }
+
+  // If pre-recorded audio exists: play directly with ZERO ElevenLabs credits & ZERO delay!
+  if (preRecordedItem && preRecordedItem.url) {
+    try {
+      const audio = new Audio(preRecordedItem.url);
+      currentTtsAudio = audio;
+
+      audio.onended = () => {
+        if (sessionId === currentSpeechSessionId) {
+          stopAllVoice();
+        }
+      };
+
+      audio.onerror = () => {
+        if (sessionId === currentSpeechSessionId) {
+          fetchAndPlayGreetingWithCache(greetingText, chosenVoiceId, btn, sessionId, abortSignal);
+        }
+      };
+
+      if (sessionId !== currentSpeechSessionId) return;
+      await audio.play();
+      return;
+    } catch (e) {
+      if (sessionId !== currentSpeechSessionId) return;
+      console.warn('Pre-recorded audio play error, falling back to cache/fetch:', e);
+    }
+  }
+
+  // 2. Custom voice ID not in static registry: check cache or fetch ONCE and cache
+  await fetchAndPlayGreetingWithCache(greetingText, chosenVoiceId, btn, sessionId, abortSignal);
 }
 
 // ─── 2. COMPREHENSIVE DATASETS ────────────────────────────────────────────────
@@ -10891,6 +11089,7 @@ function initAdminWorkspace() {
       localStorage.setItem('cf_eleven_voice', v);
       STATE.config.eleven_voice = v;
     }
+    updateGreetingButtonTitle();
   });
 
   $('#btn-verify-eleven')?.addEventListener('click', () => {
@@ -11497,6 +11696,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Initialize navigation & core handlers
   initNavigation();
+  updateGreetingButtonTitle();
   initSpeakLadder();
   initGamePicker();
   initPlanTools();
