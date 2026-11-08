@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v11.8-arena-modular-games';
+const CACHE_NAME = 'cf-cache-v11.9-hyperframe-clean';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -24,7 +24,7 @@ const STATIC_ASSETS = [
   '/audio/greeting/greeting_JBFqnCBsd6RMkjVDRZzb.mp3',
   '/audio/greeting/greeting_EXAVITQu4vr4xnSDxMaL.mp3',
   '/audio/greeting/greeting_Xb7hH8MSUJpSbSDYk0k2.mp3',
-  '/audio/greeting/greeting_IKne3meq5aSn9XLyUdCD.mp3'
+  '/audio/greeting/greeting_IKne3meq5aSn9XLyUdCD.mp3',
 ];
 
 self.addEventListener('install', (event) => {

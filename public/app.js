@@ -2516,19 +2516,27 @@ function switchTab(tabId, options = {}) {
     activeTabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 
-  // Hide all sections, reveal active
-  $$('.section-shell').forEach(sec => sec.hidden = true);
-  const targetSec = $(`#sec-${tabId}`);
-  if (targetSec) {
-    targetSec.hidden = false;
-    if (!options.keepScroll) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      if (typeof window.updateMobileNavDockState === 'function') {
-        window.updateMobileNavDockState();
-        setTimeout(window.updateMobileNavDockState, 150);
-        setTimeout(window.updateMobileNavDockState, 450);
+  // Hyperframe Fluid Tab Transition
+  const performTabSwap = () => {
+    $$('.section-shell').forEach(sec => sec.hidden = true);
+    const targetSec = $(`#sec-${tabId}`);
+    if (targetSec) {
+      targetSec.hidden = false;
+      if (!options.keepScroll) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof window.updateMobileNavDockState === 'function') {
+          window.updateMobileNavDockState();
+          setTimeout(window.updateMobileNavDockState, 150);
+          setTimeout(window.updateMobileNavDockState, 450);
+        }
       }
     }
+  };
+
+  if ('startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.startViewTransition(performTabSwap);
+  } else {
+    performTabSwap();
   }
 
   // Synchronize URL with router if this was triggered directly (not from router routeTo)
