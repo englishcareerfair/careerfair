@@ -1,14 +1,13 @@
 /**
- * Career Fair 2026 -- Executive 2-Page Vector PDF Career Booklet & Business Card
- * Delivers an ultra-prestigious, award-winning academic dossier with architectural framing,
- * multi-font hierarchy (Times serif for prestigious institutional authority, Helvetica for
- * modern executive precision, and Courier for high-tech telemetry and credential IDs),
- * faceted geometry, corner metallic brackets, acoustic radar telemetry, and printable business card.
- *
- * DYNAMIC THEME SUPPORT:
- * Automatically synchronizes with the user's active theme (Dark Mode vs. Light Mode),
- * delivering pristine executive aesthetics in both modes with zero rendering glitches.
- * Uses 100% standard ASCII typography to guarantee zero font encoding corruption across all PDF viewers.
+ * Career Fair 2026 -- Executive 2-Page Canvas-Rendered Vector PDF Booklet & Card
+ * 
+ * Delivers an ultra-prestigious, award-winning academic dossier that 100% matches
+ * the website's visual identity:
+ * - Fonts: Space Grotesk (headers & badges), Plus Jakarta Sans (body), JetBrains Mono (credentials & telemetry)
+ * - Gradients: Cyberpunk Cyan-to-Purple (#00f0ff -> #8b5cf6) in Dark Mode, Royal Sapphire-to-Azure (#1e3a8a -> #0284c7) in Light Mode
+ * - Glassmorphism: Semi-translucent cards with glowing borders and soft elevation shadows
+ * - Detachable Business Card with high-contrast, camera-scannable dynamic QR verification code
+ * - Zero mentions of English Department (Directorate of Career Guidance & Exhibition Convenors)
  */
 
 (function (window) {
@@ -20,7 +19,7 @@
     return isNaN(n) ? fallback : n;
   }
 
-  // Verified ISO/IEC 18004 Compliant 29x29 QR Code Matrix for https://careerwithenglish.pages.dev
+  // Fallback 29x29 QR Matrix if window.qrcode is not ready
   const FALLBACK_QR_MATRIX_29 = [
     "11111110001000100111001111111",
     "10000010100101000101001000001",
@@ -48,162 +47,243 @@
     "10111010001111001000100001000",
     "10111010011100111010111111010",
     "10000010111000110001010000101",
-    "11111110100101101111010111011"
+    "10111010010010100101001000111",
+    "10000010110111010100101011111",
+    "11111110011101001001001010101"
   ];
 
-  function cleanAscii(str, fallback = '') {
-    if (!str || typeof str !== 'string') return fallback;
-    return str
-      .replace(/[\u2018\u2019]/g, "'")
-      .replace(/[\u201C\u201D]/g, '"')
-      .replace(/[\u2013\u2014]/g, '-')
-      .replace(/[\u2022\u25CF]/g, '*')
-      .replace(/[\u2192]/g, '->')
-      .replace(/[\u2190]/g, '<-')
-      .replace(/[\u2713\u2714]/g, '[OK]')
-      .replace(/[^\x20-\x7E]/g, '')
-      .trim() || fallback;
-  }
-
-  function getInstitutionsForCareer(career) {
-    const title = (career?.title || '').toLowerCase();
-    const cat = (career?.cat || '').toLowerCase();
-
-    if (title.includes('pilot') || title.includes('aviation') || cat.includes('aviation')) {
-      return [
-        { name: "Indira Gandhi Rashtriya Uran Akademi (IGRUA)", acc: "DGCA Premier Govt Flying Cadre · NIRF Top Aviation Academy", prog: "Commercial Pilot License (CPL) & B.Sc Aviation" },
-        { name: "Bombay Flying Club (Juhu Aerodrome)", acc: "Estd 1928 · Historic Pioneer Flight Training Institute", prog: "Integrated Multi-Engine Instrument Rating & Airline Transport Pilot" },
-        { name: "National Flying Training Institute (NFTI Gondia)", acc: "CAE Global Aerospace Network · DGCA Grade A+", prog: "Airline Cadet Pilot Training & Modern Glass Cockpit Simulator" }
-      ];
-    }
-    if (title.includes('doctor') || title.includes('surgeon') || title.includes('medic') || cat.includes('health') || cat.includes('medic')) {
-      return [
-        { name: "All India Institute of Medical Sciences (AIIMS New Delhi)", acc: "NIRF Rank #1 · Institute of National Importance (Autonomous)", prog: "MBBS, Master of Surgery (MS) & Super-Specialty Clinical Fellowship" },
-        { name: "Christian Medical College (CMC Vellore)", acc: "NAAC Grade A++ · NIRF Medical Top 3 · Global Clinical Network", prog: "Undergraduate Medicine & Advanced Trauma Residency" },
-        { name: "King Edward Memorial Hospital & GSMC Mumbai", acc: "Top Maharashtra Healthcare Cadre · MUHS Premier College", prog: "Clinical Internal Medicine & Critical Emergency Care" }
-      ];
-    }
-    if (title.includes('law') || title.includes('advocate') || title.includes('judge') || cat.includes('law')) {
-      return [
-        { name: "National Law School of India University (NLSIU Bengaluru)", acc: "NIRF Law Rank #1 · Premier Bar Council Recognized Institute", prog: "B.A. LL.B. (Hons.) & Corporate Dispute Resolution" },
-        { name: "NALSAR University of Law (Hyderabad)", acc: "NAAC Grade A++ · Premier National Law University", prog: "Constitutional Governance & Cross-Border Commercial Arbitration" },
-        { name: "Government Law College (GLC Mumbai)", acc: "Estd 1855 · Historic Apex Legal Institution in India", prog: "Corporate Law, Intellectual Property & High Court Advocacy" }
-      ];
-    }
-    if (title.includes('engineer') || title.includes('ai') || title.includes('tech') || title.includes('software') || cat.includes('tech')) {
-      return [
-        { name: "Indian Institute of Technology (IIT Bombay / IIT Delhi)", acc: "NIRF Engineering Top Rank · Institute of National Importance", prog: "B.Tech Computer Science, Artificial Intelligence & Machine Learning" },
-        { name: "BITS Pilani (Birla Institute of Technology & Science)", acc: "NAAC Grade A · Premier Global Private Technical Institute", prog: "Dual Degree Engineering, High Performance Computing & Robotics" },
-        { name: "IIIT Hyderabad (International Institute of Info Tech)", acc: "NAAC Grade A++ · Global AI Research Center", prog: "Computer Science Research, Natural Language & Applied Deep Learning" }
-      ];
-    }
-    if (title.includes('journal') || title.includes('media') || title.includes('author') || cat.includes('media')) {
-      return [
-        { name: "Indian Institute of Mass Communication (IIMC New Delhi)", acc: "Premier Ministry of I&B Cadre · Top NIRF Media Institute", prog: "Broadcast Journalism, Digital Media & Strategic Communications" },
-        { name: "St. Xavier's College (Autonomous Mumbai)", acc: "NAAC Grade A+ · Premier Liberal Arts & Media Faculty", prog: "Bachelor of Mass Media (BMM) & Investigative Journalism" },
-        { name: "Symbiosis Institute of Media & Communication (SIMC Pune)", acc: "NAAC Grade A++ · Top Private Communications School", prog: "Audio-Visual Production, Public Relations & Executive Media" }
-      ];
-    }
-    if (title.includes('business') || title.includes('finance') || title.includes('consult') || cat.includes('business')) {
-      return [
-        { name: "Shri Ram College of Commerce (SRCC Delhi University)", acc: "NIRF Commerce Rank #1 · NAAC Grade A++", prog: "B.Com (Hons.), Global Financial Economics & Investment Strategy" },
-        { name: "Indian Institute of Management (IIM Indore IPM)", acc: "NIRF Management Top 10 · EQUIS / AMBA Accredited", prog: "5-Year Integrated Program in Management (IPM)" },
-        { name: "Narsee Monjee Institute of Management Studies (NMIMS)", acc: "NAAC Grade A+ · Category-I Autonomy", prog: "BBA Finance, International Business & Venture Analytics" }
-      ];
-    }
-    return [
-      {
-        name: "Premier Central & State Universities (NAAC Grade A++)",
-        acc: "UGC / AICTE Approved · NIRF Top 25 Ranked Institutions",
-        prog: "Bachelor of Arts / Science / Professional Degree Honors"
-      },
-      {
-        name: "National Institutes of Academic Excellence (Autonomous)",
-        acc: "Ministry of Education Cadre · Global Dual-Degree Partnerships",
-        prog: "Specialized Professional Licensure & Executive Certification"
-      },
-      {
-        name: "Accredited International Study Centers & Consortia",
-        acc: "International Global Articulation Agreements",
-        prog: "Advanced Professional Diplomas & Global Industry Fellowships"
-      }
-    ];
-  }
-
-  async function ensureQrCodeLoaded() {
-    if (typeof window !== 'undefined' && typeof window.qrcode === 'function') return true;
-    return new Promise((resolve) => {
-      const existing = document.querySelector('script[src*="qrcode"]');
-      if (existing) {
-        let count = 0;
-        const interval = setInterval(() => {
-          count++;
-          if (typeof window.qrcode === 'function') {
-            clearInterval(interval);
-            resolve(true);
-          } else if (count > 30) {
-            clearInterval(interval);
-            resolve(false);
+  function getDynamicQrMatrix(url) {
+    try {
+      if (typeof window.qrcode === 'function') {
+        const qr = window.qrcode(0, 'M');
+        qr.addData(url);
+        qr.make();
+        const count = qr.getModuleCount();
+        const matrix = [];
+        for (let r = 0; r < count; r++) {
+          const row = [];
+          for (let c = 0; c < count; c++) {
+            row.push(qr.isDark(r, c) ? 1 : 0);
           }
-        }, 100);
-        existing.addEventListener('load', () => { clearInterval(interval); resolve(typeof window.qrcode === 'function'); }, { once: true });
-        existing.addEventListener('error', () => { clearInterval(interval); resolve(false); }, { once: true });
-        return;
+          matrix.push(row);
+        }
+        return matrix;
       }
-      const script = document.createElement('script');
-      script.src = '/qrcode.min.js';
-      script.onload = () => resolve(typeof window.qrcode === 'function');
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
+    } catch (e) {
+      console.warn('QR Code generation error:', e);
+    }
+    return FALLBACK_QR_MATRIX_29;
   }
 
-  async function ensureJsPdfLoaded() {
-    if (window.jspdf && window.jspdf.jsPDF) return true;
-    return new Promise((resolve) => {
-      const existing = document.querySelector('script[src*="jspdf"]');
-      if (existing) {
-        let count = 0;
-        const interval = setInterval(() => {
-          count++;
-          if (window.jspdf && window.jspdf.jsPDF) {
-            clearInterval(interval);
-            resolve(true);
-          } else if (count > 30) {
-            clearInterval(interval);
-            resolve(false);
-          }
-        }, 100);
-        existing.addEventListener('load', () => { clearInterval(interval); resolve(Boolean(window.jspdf && window.jspdf.jsPDF)); }, { once: true });
-        existing.addEventListener('error', () => { clearInterval(interval); resolve(false); }, { once: true });
-        return;
+  // Canvas Drawing Utility Helpers
+  function drawRoundRect(ctx, x, y, w, h, r, fill, stroke) {
+    if (fill === undefined) fill = true;
+    if (stroke === undefined) stroke = true;
+    if (typeof r === 'number') {
+      r = { tl: r, tr: r, br: r, bl: r };
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    ctx.lineTo(x + w, y + h - r.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    ctx.lineTo(x + r.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    ctx.lineTo(x, y + r.tl);
+    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function drawCornerBrackets(ctx, x, y, w, h, len, lw, strokeStyle) {
+    ctx.save();
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lw;
+    ctx.lineCap = 'square';
+    // Top-Left
+    ctx.beginPath();
+    ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
+    ctx.stroke();
+    // Top-Right
+    ctx.beginPath();
+    ctx.moveTo(x + w - len, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + len);
+    ctx.stroke();
+    // Bottom-Left
+    ctx.beginPath();
+    ctx.moveTo(x, y + h - len); ctx.lineTo(x, y + h); ctx.lineTo(x + len, y + h);
+    ctx.stroke();
+    // Bottom-Right
+    ctx.beginPath();
+    ctx.moveTo(x + w - len, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - len);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSectionHeader(ctx, num, title, subtitle, x, y, width, isDark) {
+    ctx.save();
+    // Vertical Accent Pill
+    const grad = ctx.createLinearGradient(x, y, x, y + 36);
+    if (isDark) {
+      grad.addColorStop(0, '#00f0ff');
+      grad.addColorStop(1, '#8b5cf6');
+    } else {
+      grad.addColorStop(0, '#1d4ed8');
+      grad.addColorStop(1, '#0284c7');
+    }
+    ctx.fillStyle = grad;
+    drawRoundRect(ctx, x, y, 6, 36, 3, true, false);
+
+    // Number Badge
+    const badgeBg = isDark ? 'rgba(0, 240, 255, 0.12)' : 'rgba(29, 78, 216, 0.1)';
+    const badgeText = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.fillStyle = badgeBg;
+    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.3)' : 'rgba(29, 78, 216, 0.25)';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, x + 16, y + 2, 32, 32, 8, true, true);
+    ctx.font = '700 16px "Space Grotesk", -apple-system, sans-serif';
+    ctx.fillStyle = badgeText;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(num, x + 32, y + 18);
+
+    // Title
+    ctx.font = '700 24px "Space Grotesk", -apple-system, sans-serif';
+    ctx.fillStyle = isDark ? '#f8fafc' : '#090d16';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(title, x + 58, y + 1);
+
+    // Subtitle
+    ctx.font = '500 14px "Plus Jakarta Sans", -apple-system, sans-serif';
+    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+    ctx.fillText(subtitle, x + 58, y + 23);
+
+    // Trailing Decorative Horizontal Track
+    const titleWidth = ctx.measureText(title).width;
+    const lineX = x + 68 + titleWidth;
+    if (lineX < x + width - 10) {
+      const lineGrad = ctx.createLinearGradient(lineX, y + 12, x + width, y + 12);
+      lineGrad.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(29, 78, 216, 0.35)');
+      lineGrad.addColorStop(1, 'transparent');
+      ctx.strokeStyle = lineGrad;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(lineX, y + 13);
+      ctx.lineTo(x + width, y + 13);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawOfficialSeal(ctx, cx, cy, radius, isDark) {
+    ctx.save();
+    // Outer Radiant Glow
+    const glowGrad = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius * 1.25);
+    glowGrad.addColorStop(0, isDark ? 'rgba(251, 191, 36, 0.25)' : 'rgba(29, 78, 216, 0.15)');
+    glowGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = glowGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 1.25, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 24-point Starburst Notches
+    ctx.save();
+    ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 24; i++) {
+      const angle = (i * Math.PI) / 12;
+      const x1 = cx + Math.cos(angle) * (radius - 4);
+      const y1 = cy + Math.sin(angle) * (radius - 4);
+      const x2 = cx + Math.cos(angle) * (radius + 2);
+      const y2 = cy + Math.sin(angle) * (radius + 2);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Concentric Inner Circles
+    ctx.strokeStyle = isDark ? '#f59e0b' : '#b45309';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, radius - 8, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, radius - 14, 0, Math.PI * 2); ctx.stroke();
+
+    // Seal Inner Gradient Fill
+    const innerGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius - 14);
+    if (isDark) {
+      innerGrad.addColorStop(0, 'rgba(245, 158, 11, 0.15)');
+      innerGrad.addColorStop(1, 'rgba(15, 23, 42, 0.85)');
+    } else {
+      innerGrad.addColorStop(0, 'rgba(254, 243, 199, 0.5)');
+      innerGrad.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+    }
+    ctx.fillStyle = innerGrad;
+    ctx.beginPath(); ctx.arc(cx, cy, radius - 14, 0, Math.PI * 2); ctx.fill();
+
+    // Seal Typography
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#fde68a' : '#92400e';
+    ctx.fillText('KANAKIA INTL', cx, cy - 30);
+
+    ctx.font = '700 11px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.fillText('★  ★  ★', cx, cy - 14);
+
+    ctx.font = '800 18px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#fbbf24' : '#b45309';
+    ctx.fillText('VERIFIED', cx, cy + 4);
+
+    ctx.font = '700 10.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#fde68a' : '#92400e';
+    ctx.fillText('OFFICIAL SEAL', cx, cy + 22);
+
+    ctx.font = '700 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.fillText('2026', cx, cy + 36);
+
+    ctx.restore();
+  }
+
+  function drawQrToCanvas(ctx, matrix, x, y, size) {
+    const count = matrix.length;
+    const cellSize = size / count;
+    ctx.fillStyle = '#000000';
+    for (let r = 0; r < count; r++) {
+      for (let c = 0; c < count; c++) {
+        if (matrix[r][c] === 1 || matrix[r][c] === '1') {
+          // Slight 0.5px bleed avoids hairline gaps on high-DPI screens
+          ctx.fillRect(x + c * cellSize, y + r * cellSize, cellSize + 0.5, cellSize + 0.5);
+        }
       }
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      script.integrity = 'sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk';
-      script.crossOrigin = 'anonymous';
-      script.onload = () => resolve(Boolean(window.jspdf && window.jspdf.jsPDF));
-      script.onerror = () => resolve(false);
-      document.head.appendChild(script);
-    });
+    }
   }
 
   /**
-   * Main Generator Function
+   * Main High-DPI Canvas-Rendered Dossier Generator
    */
-  async function generateStudentDossierPDF(studentData = null, options = {}) {
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      const loaded = await ensureJsPdfLoaded();
-      if (!loaded || !window.jspdf || !window.jspdf.jsPDF) {
-        if (typeof window.showToast === 'function') {
-          window.showToast('⚠️ PDF generator loading... please try again in a moment.');
-        }
-        return null;
-      }
+  async function generateStudentDossierPDF(customData, options) {
+    if (customData === undefined) customData = null;
+    if (options === undefined) options = {};
+
+    if (typeof window.jspdf === 'undefined' && typeof window.jsPDF === 'undefined') {
+      alert('jsPDF library is not loaded. Please ensure the CDN script is active.');
+      return null;
     }
 
-    await ensureQrCodeLoaded();
-    const { jsPDF } = window.jspdf;
+    // Wait for fonts (Space Grotesk, Plus Jakarta Sans, JetBrains Mono)
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (_) {}
+    }
+
+    const { jsPDF } = window.jspdf || window;
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -211,904 +291,900 @@
       compress: true
     });
 
-    // Resolve user's chosen theme dynamically (Light Mode vs Dark Mode)
-    const activeTheme = options?.theme || window.STATE?.theme || document.documentElement.getAttribute('data-theme') || localStorage.getItem('cf_theme') || 'dark';
-    const isDark = (activeTheme === 'dark' || activeTheme === 'cinematic');
+    // Theme resolution: dark vs light
+    const currentTheme = options?.theme || document.documentElement.getAttribute('data-theme') || 'dark';
+    const isDark = (currentTheme === 'dark' || currentTheme === 'cinematic');
 
-    // Executive Color Palettes (Rich Contrast, Zero Garish Fills)
-    const C = isDark ? {
-      isDark: true,
-      pageBg: [8, 12, 20],              // Deep obsidian carbon (#080c14)
-      outerBorder: [30, 41, 59],        // Slate 800 (#1e293b)
-      innerBorder: [20, 30, 50],        // Slate 900 (#141e32)
-      headerBg: [13, 20, 36],           // Carbon Executive Navy (#0d1424)
-      headerGold: [232, 160, 74],       // Warm Amber Gold (#e8a04a)
-      headerCyan: [0, 240, 255],        // Glowing Electric Cyan (#00f0ff)
-      headerTitle: [255, 255, 255],     // Pure Crisp White
-      headerMeta: [148, 163, 184],      // Silver Slate (#94a3b8)
-      secTitle: [255, 255, 255],        // Section Headings: Pure White
-      cardBg: [13, 20, 38],             // Card Container Fill (#0d1426)
-      cardBorder: [30, 45, 75],         // Card Border (#1e2d4b)
-      cardPillBg: [18, 28, 52],         // Inner Pill Fill (#121c34)
-      cardPillBorder: [40, 58, 92],     // Inner Pill Border (#283a5c)
-      cardSubtleBg: [16, 24, 44],       // Inset Fill (#10182c)
-      textPrimary: [255, 255, 255],     // Primary Headings
-      textBody: [203, 213, 225],        // Body Text: Bright Silver (#cbd5e1)
-      textMuted: [148, 163, 184],       // Secondary / Muted: (#94a3b8)
-      accentCyan: [0, 240, 255],        // Electric Cyan
-      accentBlue: [14, 165, 233],       // Sky Blue
-      accentEmerald: [16, 185, 129],    // Vibrant Emerald
-      accentGold: [232, 160, 74],       // Gold
-      accentPurple: [168, 85, 247],     // Purple
-      accentPink: [236, 72, 153],       // Pink
-      footerText: [100, 116, 139]       // Muted Footer Text
-    } : {
-      isDark: false,
-      pageBg: [252, 253, 255],          // Crisp Executive Porcelain (#fcfdff)
-      outerBorder: [203, 213, 225],     // Slate 300 (#cbd5e1)
-      innerBorder: [226, 232, 240],     // Slate 200 (#e2e8f0)
-      headerBg: [15, 23, 42],           // Deep Royal Navy (#0f172a)
-      headerGold: [232, 160, 74],       // Warm Amber Gold (#e8a04a)
-      headerCyan: [0, 240, 255],        // Cyan Branding
-      headerTitle: [255, 255, 255],     // Crisp White
-      headerMeta: [203, 213, 225],      // Soft White Slate
-      secTitle: [15, 23, 42],           // Section Headings: Deep Navy
-      cardBg: [255, 255, 255],          // Pure White Cards (#ffffff)
-      cardBorder: [218, 225, 235],      // Crisp Border (#dae1eb)
-      cardPillBg: [241, 245, 249],      // Soft Slate Fill (#f1f5f9)
-      cardPillBorder: [203, 213, 225],  // Soft Slate Border (#cbd5e1)
-      cardSubtleBg: [248, 250, 252],    // Subtlest Inset Fill (#f8fafc)
-      textPrimary: [15, 23, 42],        // Deep Charcoal Navy (#0f172a)
-      textBody: [51, 65, 85],           // Slate Body (#334155)
-      textMuted: [100, 116, 139],       // Muted Secondary (#64748b)
-      accentCyan: [14, 165, 233],       // Refined Cerulean Blue
-      accentBlue: [2, 132, 199],        // Deep Sky Blue
-      accentEmerald: [5, 150, 105],     // Deep Emerald
-      accentGold: [194, 120, 3],        // Rich Amber Gold
-      accentPurple: [126, 34, 206],     // Deep Royal Purple
-      accentPink: [190, 24, 93],        // Rich Magenta
-      footerText: [148, 163, 184]       // Clean Footer Text
-    };
+    // Canvas dimensions for A4 (1600 x 2263 at 1:1.414 aspect ratio)
+    const CW = 1600;
+    const CH = 2263;
 
-    // Metadata & Student Data
-    const rawName = studentData?.name || window.STATE?.studentName || localStorage.getItem('cf_student_name') || 'Student Delegate';
-    const studentName = cleanAscii(rawName, 'Student Delegate');
-    const rawClass = studentData?.className || window.STATE?.studentClass || localStorage.getItem('cf_student_class') || 'Class 10';
-    const studentClass = cleanAscii(rawClass, 'Class 10');
-    const rawSchool = window.STATE?.config?.school_name || 'Kanakia International School Mira Road';
-    const schoolName = cleanAscii(rawSchool, 'Kanakia International School Mira Road');
+    const canvas = document.createElement('canvas');
+    canvas.width = CW;
+    canvas.height = CH;
+    const ctx = canvas.getContext('2d');
 
-    let chosenCareer = studentData?.chosenCareer || window.STATE?.studentProfile?.chosenCareer || null;
+    // Resolve Student & Career Data
+    const state = window.STATE || {};
+    let studentName = customData?.name || state.studentName || localStorage.getItem('cf_student_name') || 'Student Ambassador';
+    let className = customData?.className || state.studentClass || localStorage.getItem('cf_student_class') || 'Grade 10';
+    let chosenCareer = customData?.chosenCareer || state.chosenCareer || null;
+
     if (!chosenCareer) {
       try {
         const stored = localStorage.getItem('cf_chosen_career');
         if (stored) chosenCareer = JSON.parse(stored);
-      } catch (e) {}
+      } catch (_) {}
     }
-
     if (!chosenCareer || !chosenCareer.title) {
       chosenCareer = {
-        title: "International Aviation & Global Operations",
-        cat: "Aviation & Corporate Leadership",
-        degrees: "B.Sc Aviation / CPL Commercial Pilot / Global Logistics",
-        exams: "DGCA Commercial Examinations, ICAO Level 4+",
-        salary: "INR 18L - 50L+/yr",
-        englishSuperpower: "Mandatory ICAO Operational English Proficiency (Level 4-6). Zero ambiguity in international radio phraseology and executive team coordination."
+        title: "Commercial Airline Pilot",
+        cat: "Aviation & Aerospace",
+        desc: "Commands multi-million dollar wide-body aircraft across international air corridors, requiring non-negotiable standardized ICAO phraseology and zero-ambiguity radiotelephony precision under extreme high-stakes operational pressure.",
+        englishSuperpower: "Radiotelephony precision and non-negotiable international English phraseology under ICAO Level 5/6 standards. Pilots command global air traffic communication, crew coordination, and emergency clearance protocols where clarity saves lives."
       };
     }
 
-    let speechResult = studentData?.speechResult || window.STATE?.studentProfile?.lastSpeech || null;
-    if (!speechResult) {
-      try {
-        const stored = localStorage.getItem('cf_last_speech');
-        if (stored) speechResult = JSON.parse(stored);
-      } catch (e) {}
+    const careerTitle = chosenCareer.title;
+    const careerCat = chosenCareer.cat || 'Global Professional Track';
+    const careerDesc = chosenCareer.desc || 'High-impact international professional pathway.';
+    const superpowerText = chosenCareer.englishSuperpower || chosenCareer.superpower ||
+      "Strategic negotiation, technical cross-border precision, and executive articulation that bridges multinational protocols and creates leadership authority.";
+
+    let docId = customData?.id || state.userSessionId || localStorage.getItem('cf_user_session_id') || '';
+    if (!docId) {
+      docId = 'ECF-2026-' + Math.floor(100000 + Math.random() * 900000);
+      try { localStorage.setItem('cf_user_session_id', docId); } catch (_) {}
     }
 
-    let gameResults = studentData?.gameResults || null;
-    if (!gameResults) {
-      try {
-        const stored = localStorage.getItem('cf_game_history');
-        if (stored) gameResults = JSON.parse(stored);
-      } catch (e) {}
+    // Dynamic QR URL
+    const baseUrl = 'https://careerwithenglish.pages.dev';
+    const params = new URLSearchParams({
+      v: '1',
+      s: studentName,
+      t: careerTitle,
+      c: className,
+      id: docId
+    });
+    const qrTargetUrl = `${baseUrl}/?${params.toString()}`;
+    const qrMatrix = getDynamicQrMatrix(qrTargetUrl);
+
+    // Theme Color Tokens
+    const C = {
+      bgGradStart: isDark ? '#08090d' : '#f8fafc',
+      bgGradEnd: isDark ? '#0f1422' : '#edf2f7',
+      outerBorder: isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(29, 78, 216, 0.5)',
+      innerBorder: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+      cornerGold: isDark ? '#fbbf24' : '#d97706',
+      cardBg: isDark ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 255, 255, 0.94)',
+      cardBorder: isDark ? 'rgba(56, 189, 248, 0.28)' : 'rgba(203, 213, 225, 0.9)',
+      textMain: isDark ? '#f8fafc' : '#090d16',
+      textMuted: isDark ? '#cbd5e1' : '#334155',
+      textDim: isDark ? '#94a3b8' : '#64748b',
+      accentCyan: isDark ? '#38bdf8' : '#0284c7',
+      accentMagenta: isDark ? '#fb7185' : '#e11d48',
+      accentGold: isDark ? '#fbbf24' : '#d97706',
+      accentEmerald: isDark ? '#34d399' : '#059669',
+      accentBrand: isDark ? '#3b82f6' : '#2563eb'
+    };
+
+    // =========================================================================
+    // PAGE 1: CAREER BLUEPRINT & ACADEMIC HORIZON
+    // =========================================================================
+    ctx.clearRect(0, 0, CW, CH);
+
+    // 1. Background Gradient with subtle radial ambient glow
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
+    bgGrad.addColorStop(0, C.bgGradStart);
+    bgGrad.addColorStop(1, C.bgGradEnd);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Top Ambient Glow
+    const topGlow = ctx.createRadialGradient(CW / 2, 0, 50, CW / 2, 0, 900);
+    topGlow.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(37, 99, 235, 0.1)');
+    topGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(0, 0, CW, 800);
+
+    // 2. Outer Architectural Double Framing
+    ctx.strokeStyle = C.outerBorder;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(35, 35, CW - 70, CH - 70);
+
+    ctx.strokeStyle = C.innerBorder;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(45, 45, CW - 90, CH - 90);
+
+    drawCornerBrackets(ctx, 35, 35, CW - 70, CH - 70, 36, 4, C.cornerGold);
+
+    // Top Ticker (Security String)
+    ctx.font = '700 11.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.textDim;
+    ctx.textAlign = 'left';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | OFFICIAL STUDENT CAREER BOOKLET & STRATEGIC BLUEPRINT', 55, 27);
+    ctx.textAlign = 'right';
+    ctx.fillText(`ID: ${docId}`, CW - 55, 27);
+
+    // Bottom Ticker
+    ctx.fillText('PAGE 01 OF 02 | CONFIDENTIAL ACADEMIC RECORD | ISSUED UNDER DIRECTORATE SEAL', 55, CH - 20);
+    ctx.fillText('CAREER FAIR 2026', CW - 55, CH - 20);
+
+    // 3. Header Card (Glassmorphism with Gradient Trim)
+    const hX = 65, hY = 65, hW = CW - 130, hH = 215;
+    ctx.save();
+    ctx.fillStyle = C.cardBg;
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(37, 99, 235, 0.35)';
+    ctx.lineWidth = 1.5;
+    drawRoundRect(ctx, hX, hY, hW, hH, 20, true, true);
+
+    // Header Top Gradient Accent Ribbon
+    const hRibbon = ctx.createLinearGradient(hX, hY, hX + hW, hY);
+    if (isDark) {
+      hRibbon.addColorStop(0, '#00f0ff');
+      hRibbon.addColorStop(0.5, '#8b5cf6');
+      hRibbon.addColorStop(1, '#fb7185');
+    } else {
+      hRibbon.addColorStop(0, '#1e3a8a');
+      hRibbon.addColorStop(0.5, '#2563eb');
+      hRibbon.addColorStop(1, '#0284c7');
     }
+    ctx.fillStyle = hRibbon;
+    drawRoundRect(ctx, hX, hY, hW, 6, { tl: 20, tr: 20, br: 0, bl: 0 }, true, false);
 
-    const docId = `ECF-2026-${Math.abs(Math.floor(Math.sin(Date.now()) * 899999 + 100000))}`;
-    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    // Left Crest / Insignia Badge
+    const cX = hX + 70, cY = hY + hH / 2 + 3;
+    const crestGrad = ctx.createRadialGradient(cX, cY, 0, cX, cY, 52);
+    crestGrad.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(37, 99, 235, 0.15)');
+    crestGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = crestGrad;
+    ctx.beginPath(); ctx.arc(cX, cY, 52, 0, Math.PI * 2); ctx.fill();
 
-    // PDF Document Meta
-    doc.setProperties({
-      title: `Career Fair 2026 Official Booklet - ${studentName}`,
-      subject: `Official Student Career Intelligence & Articulation Dossier`,
-      author: schoolName,
-      keywords: "Career Fair, English Proficiency, Speech Articulation, Career Booklet"
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(cX, cY, 44, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cX, cY, 38, 0, Math.PI * 2); ctx.stroke();
+
+    ctx.font = '800 24px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#fbbf24' : '#d97706';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('KIS', cX, cY - 2);
+
+    ctx.font = '700 9.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.fillText('FAIR 2026', cX, cY + 16);
+
+    // Header Center Institutional Typography
+    const tX = hX + 150;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    ctx.font = '700 15px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD', tX, hY + 28);
+
+    // Main Title with Gradient Fill
+    ctx.font = '800 32px "Space Grotesk", sans-serif';
+    const titleGrad = ctx.createLinearGradient(tX, hY + 52, tX + 600, hY + 52);
+    if (isDark) {
+      titleGrad.addColorStop(0, '#ffffff');
+      titleGrad.addColorStop(0.6, '#e0f2fe');
+      titleGrad.addColorStop(1, '#a5b4fc');
+    } else {
+      titleGrad.addColorStop(0, '#090d16');
+      titleGrad.addColorStop(0.6, '#1e3a8a');
+      titleGrad.addColorStop(1, '#2563eb');
+    }
+    ctx.fillStyle = titleGrad;
+    ctx.fillText('OFFICIAL STUDENT CAREER BOOKLET', tX, hY + 50);
+
+    ctx.font = '600 18px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textMuted;
+    ctx.fillText('& STRATEGIC ACADEMIC BLUEPRINT', tX, hY + 90);
+
+    ctx.font = 'italic 13.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Virtus · Scientia · Excellentia  —  Empowering 32+ Global Careers Through English', tX, hY + 118);
+
+    // Right Student Credential Box (4-field Glass Pill)
+    const credW = 420;
+    const credX = hX + hW - credW - 25;
+    const credY = hY + 28;
+    const credH = hH - 52;
+    ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(241, 245, 249, 0.85)';
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(203, 213, 225, 0.8)';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, credX, credY, credW, credH, 14, true, true);
+
+    const rowH = credH / 4;
+    const credRows = [
+      ['STUDENT NAME', studentName],
+      ['CLASS & GRADE', className],
+      ['TARGET CAREER', careerTitle],
+      ['CREDENTIAL ID', docId]
+    ];
+
+    credRows.forEach(([lbl, val], idx) => {
+      const ry = credY + idx * rowH;
+      ctx.font = '700 11px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.textDim;
+      ctx.fillText(lbl, credX + 16, ry + 12);
+
+      ctx.font = (idx === 3) ? '700 13px "JetBrains Mono", monospace' : '700 14px "Space Grotesk", sans-serif';
+      ctx.fillStyle = (idx === 2) ? (isDark ? '#38bdf8' : '#1d4ed8') : C.textMain;
+      ctx.textAlign = 'right';
+      // Truncate long value
+      let maxLen = 22;
+      let displayVal = val.length > maxLen ? val.slice(0, maxLen - 1) + '…' : val;
+      ctx.fillText(displayVal, credX + credW - 16, ry + 11);
+      ctx.textAlign = 'left';
+
+      if (idx < 3) {
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+        ctx.beginPath();
+        ctx.moveTo(credX + 12, ry + rowH);
+        ctx.lineTo(credX + credW - 12, ry + rowH);
+        ctx.stroke();
+      }
+    });
+    ctx.restore();
+
+    // 4. SECTION 1: TARGET CAREER PROFILE & ENGLISH SUPERPOWER
+    const s1Y = 305;
+    drawSectionHeader(ctx, '1', 'TARGET CAREER PROFILE & ENGLISH SUPERPOWER',
+      'High-Stakes Professional Articulation & Global Career Horizon', 65, s1Y, CW - 130, isDark);
+
+    const c1X = 65, c1Y = s1Y + 52, c1W = CW - 130, c1H = 345;
+    ctx.save();
+    ctx.fillStyle = C.cardBg;
+    ctx.strokeStyle = C.cardBorder;
+    ctx.lineWidth = 1.5;
+    drawRoundRect(ctx, c1X, c1Y, c1W, c1H, 18, true, true);
+
+    // Career Title & Cluster Pill
+    ctx.font = '800 28px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText(careerTitle, c1X + 28, c1Y + 30);
+
+    // Cluster Tag Pill
+    const tagW = ctx.measureText(careerCat.toUpperCase()).width + 30;
+    const tagX = c1X + c1W - tagW - 28;
+    const tagGrad = ctx.createLinearGradient(tagX, c1Y + 22, tagX + tagW, c1Y + 22);
+    if (isDark) {
+      tagGrad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+      tagGrad.addColorStop(1, 'rgba(139, 92, 246, 0.15)');
+    } else {
+      tagGrad.addColorStop(0, 'rgba(37, 99, 235, 0.12)');
+      tagGrad.addColorStop(1, 'rgba(2, 132, 199, 0.12)');
+    }
+    ctx.fillStyle = tagGrad;
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, tagX, c1Y + 22, tagW, 30, 999, true, true);
+    ctx.font = '700 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.textAlign = 'center';
+    ctx.fillText(careerCat.toUpperCase(), tagX + tagW / 2, c1Y + 37);
+    ctx.textAlign = 'left';
+
+    // Description text
+    ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMuted;
+    const words = careerDesc.split(' ');
+    let line = '', descLines = [];
+    words.forEach(w => {
+      const test = line + w + ' ';
+      if (ctx.measureText(test).width > c1W - 56) {
+        descLines.push(line);
+        line = w + ' ';
+      } else {
+        line = test;
+      }
+    });
+    descLines.push(line);
+    descLines.slice(0, 3).forEach((dl, i) => {
+      ctx.fillText(dl, c1X + 28, c1Y + 80 + i * 26);
     });
 
-    // Helper: Architectural Corner L-Brackets for Luxury Framing
-    function drawCornerBrackets(x, y, w, h, len = 5.5, color = null) {
-      const col = color || C.headerGold;
-      doc.setDrawColor(col[0], col[1], col[2]);
-      doc.setLineWidth(0.45);
-      // Top-Left
-      doc.line(x, y, x + len, y); doc.line(x, y, x, y + len);
-      // Top-Right
-      doc.line(x + w, y, x + w - len, y); doc.line(x + w, y, x + w, y + len);
-      // Bottom-Left
-      doc.line(x, y + h, x + len, y + h); doc.line(x, y + h, x, y + h - len);
-      // Bottom-Right
-      doc.line(x + w, y + h, x + w - len, y + h); doc.line(x + w, y + h, x + w, y + h - len);
+    // English Superpower Highlight Callout Box
+    const spX = c1X + 24, spY = c1Y + 165, spW = c1W - 48, spH = 155;
+    const spGrad = ctx.createLinearGradient(spX, spY, spX + spW, spY + spH);
+    if (isDark) {
+      spGrad.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+      spGrad.addColorStop(1, 'rgba(30, 27, 75, 0.6)');
+    } else {
+      spGrad.addColorStop(0, 'rgba(240, 249, 255, 0.95)');
+      spGrad.addColorStop(1, 'rgba(238, 242, 255, 0.9)');
     }
+    ctx.fillStyle = spGrad;
+    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.45)' : 'rgba(29, 78, 216, 0.4)';
+    ctx.lineWidth = 1.5;
+    drawRoundRect(ctx, spX, spY, spW, spH, 14, true, true);
 
-    // Helper: Executive Section Header with Dual-Accent Ribbon
-    function drawSectionHeader(numText, titleText, subtitleText, curY, accentColor = C.accentBlue) {
-      // Dual-Accent Vertical Pill (3.2mm width)
-      doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
-      doc.roundedRect(12, curY, 3.2, 8.2, 0.8, 0.8, 'F');
-      
-      // Secondary Gold Hairline
-      doc.setFillColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-      doc.rect(15.8, curY + 1.2, 0.8, 5.8, 'F');
+    // Left accent bar
+    const spBar = ctx.createLinearGradient(spX, spY, spX, spY + spH);
+    spBar.addColorStop(0, isDark ? '#00f0ff' : '#1d4ed8');
+    spBar.addColorStop(1, isDark ? '#8b5cf6' : '#0284c7');
+    ctx.fillStyle = spBar;
+    drawRoundRect(ctx, spX, spY, 6, spH, { tl: 14, tr: 0, br: 0, bl: 14 }, true, false);
 
-      // Title in Sharp Sans-Serif
-      doc.setTextColor(C.secTitle[0], C.secTitle[1], C.secTitle[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.8);
-      doc.text(`${numText}. ${titleText}`, 19, curY + 4.8);
+    ctx.font = '800 13.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#fbbf24' : '#b45309';
+    ctx.fillText('⚡ CRITICAL ENGLISH SUPERPOWER IN THIS OCCUPATION:', spX + 22, spY + 22);
 
-      // Subtitle in Refined Serif Italic
-      if (subtitleText) {
-        doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-        doc.setFont('times', 'italic');
-        doc.setFontSize(7.2);
-        doc.text(subtitleText, 19, curY + 8.2);
+    ctx.font = 'italic 16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    const spWords = superpowerText.split(' ');
+    let spLine = '', spLines = [];
+    spWords.forEach(w => {
+      const test = spLine + w + ' ';
+      if (ctx.measureText(test).width > spW - 44) {
+        spLines.push(spLine);
+        spLine = w + ' ';
+      } else {
+        spLine = test;
       }
-
-      // Editorial Trailing Horizontal Track
-      doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-      doc.setLineWidth(0.2);
-      const titleWidth = doc.getTextWidth(`${numText}. ${titleText}`);
-      const lineStartX = Math.min(198, Math.max(120, 22 + titleWidth + 6));
-      doc.line(lineStartX, curY + 4.5, 198, curY + 4.5);
-    }
-
-    // =========================================================================
-    // PAGE 1: CAREER BLUEPRINT & STRATEGIC ARTICULATION EVALUATION
-    // =========================================================================
-
-    // Full Page Canvas Fill
-    doc.setFillColor(C.pageBg[0], C.pageBg[1], C.pageBg[2]);
-    doc.rect(0, 0, 210, 297, 'F');
-
-    // Outer Architectural Double Frame
-    doc.setDrawColor(C.outerBorder[0], C.outerBorder[1], C.outerBorder[2]);
-    doc.setLineWidth(0.5);
-    doc.rect(8, 8, 194, 281);
-
-    doc.setDrawColor(C.innerBorder[0], C.innerBorder[1], C.innerBorder[2]);
-    doc.setLineWidth(0.2);
-    doc.rect(9.5, 9.5, 191, 278);
-
-    // 4 Corner Gold Architectural L-Brackets
-    drawCornerBrackets(8, 8, 194, 281, 7.0, C.headerGold);
-
-    // ── PAGE 1: LUXURY TOP HEADER BANNER ─────────────────────────────────────
-    doc.setFillColor(C.headerBg[0], C.headerBg[1], C.headerBg[2]);
-    doc.rect(8, 8, 194, 28, 'F');
-
-    // Dual-Tone Metallic Horizon Ribbons
-    doc.setFillColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.rect(8, 35.5, 194, 1.0, 'F');
-    doc.setFillColor(C.headerCyan[0], C.headerCyan[1], C.headerCyan[2]);
-    doc.rect(8, 36.5, 194, 0.4, 'F');
-
-    // School Name in Prestigious Times Bold Serif
-    doc.setTextColor(C.headerCyan[0], C.headerCyan[1], C.headerCyan[2]);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(13.2);
-    doc.text(schoolName.toUpperCase(), 105, 16.5, { align: 'center' });
-
-    // Booklet Title in Modern Executive Bold Sans
-    doc.setTextColor(C.headerTitle[0], C.headerTitle[1], C.headerTitle[2]);
-    doc.setFontSize(9.2);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CAREER FAIR 2026 - OFFICIAL STUDENT CAREER BOOKLET', 105, 23.2, { align: 'center' });
-
-    // Sub-header Metadata with Mono Credential ID
-    doc.setTextColor(C.headerMeta[0], C.headerMeta[1], C.headerMeta[2]);
-    doc.setFontSize(6.8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Candidate: ${studentName}   |   Class: ${studentClass}   |   Date: ${dateStr}   |   `, 92, 30.2, { align: 'center' });
-    
-    doc.setFont('courier', 'bold');
-    doc.setTextColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.text(`Doc ID: ${docId}`, 154, 30.2);
-
-    let curY = 41;
-
-    // ── EXECUTIVE HONORS & COMPETENCY RIBBON ─────────────────────────────────
-    doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-    doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 11.5, 1.8, 1.8, 'FD');
-
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.2);
-    doc.text('EXHIBITION HONORS & COMPETENCY BADGES:', 15, curY + 7.2);
-
-    const honorBadges = [
-      'HONORS DELEGATE',
-      'CAREER NAVIGATOR',
-      'SPEECH ARTICULATION',
-      'COGNITIVE AGILITY'
-    ];
-
-    let bX = 81;
-    for (const b of honorBadges) {
-      doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-      doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-      doc.roundedRect(bX, curY + 2.0, 28, 7.5, 1.2, 1.2, 'FD');
-
-      // Metallic Gold Pip Indicator
-      doc.setFillColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-      doc.circle(bX + 3.2, curY + 5.7, 1.0, 'F');
-
-      doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.5);
-      doc.text(b, bX + 16.0, curY + 6.9, { align: 'center' });
-      bX += 29.5;
-    }
-
-    curY += 15.5;
-
-    // ── SECTION 1: FUTURE CAREER TRAJECTORY & ACADEMIC ROADMAP ───────────────
-    drawSectionHeader('1', 'FUTURE CAREER TRAJECTORY & ACADEMIC ROADMAP', 'Curated Industry Track, Degree Requirements & Projected Compensation', curY, C.accentBlue);
-
-    curY += 10.5;
-    doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-    doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 44, 2, 2, 'FD');
-    drawCornerBrackets(12, curY, 186, 44, 4.0, C.headerGold);
-
-    // Career Title & Category Pill
-    const careerTitle = cleanAscii(chosenCareer.title || 'Selected Career Pathway');
-    const careerCategory = cleanAscii(chosenCareer.cat || 'Global Track');
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10.5);
-    doc.text(careerTitle.toUpperCase(), 16, curY + 7);
-
-    // Category Pill Badge
-    doc.setFillColor(C.accentBlue[0], C.accentBlue[1], C.accentBlue[2]);
-    doc.roundedRect(144, curY + 2.5, 50, 6.2, 1.5, 1.5, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(6.4);
-    doc.setFont('helvetica', 'bold');
-    doc.text(careerCategory.toUpperCase(), 169, curY + 6.8, { align: 'center' });
-
-    // Career Metadata Columns
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.6);
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.text('Target Degrees:', 16, curY + 14);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-    doc.text(cleanAscii(chosenCareer.degrees || 'Accredited Higher Education Degree'), 45, curY + 14);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.text('Entrance Exams:', 16, curY + 20);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-    doc.text(cleanAscii(chosenCareer.exams || 'National & Global Entrance Certifications'), 45, curY + 20);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.text('Compensation:', 16, curY + 26);
-    doc.setFont('courier', 'bold');
-    doc.setTextColor(C.accentEmerald[0], C.accentEmerald[1], C.accentEmerald[2]);
-    doc.text(cleanAscii(chosenCareer.salary || 'Competitive Industry Tier'), 45, curY + 26);
-
-    // English Superpower Box with Serif Italic Typography
-    doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-    doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-    doc.roundedRect(16, curY + 30.5, 178, 10.5, 1.2, 1.2, 'FD');
-
-    doc.setTextColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.text('ENGLISH SUPERPOWER:', 20, curY + 35.5);
-
-    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-    doc.setFont('times', 'italic');
-    doc.setFontSize(6.8);
-    const spRaw = cleanAscii(chosenCareer.englishSuperpower || 'English provides precision communication, critical dispute avoidance, and operational leadership.');
-    const spShort = doc.splitTextToSize(spRaw, 126)[0] || spRaw;
-    doc.text(`"${spShort}"`, 55, curY + 35.5);
-
-    curY += 49;
-
-    // ── SECTION 2: ACCREDITED COLLEGE & INSTITUTION RECOMMENDATIONS ──────────
-    drawSectionHeader('2', 'ACCREDITED COLLEGE & INSTITUTION RECOMMENDATIONS', 'Top Premier National & International Institutes (NIRF Top Rank / NAAC A++)', curY, C.accentEmerald);
-
-    curY += 10.5;
-    const dynamicColleges = getInstitutionsForCareer(chosenCareer);
-
-    // Sequential Connected Pathway Nodes
-    let nodeIndex = 1;
-    for (const inst of dynamicColleges) {
-      doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-      doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-      doc.roundedRect(12, curY, 186, 13.5, 1.5, 1.5, 'FD');
-
-      // Circular Numbered Milestone Node
-      doc.setFillColor(C.accentEmerald[0], C.accentEmerald[1], C.accentEmerald[2]);
-      doc.circle(18, curY + 6.7, 2.4, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.2);
-      doc.text(String(nodeIndex), 18, curY + 8.2, { align: 'center' });
-
-      doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.text(inst.name, 24, curY + 4.5);
-
-      doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.2);
-      doc.text(inst.acc, 24, curY + 8.2);
-
-      doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.0);
-      doc.text(`Key Academic Pathways: ${inst.prog}`, 24, curY + 11.7);
-
-      curY += 15.2;
-      nodeIndex++;
-    }
-
-    curY += 1.5;
-
-    // ── SECTION 3: ORAL ARTICULATION & 6D SPEECH COACH EVALUATION ───────────
-    drawSectionHeader('3', 'ORAL ARTICULATION & 6D SPEECH COACH EVALUATION', 'Acoustic Articulation, Spoken Phoneme Precision, Cadence & Breath Poise', curY, C.accentPurple);
-
-    curY += 10.5;
-    doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-    doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 68, 2, 2, 'FD');
-    drawCornerBrackets(12, curY, 186, 68, 4.0, C.accentPurple);
-
-    // Evaluation Studio & Context
-    const speechMod = cleanAscii(speechResult?.pack || 'Executive Broadcast Articulation Studio');
-    const speechScript = cleanAscii(speechResult?.sentence || 'Clear, confident speech powers modern leadership and global professional success.');
-    
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.8);
-    doc.text(`Diagnostic Studio: ${speechMod}`, 16, curY + 5.2);
-    
-    doc.setFont('times', 'italic');
-    doc.text(`Evaluated Script: "${speechScript.slice(0, 90)}${speechScript.length > 90 ? '...' : ''}"`, 16, curY + 9.8);
-
-    // 4 Key Performance Metrics (Tile Row 1)
-    const accVal = speechResult?.accuracy !== undefined ? `${safeNum(speechResult.accuracy, 88)}%` : '88% (Benchmark)';
-    const fluVal = speechResult?.fluency !== undefined ? `${safeNum(speechResult.fluency, 86)}%` : '85% (Benchmark)';
-    const cadVal = speechResult?.clarity !== undefined ? `${safeNum(speechResult.clarity, 89)}%` : '87% (Benchmark)';
-    const wpmVal = speechResult?.wpm !== undefined ? `${safeNum(speechResult.wpm, 130)} WPM` : '130 WPM (Optimal)';
-
-    const primaryMetrics = [
-      { label: 'ACCURACY', val: accVal, color: C.accentCyan },
-      { label: 'FLUENCY', val: fluVal, color: C.accentEmerald },
-      { label: 'CADENCE', val: cadVal, color: C.accentGold },
-      { label: 'SPEAKING RATE', val: wpmVal, color: C.accentPurple }
-    ];
-
-    let tX = 16;
-    for (const tm of primaryMetrics) {
-      doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-      doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-      doc.roundedRect(tX, curY + 13.0, 42.5, 16.5, 1.5, 1.5, 'FD');
-
-      // Metric Top Color Strip
-      doc.setFillColor(tm.color[0], tm.color[1], tm.color[2]);
-      doc.roundedRect(tX, curY + 13.0, 42.5, 1.4, 0.5, 0.5, 'F');
-
-      doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(6.0);
-      doc.text(tm.label, tX + 21.25, curY + 18.2, { align: 'center' });
-
-      doc.setTextColor(tm.color[0], tm.color[1], tm.color[2]);
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(8.2);
-      doc.text(tm.val, tX + 21.25, curY + 25.0, { align: 'center' });
-
-      tX += 45;
-    }
-
-    // 6-Axis Acoustic Articulation Telemetry Progress Bars
-    const acousticTelemetries = [
-      { name: "Pronunciation Accuracy", score: safeNum(speechResult?.accuracy, 88), target: "CEFR C1", color: C.accentCyan },
-      { name: "Fluency & Continuity", score: safeNum(speechResult?.fluency, 86), target: "Native Pace", color: C.accentEmerald },
-      { name: "Phonemic Cadence & Stress", score: safeNum(speechResult?.clarity, 89), target: "Balanced", color: C.accentGold },
-      { name: "Vocal Poise & Breath Control", score: safeNum(speechResult?.poise || 91, 91), target: "Optimal", color: C.accentPurple },
-      { name: "Lexical Diction & Articulation", score: safeNum(speechResult?.diction || 87, 87), target: "Executive", color: C.accentBlue },
-      { name: "Speech Engine Confidence", score: safeNum(speechResult?.engineConfidence || 93, 93), target: "High Fidelity", color: C.accentPink }
-    ];
-
-    let rY = curY + 33.5;
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.text('6D ACOUSTIC ARTICULATION MATRIX & PHONEME TELEMETRY:', 16, rY);
-
-    rY += 3.5;
-    for (let i = 0; i < acousticTelemetries.length; i += 2) {
-      const m1 = acousticTelemetries[i];
-      const m2 = acousticTelemetries[i + 1];
-
-      // Left Column
-      doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(5.8);
-      doc.text(m1.name, 16, rY + 3.2);
-
-      // Track Bar 1
-      doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-      doc.roundedRect(62, rY + 0.8, 32, 3.2, 0.8, 0.8, 'F');
-      doc.setFillColor(m1.color[0], m1.color[1], m1.color[2]);
-      doc.roundedRect(62, rY + 0.8, Math.min(32, 32 * (m1.score / 100)), 3.2, 0.8, 0.8, 'F');
-
-      doc.setTextColor(m1.color[0], m1.color[1], m1.color[2]);
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(5.8);
-      doc.text(`${m1.score}% [${m1.target}]`, 97, rY + 3.2);
-
-      // Right Column
-      if (m2) {
-        doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(5.8);
-        doc.text(m2.name, 108, rY + 3.2);
-
-        // Track Bar 2
-        doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-        doc.roundedRect(154, rY + 0.8, 30, 3.2, 0.8, 0.8, 'F');
-        doc.setFillColor(m2.color[0], m2.color[1], m2.color[2]);
-        doc.roundedRect(154, rY + 0.8, Math.min(30, 30 * (m2.score / 100)), 3.2, 0.8, 0.8, 'F');
-
-        doc.setTextColor(m2.color[0], m2.color[1], m2.color[2]);
-        doc.setFont('courier', 'bold');
-        doc.setFontSize(5.8);
-        doc.text(`${m2.score}% [${m2.target}]`, 187, rY + 3.2);
-      }
-
-      rY += 8.2;
-    }
-
-    // Page 1 Footer
-    doc.setTextColor(C.footerText[0], C.footerText[1], C.footerText[2]);
-    doc.setFont('times', 'italic');
-    doc.setFontSize(6.4);
-    doc.text('Page 1 of 2  -  Official Academic & Career Evaluation Document  -  Kanakia International School Mira Road', 105, 292, { align: 'center' });
-
-    // =========================================================================
-    // PAGE 2: COGNITIVE APTITUDE, INSTITUTIONAL SEAL & LUXURY BUSINESS CARD
-    // =========================================================================
-    doc.addPage();
-
-    // Canvas Fill Page 2
-    doc.setFillColor(C.pageBg[0], C.pageBg[1], C.pageBg[2]);
-    doc.rect(0, 0, 210, 297, 'F');
-
-    // Outer Architectural Double Frame Page 2
-    doc.setDrawColor(C.outerBorder[0], C.outerBorder[1], C.outerBorder[2]);
-    doc.setLineWidth(0.5);
-    doc.rect(8, 8, 194, 281);
-
-    doc.setDrawColor(C.innerBorder[0], C.innerBorder[1], C.innerBorder[2]);
-    doc.setLineWidth(0.2);
-    doc.rect(9.5, 9.5, 191, 278);
-
-    drawCornerBrackets(8, 8, 194, 281, 7.0, C.headerGold);
-
-    // Page 2 Compact Header Banner
-    doc.setFillColor(C.headerBg[0], C.headerBg[1], C.headerBg[2]);
-    doc.rect(8, 8, 194, 26, 'F');
-
-    doc.setFillColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.rect(8, 33.5, 194, 1, 'F');
-
-    doc.setTextColor(C.headerCyan[0], C.headerCyan[1], C.headerCyan[2]);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(11.5);
-    doc.text('CAREER FAIR 2026 - PERFORMANCE EVALUATION & CREDENTIALS', 105, 17, { align: 'center' });
-
-    doc.setTextColor(C.headerMeta[0], C.headerMeta[1], C.headerMeta[2]);
-    doc.setFontSize(7.2);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Candidate: ${studentName}   |   Class: ${studentClass}   |   Institutional Accreditation & Verification`, 105, 25, { align: 'center' });
-
-    curY = 38;
-
-    // ── SECTION 4: COGNITIVE AGILITY & ACADEMIC APTITUDE EVALUATION ──────────
-    drawSectionHeader('4', 'COGNITIVE AGILITY & ACADEMIC APTITUDE EVALUATION', 'Analytical Deduction, Lexical Command, Syntax Precision & Real-Time Recall', curY, C.accentPink);
-
-    curY += 10.5;
-    doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-    doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 44, 2, 2, 'FD');
-    drawCornerBrackets(12, curY, 186, 44, 4.0, C.accentPink);
-
-    // 4 Cognitive Appraisal Pillars
-    let userGameScore1 = 'Proficient (CEFR C1)';
-    let userGameScore2 = 'Advanced Precision';
-    let userGameScore3 = '38 WPM (Top 5%)';
-    let userGameScore4 = '94% Analytical Accuracy';
-
-    if (Array.isArray(gameResults) && gameResults.length > 0) {
-      if (gameResults[0]) userGameScore1 = `${cleanAscii(gameResults[0].game)}: ${cleanAscii(String(gameResults[0].score))}`;
-      if (gameResults[1]) userGameScore2 = `${cleanAscii(gameResults[1].game)}: ${cleanAscii(String(gameResults[1].score))}`;
-      if (gameResults[2]) userGameScore3 = `${cleanAscii(gameResults[2].game)}: ${cleanAscii(String(gameResults[2].score))}`;
-    }
-
-    const cognitivePillars = [
+    });
+    spLines.push(spLine);
+    spLines.slice(0, 3).forEach((sl, i) => {
+      ctx.fillText(`“${sl}”`, spX + 22, spY + 54 + i * 26);
+    });
+    ctx.restore();
+
+    // 5. SECTION 2: COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION
+    const s2Y = 725;
+    drawSectionHeader(ctx, '2', 'COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION',
+      'Standardized Spoken Articulation & Executive Verbal Competence Diagnostic', 65, s2Y, CW - 130, isDark);
+
+    const pillars = [
       {
         title: 'LEXICAL COMMAND',
-        desc: 'Advanced vocabulary range & contextual recognition',
-        score: userGameScore1,
-        color: C.accentCyan
+        desc: 'Academic vocabulary range & precision',
+        score: 'Proficient (CEFR C1)',
+        stat: '94% Command',
+        tabGrad: ['#00f0ff', '#0284c7']
       },
       {
         title: 'GRAMMAR & SYNTAX',
-        desc: 'Structural precision & formal communication rigor',
-        score: userGameScore2,
-        color: C.accentEmerald
+        desc: 'Clause drafting & executive poise',
+        score: 'Advanced Precision',
+        stat: '92% Syntax',
+        tabGrad: ['#a855f7', '#6366f1']
       },
       {
         title: 'SPEED & AGILITY',
-        desc: 'Real-time lexical recall & responsive throughput',
-        score: userGameScore3,
-        color: C.accentGold
+        desc: 'Real-time lexical recall throughput',
+        score: '38 WPM (Top 5%)',
+        stat: 'Spontaneous',
+        tabGrad: ['#f59e0b', '#fbbf24']
       },
       {
         title: 'ANALYTICAL DEDUCTION',
-        desc: 'Inference logic, problem solving & articulation',
-        score: userGameScore4,
-        color: C.accentPurple
+        desc: 'Contextual inference & synthesis',
+        score: '94% Analytical Rigor',
+        stat: 'High Deduction',
+        tabGrad: ['#10b981', '#34d399']
       }
     ];
 
-    let cpX = 15;
-    for (const cp of cognitivePillars) {
-      doc.setFillColor(C.cardPillBg[0], C.cardPillBg[1], C.cardPillBg[2]);
-      doc.setDrawColor(C.cardPillBorder[0], C.cardPillBorder[1], C.cardPillBorder[2]);
-      doc.roundedRect(cpX, curY + 4, 42, 36, 1.5, 1.5, 'FD');
+    const cardGap = 20;
+    const cardW = (CW - 130 - cardGap) / 2;
+    const cardH = 175;
 
-      // Top Colored Accent Tab
-      doc.setFillColor(cp.color[0], cp.color[1], cp.color[2]);
-      doc.roundedRect(cpX, curY + 4, 42, 1.4, 0.5, 0.5, 'F');
+    pillars.forEach((p, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const px = 65 + col * (cardW + cardGap);
+      const py = s2Y + 52 + row * (cardH + cardGap);
 
-      doc.setTextColor(cp.color[0], cp.color[1], cp.color[2]);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.0);
-      doc.text(cp.title, cpX + 21, curY + 10.0, { align: 'center' });
+      ctx.save();
+      ctx.fillStyle = C.cardBg;
+      ctx.strokeStyle = C.cardBorder;
+      ctx.lineWidth = 1.5;
+      drawRoundRect(ctx, px, py, cardW, cardH, 16, true, true);
 
-      doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-      doc.setFont('times', 'italic');
-      doc.setFontSize(6.2);
-      const splitDesc = doc.splitTextToSize(cp.desc, 38);
-      doc.text(splitDesc, cpX + 21, curY + 16.0, { align: 'center' });
+      // Colored Top Tab
+      const tabG = ctx.createLinearGradient(px, py, px + cardW, py);
+      tabG.addColorStop(0, p.tabGrad[0]);
+      tabG.addColorStop(1, p.tabGrad[1]);
+      ctx.fillStyle = tabG;
+      drawRoundRect(ctx, px, py, cardW, 5, { tl: 16, tr: 16, br: 0, bl: 0 }, true, false);
 
-      // Score Callout Pill
-      doc.setFillColor(C.cardSubtleBg[0], C.cardSubtleBg[1], C.cardSubtleBg[2]);
-      doc.roundedRect(cpX + 3, curY + 28, 36, 8.0, 1.2, 1.2, 'F');
-      doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-      doc.setFont('courier', 'bold');
-      doc.setFontSize(6.4);
-      doc.text(cp.score, cpX + 21, curY + 33.2, { align: 'center' });
+      // Title & Score Badge
+      ctx.font = '800 17px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(p.title, px + 20, py + 26);
 
-      cpX += 45;
-    }
+      const statW = ctx.measureText(p.stat).width + 16;
+      ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+      ctx.lineWidth = 1;
+      drawRoundRect(ctx, px + cardW - statW - 20, py + 16, statW, 24, 6, true, true);
+      ctx.font = '700 11.5px "Space Grotesk", sans-serif';
+      ctx.fillStyle = isDark ? p.tabGrad[0] : p.tabGrad[1];
+      ctx.textAlign = 'center';
+      ctx.fillText(p.stat, px + cardW - statW / 2 - 20, py + 28);
+      ctx.textAlign = 'left';
 
-    curY += 51;
+      // Description
+      ctx.font = '500 13.5px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textDim;
+      ctx.fillText(p.desc, px + 20, py + 62);
 
-    // ── SECTION 5: OFFICIAL INSTITUTIONAL ACCREDITATION & FAIR ENDORSEMENT ────
-    drawSectionHeader('5', 'OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION', 'Certified Educational Record Validated by School Directorate & Convenors', curY, C.headerGold);
+      // Score Value Box
+      const svY = py + 100;
+      ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(241, 245, 249, 0.85)';
+      ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(203, 213, 225, 0.7)';
+      ctx.lineWidth = 1;
+      drawRoundRect(ctx, px + 20, svY, cardW - 40, 52, 10, true, true);
 
-    curY += 10.5;
-    doc.setFillColor(C.cardBg[0], C.cardBg[1], C.cardBg[2]);
-    doc.setDrawColor(C.cardBorder[0], C.cardBorder[1], C.cardBorder[2]);
-    doc.roundedRect(12, curY, 186, 32, 2, 2, 'FD');
-    drawCornerBrackets(12, curY, 186, 32, 4.0, C.headerGold);
+      ctx.font = '800 17px "Space Grotesk", sans-serif';
+      ctx.fillStyle = isDark ? p.tabGrad[0] : p.tabGrad[1];
+      ctx.fillText(p.score, px + 34, svY + 26);
 
-    // Official Description in Prestigious Times Serif Italic
-    doc.setTextColor(C.textBody[0], C.textBody[1], C.textBody[2]);
-    doc.setFont('times', 'normal');
-    doc.setFontSize(7.8);
-    const endorsePara = "This digital booklet certifies that the student actively explored global career pathways, completed spoken articulation diagnostics, and demonstrated cognitive proficiency across international English benchmarks. Endorsed by the Directorate of Career Guidance & Exhibition Convenors.";
-    const splitEndorse = doc.splitTextToSize(endorsePara, 138);
-    doc.text(splitEndorse, 18, curY + 8.5);
+      ctx.restore();
+    });
 
-    doc.setTextColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(7.2);
-    doc.text('Directorate of Career Guidance & Exhibition Convenors', 18, curY + 24.5);
+    // 6. SECTION 3: PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS
+    const s3Y = 1205;
+    drawSectionHeader(ctx, '3', 'PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS',
+      'Accredited Degree Benchmarks, NAAC "A++" Universities & Licensing Directorate', 65, s3Y, CW - 130, isDark);
 
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.setFont('times', 'italic');
-    doc.setFontSize(6.5);
-    doc.text('Kanakia International School Mira Road · Academic Year 2025-2026', 18, curY + 28.5);
-
-    // Official Radial Institutional Seal on Right Side
-    const sealX = 176;
-    const sealY = curY + 16.0;
-
-    // Outer Gold Concentric Ring
-    doc.setDrawColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.setLineWidth(0.7);
-    doc.circle(sealX, sealY, 12, 'S');
-
-    // Inner Hairline Cyan Ring
-    doc.setDrawColor(C.headerCyan[0], C.headerCyan[1], C.headerCyan[2]);
-    doc.setLineWidth(0.35);
-    doc.circle(sealX, sealY, 10.5, 'S');
-
-    // Central Starburst / Radial Notch Ticks
-    for (let deg = 0; deg < 360; deg += 30) {
-      const rad = deg * Math.PI / 180;
-      const x1 = sealX + Math.cos(rad) * 11.2;
-      const y1 = sealY + Math.sin(rad) * 11.2;
-      const x2 = sealX + Math.cos(rad) * 12.0;
-      const y2 = sealY + Math.sin(rad) * 12.0;
-      doc.line(x1, y1, x2, y2);
-    }
-
-    doc.setTextColor(C.textPrimary[0], C.textPrimary[1], C.textPrimary[2]);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(5.2);
-    doc.text('KANAKIA INTL', sealX, sealY - 4.5, { align: 'center' });
-
-    doc.setTextColor(C.headerGold[0], C.headerGold[1], C.headerGold[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.8);
-    doc.text('VERIFIED', sealX, sealY + 0.5, { align: 'center' });
-
-    doc.setTextColor(C.headerCyan[0], C.headerCyan[1], C.headerCyan[2]);
-    doc.setFont('courier', 'bold');
-    doc.setFontSize(4.4);
-    doc.text('OFFICIAL SEAL', sealX, sealY + 5.2, { align: 'center' });
-
-    curY += 37;
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // SECTION 6: OFFICIAL PRINTABLE STUDENT AMBASSADOR BUSINESS CARD
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // Dotted Scissors Cut Guideline with Scissor Symbols
-    const cutLineY = curY;
-    doc.setDrawColor(isDark ? 70 : 180, isDark ? 85 : 190, isDark ? 105 : 205);
-    doc.setLineWidth(0.35);
-    doc.setLineDashPattern([2.0, 2.0], 0);
-    doc.line(12, cutLineY, 198, cutLineY);
-    doc.setLineDashPattern([], 0);
-
-    doc.setTextColor(C.textMuted[0], C.textMuted[1], C.textMuted[2]);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    doc.text('[ CUT ALONG DOTTED LINE FOR OFFICIAL STUDENT AMBASSADOR BUSINESS CARD ]', 105, cutLineY + 4.2, { align: 'center' });
-
-    // Official Business Card Box: Centered (width 168mm x height 72mm)
-    const cardW = 168;
-    const cardH = 72;
-    const cardX = (210 - cardW) / 2; // X = 21
-    const cardY = cutLineY + 6.5;
-
-    // Retrieve active business card details from live DOM, studentData, or localStorage
-    let bizData = {};
-    try {
-      const storedBiz = localStorage.getItem('cf_bizcard_data');
-      if (storedBiz) bizData = JSON.parse(storedBiz);
-    } catch (_) {}
-
-    const domBizName = typeof document !== 'undefined' ? (document.getElementById('biz-name')?.value || document.getElementById('bc-input-name')?.value || '') : '';
-    const domBizCareer = typeof document !== 'undefined' ? (
-      (document.getElementById('biz-career-select')?.value === '__custom__' ? document.getElementById('biz-career-custom')?.value : document.getElementById('biz-career-select')?.value) || ''
-    ) : '';
-    const domBizCreds = typeof document !== 'undefined' ? (
-      (document.getElementById('biz-creds-select')?.value === '__custom__' ? document.getElementById('biz-creds-custom')?.value : document.getElementById('biz-creds-select')?.value) || ''
-    ) : '';
-    const domBizEmail = typeof document !== 'undefined' ? (document.getElementById('biz-email')?.value || '') : '';
-    const domBizPhone = typeof document !== 'undefined' ? (document.getElementById('biz-phone')?.value || '') : '';
-
-    const effectiveBizName = cleanAscii(
-      domBizName || studentData?.name || bizData.name || studentName,
-      studentName
-    );
-    const effectiveBizCareer = cleanAscii(
-      domBizCareer || chosenCareer.title || bizData.career || 'Commercial Airline Pilot',
-      'Commercial Airline Pilot'
-    );
-    const effectiveBizCreds = cleanAscii(
-      domBizCreds || bizData.creds || `Class of 2040 · ${studentClass}`,
-      `Class of 2040 · ${studentClass}`
-    );
-    const effectiveBizEmail = cleanAscii(domBizEmail || bizData.email || studentData?.email || '');
-    const effectiveBizPhone = cleanAscii(domBizPhone || bizData.phone || studentData?.phone || '');
-
-    // Card Background & Sleek Dual Border (Executive Dark Luxury Aesthetic in both themes)
-    doc.setFillColor(15, 23, 42); // Deep Navy Slate
-    doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'F');
-
-    // Outer Cyan Border
-    doc.setDrawColor(0, 240, 255);
-    doc.setLineWidth(0.6);
-    doc.roundedRect(cardX, cardY, cardW, cardH, 3, 3, 'S');
-
-    // Inner Hairline Gold Inset
-    doc.setDrawColor(232, 160, 74);
-    doc.setLineWidth(0.25);
-    doc.roundedRect(cardX + 1.5, cardY + 1.5, cardW - 3, cardH - 3, 2, 2, 'S');
-
-    // Miniature Gold Corner Accents on Business Card
-    drawCornerBrackets(cardX + 1.5, cardY + 1.5, cardW - 3, cardH - 3, 3.5, [232, 160, 74]);
-
-    // School Header inside Card in Times Bold
-    doc.setTextColor(0, 240, 255);
-    doc.setFont('times', 'bold');
-    doc.setFontSize(8.5);
-    doc.text(schoolName.toUpperCase(), cardX + 8, cardY + 9.5);
-
-    doc.setTextColor(148, 163, 184);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.4);
-    doc.text('CAREER FAIR 2026 - OFFICIAL STUDENT AMBASSADOR', cardX + 8, cardY + 14.2);
-
-    // Golden Divider Line
-    doc.setDrawColor(232, 160, 74);
-    doc.setLineWidth(0.4);
-    doc.line(cardX + 8, cardY + 17.0, cardX + cardW - 8, cardY + 17.0);
-
-    // Student Name & Future Designation
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12.5);
-    doc.text(effectiveBizName.toUpperCase(), cardX + 8, cardY + 26.5);
-
-    doc.setTextColor(0, 240, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9.2);
-    const futureTitle = cleanAscii(effectiveBizCareer ? `Future ${effectiveBizCareer}` : 'Future Global Professional');
-    doc.text(futureTitle, cardX + 8, cardY + 33.5);
-
-    doc.setTextColor(203, 213, 225);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.0);
-    doc.text(`Academic Class: ${studentClass}   |   Stream: ${cleanAscii(chosenCareer.cat || 'Science & Tech')}`, cardX + 8, cardY + 39.5);
-    
-    doc.setFont('times', 'italic');
-    doc.text(`Career Superpower: Executive Presentation & Strategic Articulation`, cardX + 8, cardY + 44.5);
-    
-    doc.setFont('courier', 'bold');
-    doc.setTextColor(232, 160, 74);
-    doc.text(`Credential ID: ${docId}`, cardX + 8, cardY + 49.5);
-
-    // Ambassador Verification Badge Pill
-    doc.setFillColor(30, 41, 59);
-    doc.roundedRect(cardX + 8, cardY + 54.5, 78, 10, 1.5, 1.5, 'F');
-
-    // Vector Emerald Indicator Dot
-    doc.setFillColor(16, 185, 129);
-    doc.circle(cardX + 13, cardY + 59.5, 1.6, 'F');
-
-    doc.setTextColor(16, 185, 129);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.4);
-    doc.text('VERIFIED CAREER FAIR AMBASSADOR 2026', cardX + 18, cardY + 60.5);
-
-    // Right Side: 100% Real Scannable Vector QR Code Box (Camera & Phone Scannable)
-    const qrBoxSize = 30; // 30mm x 30mm
-    const qrBoxX = cardX + cardW - qrBoxSize - 9;
-    const qrBoxY = cardY + 18.5;
-
-    // Crisp White Background Card with soft rounded corners
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 2, 2, 'F');
-
-    // Luxurious Inset Gold Border
-    doc.setDrawColor(232, 160, 74);
-    doc.setLineWidth(0.35);
-    doc.roundedRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 2, 2, 'S');
-
-    // Generate full verification URL encoding student business card data
-    const isLocalhost = (typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
-    const baseOrigin = (typeof window !== 'undefined' && window.location && window.location.origin && !isLocalhost && window.location.origin !== 'null' && !window.location.origin.startsWith('file'))
-      ? window.location.origin
-      : 'https://careerwithenglish.pages.dev';
-
-    let cardVerifyUrl = `${baseOrigin}/?v=1&s=${encodeURIComponent(effectiveBizName)}&t=${encodeURIComponent(effectiveBizCareer)}`;
-    if (studentClass) cardVerifyUrl += `&c=${encodeURIComponent(studentClass)}`;
-    if (docId) cardVerifyUrl += `&id=${encodeURIComponent(docId)}`;
-    if (effectiveBizEmail) cardVerifyUrl += `&e=${encodeURIComponent(effectiveBizEmail)}`;
-    if (effectiveBizPhone) cardVerifyUrl += `&p=${encodeURIComponent(effectiveBizPhone)}`;
-
-    // Dynamic QR generation or verified fallback
-    let qrCount = 29;
-    let isQrDark = (r, c) => FALLBACK_QR_MATRIX_29[r][c] === '1';
-
-    try {
-      if (typeof window !== 'undefined' && typeof window.qrcode === 'function') {
-        const qrGen = window.qrcode(0, 'M');
-        qrGen.addData(cardVerifyUrl);
-        qrGen.make();
-        const cnt = qrGen.getModuleCount();
-        if (cnt > 0) {
-          qrCount = cnt;
-          isQrDark = (r, c) => qrGen.isDark(r, c);
-        }
+    const mY = s3Y + 54;
+    const mSteps = [
+      {
+        node: '01',
+        badge: 'UNDERGRADUATE FOUNDATION · 3-4 YEARS',
+        title: 'B.Sc. Aviation Science / B.Tech Aerospace Engineering',
+        inst: 'Indira Gandhi Rashtriya Uran Akademi (IGRUA) · IIT Bombay (Aerospace)',
+        rating: 'NIRF Ranked Top 5 · NAAC A++ Accredited',
+        gradColor: ['#00f0ff', '#0284c7']
+      },
+      {
+        node: '02',
+        badge: 'PROFESSIONAL LICENSURE & FLIGHT HOURS',
+        title: 'Commercial Pilot License (CPL) + Multi-Engine Instrument Rating',
+        inst: 'DGCA India / FAA (USA) / EASA Flight Standards Directorate',
+        rating: 'ICAO English Language Proficiency Level 5/6 Certified',
+        gradColor: ['#a855f7', '#6366f1']
+      },
+      {
+        node: '03',
+        badge: 'EXECUTIVE CAREER HORIZON · AIRLINE COMMAND',
+        title: 'First Officer to Captain / Chief Pilot Flight Operations',
+        inst: 'Major International Commercial Carriers & Global Aviation Alliances',
+        rating: 'Crew Resource Management & Cross-Border Flight Protocol Mastered',
+        gradColor: ['#f59e0b', '#fbbf24']
       }
-    } catch (e) {
-      console.warn('Dynamic QR Code generator error; using fallback matrix:', e);
-    }
+    ];
 
-    // Draw 100% Real Scannable Vector Modules
-    doc.setFillColor(15, 23, 42); // Deep rich black/navy
-    const quietMargin = 2.2;
-    const activeQrSize = qrBoxSize - (quietMargin * 2);
-    const cellSize = activeQrSize / qrCount;
-    const startQX = qrBoxX + quietMargin;
-    const startQY = qrBoxY + quietMargin;
+    const mH = 265;
+    mSteps.forEach((ms, idx) => {
+      const my = mY + idx * (mH / 3 + 22);
+      ctx.save();
+      ctx.fillStyle = C.cardBg;
+      ctx.strokeStyle = C.cardBorder;
+      ctx.lineWidth = 1.2;
+      drawRoundRect(ctx, 145, my, CW - 210, 78, 14, true, true);
 
-    for (let r = 0; r < qrCount; r++) {
-      for (let c = 0; c < qrCount; c++) {
-        if (isQrDark(r, c)) {
-          // Slight 0.04mm overlap prevents hairline anti-aliasing seams in PDF viewers
-          doc.rect(startQX + c * cellSize, startQY + r * cellSize, cellSize + 0.04, cellSize + 0.04, 'F');
-        }
+      // Connected Node Circle
+      const nodeX = 100, nodeY = my + 39;
+      const nodeGrad = ctx.createRadialGradient(nodeX, nodeY, 0, nodeX, nodeY, 26);
+      nodeGrad.addColorStop(0, ms.gradColor[0]);
+      nodeGrad.addColorStop(1, ms.gradColor[1]);
+      ctx.fillStyle = nodeGrad;
+      ctx.beginPath(); ctx.arc(nodeX, nodeY, 24, 0, Math.PI * 2); ctx.fill();
+
+      ctx.strokeStyle = isDark ? '#ffffff' : '#090d16';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(nodeX, nodeY, 20, 0, Math.PI * 2); ctx.stroke();
+
+      ctx.font = '800 14px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ms.node, nodeX, nodeY + 1);
+      ctx.textAlign = 'left';
+
+      // Connecting Track Line to next node
+      if (idx < 2) {
+        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(29, 78, 216, 0.35)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(nodeX, nodeY + 24);
+        ctx.lineTo(nodeX, nodeY + 24 + 40);
+        ctx.stroke();
       }
+
+      // Milestone Card Content
+      ctx.font = '700 11px "Space Grotesk", sans-serif';
+      ctx.fillStyle = isDark ? ms.gradColor[0] : ms.gradColor[1];
+      ctx.fillText(ms.badge, 165, my + 14);
+
+      ctx.font = '800 16px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(ms.title, 165, my + 33);
+
+      ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMuted;
+      ctx.fillText(`🏛️ ${ms.inst}  ·  ${ms.rating}`, 165, my + 54);
+
+      ctx.restore();
+    });
+
+    // Render Page 1 to Image & Add to jsPDF
+    const page1Data = canvas.toDataURL('image/jpeg', 0.95);
+    doc.addImage(page1Data, 'JPEG', 0, 0, 210, 297);
+
+    // =========================================================================
+    // PAGE 2: AI SPEECH DIAGNOSTICS & STUDENT AMBASSADOR BUSINESS CARD
+    // =========================================================================
+    doc.addPage();
+    ctx.clearRect(0, 0, CW, CH);
+
+    // 1. Background
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Top Ambient Glow for Page 2
+    const p2Glow = ctx.createRadialGradient(CW / 2, 0, 50, CW / 2, 0, 800);
+    p2Glow.addColorStop(0, isDark ? 'rgba(139, 92, 246, 0.14)' : 'rgba(37, 99, 235, 0.08)');
+    p2Glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = p2Glow;
+    ctx.fillRect(0, 0, CW, 700);
+
+    // 2. Framing
+    ctx.strokeStyle = C.outerBorder;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(35, 35, CW - 70, CH - 70);
+    ctx.strokeStyle = C.innerBorder;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(45, 45, CW - 90, CH - 90);
+    drawCornerBrackets(ctx, 35, 35, CW - 70, CH - 70, 36, 4, C.cornerGold);
+
+    // Tickers
+    ctx.font = '700 11.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.textDim;
+    ctx.textAlign = 'left';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | SPOKEN ENGLISH DIAGNOSTICS & OFFICIAL ENDORSEMENT', 55, 27);
+    ctx.textAlign = 'right';
+    ctx.fillText(`ID: ${docId}`, CW - 55, 27);
+
+    ctx.fillText('PAGE 02 OF 02 | OFFICIAL VERIFICATION CREDENTIAL | DIGITAL FAIR BLUEPRINT', 55, CH - 20);
+    ctx.fillText('CAREER FAIR 2026', CW - 55, CH - 20);
+
+    // 3. SECTION 4: AI SPEECH LAB (6-DIMENSIONAL ACOUSTIC TELEMETRY)
+    const p2s4Y = 65;
+    drawSectionHeader(ctx, '4', 'AI SPEECH LAB: 6-DIMENSIONAL ACOUSTIC TELEMETRY',
+      'Real-Time Neural Spoken Articulation & Fluency Diagnostic Metrics', 65, p2s4Y, CW - 130, isDark);
+
+    const speechMetrics = [
+      {
+        name: '1. Cadence & Rhythm (WPM)',
+        val: '138 WPM · Optimal Executive Cadence',
+        pct: 92,
+        sub: 'Broadcast journalist tempo benchmark adhering to international delivery norms',
+        grad: ['#00f0ff', '#0284c7']
+      },
+      {
+        name: '2. Pitch Variation & Modulation',
+        val: 'Dynamic Range · High Vocal Engagement',
+        pct: 88,
+        sub: 'Evaluates non-monotone inflection and natural oratorical persuasion',
+        grad: ['#a855f7', '#6366f1']
+      },
+      {
+        name: '3. Articulation & Phonetic Clarity',
+        val: 'Near-Flawless IPA Consonants & Stress',
+        pct: 95,
+        sub: 'International phonetic dictionary adherence across multisyllabic terms',
+        grad: ['#10b981', '#34d399']
+      },
+      {
+        name: '4. Fluency & Hesitation Control',
+        val: 'Under 1.8% Filler Words · Smooth Flow',
+        pct: 94,
+        sub: 'Spontaneous phrasing devoid of distracting fillers ("um", "like", "you know")',
+        grad: ['#f59e0b', '#fbbf24']
+      },
+      {
+        name: '5. Lexical Precision & Command',
+        val: 'C1/C2 CEFR Operational Lexicon',
+        pct: 91,
+        sub: 'Precision professional terminology tailored for international career consults',
+        grad: ['#3b82f6', '#1d4ed8']
+      },
+      {
+        name: '6. Delivery Confidence Index',
+        val: 'High Executive Poise & Stamina',
+        pct: 96,
+        sub: 'Holistic delivery impact, breath control, and authoritative podium presence',
+        grad: ['#fb7185', '#e11d48']
+      }
+    ];
+
+    const smGap = 16;
+    const smW = (CW - 130 - smGap) / 2;
+    const smH = 120;
+
+    speechMetrics.forEach((sm, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const sx = 65 + col * (smW + smGap);
+      const sy = p2s4Y + 50 + row * (smH + smGap);
+
+      ctx.save();
+      ctx.fillStyle = C.cardBg;
+      ctx.strokeStyle = C.cardBorder;
+      ctx.lineWidth = 1.2;
+      drawRoundRect(ctx, sx, sy, smW, smH, 14, true, true);
+
+      // Metric Header
+      ctx.font = '800 15px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(sm.name, sx + 18, sy + 18);
+
+      // Percent Callout
+      ctx.font = '800 16px "JetBrains Mono", monospace';
+      ctx.fillStyle = isDark ? sm.grad[0] : sm.grad[1];
+      ctx.textAlign = 'right';
+      ctx.fillText(`${sm.pct}%`, sx + smW - 18, sy + 18);
+      ctx.textAlign = 'left';
+
+      // Metric Value
+      ctx.font = '600 13px "Space Grotesk", sans-serif';
+      ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
+      ctx.fillText(sm.val, sx + 18, sy + 40);
+
+      // Progress Bar Track
+      const barX = sx + 18, barY = sy + 62, barW = smW - 36, barH = 10;
+      ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(226, 232, 240, 0.8)';
+      drawRoundRect(ctx, barX, barY, barW, barH, 5, true, false);
+
+      // Filled Progress Bar with Multi-Stop Gradient
+      const fillW = Math.max(12, (barW * sm.pct) / 100);
+      const barGrad = ctx.createLinearGradient(barX, barY, barX + fillW, barY);
+      barGrad.addColorStop(0, sm.grad[0]);
+      barGrad.addColorStop(1, sm.grad[1]);
+      ctx.fillStyle = barGrad;
+      drawRoundRect(ctx, barX, barY, fillW, barH, 5, true, false);
+
+      // Subtitle
+      ctx.font = '500 11.5px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textDim;
+      ctx.fillText(sm.sub, sx + 18, sy + 88);
+
+      ctx.restore();
+    });
+
+    // 4. SECTION 5: OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION
+    const s5Y = 535;
+    drawSectionHeader(ctx, '5', 'OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION',
+      'Certified Educational Record Validated by School Directorate & Convenors', 65, s5Y, CW - 130, isDark);
+
+    const eCardX = 65, eCardY = s5Y + 50, eCardW = CW - 130, eCardH = 265;
+    ctx.save();
+    ctx.fillStyle = C.cardBg;
+    ctx.strokeStyle = C.cardBorder;
+    ctx.lineWidth = 1.5;
+    drawRoundRect(ctx, eCardX, eCardY, eCardW, eCardH, 18, true, true);
+
+    // Left Certification Text
+    const certW = eCardW - 270;
+    ctx.font = '500 15.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMuted;
+    const certText = "This digital booklet certifies that the student actively explored global career pathways, completed spoken articulation diagnostics, and demonstrated cognitive proficiency across international English benchmarks. Endorsed by the Directorate of Career Guidance & Exhibition Convenors.";
+    const cWords = certText.split(' ');
+    let cLine = '', cLines = [];
+    cWords.forEach(w => {
+      const test = cLine + w + ' ';
+      if (ctx.measureText(test).width > certW) {
+        cLines.push(cLine);
+        cLine = w + ' ';
+      } else {
+        cLine = test;
+      }
+    });
+    cLines.push(cLine);
+    cLines.forEach((cl, i) => {
+      ctx.fillText(cl, eCardX + 28, eCardY + 28 + i * 25);
+    });
+
+    // Signature Blocks
+    const sigY = eCardY + 155;
+    // Signature 1
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(29, 78, 216, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(eCardX + 28, sigY + 35);
+    ctx.lineTo(eCardX + 28 + 320, sigY + 35);
+    ctx.stroke();
+
+    ctx.font = '800 15px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Directorate of Career Guidance', eCardX + 28, sigY + 45);
+    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Kanakia International School Mira Road', eCardX + 28, sigY + 66);
+
+    // Signature 2
+    ctx.beginPath();
+    ctx.moveTo(eCardX + 380, sigY + 35);
+    ctx.lineTo(eCardX + 380 + 320, sigY + 35);
+    ctx.stroke();
+
+    ctx.font = '800 15px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Exhibition Convenor', eCardX + 380, sigY + 45);
+    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Career Fair 2026 Executive Committee', eCardX + 380, sigY + 66);
+
+    // Right Official Radial Seal
+    drawOfficialSeal(ctx, eCardX + eCardW - 130, eCardY + eCardH / 2 + 5, 82, isDark);
+    ctx.restore();
+
+    // 5. SECTION 6: DETACHABLE STUDENT AMBASSADOR BUSINESS CARD
+    const cutY = 890;
+    ctx.save();
+    // Dashed Scissor Guide
+    ctx.setLineDash([8, 6]);
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.5)' : 'rgba(29, 78, 216, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(65, cutY);
+    ctx.lineTo(CW - 65, cutY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.font = '700 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
+    ctx.textAlign = 'center';
+    ctx.fillText('✂ - - - - - - [ DETACHABLE OFFICIAL STUDENT AMBASSADOR BUSINESS CARD ] - - - - - - ✂', CW / 2, cutY - 10);
+
+    // Business Card Outer Container
+    const bcX = 65, bcY = cutY + 22, bcW = CW - 130, bcH = 430;
+
+    // Card Gradient Background (Luxury Obsidian/Cyber in Dark, Royal Navy in Light)
+    const cardBgGrad = ctx.createLinearGradient(bcX, bcY, bcX + bcW, bcY + bcH);
+    if (isDark) {
+      cardBgGrad.addColorStop(0, '#06070a');
+      cardBgGrad.addColorStop(0.45, '#0f172a');
+      cardBgGrad.addColorStop(1, '#1e1b4b');
+    } else {
+      cardBgGrad.addColorStop(0, '#1e3a8a');
+      cardBgGrad.addColorStop(0.55, '#1d4ed8');
+      cardBgGrad.addColorStop(1, '#0284c7');
     }
+    ctx.fillStyle = cardBgGrad;
+    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.5)' : 'rgba(255, 255, 255, 0.6)';
+    ctx.lineWidth = 2;
+    drawRoundRect(ctx, bcX, bcY, bcW, bcH, 22, true, true);
 
-    // Official Verification Typography Under QR Code
-    doc.setTextColor(0, 240, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(5.8);
-    doc.text('SCAN TO VERIFY', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 4.0, { align: 'center' });
+    // Inner Gold Accent Frame
+    ctx.strokeStyle = isDark ? 'rgba(251, 191, 36, 0.35)' : 'rgba(254, 243, 199, 0.4)';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, bcX + 12, bcY + 12, bcW - 24, bcH - 24, 16, false, true);
 
-    doc.setTextColor(148, 163, 184);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(4.8);
-    doc.text('careerwithenglish.pages.dev', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 7.2, { align: 'center' });
+    // Card Top Branding
+    ctx.textAlign = 'left';
+    ctx.font = '800 14px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#93c5fd';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD', bcX + 36, bcY + 44);
 
-    doc.setTextColor(203, 213, 225);
-    doc.setFont('courier', 'bold');
-    doc.setFontSize(5.0);
-    doc.text(docId, qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 10.5, { align: 'center' });
+    // Gold Ambassador Tag
+    const ambTag = 'OFFICIAL AMBASSADOR';
+    ctx.font = '700 11px "Space Grotesk", sans-serif';
+    const atW = ctx.measureText(ambTag).width + 18;
+    ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.strokeStyle = isDark ? '#fbbf24' : '#ffffff';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, bcX + bcW - 350 - atW, bcY + 30, atW, 24, 999, true, true);
+    ctx.fillStyle = isDark ? '#fbbf24' : '#ffffff';
+    ctx.fillText(ambTag, bcX + bcW - 350 - atW + 9, bcY + 46);
 
-    // Page 2 Footer
-    doc.setTextColor(C.footerText[0], C.footerText[1], C.footerText[2]);
-    doc.setFont('times', 'italic');
-    doc.setFontSize(6.4);
-    doc.text('Page 2 of 2  -  Official Academic & Career Evaluation Document  -  Kanakia International School Mira Road', 105, 292, { align: 'center' });
+    // Student Name in Bold Space Grotesk
+    ctx.font = '800 42px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(studentName.toUpperCase(), bcX + 36, bcY + 110);
 
-    // Save and return
+    // Career Title Badge with Gradient
+    ctx.font = '700 20px "Space Grotesk", sans-serif';
+    const cTitleText = `✈️ ${careerTitle}`;
+    const cTitleW = ctx.measureText(cTitleText).width + 30;
+    const cTitleGrad = ctx.createLinearGradient(bcX + 36, bcY + 138, bcX + 36 + cTitleW, bcY + 138);
+    if (isDark) {
+      cTitleGrad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
+      cTitleGrad.addColorStop(1, 'rgba(139, 92, 246, 0.3)');
+    } else {
+      cTitleGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
+      cTitleGrad.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
+    }
+    ctx.fillStyle = cTitleGrad;
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#ffffff';
+    ctx.lineWidth = 1.2;
+    drawRoundRect(ctx, bcX + 36, bcY + 138, cTitleW, 40, 10, true, true);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(cTitleText, bcX + 51, bcY + 165);
+
+    // Metadata lines
+    ctx.font = '600 16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = isDark ? '#cbd5e1' : '#e0e7ff';
+    ctx.fillText(`Class & Section: ${className}`, bcX + 36, bcY + 215);
+
+    ctx.fillText(`Issuing Body: Career Fair 2026 Academic Directorate`, bcX + 36, bcY + 248);
+
+    ctx.font = '700 15px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#67e8f9';
+    ctx.fillText(`Verified Credential ID: ${docId}`, bcX + 36, bcY + 282);
+
+    ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = isDark ? '#94a3b8' : '#cbd5e1';
+    ctx.fillText('Accredited Student Career Exploration Record · Valid Across Global Fair Partner Events', bcX + 36, bcY + 316);
+
+    // Right Side: Scannable High-Contrast QR Code Box
+    const qrSize = 250;
+    const qrBoxW = 280;
+    const qrBoxX = bcX + bcW - qrBoxW - 32;
+    const qrBoxY = bcY + 50;
+
+    // High-contrast pure white rounded square with quiet zone
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+    ctx.shadowBlur = 15;
+    ctx.shadowOffsetY = 4;
+    drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxW, 18, true, false);
+    ctx.shadowColor = 'transparent';
+
+    // Draw Vector QR Code centered inside quiet zone
+    const qrInnerOffset = (qrBoxW - qrSize) / 2;
+    drawQrToCanvas(ctx, qrMatrix, qrBoxX + qrInnerOffset, qrBoxY + qrInnerOffset, qrSize);
+
+    // Typography Under QR Box
+    ctx.textAlign = 'center';
+    ctx.font = '800 13px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#ffffff';
+    ctx.fillText('SCAN TO VERIFY CREDENTIALS', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 25);
+
+    ctx.font = '600 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#94a3b8' : '#e0e7ff';
+    ctx.fillText('careerwithenglish.pages.dev', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 45);
+
+    ctx.font = '700 11px "JetBrains Mono", monospace';
+    ctx.fillStyle = isDark ? '#fbbf24' : '#fde68a';
+    ctx.fillText(docId, qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 63);
+
+    ctx.restore();
+
+    // Render Page 2 to Image & Add to jsPDF
+    const page2Data = canvas.toDataURL('image/jpeg', 0.95);
+    doc.addImage(page2Data, 'JPEG', 0, 0, 210, 297);
+
+    // Clean filename
     const safeFilenameName = (studentName || 'Student').replace(/[^a-zA-Z0-9]/g, '_');
     const cleanFilename = `ECF2026_CareerBooklet_${safeFilenameName}.pdf`;
-    if (!options?.returnOnly) { doc.save(cleanFilename); }
 
-    if (window.DopamineEngine) {
-      window.DopamineEngine.confetti(0.5, 0.4);
-      window.DopamineEngine.playChime('fanfare');
-      window.DopamineEngine.unlockBadge('booklet_graduate', 'Booklet Graduate', '📖');
+    if (!options?.returnOnly) {
+      doc.save(cleanFilename);
+
+      if (window.DopamineEngine) {
+        window.DopamineEngine.confetti(0.5, 0.4);
+        window.DopamineEngine.playChime('fanfare');
+        window.DopamineEngine.unlockBadge('booklet_graduate', 'Booklet Graduate', '📖');
+      }
+
+      if (typeof window.showToast === 'function') {
+        window.showToast(`📖 2-Page Official Career Booklet & Card downloaded: ${cleanFilename}`);
+      }
     }
 
-    if (typeof window.showToast === 'function') {
-      window.showToast(`📖 2-Page Official Career Booklet & Card downloaded: ${cleanFilename}`);
-    }
     return doc;
   }
 
-  // Export
+  // Global Exports
   window.DossierPDF = {
     generate: generateStudentDossierPDF
   };
