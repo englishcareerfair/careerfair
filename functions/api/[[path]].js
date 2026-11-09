@@ -2694,7 +2694,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
   // ── 10. POST /tts (Humanoid Indian Accent Audio Synthesis with 402 Auto-Heal) ────────────
   if (path === '/tts' && method === 'POST') {
-    let body;
+    try {
+      let body;
     try { body = await request.json(); } catch { body = {}; }
     const text = body.text || 'Welcome to the Career Fair 2026 at Kanakia International School. Good English is the universal language that unlocks thirty-two global career pathways.';
 
@@ -2944,14 +2945,14 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         : (lastStatus === 402 ? 'ElevenLabs Free Plan does not allow Community VoiceLab voices via API. Switched smoothly to Indian Neural Voice (en-IN).' : 'ElevenLabs offline. Playing instant Indian Neural Voice (en-IN).')
     });
 
-  } catch (e) {
-    return json({
-      fallback: true,
-      status: 'error',
-      message: 'Speech synthesis fallback active: ' + e.message
-    });
+    } catch (e) {
+      return json({
+        fallback: true,
+        status: 'error',
+        message: 'Speech synthesis fallback active: ' + e.message
+      });
+    }
   }
-}
 
   // ── 12. GET /export/data (Permanent Cloudflare D1 Dated Data Export) ─────────
   if ((path === '/export/data' || path === '/export-data') && method === 'GET') {
