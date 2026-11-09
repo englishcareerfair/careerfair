@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v21.2-key-pool-promotion-voice-test-fix';
+const CACHE_NAME = 'cf-cache-v21.3-hide-phone-feedback-qr';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

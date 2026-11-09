@@ -5995,3 +5995,12 @@ input[data-capitalize="name"] {
   color: var(--text-muted);
   font-size: 11px;
 }
+
+
+/* Do not display phone QR scan option on phone / mobile screens */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) and (max-width: 1024px) {
+  .feedback-qr-pill,
+  #feedback-qr-mount {
+    display: none !important;
+  }
+}

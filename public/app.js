@@ -11351,6 +11351,13 @@ function updateFeedbackBadges(feedbacks) {
 async function loadFeedbackWall() {
   const list = $('#feedback-wall-list');
 
+  // Do not show 'Scan & Review - Open directly on phone' option on phones
+  const isPhoneOrMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  const fbMountEl = $('#feedback-qr-mount');
+  if (fbMountEl && isPhoneOrMobile) {
+    fbMountEl.style.display = 'none';
+  }
+
   // Render dedicated Feedback Wall QR Code (https://careerwithenglish.pages.dev/feedback)
   const fbQrMount = $('#fb-qr-code-box');
   if (fbQrMount && !fbQrMount._rendered) {
