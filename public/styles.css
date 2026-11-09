@@ -5743,6 +5743,18 @@ input[data-capitalize="name"] {
   border-color: #ff2a85 !important;
 }
 
+/* Feature Box & Game Arena Highlight */
+.tutorial-arena-highlight {
+  border: 1.5px solid var(--accent-cyan, #00f0ff) !important;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+[data-theme="light"] .tutorial-arena-highlight {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 25px rgba(2, 132, 199, 0.35), 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
 @keyframes tutorialEq {
   0% { transform: scaleY(0.3); }
   100% { transform: scaleY(1); }

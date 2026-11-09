@@ -1228,9 +1228,69 @@ function hasGivenFeedback() {
   return false;
 }
 
-function scrollTutorialTargetIntoView(selector) {
+let tutorialScrollAnimId = null;
+let currentTutorialScrollTargetY = null;
+
+function cancelTutorialScroll() {
+  if (tutorialScrollAnimId) {
+    cancelAnimationFrame(tutorialScrollAnimId);
+    tutorialScrollAnimId = null;
+  }
+  currentTutorialScrollTargetY = null;
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('wheel', cancelTutorialScroll, { passive: true });
+  window.addEventListener('touchstart', cancelTutorialScroll, { passive: true });
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/**
+ * Perform a slow, smooth, gentle scroll across the page so the student can
+ * clearly view and absorb all features of the website along the way.
+ */
+function smoothScrollSlow(targetY, customDuration = null) {
+  if (currentTutorialScrollTargetY !== null && Math.abs(currentTutorialScrollTargetY - targetY) < 8) {
+    return; // Already smoothly gliding toward this exact destination
+  }
+  cancelTutorialScroll();
+
+  const startY = window.pageYOffset || document.documentElement.scrollTop;
+  const distance = targetY - startY;
+  if (Math.abs(distance) < 4) {
+    return;
+  }
+
+  currentTutorialScrollTargetY = targetY;
+
+  // Small scrolling speed: gentle, relaxed pacing so user can see all features
+  // Minimum 1000ms, maximum 1950ms
+  const duration = customDuration || Math.min(1950, Math.max(1000, Math.round(800 + Math.abs(distance) * 0.85)));
+  const startTime = performance.now();
+
+  function step(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(1, elapsed / duration);
+    const ease = easeInOutCubic(progress);
+    window.scrollTo(0, Math.round(startY + distance * ease));
+
+    if (progress < 1) {
+      tutorialScrollAnimId = requestAnimationFrame(step);
+    } else {
+      tutorialScrollAnimId = null;
+      currentTutorialScrollTargetY = null;
+    }
+  }
+
+  tutorialScrollAnimId = requestAnimationFrame(step);
+}
+
+function scrollTutorialTargetIntoView(selector, options = {}) {
   if (!selector) return;
-  const target = document.querySelector(selector);
+  const target = (typeof selector === 'string') ? document.querySelector(selector) : selector;
   if (!target) return;
 
   try {
@@ -1240,19 +1300,24 @@ function scrollTutorialTargetIntoView(selector) {
 
     const topNav = document.querySelector('.navbar') || document.querySelector('header');
     const topNavHeight = topNav ? topNav.offsetHeight : 64;
-    const hud = document.getElementById('tutorial-hud');
-    const hudHeight = (hud && hud.classList.contains('active')) ? hud.offsetHeight : 180;
 
     const viewportHeight = window.innerHeight;
-    const availableHeight = Math.max(200, viewportHeight - topNavHeight - hudHeight);
+    // Tutorial HUD is at bottom-right corner; keep 80px bottom breathing room
+    const bottomMargin = 80;
+    const availableHeight = Math.max(180, viewportHeight - topNavHeight - bottomMargin);
 
-    // Center target comfortably within clear vertical slice between navbar and bottom HUD
-    const idealTop = Math.max(0, targetTop - topNavHeight - Math.max(16, (availableHeight - Math.min(rect.height, availableHeight)) / 2));
+    let idealTop;
+    if (rect.height <= availableHeight) {
+      // Center the box cleanly in the vertical slice between navbar and bottom margin
+      const spaceAround = (availableHeight - rect.height) / 2;
+      idealTop = Math.max(0, Math.round(targetTop - topNavHeight - spaceAround));
+    } else {
+      // Element is taller than available slice (e.g. tall game arena on mobile):
+      // Position its top 16px below navbar so the full top and controls are immediately visible
+      idealTop = Math.max(0, Math.round(targetTop - topNavHeight - 16));
+    }
 
-    window.scrollTo({
-      top: idealTop,
-      behavior: 'smooth'
-    });
+    smoothScrollSlow(idealTop, options.duration);
   } catch (_) {
     try {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1643,6 +1708,9 @@ function stopTutorial() {
     headerBtn.innerHTML = '<span>💡</span> <span class="tutorial-btn-text"><span class="tutorial-btn-prefix">Start </span>Tutorial</span>';
   }
 
+  cancelTutorialScroll();
+  document.querySelectorAll('.tutorial-button-highlight').forEach(el => el.classList.remove('tutorial-button-highlight'));
+  document.querySelectorAll('.tutorial-arena-highlight').forEach(el => el.classList.remove('tutorial-arena-highlight'));
   setHeaderBookletHighlight(false);
   document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 }
@@ -1681,7 +1749,13 @@ function renderInSiteTutorialStep(stepIndex) {
   if (pauseBtn) pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
 
   // Navigate on page to target tab
+  let tabChanged = false;
   if (data.tab) {
+    const activeTabBtn = document.querySelector('.tab-btn.active');
+    const currentActiveTab = activeTabBtn ? activeTabBtn.dataset.tab : '';
+    if (currentActiveTab && currentActiveTab !== data.tab) {
+      tabChanged = true;
+    }
     if (window.AppRouter) {
       window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab), { keepVoice: true, keepScroll: true });
     } else if (typeof window.switchTab === 'function') {
@@ -1701,6 +1775,7 @@ function renderInSiteTutorialStep(stepIndex) {
 
   // Remove previous button highlights & pin glows across document
   document.querySelectorAll('.tutorial-button-highlight').forEach(el => el.classList.remove('tutorial-button-highlight'));
+  document.querySelectorAll('.tutorial-arena-highlight').forEach(el => el.classList.remove('tutorial-arena-highlight'));
   document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 
   function highlightAndScrollTarget() {
@@ -1711,13 +1786,40 @@ function renderInSiteTutorialStep(stepIndex) {
       if (data.tab === 'games' && targetEl.closest('#game-picker-tabs')) {
         targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
-      scrollTutorialTargetIntoView(data.targetSelector);
+    }
+
+    // Determine feature box to scroll into view:
+    // In games, scroll till the game arena box (#game-arena-mount) where the feature is fully shown!
+    // In roadmap with subtools (bizcard / myplan), scroll till #plan-tool-arena where the card/plan is fully shown!
+    let scrollTarget = null;
+    if (data.tab === 'games') {
+      scrollTarget = document.getElementById('game-arena-mount') || targetEl;
+      if (scrollTarget) {
+        scrollTarget.classList.add('tutorial-arena-highlight');
+      }
+    } else if (data.tab === 'roadmap' && data.subtool) {
+      scrollTarget = document.getElementById('plan-tool-arena') || targetEl;
+      if (scrollTarget) {
+        scrollTarget.classList.add('tutorial-arena-highlight');
+      }
+    } else {
+      scrollTarget = targetEl;
+    }
+
+    if (scrollTarget) {
+      scrollTutorialTargetIntoView(scrollTarget);
     }
   }
 
-  // Trigger highlight & scroll immediately and after section mount
-  highlightAndScrollTarget();
-  setTimeout(highlightAndScrollTarget, 180);
+  // Trigger highlight & smooth slow scroll
+  if (tabChanged) {
+    window.scrollTo(0, 0);
+    setTimeout(highlightAndScrollTarget, 100);
+    setTimeout(highlightAndScrollTarget, 260);
+  } else {
+    highlightAndScrollTarget();
+    setTimeout(highlightAndScrollTarget, 180);
+  }
 
   const isCareerStep = (data.sectionKey === 'section_career');
   const isFinalStep = (stepIndex === steps.length - 1);
@@ -6857,6 +6959,11 @@ function initGamePicker() {
       }
       // Auto-center the clicked game chip in the visible viewport
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      // In games: scroll till the box where the feature is fully shown!
+      const arena = document.getElementById('game-arena-mount');
+      if (arena) {
+        scrollTutorialTargetIntoView(arena);
+      }
     };
   });
 
@@ -11865,7 +11972,7 @@ async function loadFeedbackWall() {
         await loadFeedbackWall();
         const reflectionsCard = document.querySelector('.feedback-reflections-card') || document.getElementById('feedback-wall-list');
         if (reflectionsCard) {
-          reflectionsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          scrollTutorialTargetIntoView(reflectionsCard);
           reflectionsCard.classList.add('tutorial-button-highlight');
           setTimeout(() => {
             reflectionsCard.classList.remove('tutorial-button-highlight');
