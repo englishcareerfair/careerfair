@@ -6324,3 +6324,12 @@ input.tutorial-button-highlight {
 #teleprompter-box:not(.has-roleplay) {
   display: none !important;
 }
+
+/* ── Notification System Permanently Removed ── */
+.social-proof-toast, #social-proof-toast,
+.pulse-indicator-dot, .pulse-content, .pulse-dismiss {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}

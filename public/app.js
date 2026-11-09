@@ -11651,15 +11651,7 @@ async function loadLeaderboard(filterPack = 'All') {
       const key = `${item.id || ''}_${item.name || ''}_${item.acc || ''}_${item.ts || ''}`;
       currentTopKeys.add(key);
       if (!isFirstLoad && !knownTopKeys.has(key)) {
-        // A genuine new top 10 score has entered the leaderboard!
-        if (window.DopamineEngine && typeof window.DopamineEngine.notifyTop10Score === 'function') {
-          window.DopamineEngine.notifyTop10Score({
-            rank: idx + 1,
-            name: item.name,
-            acc: item.acc,
-            pack: item.pack
-          });
-        }
+        // Top 10 score notification permanently disabled per user request
       }
     });
     window._lastKnownTop10Keys = currentTopKeys;

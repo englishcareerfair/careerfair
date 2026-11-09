@@ -105,67 +105,14 @@
   let notificationHideTimer = null;
 
   function initSocialProofPulses() {
-    if (document.getElementById('social-proof-toast')) return;
-    const toast = document.createElement('div');
-    toast.id = 'social-proof-toast';
-    toast.className = 'social-proof-toast';
-    toast.setAttribute('aria-live', 'polite');
-    toast.innerHTML = `
-      <div class="pulse-indicator-dot" style="background:#ffd700;box-shadow:0 0 12px rgba(255,215,0,0.8);"></div>
-      <div class="pulse-content" id="social-proof-content">
-        <span class="pulse-icon">🏆</span>
-        <span class="pulse-msg" style="font-weight:600;">Leaderboard Active</span>
-      </div>
-      <button class="pulse-dismiss" id="social-proof-dismiss" aria-label="Dismiss leaderboard alert">✕</button>
-    `;
-    document.body.appendChild(toast);
-
-    toast.querySelector('#social-proof-dismiss').onclick = () => {
-      toast.classList.remove('visible');
-      if (notificationHideTimer) clearTimeout(notificationHideTimer);
-    };
+    const existing = document.getElementById('social-proof-toast');
+    if (existing) existing.remove();
   }
 
-  // Notifies ONLY when a REAL student score reaches the Top 10 ranks (<= 10)
+  // Notifies Top 10 scores - Permanently disabled per user request
   function notifyTop10Score(scoreRecord) {
-    if (!scoreRecord || typeof scoreRecord !== 'object') return;
-    const rank = Number(scoreRecord.rank);
-    if (!rank || rank < 1 || rank > 10) return; // STRICT GUARD: Only Rank 1 to 10
-
-    if (window.STATE?.config?.flags?.dopamine_fx === false) return;
-
-    initSocialProofPulses();
-    const toast = document.getElementById('social-proof-toast');
-    const content = document.getElementById('social-proof-content');
-    if (!toast || !content) return;
-
-    const rankLabel = rank === 1 ? '🥇 #1 High Score!' : rank === 2 ? '🥈 #2 Leaderboard!' : rank === 3 ? '🥉 #3 Leaderboard!' : `🏆 Top 10 (Rank #${rank})!`;
-    const name = escapeHtml(scoreRecord.name || 'Student');
-    const acc = scoreRecord.acc !== undefined ? `${scoreRecord.acc}%` : '';
-    const pack = escapeHtml(scoreRecord.pack || 'Speech Arena');
-
-    content.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:2px;">
-        <div style="font-weight:800;font-size:12px;color:#ffd700;letter-spacing:0.4px;">
-          ${rankLabel}
-        </div>
-        <div style="font-size:12px;color:#ffffff;line-height:1.35;">
-          <strong>${name}</strong> achieved <strong>${acc}</strong> in ${pack}!
-        </div>
-      </div>
-    `;
-
-    // Visual theme highlighting Top 10 excellence
-    toast.style.borderColor = 'rgba(255,215,0,0.55)';
-    toast.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 215, 0, 0.35)';
-
-    toast.classList.add('visible');
-    playSynthesizedChime('fanfare');
-
-    if (notificationHideTimer) clearTimeout(notificationHideTimer);
-    notificationHideTimer = setTimeout(() => {
-      toast.classList.remove('visible');
-    }, 7500);
+    const existing = document.getElementById('social-proof-toast');
+    if (existing) existing.remove();
   }
 
   // ── 4. Mystery Trajectory Card Reveal (Gacha Unboxing Sequence) ─────────────
@@ -432,16 +379,9 @@
   }
 
   function showLivePulse(text, icon = '🔥') {
-    if (window.STATE?.config?.flags?.dopamine_fx === false) return;
-    initSocialProofPulses();
-    const toast = document.getElementById('social-proof-toast');
-    const content = document.getElementById('social-proof-content');
-    if (!toast || !content) return;
-    content.innerHTML = `<span class="pulse-icon">${icon}</span> <span class="pulse-msg">${escapeHtml(text)}</span>`;
-    toast.classList.add('visible');
-    setTimeout(() => {
-      toast.classList.remove('visible');
-    }, 7000);
+    // Disabled notification popup
+    const existing = document.getElementById('social-proof-toast');
+    if (existing) existing.remove();
   }
 
   // Initialize immediately on DOM ready
