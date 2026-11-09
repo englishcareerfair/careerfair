@@ -5545,10 +5545,19 @@ input[data-capitalize="name"] {
 
 .in-site-tutorial-hud.expanded .tutorial-hud-header {
   display: flex !important;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 10px;
+}
+
+.tutorial-hud-top-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
 }
 
 [data-theme="light"] .in-site-tutorial-hud.expanded .tutorial-hud-header {
@@ -5615,10 +5624,14 @@ input[data-capitalize="name"] {
 }
 
 .tutorial-hud-title {
-  margin: 0;
-  font-size: 14.5px;
+  margin: 2px 0 0 0 !important;
+  font-size: 15px !important;
   font-weight: 800;
   color: var(--text-main, #ffffff);
+  line-height: 1.35;
+  width: 100%;
+  white-space: normal;
+  word-break: break-word;
 }
 
 [data-theme="light"] .tutorial-hud-title {
@@ -5639,12 +5652,15 @@ input[data-capitalize="name"] {
   border: 1px solid rgba(0, 240, 255, 0.25);
   border-radius: 99px;
   padding: 3px 10px;
+  white-space: nowrap !important;
+  flex-shrink: 0;
 }
 
 .tutorial-voice-label {
   font-size: 11px;
   font-weight: 700;
   color: var(--accent-cyan, #00f0ff);
+  white-space: nowrap !important;
 }
 
 [data-theme="light"] .tutorial-voice-label {

@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v22.3-mobile-feedback-badge-fix';
+const CACHE_NAME = 'cf-cache-v22.4-tutorial-hud-clean';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

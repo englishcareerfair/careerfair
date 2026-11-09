@@ -1473,13 +1473,13 @@ function fallbackTutorialSpeech(text, sessionId) {
   utt.onend = () => {
     if (sessionId === currentTutorialAudioSessionId) {
       isTutorialSpeechActive = false;
-      updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
+      updateTutorialHudStatus('idle', 'River');
     }
   };
   utt.onerror = () => {
     if (sessionId === currentTutorialAudioSessionId) {
       isTutorialSpeechActive = false;
-      updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
+      updateTutorialHudStatus('idle', 'River');
     }
   };
   try { window.speechSynthesis.speak(utt); } catch (_) {}
@@ -1498,7 +1498,7 @@ function playTutorialStepAudio(stepData) {
   if (!stepData) return;
   const sessionId = ++currentTutorialAudioSessionId;
 
-  updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
+  updateTutorialHudStatus('speaking', 'River');
   isTutorialSpeechActive = true;
 
   if (stepData.audioUrl) {
@@ -1511,7 +1511,7 @@ function playTutorialStepAudio(stepData) {
         if (sessionId !== currentTutorialAudioSessionId) return;
         isTutorialSpeechActive = true;
         if (!isTutorialPaused) {
-          updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
+          updateTutorialHudStatus('speaking', 'River');
         }
       };
 
@@ -1525,7 +1525,7 @@ function playTutorialStepAudio(stepData) {
       audio.onended = () => {
         if (sessionId !== currentTutorialAudioSessionId) return;
         isTutorialSpeechActive = false;
-        updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
+        updateTutorialHudStatus('idle', 'River');
       };
 
       audio.onerror = () => {
@@ -1562,7 +1562,7 @@ function updateTutorialHudStatus(state, labelText) {
     statusEl.classList.add('speaking');
     statusEl.classList.remove('paused');
     if (equalizer) equalizer.style.display = 'inline-flex';
-    if (labelEl) labelEl.textContent = labelText || 'River (Studio Pre-recorded)';
+    if (labelEl) labelEl.textContent = labelText || 'River';
   } else if (state === 'paused') {
     statusEl.classList.remove('speaking');
     statusEl.classList.add('paused');
@@ -1571,7 +1571,7 @@ function updateTutorialHudStatus(state, labelText) {
   } else {
     statusEl.classList.remove('speaking', 'paused');
     if (equalizer) equalizer.style.display = 'none';
-    if (labelEl) labelEl.textContent = labelText || 'River (Studio Pre-recorded)';
+    if (labelEl) labelEl.textContent = labelText || 'River';
   }
 }
 
