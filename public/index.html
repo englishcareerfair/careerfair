@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=23.8">
+  <link rel="stylesheet" href="styles.css?v=23.9">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -35,13 +35,13 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" integrity="sha384-sPwMflxqfAN+Q5mvlkLmHiX3PORGbZSXHiSGPTXT9VHCD/AB+b+r+vJWsqprv+7k" crossorigin="anonymous" defer></script>
   <!-- Architectural Engines -->
-  <script src="dossier-pdf.js?v=23.8" defer></script>
-  <script src="dopamine-engine.js?v=23.8" defer></script>
+  <script src="dossier-pdf.js?v=23.9" defer></script>
+  <script src="dopamine-engine.js?v=23.9" defer></script>
   <script src="game-completion-detector.js?v=7.7" defer></script>
     <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=14.0"></script>
-  <script src="app.js?v=23.8" defer></script>
+  <script src="app.js?v=23.9" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -599,12 +599,27 @@
             
             <!-- 16:9 Stream Frame / Standby Wrapper -->
             <div class="hero-stream-frame-wrap" id="hero-stream-container">
+              <!-- Stream Loading Screen (Replaces black screen with animated loading while video is initializing/buffering) -->
+              <div class="hero-stream-loader" id="hero-stream-loader">
+                <div class="stream-loader-spinner">
+                  <div class="spinner-ring"></div>
+                  <div class="stream-pulse-dot"></div>
+                </div>
+                <div class="stream-loader-title">Connecting to Live Broadcast...</div>
+                <div class="stream-loader-subtitle">Synchronizing Auditorium Stage Feed</div>
+                <div class="stream-loader-badge">
+                  <span class="pulse-indicator"></span> 1080p HD Live Stream
+                </div>
+              </div>
+
               <!-- Active iframe (populated dynamically with YouTube stream) -->
               <iframe
                 id="hero-youtube-iframe"
-                src="https://www.youtube-nocookie.com/embed/3Hn-jH3up9Y?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&autoplay=1&mute=1"
+                src="https://www.youtube.com/embed/3Hn-jH3up9Y?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&autoplay=1&mute=1"
+                data-current-src="https://www.youtube.com/embed/3Hn-jH3up9Y?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&autoplay=1&mute=1"
                 title="Career Fair 2026 Live Broadcast"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                referrerpolicy="strict-origin-when-cross-origin"
                 allowfullscreen>
               </iframe>
 
@@ -1467,7 +1482,8 @@
                   src=""
                   title="Admin Stream Preview"
                   style="width:100%;height:100%;border:0;"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  referrerpolicy="strict-origin-when-cross-origin"
                   allowfullscreen
                   hidden>
                 </iframe>

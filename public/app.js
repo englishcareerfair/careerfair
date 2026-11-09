@@ -14061,17 +14061,34 @@ function buildYouTubeEmbedUrl(input, autoplay = true) {
   // rel=0 avoids irrelevant recommended videos
   // modestbranding=1 keeps player clean
   // autoplay=1&mute=1 satisfies browser autoplay policies for continuous playback
+  // origin & widget_referrer allow YouTube player to validate domain context, resolving Error 153
   const autoParam = autoplay ? '&autoplay=1&mute=1' : '';
-  return `https://www.youtube-nocookie.com/embed/${id}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1${autoParam}`;
+  const origin = (typeof window !== 'undefined' && window.location && window.location.origin && !window.location.origin.startsWith('file'))
+    ? window.location.origin
+    : 'https://careerwithenglish.pages.dev';
+  return `https://www.youtube.com/embed/${id}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&widget_referrer=${encodeURIComponent(origin)}${autoParam}`;
 }
 
 function renderHeroStream() {
   const iframe = $('#hero-youtube-iframe');
   const standby = $('#hero-stream-standby');
+  const loader = $('#hero-stream-loader');
   const badge = $('#stream-live-badge');
   const titleEl = $('#hero-stream-title-text');
   const linkEl = $('#hero-stream-external-link');
   if (!iframe || !standby) return;
+
+  function showStreamLoader() {
+    if (loader) {
+      loader.classList.remove('stream-loader-hidden');
+    }
+  }
+
+  function hideStreamLoader() {
+    if (loader) {
+      loader.classList.add('stream-loader-hidden');
+    }
+  }
 
   const rawUrl = (STATE.config && STATE.config.stream_url) || localStorage.getItem('cf_stream_url') || 'https://youtube.com/live/3Hn-jH3up9Y';
   const isActive = STATE.config ? (STATE.config.stream_active !== false) : true;
@@ -14081,15 +14098,61 @@ function renderHeroStream() {
 
   if (isActive && videoId) {
     const embedUrl = buildYouTubeEmbedUrl(videoId, isAutoplay);
-    if (iframe.dataset.currentSrc !== embedUrl || !iframe.src || !iframe.src.includes(videoId)) {
+    const needsSrcUpdate = iframe.dataset.currentSrc !== embedUrl || !iframe.src || !iframe.src.includes(videoId);
+
+    if (needsSrcUpdate) {
+      showStreamLoader();
       iframe.src = embedUrl;
       iframe.dataset.currentSrc = embedUrl;
     }
+
     iframe.removeAttribute('hidden');
     iframe.hidden = false;
     iframe.style.display = 'block';
     standby.hidden = true;
     standby.style.display = 'none';
+
+    // Hook onload to transition smoothly once iframe has rendered
+    if (!iframe.dataset.loadBound) {
+      iframe.dataset.loadBound = 'true';
+      iframe.addEventListener('load', () => {
+        // 1.2s delay ensures player canvas/shaders have decoded first frame
+        setTimeout(hideStreamLoader, 1200);
+      });
+    }
+
+    // Hook YouTube postMessage for real-time playerState & error handling
+    if (!window._ytHeroStreamBound) {
+      window._ytHeroStreamBound = true;
+      window.addEventListener('message', (event) => {
+        if (!event || (typeof event.data !== 'string' && typeof event.data !== 'object')) return;
+        try {
+          const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (!data) return;
+          // State: 1 = playing, 2 = paused, 3 = buffering
+          const pState = data.info?.playerState ?? (data.event === 'onStateChange' ? data.info : null);
+          if (pState === 1 || pState === 2 || pState === 3) {
+            hideStreamLoader();
+          }
+          // Error handling from YouTube embed
+          if (data.event === 'onError' || (data.info && data.info.errorCode)) {
+            console.warn('[YouTube Hero Stream] Player reported embed issue, switching to graceful standby:', data);
+            hideStreamLoader();
+            standby.hidden = false;
+            standby.style.display = 'flex';
+            iframe.hidden = true;
+            iframe.style.display = 'none';
+            if (badge) {
+              badge.className = 'badge-standby';
+              badge.textContent = 'STANDBY MODE';
+            }
+          }
+        } catch (_) {}
+      });
+    }
+
+    // Safety timeout: loader will never get permanently stuck
+    setTimeout(hideStreamLoader, 4000);
 
     if (badge) {
       badge.className = 'badge-live-pulse';
@@ -14105,6 +14168,7 @@ function renderHeroStream() {
     }
   } else {
     // Standby mode
+    hideStreamLoader();
     if (iframe.dataset.currentSrc) {
       iframe.src = '';
       iframe.dataset.currentSrc = '';
