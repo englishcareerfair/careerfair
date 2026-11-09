@@ -5363,53 +5363,200 @@ input[data-capitalize="name"] {
 
 
 /* =========================================================================
-   IN-WEBSITE INTERACTIVE TUTORIAL CONTROLLER HUD
+   IN-WEBSITE INTERACTIVE TUTORIAL CONTROLLER HUD (CORNER BOX & EXPANDABLE)
    ========================================================================= */
 .in-site-tutorial-hud {
   position: fixed;
   bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(140%);
-  width: min(840px, calc(100vw - 32px));
-  background: rgba(15, 23, 42, 0.94);
+  right: 24px;
+  left: auto;
+  transform: translateY(140%) scale(0.92);
+  width: auto;
+  max-width: fit-content;
+  background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border: 1.5px solid var(--accent-cyan);
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 240, 255, 0.25);
+  border: 1.5px solid var(--accent-cyan, #00f0ff);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.75), 0 0 22px rgba(0, 240, 255, 0.3);
   z-index: 99999;
-  padding: 16px 20px;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  padding: 6px 10px;
+  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   opacity: 0;
   pointer-events: none;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
   box-sizing: border-box;
+  cursor: pointer;
 }
 
 .in-site-tutorial-hud.active {
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(0) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
 
 [data-theme="light"] .in-site-tutorial-hud {
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.98);
   border-color: #0284c7;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2), 0 0 25px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), 0 0 20px rgba(2, 132, 199, 0.3);
 }
 
-.tutorial-hud-header {
-  display: flex;
+/* ── COMPACT STATE (Small Box at bottom-right corner, NO TEXT) ── */
+.in-site-tutorial-hud:not(.expanded) {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.in-site-tutorial-hud:not(.expanded) .tutorial-hud-header,
+.in-site-tutorial-hud:not(.expanded) .tutorial-hud-body,
+.in-site-tutorial-hud:not(.expanded) .tutorial-hud-controls-left,
+.in-site-tutorial-hud:not(.expanded) #btn-tutorial-prev {
+  display: none !important;
+}
+
+.in-site-tutorial-hud:not(.expanded) .tutorial-hud-footer {
+  border-top: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.in-site-tutorial-hud:not(.expanded) .tutorial-hud-controls-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.btn-tutorial-hud-expand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: var(--accent-cyan, #00f0ff);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-tutorial-hud-expand:hover {
+  background: rgba(0, 240, 255, 0.25);
+  transform: scale(1.08);
+}
+
+[data-theme="light"] .btn-tutorial-hud-expand {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+}
+
+.btn-tutorial-hud-collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-muted, #94a3b8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  margin-right: 4px;
+}
+
+.btn-tutorial-hud-collapse:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-main, #ffffff);
+}
+
+[data-theme="light"] .btn-tutorial-hud-collapse {
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #64748b;
+}
+
+.in-site-tutorial-hud:not(.expanded) .btn-compact-close {
+  display: inline-flex !important;
+}
+
+.in-site-tutorial-hud.expanded .btn-compact-close,
+.in-site-tutorial-hud.expanded .btn-tutorial-hud-expand {
+  display: none !important;
+}
+
+/* ── EXPANDED STATE (Expands at the Corner) ── */
+.in-site-tutorial-hud.expanded {
+  width: min(500px, calc(100vw - 32px));
+  max-width: 500px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  cursor: default;
+}
+
+.in-site-tutorial-hud.expanded .tutorial-hud-header {
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   padding-bottom: 10px;
 }
 
-[data-theme="light"] .tutorial-hud-header {
+[data-theme="light"] .in-site-tutorial-hud.expanded .tutorial-hud-header {
   border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+.in-site-tutorial-hud.expanded .tutorial-hud-body {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.in-site-tutorial-hud.expanded .tutorial-hud-footer {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  padding-top: 10px !important;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+[data-theme="light"] .in-site-tutorial-hud.expanded .tutorial-hud-footer {
+  border-top-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.in-site-tutorial-hud.expanded .tutorial-hud-controls-left {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.in-site-tutorial-hud.expanded .tutorial-hud-controls-right {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.in-site-tutorial-hud.expanded #btn-tutorial-prev {
+  display: inline-flex !important;
+}
+
+.tutorial-hud-header {
+  display: none;
 }
 
 .tutorial-hud-title-wrap {
@@ -5432,7 +5579,7 @@ input[data-capitalize="name"] {
 
 .tutorial-hud-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 800;
   color: var(--text-main, #ffffff);
 }
@@ -5444,7 +5591,7 @@ input[data-capitalize="name"] {
 .tutorial-hud-status-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .tutorial-hud-status {
@@ -5508,6 +5655,9 @@ input[data-capitalize="name"] {
   line-height: 1;
   border-radius: 4px;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-tutorial-hud-close:hover {
@@ -5516,14 +5666,11 @@ input[data-capitalize="name"] {
 }
 
 .tutorial-hud-body {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 4px 0;
+  display: none;
 }
 
 .tutorial-hud-step-icon {
-  font-size: 28px;
+  font-size: 26px;
   line-height: 1;
   background: rgba(0, 240, 255, 0.1);
   border: 1px solid rgba(0, 240, 255, 0.25);
@@ -5568,21 +5715,6 @@ input[data-capitalize="name"] {
 .tutorial-hud-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 10px;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-[data-theme="light"] .tutorial-hud-footer {
-  border-top-color: rgba(0, 0, 0, 0.08);
-}
-
-.tutorial-hud-controls-left,
-.tutorial-hud-controls-right {
-  display: flex;
-  align-items: center;
   gap: 8px;
 }
 
@@ -5592,32 +5724,23 @@ input[data-capitalize="name"] {
   outline-offset: 3px !important;
   box-shadow: 0 0 20px 4px rgba(0, 240, 255, 0.75), inset 0 0 10px rgba(0, 240, 255, 0.25) !important;
   position: relative !important;
-  z-index: 100 !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  z-index: 1000 !important;
 }
 
 @keyframes tutorialButtonPulse {
   0% {
+    box-shadow: 0 0 10px 2px rgba(0, 240, 255, 0.5), inset 0 0 6px rgba(0, 240, 255, 0.2);
     transform: scale(1);
-    box-shadow: 0 0 12px 2px rgba(0, 240, 255, 0.5), inset 0 0 6px rgba(0, 240, 255, 0.2);
   }
   100% {
-    transform: scale(1.04);
-    box-shadow: 0 0 24px 6px rgba(0, 240, 255, 0.95), inset 0 0 14px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 24px 6px rgba(0, 240, 255, 0.9), inset 0 0 12px rgba(0, 240, 255, 0.4);
+    transform: scale(1.03);
   }
 }
 
 .tutorial-pin-glow {
-  animation: tutorialPinGlow 1.2s infinite alternate !important;
-  border-color: var(--accent-cyan, #00f0ff) !important;
-  box-shadow: 0 0 16px rgba(0, 240, 255, 0.8) !important;
-  position: relative;
-  z-index: 10;
-}
-
-@keyframes tutorialPinGlow {
-  0% { transform: scale(1); box-shadow: 0 0 8px rgba(0, 240, 255, 0.4); }
-  100% { transform: scale(1.03); box-shadow: 0 0 20px rgba(0, 240, 255, 0.95); }
+  box-shadow: 0 0 16px 3px rgba(255, 42, 133, 0.8) !important;
+  border-color: #ff2a85 !important;
 }
 
 @keyframes tutorialEq {
@@ -5628,8 +5751,17 @@ input[data-capitalize="name"] {
 @media (max-width: 640px) {
   .in-site-tutorial-hud {
     bottom: 12px;
+    right: 12px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .in-site-tutorial-hud.expanded {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
     padding: 12px 14px;
-    gap: 10px;
   }
   .tutorial-hud-title {
     font-size: 13.5px;
@@ -5645,7 +5777,6 @@ input[data-capitalize="name"] {
     justify-content: center;
   }
 }
-
 
 /* ─── INTERACTIVE TUTORIAL MODE SELECTION MODAL & HUD ENHANCEMENTS ─── */
 .tutorial-choice-modal-card {

@@ -1635,7 +1635,7 @@ function stopTutorial() {
     activeTutorialAudio = null;
   }
   const hud = document.getElementById('tutorial-hud');
-  if (hud) hud.classList.remove('active');
+  if (hud) hud.classList.remove('active', 'expanded');
 
   const headerBtn = document.getElementById('btn-header-tutorial');
   if (headerBtn) {
@@ -1772,26 +1772,8 @@ function renderInSiteTutorialStep(stepIndex) {
     }
     if (skipBtn) skipBtn.style.display = 'none';
     if (closeBtn) closeBtn.style.display = 'none';
-  } else if (isInteractive) {
-    // Hide Next Exhibit button because doing the task auto-advances automatically!
-    if (nextBtn) {
-      nextBtn.style.display = 'none';
-    }
-    // On feedback step, feedback is strictly mandatory - never show skip button!
-    // In quick tutorial, skip button is removed across all steps.
-    if (isFeedbackStep || currentTutorialMode === 'short') {
-      if (skipBtn) skipBtn.style.display = 'none';
-    } else {
-      if (skipBtn) {
-        skipBtn.style.display = 'inline-flex';
-        skipBtn.className = 'btn btn-primary btn-sm';
-        skipBtn.textContent = 'Skip Step ⏭️';
-        skipBtn.title = 'Skip this step and omit from booklet';
-      }
-    }
-    if (closeBtn) closeBtn.style.display = '';
   } else {
-    // Non-interactive informational step (e.g. Colleges, Exams in Complete Tour):
+    // Exhibition step: Next Exhibit and Skip are always available so user can try the feature nicely and advance anytime!
     if (nextBtn) {
       nextBtn.style.display = 'inline-flex';
       nextBtn.className = 'btn btn-primary btn-sm';
@@ -1799,14 +1781,13 @@ function renderInSiteTutorialStep(stepIndex) {
       nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
-    // Remove skip step button in quick tutorial
-    if (currentTutorialMode === 'short') {
-      if (skipBtn) skipBtn.style.display = 'none';
-    } else {
-      if (skipBtn) {
+    if (skipBtn) {
+      if (isFeedbackStep) {
+        skipBtn.style.display = 'none';
+      } else {
         skipBtn.style.display = 'inline-flex';
         skipBtn.className = 'btn btn-secondary btn-sm';
-        skipBtn.textContent = 'Skip ⏭️';
+        skipBtn.textContent = 'Skip ⏭';
         skipBtn.title = 'Skip this step and omit from booklet';
       }
     }
@@ -3016,25 +2997,56 @@ function initNavigation() {
   });
 
   // In-Website Tutorial HUD controller events
-  $('#btn-tutorial-hud-close')?.addEventListener('click', stopTutorial);
+  $('#btn-tutorial-hud-close')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    stopTutorial();
+  });
+  $('#btn-tutorial-compact-close')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    stopTutorial();
+  });
+  $('#btn-tutorial-hud-collapse')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#tutorial-hud')?.classList.remove('expanded');
+  });
+  $('#btn-tutorial-hud-expand')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#tutorial-hud')?.classList.add('expanded');
+  });
+  // Clicking anywhere on the small corner box outside buttons expands it!
+  $('#tutorial-hud')?.addEventListener('click', (e) => {
+    const hud = document.getElementById('tutorial-hud');
+    if (!hud) return;
+    if (!hud.classList.contains('expanded')) {
+      if (!e.target.closest('button')) {
+        hud.classList.add('expanded');
+      }
+    }
+  });
   $('#btn-tutorial-stop')?.addEventListener('click', stopTutorial);
-  $('#btn-tutorial-pause')?.addEventListener('click', () => {
+  $('#btn-tutorial-pause')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (isTutorialPaused) {
       resumeTutorial();
     } else {
       pauseTutorial();
     }
   });
-  $('#btn-tutorial-replay-audio')?.addEventListener('click', replayCurrentTutorialAudio);
+  $('#btn-tutorial-replay-audio')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    replayCurrentTutorialAudio();
+  });
 
-  $('#btn-tutorial-prev')?.addEventListener('click', () => {
+  $('#btn-tutorial-prev')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (tutorialAutoAdvanceTimer) {
       clearTimeout(tutorialAutoAdvanceTimer);
       tutorialAutoAdvanceTimer = null;
     }
     renderInSiteTutorialStep(currentTutorialStepIndex - 1);
   });
-  $('#btn-tutorial-skip')?.addEventListener('click', () => {
+  $('#btn-tutorial-skip')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (tutorialAutoAdvanceTimer) {
       clearTimeout(tutorialAutoAdvanceTimer);
       tutorialAutoAdvanceTimer = null;
@@ -3055,7 +3067,8 @@ function initNavigation() {
       stopTutorial();
     }
   });
-  $('#btn-tutorial-next')?.addEventListener('click', () => {
+  $('#btn-tutorial-next')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
     if (currentTutorialStepIndex >= steps.length - 1) {
       if (!hasGivenFeedback()) {
