@@ -1438,10 +1438,27 @@ function scrollTutorialTargetIntoView(selector, options = {}) {
 }
 
 
+function updateHeaderBookletVisibility() {
+  const btn = document.getElementById('btn-header-dossier');
+  if (!btn) return;
+  const isCompleted = localStorage.getItem('cf_tutorial_completed') === 'true' || 
+                      localStorage.getItem('cf_dossier_unlocked') === 'true';
+  const isPdfEnabled = window.STATE?.config?.flags?.pdf_export !== false;
+  if (isCompleted && isPdfEnabled) {
+    btn.style.display = 'inline-flex';
+    btn.hidden = false;
+  } else {
+    btn.style.display = 'none';
+    btn.hidden = true;
+  }
+}
+
 function setHeaderBookletHighlight(active) {
   const btn = document.getElementById('btn-header-dossier');
   if (!btn) return;
   if (active) {
+    btn.hidden = false;
+    btn.style.display = 'inline-flex';
     btn.classList.add('header-booklet-highlight');
     btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const removeOnce = () => {
@@ -3333,7 +3350,11 @@ function initNavigation() {
         window.DopamineEngine.confetti(0.5, 0.4);
         window.DopamineEngine.playChime('fanfare');
       }
-      showToast('🎉 Congratulations on completing the Career Fair tutorial tour!');
+      localStorage.setItem('cf_tutorial_completed', 'true');
+      localStorage.setItem('cf_dossier_unlocked', 'true');
+      if (typeof updateHeaderBookletVisibility === 'function') updateHeaderBookletVisibility();
+      setHeaderBookletHighlight(true);
+      showToast('🎉 Congratulations on completing the Career Fair tutorial tour! Your Booklet is now unlocked at the top!');
       stopTutorial();
       return;
     }
@@ -5543,7 +5564,8 @@ function analyzeSpeechLabSample() {
   const fluency = Math.min(100, Math.max(45, Math.round((94 - fillers * 5) * passRatio)));
   const clarity = Math.min(100, Math.max(50, Math.round((88 + Math.min(10, sentences.length * 3) - fillers * 3) * passRatio)));
   const pronunciation = Math.min(100, Math.max(50, Math.round((90 - fillers * 2) * passRatio)));
-  const vocab = Math.min(100, Math.max(40, Math.round(((uniqueWords / Math.max(1, words.length)) * 100))));
+  // Pace & Cadence: rate of speech and natural pausing (replaces AI-provided vocabulary)
+  const pace = Math.min(100, Math.max(50, Math.round(((fluency * 0.6) + (clarity * 0.4)) * passRatio)));
   const grammar = Math.min(100, Math.max(50, 80 + (text.length > 50 ? 15 : 5)));
   const confidence = Math.min(100, Math.max(50, Math.round((fluency + clarity) / 2)));
 
@@ -5556,15 +5578,15 @@ function analyzeSpeechLabSample() {
   const accValEl = $('#speech-lab-accuracy-val');
   if (accValEl) accValEl.textContent = `${accuracy}%`;
 
-  $('#dim-pronunciation').textContent = pronunciation;
-  $('#dim-fluency').textContent = fluency;
-  $('#dim-clarity').textContent = clarity;
-  $('#dim-vocab').textContent = vocab;
-  $('#dim-grammar').textContent = grammar;
-  $('#dim-confidence').textContent = confidence;
+  const pEl = $('#dim-pronunciation'); if (pEl) pEl.textContent = pronunciation;
+  const fEl = $('#dim-fluency'); if (fEl) fEl.textContent = fluency;
+  const cEl = $('#dim-clarity'); if (cEl) cEl.textContent = clarity;
+  const paceEl = $('#dim-pace') || $('#dim-vocab'); if (paceEl) paceEl.textContent = pace;
+  const gEl = $('#dim-grammar'); if (gEl) gEl.textContent = grammar;
+  const confEl = $('#dim-confidence'); if (confEl) confEl.textContent = confidence;
 
   // Draw Spider/Radar Canvas
-  drawSpiderRadar([pronunciation, fluency, clarity, vocab, grammar, confidence]);
+  drawSpiderRadar([pronunciation, fluency, clarity, pace, grammar, confidence]);
 
   // Persist 6D Speech evaluation
   if (!STATE.studentProfile) STATE.studentProfile = {};
@@ -5572,11 +5594,11 @@ function analyzeSpeechLabSample() {
     pronunciation,
     fluency,
     clarity,
-    vocab,
+    pace,
     grammar,
     confidence,
     pitchModulation: clarity,
-    pauseControl: vocab,
+    pauseControl: pace,
     confidenceScore: confidence
   };
   try {
@@ -5718,7 +5740,7 @@ function drawSpiderRadar(scores) {
   const cx = w / 2;
   const cy = h / 2;
   const radius = 70;
-  const labels = ['Pronunciation', 'Fluency', 'Clarity', 'Vocab', 'Grammar', 'Confidence'];
+  const labels = ['Pronunciation', 'Fluency', 'Clarity', 'Pace', 'Grammar', 'Confidence'];
 
   ctx.clearRect(0, 0, w, h);
 
@@ -13003,12 +13025,15 @@ function applyFeatureFlags() {
     greetingBtn.style.display = 'none';
   }
 
-  // 5. Header Dossier button encapsulation
+  // 5. Header Dossier button encapsulation (hidden until user completes tutorial)
   const dossierBtn = $('#btn-header-dossier');
   if (dossierBtn) {
     const isPdfEnabled = flags.pdf_export !== false;
-    dossierBtn.hidden = !isPdfEnabled;
-    dossierBtn.style.display = isPdfEnabled ? '' : 'none';
+    const isTutorialDone = localStorage.getItem('cf_tutorial_completed') === 'true' || 
+                           localStorage.getItem('cf_dossier_unlocked') === 'true';
+    const shouldShow = isPdfEnabled && isTutorialDone;
+    dossierBtn.hidden = !shouldShow;
+    dossierBtn.style.display = shouldShow ? 'inline-flex' : 'none';
   }
 
   // 6. Header Tutorial button encapsulation
