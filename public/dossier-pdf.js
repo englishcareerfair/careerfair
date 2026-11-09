@@ -389,16 +389,16 @@
     const metaH = 110;
     drawCard(ctx, 80, metaY, metaW, metaH, 16, C);
 
+    // Student metadata profile card: Clean 3-column layout (Roll Number removed per user request)
     const metaCols = [
       { label: "STUDENT NAME", val: studentName.toUpperCase(), color: C.textMain, font: '800 20px "Plus Jakarta Sans", sans-serif' },
-      { label: "ROLL NUMBER", val: rollNo, color: C.textHighlight, font: '700 16px "JetBrains Mono", monospace' },
       { label: "CLASS / GRADE", val: `Class ${className}`, color: C.textMain, font: '700 16px "Plus Jakarta Sans", sans-serif' },
       { label: "EXAMINATION", val: "Career Fair 2026 · Spoken Articulation", color: C.greenPillText, font: '700 14px "Space Grotesk", sans-serif' }
     ];
 
-    const colW = metaW / 4;
+    const colW = metaW / 3;
     metaCols.forEach((col, idx) => {
-      const cX = 80 + idx * colW + 28;
+      const cX = 80 + idx * colW + 36;
       ctx.font = '700 11px "Space Grotesk", sans-serif';
       ctx.fillStyle = C.textDim;
       ctx.fillText(col.label, cX, metaY + 38);
@@ -407,7 +407,7 @@
       ctx.fillStyle = col.color;
       ctx.fillText(col.val, cX, metaY + 74);
 
-      if (idx < 3) {
+      if (idx < 2) {
         ctx.strokeStyle = C.innerBorder;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -507,12 +507,30 @@
       font: '700 12px "Space Grotesk", sans-serif'
     });
 
-    // 4 Columns of Big Bold Metrics matching Image 5
+    // Resolve actual student accuracy & un-updated leaderboard rank
+    let studentAcc = Number(customData?.accuracy || state?.studentProfile?.lastSpeech?.accuracy || coach6D.pronunciation || 94);
+    let studentRankStr = "Top 10%";
+    try {
+      const allScores = JSON.parse(localStorage.getItem('cf_user_scores') || '[]');
+      if (Array.isArray(allScores) && allScores.length > 0) {
+        // Find existing un-updated score entry for student
+        const myScore = allScores.find(s => s.name && s.name.toLowerCase() === studentName.toLowerCase());
+        if (myScore && myScore.acc) studentAcc = Number(myScore.acc);
+        // Rank on leaderboard
+        const sorted = [...allScores].sort((a, b) => (Number(b.acc) || 0) - (Number(a.acc) || 0));
+        const rIdx = sorted.findIndex(s => s.name && s.name.toLowerCase() === studentName.toLowerCase());
+        if (rIdx !== -1) {
+          studentRankStr = `#${rIdx + 1}`;
+        }
+      }
+    } catch (_) {}
+
+    // 4 Columns of Big Bold Metrics: Overall Accuracy and Leaderboard Rank per user instructions
     const heroMetrics = [
-      { label: "OVERALL SCORE", val: "92", denom: "/100", sub: "92% overall · 95% articulation accuracy" },
-      { label: "RANK", val: "Top 10%", denom: "", sub: "Exhibition Leaderboard" },
-      { label: "PERCENTILE", val: "94.20", denom: "", sub: "Top 25% of participants" },
-      { label: "LEAP SCORE", val: "9.2", denom: "/10", sub: "Learning Intelligence Index" }
+      { label: "OVERALL ACCURACY", val: `${studentAcc}%`, denom: "", sub: `${studentAcc}% speech accuracy · Articulation` },
+      { label: "LEADERBOARD RANK", val: studentRankStr, denom: "", sub: "Exhibition Hall of Fame" },
+      { label: "PERCENTILE", val: `${Math.min(99.4, Math.max(75.0, 85 + (studentAcc * 0.12))).toFixed(1)}%`, denom: "", sub: "Top tier participant cohort" },
+      { label: "LEAP SCORE", val: `${(studentAcc / 10).toFixed(1)}`, denom: "/10", sub: "Learning Intelligence Index" }
     ];
 
     const metricColW = heroW / 4;

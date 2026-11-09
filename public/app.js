@@ -204,6 +204,12 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     const res = await fetch(primaryUrl, fetchOpts);
     if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
+    if (!isFile && typeof window !== 'undefined' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+      try {
+        const fallbackRes = await fetch(`${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`, fetchOpts);
+        if (fallbackRes.ok) return await fallbackRes.json();
+      } catch (e) {}
+    }
   } catch (err) {
     if (timeoutId) clearTimeout(timeoutId);
     // If local relative call failed and we're not already targeting PRIMARY_D1_ORIGIN, try fallback to PRIMARY_D1_ORIGIN
@@ -463,14 +469,11 @@ async function speak(text, btn = null) {
           const promotedHeader = res.headers.get('x-eleven-promoted') === 'true';
           const keyIdxHeader = parseInt(res.headers.get('x-eleven-key-index') || '0', 10);
           if (promotedHeader && keyIdxHeader > 0) {
+            // Update active pointer WITHOUT deleting earlier keys from user's registered pool!
             let currentPool = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
             if (currentPool.length > keyIdxHeader) {
-              const newPool = currentPool.slice(keyIdxHeader);
-              const joined = newPool.join('\n');
-              localStorage.setItem('cf_eleven_keys', joined);
-              localStorage.setItem('cf_eleven_key', newPool[0] || '');
-              STATE.config.eleven_keys = joined;
-              STATE.config.eleven_key = newPool[0] || '';
+              localStorage.setItem('cf_eleven_key', currentPool[keyIdxHeader] || '');
+              STATE.config.eleven_key = currentPool[keyIdxHeader] || '';
               if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
             }
           }
@@ -888,13 +891,12 @@ const TUTORIAL_SHORT_STEPS = [
     game: 'wordle',
     targetSelector: '#game-picker-tabs button[data-game="wordle"]',
     badge: 'QUICK TOUR · STEP 3 OF 5',
-    title: 'Vocabulary Challenge: Wordle 2026',
+    title: 'Vocabulary Challenge: Wordle',
     icon: '🟩',
     sectionKey: 'section_wordle_quick',
     instruction: 'Test your vocabulary power in our most popular arcade game! Guess the secret 5-letter professional English word in 6 attempts.',
     actionHint: '👉 Type letters on the on-screen keyboard to make your guess',
-    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
-    speechText: 'Test your vocabulary with Wordle 2026! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
+    speechText: 'Test your vocabulary with Wordle! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
   },
   {
     step: 3,
@@ -1078,7 +1080,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 11,
     tab: 'games',
     game: 'quest-cipher',
-    targetSelector: '#cipher-lens-box',
+    targetSelector: '#standalone-quest-mount',
     badge: 'COMPLETE TOUR · STEP 12 OF 23',
     title: 'The Ink Cipher: University Archive Mystery',
     icon: '🔍',
@@ -1094,13 +1096,12 @@ const TUTORIAL_EXPANDED_STEPS = [
     game: 'wordle',
     targetSelector: '#game-picker-tabs button[data-game="wordle"]',
     badge: 'COMPLETE TOUR · STEP 13 OF 23',
-    title: 'Wordle 2026: 5-Letter Vocabulary Challenge',
+    title: 'Wordle: 5-Letter Vocabulary Challenge',
     icon: '🟩',
     sectionKey: 'section_cognitive_wordle',
     instruction: 'Guess the secret 5-letter professional English word in 6 attempts! Color-coded tiles guide your deductive vocabulary trials.',
     actionHint: '👉 Enter letters on the keyboard and press Enter to guess',
-    audioUrl: '/audio/tutorial/tutorial_exp_step12.mp3',
-    speechText: 'Test your vocabulary with Wordle 2026! Guess the secret five-letter professional word in six attempts with green and yellow tile clues.'
+    speechText: 'Test your vocabulary with Wordle! Guess the secret five-letter professional word in six attempts with green and yellow tile clues.'
   },
   {
     step: 13,
@@ -1198,13 +1199,12 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_roadmap_quiz',
     instruction: 'Discover your professional strengths! Answer 5 rapid career scenarios to uncover your optimal cognitive work style and top recommended career matches.',
     actionHint: '👉 Answer the aptitude scenarios to reveal your profile',
-    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
     speechText: 'Discover your strengths with the five-question Career Aptitude Quiz! Answer interactive career scenarios to reveal your cognitive work style and top career recommendations.'
   },
   {
     step: 20,
     tab: 'leaderboard',
-    targetSelector: '#btn-refresh-leaderboard',
+    targetSelector: '#sec-leaderboard .table-wrapper',
     badge: 'COMPLETE TOUR · STEP 21 OF 23',
     title: 'Live Fair Leaderboard & Hall of Fame',
     icon: '🏆',
@@ -1978,18 +1978,16 @@ function renderInSiteTutorialStep(stepIndex) {
     // Determine feature box to scroll into view:
     let scrollTarget = null;
     if (data.tab === 'games') {
-      if (data.game === 'quest-cipher') {
-        // Specifically target the interactive mystery questioning & accusation console
-        scrollTarget = document.getElementById('cipher-question-input') || 
-                       document.getElementById('cipher-lens-box') || 
-                       document.getElementById('standalone-quest-mount') ||
-                       document.getElementById('game-arena-mount');
-      } else {
-        // Highlight the inner interactive box in the scribe and games instead of the massive outer wrapper
-        scrollTarget = document.getElementById('standalone-quest-mount') || 
-                       document.querySelector('.quest-view-card') || 
-                       document.getElementById('game-arena-mount') || targetEl;
+      // Highlight the entire window/arena of the quest (including The Ink Cipher and The Scribe per user request)
+      scrollTarget = document.getElementById('standalone-quest-mount') || 
+                     document.querySelector('.quest-view-card') || 
+                     document.getElementById('game-arena-mount') || targetEl;
+      if (scrollTarget) {
+        scrollTarget.classList.add('tutorial-arena-highlight');
       }
+    } else if (data.tab === 'leaderboard') {
+      // Highlight the entire leaderboard table window instead of the refresh button
+      scrollTarget = document.querySelector('#sec-leaderboard .table-wrapper') || document.querySelector('.table-wrapper') || targetEl;
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
       }
@@ -2024,11 +2022,21 @@ function renderInSiteTutorialStep(stepIndex) {
     }
   }
 
-  // Always reset scroll to top (0) when entering any step,
-  // so any scroll is guaranteed to be downwards from top to bottom (never scrolling up from down)!
+  // Always reset scroll to top (0) INSTANTLY without smooth animation,
+  // so any subsequent scroll across Wordle, games, and roadmap is strictly a DOWNWARD glide from top to bottom (never scrolling up from down)!
+  cancelTutorialGlider();
+  cancelTutorialScroll();
+  const htmlEl = document.documentElement;
+  const prevBehavior = htmlEl.style.scrollBehavior;
+  htmlEl.style.scrollBehavior = 'auto';
   window.scrollTo(0, 0);
-  // Single smooth scroll invocation after DOM is laid out (prevents lag and animation fighting)
-  setTimeout(highlightAndScrollTarget, 110);
+  document.body.scrollTop = 0;
+  htmlEl.scrollTop = 0;
+  requestAnimationFrame(() => {
+    htmlEl.style.scrollBehavior = prevBehavior;
+  });
+  // Single smooth downward scroll invocation after DOM is laid out
+  setTimeout(highlightAndScrollTarget, 140);
 
   // If final reflections step: first highlight reflections card, then scroll to top to showcase Your Booklet!
   if (data.sectionKey === 'section_reflections_final') {
@@ -11915,12 +11923,25 @@ async function loadFeedbackWall() {
     });
   }
 
+  const DEFAULT_COMMUNITY_FEEDBACKS = [
+    { id: 1, name: 'Shrija Limaye', role: 'Teacher', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Very nice work by the students. Excellent! Keep it up!', pinned: 1, ts: 1793297127751 },
+    { id: 2, name: 'Vidhi Mangal', role: 'Teacher', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Excellent work done by the students.', pinned: 1, ts: 1793297127752 },
+    { id: 3, name: 'Aarush Anoor', role: 'Student', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Very good', pinned: 0, ts: 1793297127753 },
+    { id: 4, name: 'Sadiya Khan', role: 'Teacher', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Audio Recording news reporter part was the best part', pinned: 1, ts: 1793297127754 },
+    { id: 5, name: 'Jagannath Padhy', role: 'Parent', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'great job by the students. interesting and very well designed and explained', pinned: 0, ts: 1793297127755 },
+    { id: 6, name: 'Pinky', role: 'Parent', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'The explanation was excellent.  Overall  very good', pinned: 0, ts: 1793297127756 },
+    { id: 7, name: 'Susan', role: 'Teacher', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Very Good!!! Impressive.', pinned: 0, ts: 1793297127757 },
+    { id: 8, name: 'Rupesh Sawant', role: 'Teacher', class_info: 'Class 10', useful: 5, r_useful: 5, comment: 'Excellent work done by the students. Very helpful for the people who want to improve their communication skills.', pinned: 0, ts: 1793297127758 }
+  ];
+
   function getLocalFeedbacks() {
     try {
       const raw = localStorage.getItem('cf_user_feedbacks');
-      return raw ? JSON.parse(raw) : [];
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      return DEFAULT_COMMUNITY_FEEDBACKS;
     } catch {
-      return [];
+      return DEFAULT_COMMUNITY_FEEDBACKS;
     }
   }
 
@@ -11979,8 +12000,8 @@ async function loadFeedbackWall() {
       let roleBadgeText;
       if (roleStr === 'Teacher' || roleStr === 'Faculty') {
         roleBadgeText = (classStr && !classStr.startsWith('Class ') && classStr !== 'Parent / Guest' && classStr !== 'Teacher' && classStr !== 'Faculty')
-          ? `Faculty · ${classStr}`
-          : 'Faculty';
+          ? `Teacher · ${classStr}`
+          : 'Teacher';
       } else if (roleStr === 'Student') {
         roleBadgeText = (classStr && classStr !== 'Student' && classStr !== 'Parent / Guest')
           ? `Student · ${classStr}`
@@ -12052,7 +12073,7 @@ async function loadFeedbackWall() {
   try {
     const res = await fetchApi('feedback');
     const serverItems = res?.results || res?.feedback;
-    if (Array.isArray(serverItems)) {
+    if (Array.isArray(serverItems) && serverItems.length > 0) {
       // The global database is the single source of truth:
       // Overwrite local cache with authoritative server items so deleted reviews disappear everywhere!
       feedbacks = serverItems.map(item => ({
@@ -13385,7 +13406,9 @@ function initAdminWorkspace() {
       const data = await res.json();
 
       if (data.ok) {
-        const quotaStr = data.subscription ? ` · Quota: ${data.subscription.character_count?.toLocaleString() || 0} / ${data.subscription.character_limit?.toLocaleString() || 10000} chars` : '';
+        const charCount = Number(data.subscription?.character_count ?? data.character_count ?? 0);
+        const charLimit = Number(data.subscription?.character_limit ?? data.character_limit ?? 10000);
+        const quotaStr = ` · ${charCount.toLocaleString()} / ${charLimit.toLocaleString()} credits`;
         if (statusEl) {
           const keyCount = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean).length || (effectiveKey ? 1 : 0);
           const poolStr = keyCount > 1 ? ` · Failover Pool: ${keyCount} keys active` : '';
@@ -14952,43 +14975,33 @@ window.initDynamicApiPools = function() {
     renderElevenBoxes(current);
   };
 
-  // Global key rotation & promotion handler: purges dead key and visibly promotes next backup to Main!
+  // Global key rotation & promotion handler: advances active key pointer WITHOUT deleting registered keys!
   window.rotateAndPromoteElevenKey = async function(reason = 'quota_exhausted') {
     let rawElevenKeys = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
     let keyList = rawElevenKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
     if (keyList.length === 0) return null;
 
-    const deadKey = keyList.shift(); // Purge exhausted main key
-    console.warn(`ElevenLabs key ${deadKey.slice(0, 6)}... (${reason}) purged from pool.`);
+    // Advance active key pointer WITHOUT deleting any keys from user's registered pool!
+    const currentActive = localStorage.getItem('cf_eleven_key') || keyList[0];
+    const curIdx = keyList.indexOf(currentActive);
+    const nextIdx = (curIdx + 1) % keyList.length;
+    const nextKey = keyList[nextIdx];
 
-    const newJoined = keyList.join('\n');
-    localStorage.setItem('cf_eleven_keys', newJoined);
-    localStorage.setItem('cf_eleven_key', keyList[0] || '');
-    STATE.config.eleven_keys = newJoined;
-    STATE.config.eleven_key = keyList[0] || '';
+    localStorage.setItem('cf_eleven_key', nextKey);
+    STATE.config.eleven_key = nextKey;
+    console.warn(`ElevenLabs active key cycled to backup ${nextIdx + 1}/${keyList.length} (${reason}) without deleting registered keys.`);
 
-    // Visually shift the input boxes so Backup 1 becomes Main on screen!
-    if (typeof window.syncAdminElevenKeyBoxes === 'function') {
-      window.syncAdminElevenKeyBoxes();
-    }
-
-    // Persist to Cloudflare D1 Backend asynchronously
+    // Persist active key update to D1 without altering the registered pool list
     try {
       if (typeof fetchApi === 'function') {
         await fetchApi('admin/config', 'PUT', {
-          eleven_keys: newJoined,
-          eleven_key: keyList[0] || ''
+          eleven_key: nextKey
         });
       }
     } catch (_) {}
 
-    if (keyList.length > 0) {
-      showToast('🔄 ElevenLabs quota reached: Backup 1 promoted to Main!', 4000);
-    } else {
-      showToast('⚠️ All ElevenLabs keys consumed. Switched to high-fidelity Indian Neural Voice (en-IN).', 5000);
-    }
-
-    return keyList[0] || null;
+    showToast(`🔄 ElevenLabs quota reached: Cycled to backup key ${nextIdx + 1} of ${keyList.length}`, 4000);
+    return nextKey;
   };
 
   addElevenBtn?.addEventListener('click', () => {

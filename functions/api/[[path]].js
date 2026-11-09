@@ -171,7 +171,16 @@ const GLOBAL_CACHE = {
     rclone_remote: 'gdrive:careerfair_telemetry'
   },
   scores: [],
-  feedback: [],
+  feedback: [
+    { id: 1, name: 'Shrija Limaye', role: 'Teacher', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Very nice work by the students. Excellent! Keep it up!', approved: 1, pinned: 1, ts: 1793297127751 },
+    { id: 2, name: 'Vidhi Mangal', role: 'Teacher', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Excellent work done by the students.', approved: 1, pinned: 1, ts: 1793297127752 },
+    { id: 3, name: 'Aarush Anoor', role: 'Student', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Very good', approved: 1, pinned: 0, ts: 1793297127753 },
+    { id: 4, name: 'Sadiya Khan', role: 'Teacher', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Audio Recording news reporter part was the best part', approved: 1, pinned: 1, ts: 1793297127754 },
+    { id: 5, name: 'Jagannath Padhy', role: 'Parent', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'great job by the students. interesting and very well designed and explained', approved: 1, pinned: 0, ts: 1793297127755 },
+    { id: 6, name: 'Pinky', role: 'Parent', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'The explanation was excellent.  Overall  very good', approved: 1, pinned: 0, ts: 1793297127756 },
+    { id: 7, name: 'Susan', role: 'Teacher', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Very Good!!! Impressive.', approved: 1, pinned: 0, ts: 1793297127757 },
+    { id: 8, name: 'Rupesh Sawant', role: 'Teacher', class_info: 'Class 10', r_useful: 5, r_games: 5, r_speaking: 5, comment: 'Excellent work done by the students. Very helpful for the people who want to improve their communication skills.', approved: 1, pinned: 0, ts: 1793297127758 }
+  ],
   api_keys: [],
   telemetry: [],
   issues: []
@@ -2599,10 +2608,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
     }
 
-    // Auto-heal D1 key pool if a backup key succeeded
+    // Update active key pointer if a backup succeeded WITHOUT deleting earlier keys from pool
     if (successfulKeyIdx > 0 && db) {
-      const remaining = elevenKeyPool.slice(successfulKeyIdx).join('\n');
-      await kvSet(db, 'eleven_keys', remaining);
       await kvSet(db, 'eleven_key', elevenKeyPool[successfulKeyIdx] || '');
     }
 
@@ -2623,7 +2630,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       const vData = await vRes.json();
       const rawVoices = vData.voices || [];
 
-      // Check subscription quota & tier
+      // Check subscription quota & tier with robust fallback to /v1/user
       let subscription = null;
       try {
         const subRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
@@ -2631,8 +2638,18 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         });
         if (subRes.ok) {
           subscription = await subRes.json();
+        } else {
+          const uRes = await fetch('https://api.elevenlabs.io/v1/user', {
+            headers: { 'xi-api-key': elevenKey }
+          });
+          if (uRes.ok) {
+            const uData = await uRes.json();
+            if (uData.subscription) subscription = uData.subscription;
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.warn('ElevenLabs subscription check note:', err);
+      }
 
       const tier = (subscription?.tier || 'free').toLowerCase();
       const isFreeTier = tier === 'free';
@@ -2667,6 +2684,9 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         || voices.find(v => v.freeTierReady)
         || UNIVERSAL_PREMADE_VOICES[0];
 
+      const charCount = Number(subscription?.character_count ?? subscription?.characters_used ?? 0);
+      const charLimit = Number(subscription?.character_limit ?? subscription?.characters_allowed ?? 10000);
+
       return json({
         ok: true,
         total: voices.length,
@@ -2675,12 +2695,14 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         hasIndianVoice: Boolean(indianVoice),
         recommendedIndianVoice: indianVoice,
         recommendedFreeVoice: bestFreeVoice,
-        subscription: subscription ? {
-          tier: subscription.tier || 'free',
-          character_count: subscription.character_count || 0,
-          character_limit: subscription.character_limit || 10000,
-          status: subscription.status || 'active'
-        } : null,
+        character_count: charCount,
+        character_limit: charLimit,
+        subscription: {
+          tier: subscription?.tier || tier || 'free',
+          character_count: charCount,
+          character_limit: charLimit,
+          status: subscription?.status || 'active'
+        },
         voices: voices
       });
     } catch (e) {
@@ -2903,12 +2925,10 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
 
         if (audioBuffer) {
-          // If a promoted backup key succeeded, auto-persist the updated pool in D1
+          // Update active pointer if a backup key succeeded WITHOUT slicing/purging registered keys
           if (db && kIdx > 0) {
-            const promotedPool = elevenKeyPool.slice(kIdx);
             try {
-              await kvSet(db, 'eleven_keys', promotedPool.join('\n'));
-              await kvSet(db, 'eleven_key', promotedPool[0] || '');
+              await kvSet(db, 'eleven_key', elevenKeyPool[kIdx] || '');
             } catch (_) {}
           }
           break; // Audio ready, stop checking keys
