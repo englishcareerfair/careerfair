@@ -968,7 +968,7 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 3,
     tab: 'exams',
-    targetSelector: '#sec-exams',
+    targetSelector: '#exams-cards-container',
     badge: 'COMPLETE TOUR · STEP 4 OF 23',
     title: 'English Proficiency Testing & Exams',
     icon: '📋',
@@ -981,7 +981,7 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 4,
     tab: 'speak',
-    targetSelector: '#btn-listen-target',
+    targetSelector: '#speak-record-orb',
     badge: 'COMPLETE TOUR · STEP 5 OF 23',
     title: 'AI Pronunciation Studio & Phonetics',
     icon: '🗣️',
@@ -1274,6 +1274,7 @@ let tutorialScrollAnimId = null;
 let currentTutorialScrollTargetY = null;
 
 function cancelTutorialScroll() {
+  cancelCollegesCycle();
   cancelTutorialGlider();
   if (tutorialScrollAnimId) {
     cancelAnimationFrame(tutorialScrollAnimId);
@@ -1340,9 +1341,57 @@ function cancelTutorialGlider() {
   }
 }
 
-function startTutorialNarrationGlider(tabKey) {
+let collegeCycleTimer = null;
+
+function cancelCollegesCycle() {
+  if (collegeCycleTimer) {
+    clearInterval(collegeCycleTimer);
+    collegeCycleTimer = null;
+  }
+}
+
+function startCollegesTabCycling() {
+  cancelCollegesCycle();
   cancelTutorialGlider();
   if (!isTutorialRunning) return;
+
+  // Ensure colleges are rendered and scroll starts cleanly at top
+  window.scrollTo(0, 0);
+
+  const chips = Array.from(document.querySelectorAll('#college-region-filters .filter-chip'));
+  if (!chips.length) return;
+
+  let currentIdx = 0;
+  // Activate first filter chip immediately
+  chips[0].click();
+
+  collegeCycleTimer = setInterval(() => {
+    if (!isTutorialRunning) {
+      cancelCollegesCycle();
+      return;
+    }
+    const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+    const step = steps[currentTutorialStepIndex];
+    if (!step || step.tab !== 'colleges') {
+      cancelCollegesCycle();
+      return;
+    }
+
+    currentIdx = (currentIdx + 1) % chips.length;
+    chips[currentIdx].click();
+    chips[currentIdx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, 3400);
+}
+
+function startTutorialNarrationGlider(tabKey) {
+  cancelTutorialGlider();
+  cancelCollegesCycle();
+  if (!isTutorialRunning) return;
+
+  if (tabKey === 'colleges') {
+    startCollegesTabCycling();
+    return;
+  }
 
   const targetSec = document.getElementById(`sec-${tabKey}`);
   if (!targetSec) return;
@@ -1352,22 +1401,18 @@ function startTutorialNarrationGlider(tabKey) {
     const topNav = document.querySelector('.navbar') || document.querySelector('header');
     const topNavHeight = topNav ? topNav.offsetHeight : 64;
 
-    const rect = targetSec.getBoundingClientRect();
-    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-    const startY = Math.max(0, rect.top + currentScrollY - topNavHeight);
-    
-    // Always start at top of tab
-    window.scrollTo(0, startY);
+    // Always start at top of tab (guarantees downward scroll motion)
+    window.scrollTo(0, 0);
 
     const totalHeight = targetSec.scrollHeight || targetSec.offsetHeight;
     const viewportHeight = window.innerHeight;
-    const maxScroll = Math.max(startY, startY + totalHeight - viewportHeight + 80);
-    const distance = maxScroll - startY;
+    const maxScroll = Math.max(0, totalHeight - viewportHeight + 140);
+    const distance = maxScroll;
 
     if (distance <= 40) return;
 
-    // Glide smoothly over 9 to 13 seconds while audio plays
-    const duration = Math.min(13000, Math.max(8500, Math.round(distance * 11)));
+    // Glide smoothly in slow motion over 14 to 18 seconds so user gets to see each item
+    const duration = Math.min(18000, Math.max(12000, Math.round(distance * 14)));
     const startTime = performance.now();
 
     function glideStep(now) {
@@ -1376,7 +1421,7 @@ function startTutorialNarrationGlider(tabKey) {
       const progress = Math.min(1, elapsed / duration);
       // Gentle smooth curve
       const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
-      window.scrollTo(0, Math.round(startY + distance * ease));
+      window.scrollTo(0, Math.round(distance * ease));
 
       if (progress < 1) {
         tutorialGliderAnimId = requestAnimationFrame(glideStep);
@@ -1386,7 +1431,7 @@ function startTutorialNarrationGlider(tabKey) {
     }
 
     tutorialGliderAnimId = requestAnimationFrame(glideStep);
-  }, 140);
+  }, 200);
 }
 
 function scrollTutorialTargetIntoView(selector, options = {}) {
@@ -1893,7 +1938,10 @@ function renderInSiteTutorialStep(stepIndex) {
       tabChanged = true;
     }
     if (typeof window.switchTab === 'function') {
-      window.switchTab(data.tab, { keepVoice: true, keepScroll: true, skipSubInit: true, fromRouter: true });
+      window.switchTab(data.tab, { keepVoice: true, keepScroll: true, skipSubInit: false, fromRouter: true });
+    if (data.tab === 'exams' && typeof renderExams === 'function') renderExams();
+    if (data.tab === 'speechLab' && typeof initSpeechLab === 'function') initSpeechLab();
+    if (data.tab === 'teleprompter' && typeof initTeleprompter === 'function') initTeleprompter();
     }
     if (window.AppRouter && typeof window.AppRouter.updateUrl === 'function') {
       window.AppRouter.current.tab = data.tab;
@@ -1932,12 +1980,15 @@ function renderInSiteTutorialStep(stepIndex) {
     if (data.tab === 'games') {
       if (data.game === 'quest-cipher') {
         // Specifically target the interactive mystery questioning & accusation console
-        // so the clue, suspects, interrogation input, and decision buttons are right in view!
         scrollTarget = document.getElementById('cipher-question-input') || 
                        document.getElementById('cipher-lens-box') || 
+                       document.getElementById('standalone-quest-mount') ||
                        document.getElementById('game-arena-mount');
       } else {
-        scrollTarget = document.getElementById('game-arena-mount') || targetEl;
+        // Highlight the inner interactive box in the scribe and games instead of the massive outer wrapper
+        scrollTarget = document.getElementById('standalone-quest-mount') || 
+                       document.querySelector('.quest-view-card') || 
+                       document.getElementById('game-arena-mount') || targetEl;
       }
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
@@ -1960,16 +2011,22 @@ function renderInSiteTutorialStep(stepIndex) {
       scrollTarget = targetEl;
     }
 
+    if (data.tab === 'colleges') {
+      // User request: "and same in colleges but instead of scrolling go through the tabs"
+      // Keep scroll strictly at top so the entire colleges header and tab bar are fully visible without vertical scrolling
+      window.scrollTo(0, 0);
+      startCollegesTabCycling();
+      return;
+    }
+
     if (scrollTarget) {
       scrollTutorialTargetIntoView(scrollTarget);
     }
   }
 
-  // Always reset scroll to top (0) when entering a new tab,
+  // Always reset scroll to top (0) when entering any step,
   // so any scroll is guaranteed to be downwards from top to bottom (never scrolling up from down)!
-  if (tabChanged) {
-    window.scrollTo(0, 0);
-  }
+  window.scrollTo(0, 0);
   // Single smooth scroll invocation after DOM is laid out (prevents lag and animation fighting)
   setTimeout(highlightAndScrollTarget, 110);
 
@@ -4155,15 +4212,15 @@ function switchTab(tabId, options = {}) {
     window.AppRouter.onTabSwitched(tabId);
   }
 
-  // Trigger lazy section initializers (only if not already handled by router sub-initializer)
+  // Trigger section initializers (always ensure hero, careers, colleges, exams, speak, speechLab, teleprompter are initialized)
+  if (tabId === 'hero') renderHeroStream();
+  if (tabId === 'careers') renderCareers();
+  if (tabId === 'colleges') renderColleges();
+  if (tabId === 'exams') renderExams();
+  if (tabId === 'speak') initSpeakLadder();
+  if (tabId === 'speechLab') initSpeechLab();
+  if (tabId === 'teleprompter') initTeleprompter();
   if (!options.skipSubInit) {
-    if (tabId === 'hero') renderHeroStream();
-    if (tabId === 'careers') renderCareers();
-    if (tabId === 'colleges') renderColleges();
-    if (tabId === 'exams') renderExams();
-    if (tabId === 'speak') initSpeakLadder();
-    if (tabId === 'speechLab') initSpeechLab();
-    if (tabId === 'teleprompter') initTeleprompter();
     if (tabId === 'games') renderGameArena('quest-scribe');
     if (tabId === 'roadmap') renderPlanTool('bizcard');
     if (tabId === 'leaderboard') loadLeaderboard();
@@ -7786,8 +7843,7 @@ function launchQuestScribe(mount) {
   let storyHistory = [];
 
   mount.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0;">📜 Quest I: The Scribe</h3>
+    <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:8px;">
       <span class="badge-pill badge-reg" id="scribe-turn-badge">Chapter 1 of 6</span>
     </div>
     <div id="scribe-story-box" class="quest-output-box">The ink is still wet on the parchment...</div>
@@ -7924,8 +7980,7 @@ function launchQuestScribe(mount) {
 // QUEST 2: The Etymologist
 function launchQuestEtym(mount) {
   mount.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0 0 4px 0;">🏛️ Quest II: The Etymologist</h3>
+    <div style="margin-bottom:10px;">
       <span style="font-size:13px;color:var(--text-dim);">Uncover the ancient Latin &amp; Greek lineages behind modern English career words.</span>
     </div>
     <div style="display:flex;gap:10px;margin-bottom:16px;">
@@ -8013,8 +8068,7 @@ function launchQuestEtym(mount) {
 // QUEST 3: The Bard's Mirror
 function launchQuestBard(mount) {
   mount.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0 0 4px 0;">🪞 Quest III: The Bard's Mirror</h3>
+    <div style="margin-bottom:10px;">
       <span style="font-size:13px;color:var(--text-dim);">Consult Shakespeare and the Romantic poets for verse composition or a rigorous stylistic critique.</span>
     </div>
     <div style="margin-bottom:12px;">
@@ -8102,8 +8156,7 @@ function launchQuestBard(mount) {
 // QUEST 4: The Career Oracle
 function launchQuestOracle(mount) {
   mount.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <h3 style="font-size:20px;margin:0 0 4px 0;">🔮 Quest IV: The Career Oracle</h3>
+    <div style="margin-bottom:10px;">
       <span style="font-size:13px;color:var(--text-dim);">Three personality divination prompts to uncover an unexpected high-impact career pathway in India.</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));gap:12px;margin-bottom:14px;">
@@ -8523,7 +8576,6 @@ function launchQuestCipher(mount) {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
         <div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <h3 style="font-size:20px;margin:0;">🔍 Quest V: The Ink Cipher</h3>
             <span class="badge-pill" style="font-size:11px;font-weight:700;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">
               ${escapeHtml(currentCase.badge)}
             </span>

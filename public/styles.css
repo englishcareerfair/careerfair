@@ -5872,8 +5872,7 @@ input[data-capitalize="name"] {
   box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
 }
 
-/* Replaced inputs and selects that do not support ::after */
-select.tutorial-button-highlight,
+/* Replaced text inputs that do not support ::after */
 input.tutorial-button-highlight {
   border: 2.5px solid transparent !important;
   background-clip: padding-box, border-box !important;
@@ -5885,12 +5884,29 @@ input.tutorial-button-highlight {
   box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
 }
 
-[data-theme="light"] select.tutorial-button-highlight,
 [data-theme="light"] input.tutorial-button-highlight {
   background-image: 
     linear-gradient(#ffffff, #ffffff),
     conic-gradient(from var(--perimeter-angle, 0deg), transparent 60%, rgba(2, 132, 199, 0.4) 75%, #0284c7 92%, #38bdf8 97%, #0284c7 100%) !important;
   box-shadow: 0 0 14px rgba(2, 132, 199, 0.4) !important;
+}
+
+/* Select dropdowns: keep native/custom dropdown arrow pristine without square mask artifact */
+select.tutorial-button-highlight {
+  border-color: var(--accent-cyan, #00f0ff) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2.5px rgba(0, 240, 255, 0.5), 0 0 22px rgba(0, 240, 255, 0.45) !important;
+  animation: pulseCyanGlow 1.8s infinite ease-in-out !important;
+}
+
+[data-theme="light"] select.tutorial-button-highlight {
+  border-color: var(--accent-blue, #0284c7) !important;
+  box-shadow: 0 0 0 2.5px rgba(2, 132, 199, 0.5), 0 0 22px rgba(2, 132, 199, 0.35) !important;
+}
+
+@keyframes pulseCyanGlow {
+  0%, 100% { box-shadow: 0 0 0 2.5px rgba(0, 240, 255, 0.4), 0 0 14px rgba(0, 240, 255, 0.3); }
+  50% { box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.8), 0 0 26px rgba(0, 240, 255, 0.6); }
 }
 
 .tutorial-pin-glow {
