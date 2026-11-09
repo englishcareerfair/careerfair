@@ -741,39 +741,40 @@ async function speakGreeting() {
 const TUTORIAL_SHORT_STEPS = [
   {
     step: 0,
-    tab: 'hero',
-    targetSelector: '#overview',
-    badge: 'SHORT TOUR · STEP 1 OF 5',
-    title: 'Welcome & Live Stage Broadcast',
-    icon: '🔴',
-    sectionKey: 'section_overview',
-    instruction: 'Welcome to Career Fair 2026! Watch our official Live Stream broadcasting keynotes and student presentations from the school auditorium.',
-    actionHint: '👉 Watch the live auditorium broadcast on the main stage',
-    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! Check out our official Live Stream broadcasting keynotes and student exhibitions directly from the auditorium stage. Now, let us explore your target careers and pin one to your booklet!'
-  },
-  {
-    step: 1,
     tab: 'careers',
     targetSelector: '#careers',
-    badge: 'SHORT TOUR · STEP 2 OF 5',
+    badge: 'SHORT TOUR · STEP 1 OF 5',
     title: 'Choose & Pin Your Career',
     icon: '🎯',
     sectionKey: 'section_career',
     instruction: 'Explore 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. Pinning automatically generates your personalized college roadmap!',
     actionHint: '👉 Click "⭐ Pin to Your Booklet" on any career card below',
-    speechText: 'Choose your target career from our thirty-two global pathways. When you pin a career, its academic roadmap and top colleges are automatically added to your booklet. Click Pin to Your Booklet on your favorite career!'
+    speechText: 'Welcome to Career Fair 2026! Let us begin by choosing your target career from thirty-two global pathways. When you pin a career, its academic roadmap and top colleges are automatically added to your booklet. Click Pin to Your Booklet on your favorite career!'
   },
   {
-    step: 2,
+    step: 1,
     tab: 'speechLab',
     targetSelector: '#speech-lab',
-    badge: 'SHORT TOUR · STEP 3 OF 5',
+    badge: 'SHORT TOUR · STEP 2 OF 5',
     title: 'Spoken English AI Diagnostic',
     icon: '🎙️',
     sectionKey: 'section_speech',
     instruction: 'Spoken articulation is vital for career success. Test your speech below—your pronunciation, cadence, and fluency scores directly populate Section 4 of your printable booklet!',
     actionHint: '👉 Tap the microphone or click "Try Demo" to test speech diagnostics',
     speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Tap the microphone to record your voice or test a phrase!'
+  },
+  {
+    step: 2,
+    tab: 'games',
+    game: 'wordle',
+    targetSelector: '#game-arena-mount',
+    badge: 'SHORT TOUR · STEP 3 OF 5',
+    title: 'Vocabulary Challenge: Wordle 2026',
+    icon: '🟩',
+    sectionKey: 'section_wordle_quick',
+    instruction: 'Sharpen your vocabulary with Wordle 2026! Guess the 5-letter professional word in 6 attempts. Each attempt gives instant color-coded feedback!',
+    actionHint: '👉 Enter a 5-letter word and submit your guess',
+    speechText: 'Test your vocabulary with Wordle 2026! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
   },
   {
     step: 3,
@@ -805,33 +806,21 @@ const TUTORIAL_SHORT_STEPS = [
 const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 0,
-    tab: 'hero',
-    targetSelector: '#overview',
-    badge: 'COMPLETE TOUR · STEP 1 OF 12',
-    title: 'Live Stage Broadcast & Overview',
-    icon: '🔴',
-    sectionKey: 'section_overview',
-    instruction: 'Welcome to Career Fair 2026! Watch our official Live Stream player on the main stage for live keynote broadcasts and auditorium presentations.',
-    actionHint: '👉 Inspect the live stage broadcast and English superpower framework',
-    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! Our official Live Stream is broadcasting live right now from the auditorium, featuring industry keynotes, student project showcases, and live career panels. Follow along as we explore every exhibit, game, quiz, and diagnostic across the fair!'
-  },
-  {
-    step: 1,
     tab: 'careers',
     targetSelector: '#careers',
-    badge: 'COMPLETE TOUR · STEP 2 OF 12',
+    badge: 'COMPLETE TOUR · STEP 1 OF 11',
     title: '32+ Global Careers Directory',
     icon: '🎯',
     sectionKey: 'section_career',
     instruction: 'Explore 32 high-impact career pathways. Filter by Healthcare, Aviation, Tech, Corporate, or Law, inspect required skills and salary projections, and pin your dream career.',
     actionHint: '👉 Click cluster filters (e.g. Healthcare, Aviation) or pin a career',
-    speechText: 'Here are thirty-two high-impact global career pathways where English fluency is essential. Filter by aviation, technology, healthcare, or law, and click Pin to Your Booklet to select your target career!'
+    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! Here are thirty-two high-impact global career pathways where English fluency is essential. Filter by aviation, technology, healthcare, or law, and click Pin to Your Booklet to select your target career!'
   },
   {
-    step: 2,
+    step: 1,
     tab: 'colleges',
     targetSelector: '#colleges',
-    badge: 'COMPLETE TOUR · STEP 3 OF 12',
+    badge: 'COMPLETE TOUR · STEP 2 OF 11',
     title: 'Premier Higher Education & Universities',
     icon: '🏛️',
     sectionKey: 'section_colleges',
@@ -840,10 +829,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Explore top accredited universities, global QS rankings, and degree paths. Discover the exact institutions and admission benchmarks needed to achieve your dream career!'
   },
   {
-    step: 3,
+    step: 2,
     tab: 'exams',
     targetSelector: '#exams',
-    badge: 'COMPLETE TOUR · STEP 4 OF 12',
+    badge: 'COMPLETE TOUR · STEP 3 OF 11',
     title: 'English Proficiency Testing & Score Conversion',
     icon: '📋',
     sectionKey: 'section_exams',
@@ -852,36 +841,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Master global English proficiency benchmarks! Compare CEFR levels with IELTS, TOEFL, and Duolingo scores required for international licensure and university admissions.'
   },
   {
-    step: 4,
-    tab: 'roadmap',
-    subtool: 'quiz',
-    targetSelector: '#plan-tool-arena',
-    badge: 'COMPLETE TOUR · STEP 5 OF 12',
-    title: 'Interactive Career Aptitude Discovery Quiz',
-    icon: '🧩',
-    sectionKey: 'section_quiz',
-    instruction: 'Take our 5-question aptitude diagnostic! Discover your personality alignment and find the top global professions matched to your unique talents.',
-    actionHint: '👉 Answer the 5 quiz questions to find your optimal career match',
-    speechText: 'Take our interactive Career Aptitude Quiz! Answer five quick diagnostic questions to discover your personality alignment and find the global careers best suited for your skills and interests!'
-  },
-  {
-    step: 5,
-    tab: 'roadmap',
-    subtool: 'myplan',
-    targetSelector: '#plan-tool-arena',
-    badge: 'COMPLETE TOUR · STEP 6 OF 12',
-    title: '"My Plan" Strategic Career Blueprint',
-    icon: '🗺️',
-    sectionKey: 'section_roadmap',
-    instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, licensure milestones, and executive leadership goals.',
-    actionHint: '👉 Select your current class to generate your personalized timeline',
-    speechText: 'This is your personalized Strategic Career Blueprint. It maps out your multi-year progression from undergraduate degrees to professional licensure and executive leadership milestones.'
-  },
-  {
-    step: 6,
+    step: 3,
     tab: 'speak',
     targetSelector: '#sec-speak',
-    badge: 'COMPLETE TOUR · STEP 7 OF 12',
+    badge: 'COMPLETE TOUR · STEP 4 OF 11',
     title: 'AI Pronunciation Studio & Phonetic Breakdown',
     icon: '🗣️',
     sectionKey: 'section_speak',
@@ -890,10 +853,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our visual phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
   },
   {
-    step: 7,
+    step: 4,
     tab: 'speechLab',
     targetSelector: '#speech-lab',
-    badge: 'COMPLETE TOUR · STEP 8 OF 12',
+    badge: 'COMPLETE TOUR · STEP 5 OF 11',
     title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
@@ -902,10 +865,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Your scores feed directly into your booklet!'
   },
   {
-    step: 8,
+    step: 5,
     tab: 'teleprompter',
     targetSelector: '#teleprompter',
-    badge: 'COMPLETE TOUR · STEP 9 OF 12',
+    badge: 'COMPLETE TOUR · STEP 6 OF 11',
     title: 'News Anchor Studio & Live Teleprompter',
     icon: '📺',
     sectionKey: 'section_teleprompter',
@@ -914,22 +877,48 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Step into the shoes of a broadcast news anchor! Practice reading breaking international news scripts with an adjustable teleprompter mirror and live webcam video. Master poise, speed control, and camera presence!'
   },
   {
-    step: 9,
+    step: 6,
     tab: 'games',
-    targetSelector: '#games',
-    badge: 'COMPLETE TOUR · STEP 10 OF 12',
-    title: 'Language Arcade Games & Leaderboard',
+    targetSelector: '#game-picker-tabs',
+    badge: 'COMPLETE TOUR · STEP 7 OF 11',
+    title: 'Language Arcade Games & AI Quests',
     icon: '🎮',
     sectionKey: 'section_cognitive',
-    instruction: 'Compete in 11 interactive arcade games: Wordle 2026, Vocab Hangman, Jobtris, Phrasal Dash, and Speed Scramble to climb the live exhibition leaderboard!',
-    actionHint: '👉 Launch Wordle, Hangman, or any arcade game card',
-    speechText: 'Have fun while sharpening your vocabulary! Play eleven interactive educational arcade games including Wordle 2026, Vocab Hangman, Jobtris, and Speed Scramble. Earn points and climb the live exhibition leaderboard!'
+    instruction: 'Compete in 11 interactive arcade games and Gemini AI quests: The Scribe, The Etymologist, Wordle 2026, Vocab Hangman, and Spelling Bee to climb the live leaderboard!',
+    actionHint: '👉 Launch Wordle, Hangman, or any quest card',
+    speechText: 'Have fun while sharpening your vocabulary! Explore eleven interactive games including The Scribe, The Etymologist, Wordle 2026, Hangman, and Spelling Bee. Earn points and climb the live exhibition leaderboard!'
   },
   {
-    step: 10,
+    step: 7,
+    tab: 'roadmap',
+    subtool: 'quiz',
+    targetSelector: '#plan-tool-arena',
+    badge: 'COMPLETE TOUR · STEP 8 OF 11',
+    title: 'Interactive Career Aptitude Discovery Quiz',
+    icon: '🧩',
+    sectionKey: 'section_quiz',
+    instruction: 'Take our 5-question aptitude diagnostic! Discover your personality alignment and find the top global professions matched to your unique talents.',
+    actionHint: '👉 Answer the 5 quiz questions to find your optimal career match',
+    speechText: 'Take our interactive Career Aptitude Quiz! Answer five quick diagnostic questions to discover your personality alignment and find the global careers best suited for your skills and interests!'
+  },
+  {
+    step: 8,
+    tab: 'roadmap',
+    subtool: 'myplan',
+    targetSelector: '#plan-tool-arena',
+    badge: 'COMPLETE TOUR · STEP 9 OF 11',
+    title: '"My Plan" Strategic Career Blueprint',
+    icon: '🗺️',
+    sectionKey: 'section_roadmap',
+    instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, licensure milestones, and executive leadership goals.',
+    actionHint: '👉 Select your current class to generate your personalized timeline',
+    speechText: 'This is your personalized Strategic Career Blueprint. It maps out your multi-year progression from undergraduate degrees to professional licensure and executive leadership milestones.'
+  },
+  {
+    step: 9,
     tab: 'feedback',
     targetSelector: '#feedback',
-    badge: 'COMPLETE TOUR · STEP 11 OF 12',
+    badge: 'COMPLETE TOUR · STEP 10 OF 11',
     title: 'Student Reflection & Fair Feedback',
     icon: '⭐',
     sectionKey: 'section_feedback',
@@ -938,11 +927,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Share your official exhibition feedback and star rating! Your reflection is published to the exhibition feedback wall and stamped onto Page Two of your official Career Booklet, right above your student business card!'
   },
   {
-    step: 11,
+    step: 10,
     tab: 'roadmap',
     subtool: 'bizcard',
     targetSelector: '#student-card-preview',
-    badge: 'COMPLETE TOUR · STEP 12 OF 12',
+    badge: 'COMPLETE TOUR · STEP 11 OF 11',
     title: 'Your Booklet is Ready! (Download at Top)',
     icon: '📖',
     sectionKey: 'section_booklet',
@@ -961,6 +950,56 @@ let activeTutorialAudio = null;
 let currentTutorialAudioSessionId = 0;
 let hasPinnedDuringActiveTutorial = false;
 let waitingForCareerPin = false;
+let hasSubmittedFeedbackDuringTutorial = false;
+
+function isTutorialOnSection(sectionKey) {
+  if (!isTutorialRunning) return false;
+  const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+  const step = steps[currentTutorialStepIndex];
+  return Boolean(step && step.sectionKey === sectionKey);
+}
+
+function hasGivenFeedback() {
+  if (hasSubmittedFeedbackDuringTutorial) return true;
+  try {
+    const fb = JSON.parse(localStorage.getItem('ecf_student_feedback') || '{}');
+    if (fb && ((fb.comment && fb.comment.trim()) || fb.stars)) return true;
+  } catch (_) {}
+  return false;
+}
+
+function scrollTutorialTargetIntoView(selector) {
+  if (!selector) return;
+  const target = document.querySelector(selector);
+  if (!target) return;
+
+  try {
+    const rect = target.getBoundingClientRect();
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const targetTop = rect.top + currentScrollY;
+
+    const topNav = document.querySelector('.navbar') || document.querySelector('header');
+    const topNavHeight = topNav ? topNav.offsetHeight : 64;
+    const hud = document.getElementById('tutorial-hud');
+    const hudHeight = (hud && hud.classList.contains('active')) ? hud.offsetHeight : 180;
+
+    const viewportHeight = window.innerHeight;
+    const availableHeight = Math.max(200, viewportHeight - topNavHeight - hudHeight);
+
+    // Center target comfortably within clear vertical slice between navbar and bottom HUD
+    const idealTop = Math.max(0, targetTop - topNavHeight - Math.max(16, (availableHeight - Math.min(rect.height, availableHeight)) / 2));
+
+    window.scrollTo({
+      top: idealTop,
+      behavior: 'smooth'
+    });
+  } catch (_) {
+    try {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (_) {}
+  }
+}
+
 
 function setHeaderBookletHighlight(active) {
   const btn = document.getElementById('btn-header-dossier');
@@ -980,7 +1019,14 @@ function setHeaderBookletHighlight(active) {
 
 function syncStudentNameToAllSections(name) {
   if (!name) return;
-  const bcInput = document.getElementById('bizcard-name-input');
+  STATE.studentName = name;
+  try {
+    localStorage.setItem('cf_student_name', name);
+    localStorage.setItem('ecf_student_name', name);
+    localStorage.setItem('ecf_bizcard_name', name);
+  } catch (_) {}
+
+  const bcInput = document.getElementById('biz-name') || document.getElementById('bizcard-name-input');
   if (bcInput) {
     bcInput.value = name;
     bcInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -988,6 +1034,21 @@ function syncStudentNameToAllSections(name) {
   const fbInput = document.getElementById('fb-name');
   if (fbInput) {
     fbInput.value = name;
+    fbInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  // Synchronize student name into Spoken English / Voice Test studio
+  const speakNameInput = document.getElementById('speak-student-name');
+  if (speakNameInput) {
+    speakNameInput.value = name;
+    speakNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    speakNameInput.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  // Synchronize student name into 6D AI Voice Coach / Speech Lab
+  const speechLabNameInput = document.getElementById('speech-lab-student-name');
+  if (speechLabNameInput) {
+    speechLabNameInput.value = name;
+    speechLabNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    speechLabNameInput.dispatchEvent(new Event('change', { bubbles: true }));
   }
   document.querySelectorAll('.student-name-display').forEach(el => {
     el.textContent = name;
@@ -1045,6 +1106,10 @@ function startTutorialWithMode(mode) {
 
   closeTutorialChoiceModal();
   currentTutorialMode = (mode === 'expanded') ? 'expanded' : 'short';
+  try {
+    localStorage.setItem('cf_tutorial_mode', currentTutorialMode);
+  } catch (_) {}
+  hasSubmittedFeedbackDuringTutorial = false;
   isTutorialRunning = true;
   isTutorialPaused = false;
   hasPinnedDuringActiveTutorial = false;
@@ -1200,24 +1265,38 @@ function resumeTutorial() {
 let tutorialAutoAdvanceTimer = null;
 
 function isTutorialInteractiveStep(mode, stepIndex) {
+  const steps = (mode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
+  const step = steps[stepIndex];
+  if (!step) return false;
+
   if (mode === 'short') {
     // In Short Tour:
-    // Step 1: Choose & Pin Your Career
-    // Step 2: Spoken English AI Diagnostic (Speech Lab)
-    // Step 3: Student Reflection & Fair Feedback
-    return stepIndex === 1 || stepIndex === 2 || stepIndex === 3;
+    // Step 0: Choose & Pin Your Career (section_career)
+    // Step 1: Spoken English AI Diagnostic (section_speech)
+    // Step 2: Vocabulary Challenge Wordle 2026 (section_wordle_quick)
+    // Step 3: Student Reflection & Fair Feedback (section_feedback)
+    return ['section_career', 'section_speech', 'section_wordle_quick', 'section_feedback'].includes(step.sectionKey);
   } else if (mode === 'expanded') {
     // In Complete Tour:
-    // Only steps that are same in both tutorials OR require user interference:
-    // Step 1: Careers (Pin career - same in both & requires user action)
-    // Step 4: Quiz (Answer aptitude questions - requires user action)
-    // Step 5: My Plan (Generate blueprint - requires user action)
-    // Step 6: Pronunciation Studio (Speak / listen - requires user action)
-    // Step 7: Speech Lab (Test speech - same in both & requires user action)
-    // Step 8: Teleprompter (Rehearse roleplay - requires user action)
-    // Step 9: Language Arcade Games (Launch / play arcade - requires user action)
-    // Step 10: Feedback (Review / rate - same in both & requires user action)
-    return [1, 4, 5, 6, 7, 8, 9, 10].includes(stepIndex);
+    // Interactive steps:
+    // Step 0: Careers (section_career)
+    // Step 3: Pronunciation Studio (section_speak)
+    // Step 4: 6D Voice Coach (section_speech)
+    // Step 5: Teleprompter Studio (section_teleprompter)
+    // Step 6: Language Arcade & AI Quests (section_cognitive)
+    // Step 7: Quiz (section_quiz)
+    // Step 8: My Plan (section_roadmap)
+    // Step 9: Feedback (section_feedback)
+    return [
+      'section_career',
+      'section_speak',
+      'section_speech',
+      'section_teleprompter',
+      'section_cognitive',
+      'section_quiz',
+      'section_roadmap',
+      'section_feedback'
+    ].includes(step.sectionKey);
   }
   return false;
 }
@@ -1341,9 +1420,9 @@ function renderInSiteTutorialStep(stepIndex) {
   // Navigate on page to target tab
   if (data.tab) {
     if (window.AppRouter) {
-      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab), { keepVoice: true });
+      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab), { keepVoice: true, keepScroll: true });
     } else if (typeof window.switchTab === 'function') {
-      window.switchTab(data.tab, { keepVoice: true });
+      window.switchTab(data.tab, { keepVoice: true, keepScroll: true });
     }
   }
 
@@ -1352,19 +1431,22 @@ function renderInSiteTutorialStep(stepIndex) {
     renderPlanTool(data.subtool);
   }
 
-  // Scroll smoothly to target element
+  // Switch game arena if target game specified
+  if (data.game && typeof renderGameArena === 'function') {
+    renderGameArena(data.game);
+  }
+
+  // Scroll smoothly to target element with ideal showcase centering
   setTimeout(() => {
-    const target = data.targetSelector ? document.querySelector(data.targetSelector) : null;
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, 180);
+    scrollTutorialTargetIntoView(data.targetSelector);
+  }, 220);
 
   // Remove pin glow
   document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
 
-  const isCareerStep = (currentTutorialMode === 'short' && stepIndex === 1) || (currentTutorialMode === 'expanded' && stepIndex === 1);
+  const isCareerStep = (data.sectionKey === 'section_career');
   const isFinalStep = (stepIndex === steps.length - 1);
+  const isFeedbackStep = (data.sectionKey === 'section_feedback');
   const isInteractive = isTutorialInteractiveStep(currentTutorialMode, stepIndex);
 
   if (isCareerStep) {
@@ -1398,10 +1480,18 @@ function renderInSiteTutorialStep(stepIndex) {
   // On interactive steps: auto-detect user action and auto-advance! Place "Skip Step ⏭️" in place of Next Exhibit
   // On non-interactive informational steps: keep manual "Next Exhibit ▶" and standard "Skip ⏭️"
   if (isFinalStep) {
+    const feedbackGiven = hasGivenFeedback();
     if (nextBtn) {
       nextBtn.style.display = 'inline-flex';
-      nextBtn.className = 'btn btn-primary btn-sm';
-      nextBtn.textContent = 'Finish Tutorial 🎉';
+      if (!feedbackGiven) {
+        nextBtn.className = 'btn btn-secondary btn-sm';
+        nextBtn.textContent = 'Submit Feedback to Complete ✍️';
+        nextBtn.title = 'Fair feedback is mandatory to complete the tour';
+      } else {
+        nextBtn.className = 'btn btn-primary btn-sm';
+        nextBtn.textContent = 'Finish Tutorial 🎉';
+        nextBtn.title = 'Complete exhibition tour';
+      }
       nextBtn.style.opacity = '1';
       nextBtn.disabled = false;
     }
@@ -1412,8 +1502,9 @@ function renderInSiteTutorialStep(stepIndex) {
     if (nextBtn) {
       nextBtn.style.display = 'none';
     }
-    // Remove skip step button in quick tutorial; show only in expanded tour
-    if (currentTutorialMode === 'short') {
+    // On feedback step, feedback is strictly mandatory - never show skip button!
+    // In quick tutorial, skip button is removed across all steps.
+    if (isFeedbackStep || currentTutorialMode === 'short') {
       if (skipBtn) skipBtn.style.display = 'none';
     } else {
       if (skipBtn) {
@@ -1461,10 +1552,7 @@ function renderInSiteTutorialStep(stepIndex) {
 function onCareerPinnedByStudent(careerObj) {
   if (!careerObj || !careerObj.title) return;
 
-  const isCareerStep = (currentTutorialMode === 'short' && currentTutorialStepIndex === 1) || 
-                       (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 1);
-
-  if (isTutorialRunning && isCareerStep) {
+  if (isTutorialRunning && isTutorialOnSection('section_career')) {
     hasPinnedDuringActiveTutorial = true;
     waitingForCareerPin = false;
     document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
@@ -1509,6 +1597,12 @@ window.replayCurrentTutorialAudio = replayCurrentTutorialAudio;
 window.triggerTutorialInteractionFeedback = triggerTutorialInteractionFeedback;
 window.setHeaderBookletHighlight = setHeaderBookletHighlight;
 window.syncStudentNameToAllSections = syncStudentNameToAllSections;
+window.TUTORIAL_SHORT_STEPS = TUTORIAL_SHORT_STEPS;
+window.TUTORIAL_EXPANDED_STEPS = TUTORIAL_EXPANDED_STEPS;
+window.renderInSiteTutorialStep = renderInSiteTutorialStep;
+window.renderPlanTool = renderPlanTool;
+window.scrollTutorialTargetIntoView = scrollTutorialTargetIntoView;
+window.getIsTutorialRunning = () => isTutorialRunning;
 
 Object.defineProperty(window, 'isTutorialPaused', { get: () => isTutorialPaused, configurable: true });
 Object.defineProperty(window, 'isTutorialRunning', { get: () => isTutorialRunning, configurable: true });
@@ -2689,6 +2783,14 @@ function initNavigation() {
   $('#btn-tutorial-next')?.addEventListener('click', () => {
     const steps = (currentTutorialMode === 'expanded') ? TUTORIAL_EXPANDED_STEPS : TUTORIAL_SHORT_STEPS;
     if (currentTutorialStepIndex >= steps.length - 1) {
+      if (!hasGivenFeedback()) {
+        showToast('⚠️ Feedback is mandatory to complete the tour! Please rate and leave your review on the Feedback Wall.');
+        const fbStepIndex = steps.findIndex(s => s.sectionKey === 'section_feedback');
+        if (fbStepIndex !== -1) {
+          renderInSiteTutorialStep(fbStepIndex);
+        }
+        return;
+      }
       if (window.DopamineEngine) {
         window.DopamineEngine.confetti(0.5, 0.4);
         window.DopamineEngine.playChime('fanfare');
@@ -3894,7 +3996,7 @@ function initSpeakLadder() {
     $('#btn-listen-target')?.addEventListener('click', function() {
       const text = $('#speak-target-sentence')?.textContent;
       if (text) speak(text, this);
-      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 6) {
+      if (isTutorialRunning && isTutorialOnSection('section_speak')) {
         triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
       }
     });
@@ -3920,7 +4022,7 @@ function initSpeakLadder() {
 
     $('#speak-record-orb')?.addEventListener('click', () => {
       toggleSpeakLadderRecord();
-      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 6) {
+      if (isTutorialRunning && isTutorialOnSection('section_speak')) {
         triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
       }
     });
@@ -4660,7 +4762,7 @@ function initSpeechLab() {
     recBtn.dataset.bound = 'true';
     recBtn.addEventListener('click', () => {
       startSpeechLabAudio();
-      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+      if (isTutorialRunning && isTutorialOnSection('section_speech')) {
         triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
       }
     });
@@ -4683,7 +4785,7 @@ function initSpeechLab() {
       if (currentSpeechLabSentence) {
         speak(currentSpeechLabSentence, this);
       }
-      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+      if (isTutorialRunning && isTutorialOnSection('section_speech')) {
         triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
       }
     });
@@ -4930,7 +5032,7 @@ function analyzeSpeechLabSample() {
   try {
     localStorage.setItem('cf_coach_6d', JSON.stringify(STATE.studentProfile.coach6D));
   } catch (e) {}
-  if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 2) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 7))) {
+  if (isTutorialRunning && isTutorialOnSection('section_speech')) {
     triggerTutorialAutoAdvance('Speech Diagnostic Evaluated', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
   }
 
@@ -5831,7 +5933,7 @@ function initTeleprompter() {
       teleprompterState.isPrompterPaused = false;
       updatePrompterButtonUI();
       showToast('Teleprompter started! 📜');
-      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 8) {
+      if (isTutorialRunning && isTutorialOnSection('section_teleprompter')) {
         triggerTutorialAutoAdvance('Teleprompter Studio Active', 'Poise and camera presence looking great! Roleplay session started.');
       }
     } else if (!teleprompterState.isPrompterPaused) {
@@ -6444,7 +6546,7 @@ function initGamePicker() {
     btn.onclick = () => {
       const gameKey = btn.dataset.game;
       renderGameArena(gameKey);
-      if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 9) {
+      if (isTutorialRunning && (isTutorialOnSection('section_cognitive') || isTutorialOnSection('section_wordle_quick'))) {
         triggerTutorialAutoAdvance('Arcade Game Selected', 'Game launched! Cognitive scores and vocabulary challenge active.');
       }
       if (window.AppRouter) {
@@ -8386,6 +8488,11 @@ function renderWordle(mount) {
       }
     }
 
+    // Auto-advance tutorial if Wordle guess played during tutorial
+    if (isTutorialRunning && (isTutorialOnSection('section_cognitive') || isTutorialOnSection('section_wordle_quick'))) {
+      triggerTutorialAutoAdvance('Wordle Guess Played', 'Great vocabulary attempt! Vocabulary challenge active.');
+    }
+
     // Apply colors to board
     for (let c = 0; c < 5; c++) {
       const tile = $(`#w-tile-${row}-${c}`);
@@ -9506,7 +9613,7 @@ function renderMyPlan(mount) {
     }
 
     displayBlueprint(blueprint, provider);
-    if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 5) {
+    if (isTutorialRunning && isTutorialOnSection('section_roadmap')) {
       triggerTutorialAutoAdvance('Strategic Roadmap Blueprint Generated', 'Awesome! Your multi-year academic progression is now generated!');
     }
   });
@@ -9632,7 +9739,7 @@ function renderCareerQuiz(mount) {
         const sector = btn.dataset.sector;
         scores[sector] = (scores[sector] || 0) + 1;
         currentQ++;
-        if (isTutorialRunning && currentTutorialMode === 'expanded' && currentTutorialStepIndex === 4) {
+        if (isTutorialRunning && isTutorialOnSection('section_quiz')) {
           triggerTutorialAutoAdvance('Aptitude Question Answered', 'Great choice! Your career alignment dimension is recorded.');
         }
         showQuestion();
@@ -9959,6 +10066,20 @@ function renderQrCode(containerEl, url, size = 68) {
 }
 
 function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '', email = '') {
+  if (!name || !name.trim() || name === 'YOUR FULL NAME' || name === 'Explorer') {
+    showToast('Please enter your full name first to generate your verification QR code! 🪪');
+    const bcInput = document.getElementById('biz-name') || document.getElementById('bizcard-name-input');
+    if (bcInput) {
+      bcInput.focus();
+      bcInput.style.borderColor = '#ef4444';
+      bcInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.5)';
+      bcInput.addEventListener('input', () => {
+        bcInput.style.borderColor = '';
+        bcInput.style.boxShadow = '';
+      }, { once: true });
+    }
+    return;
+  }
   let modal = $('#modal-qr-enlarged');
   if (!modal) {
     modal = document.createElement('div');
@@ -10540,10 +10661,36 @@ function renderFutureBusinessCard(mount) {
     // Render crisp scan-ready vector QR code
     const qrMount = $('#bc-qr-mount');
     if (qrMount) {
-      renderQrCode(qrMount, verifyUrl, 74);
-      qrMount.onclick = () => {
-        showEnlargedQrModal(name, career, creds, verifyUrl, phone, email);
-      };
+      if (!name || name === 'YOUR FULL NAME' || name === 'Explorer') {
+        qrMount.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:rgba(255,255,255,0.06);border-radius:6px;color:var(--text-muted);font-size:10px;text-align:center;padding:4px;gap:2px;">
+            <span style="font-size:20px;line-height:1;">🔒</span>
+            <span style="font-weight:700;color:var(--accent-cyan);font-size:9.5px;letter-spacing:0.02em;">Enter Name</span>
+            <span style="font-size:8.5px;opacity:0.75;">to unlock QR</span>
+          </div>
+        `;
+        qrMount.title = "Please enter your full name to generate and view your verified credential QR code";
+        qrMount.style.cursor = "pointer";
+        qrMount.onclick = () => {
+          showToast('Please enter your full name first to unlock your verification QR code! 🪪');
+          if (nameInput) {
+            nameInput.focus();
+            nameInput.style.borderColor = '#ef4444';
+            nameInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.5)';
+            nameInput.addEventListener('input', () => {
+              nameInput.style.borderColor = '';
+              nameInput.style.boxShadow = '';
+            }, { once: true });
+          }
+        };
+      } else {
+        renderQrCode(qrMount, verifyUrl, 74);
+        qrMount.title = "Click to view & scan full-size verification badge";
+        qrMount.style.cursor = "pointer";
+        qrMount.onclick = () => {
+          showEnlargedQrModal(name, career, creds, verifyUrl, phone, email);
+        };
+      }
     }
 
     if (animatePulse && cardEl) {
@@ -11148,7 +11295,7 @@ async function loadFeedbackWall() {
         starContainer.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedStars = parseInt(btn.dataset.val || '5', 10);
-        if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 3) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 10))) {
+        if (isTutorialRunning && isTutorialOnSection('section_feedback')) {
           triggerTutorialAutoAdvance('Exhibition Rating Selected', 'Thank you for rating our exhibits! Your reflection is saved for Page 2 of your booklet.');
         }
       });
@@ -11360,6 +11507,7 @@ async function loadFeedbackWall() {
 
             // Save feedback for official student booklet
       try {
+        hasSubmittedFeedbackDuringTutorial = true;
         localStorage.setItem('ecf_student_feedback', JSON.stringify({
           name,
           role,
@@ -11400,7 +11548,7 @@ async function loadFeedbackWall() {
 
       // Re-fetch authoritative global list immediately
       setTimeout(loadFeedbackWall, 300);
-      if (isTutorialRunning && ((currentTutorialMode === 'short' && currentTutorialStepIndex === 3) || (currentTutorialMode === 'expanded' && currentTutorialStepIndex === 10))) {
+      if (isTutorialRunning && isTutorialOnSection('section_feedback')) {
         triggerTutorialAutoAdvance('Exhibition Review Submitted', 'Thank you for your review! Your reflection is saved for Page 2 of your booklet.');
       }
     });

@@ -816,7 +816,9 @@
     ctx.textAlign = 'left';
 
     // 4. SECTION 2: COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION
-    const isCognitiveSkipped = Boolean(skippedSections.section_quiz || skippedSections.section_cognitive);
+    const isQuickTourMode = (localStorage.getItem('cf_tutorial_mode') === 'short') ||
+                            (options && options.tutorialMode === 'short');
+    const isCognitiveSkipped = isQuickTourMode || Boolean(skippedSections.section_quiz || skippedSections.section_cognitive || skippedSections.section_wordle_quick);
     let p1CurY = 725;
 
     if (!isCognitiveSkipped) {
