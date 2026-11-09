@@ -3250,7 +3250,6 @@ function initNavigation() {
 
   // Tutorial Mode Choice Modal Listeners
   $('#btn-close-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
-  $('#btn-dismiss-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
   $('#tutorial-choice-modal')?.addEventListener('click', (e) => {
     if (e.target.id === 'tutorial-choice-modal') closeTutorialChoiceModal();
   });
