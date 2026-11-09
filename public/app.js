@@ -5526,8 +5526,10 @@ async function startSpeechLabAudio() {
     }
 
     speechLabStartTime = Date.now();
-    status.textContent = 'Prompter Live';
-    status.className = 'badge-pill badge-global';
+    if (status) {
+      status.textContent = 'Prompter Live';
+      status.className = 'badge-pill badge-global';
+    }
     $('#btn-speech-lab-record').disabled = true;
     $('#btn-speech-lab-stop').disabled = false;
   } catch (err) {
@@ -5552,7 +5554,7 @@ function stopSpeechLabAudio() {
     try { speechLabRec.stop(); } catch {}
     speechLabRec = null;
   }
-  $('#speech-session-state').textContent = 'Prompter Idle';
+  const _sSt = $('#speech-session-state'); if (_sSt) _sSt.textContent = 'Prompter Idle';
   $('#btn-speech-lab-record').disabled = false;
   $('#btn-speech-lab-stop').disabled = true;
 
