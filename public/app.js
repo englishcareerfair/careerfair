@@ -883,7 +883,7 @@ const TUTORIAL_SHORT_STEPS = [
     instruction: 'Spoken English is a vital career skill! Click the microphone button to test your speech articulation. When you are ready, click "Next Exhibit ▶" to proceed.',
     actionHint: '👉 Tap the microphone button to start recording, speak, then click Next Exhibit',
     audioUrl: '/audio/tutorial/tutorial_short_step1.mp3',
-    speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Take your time to test your speech, then click Next Exhibit!'
+    speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate your printable booklet. Take your time to test your speech, then click Next Exhibit!'
   },
   {
     step: 2,
@@ -896,6 +896,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_wordle_quick',
     instruction: 'Test your vocabulary power in our most popular arcade game! Guess the secret 5-letter professional English word in 6 attempts.',
     actionHint: '👉 Type letters on the on-screen keyboard to make your guess',
+    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
     speechText: 'Test your vocabulary with Wordle! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
   },
   {
@@ -907,10 +908,10 @@ const TUTORIAL_SHORT_STEPS = [
     title: 'Student Ambassador Business Card',
     icon: '🪪',
     sectionKey: 'section_bizcard_quick',
-    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code printed on Page 2 of your booklet.',
+    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code directly in your booklet.',
     actionHint: '👉 Review your business card details and live verification QR code',
     audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
-    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code printed on Page Two of your booklet.'
+    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code directly in your booklet.'
   },
   {
     step: 4,
@@ -920,10 +921,10 @@ const TUTORIAL_SHORT_STEPS = [
     title: 'Student Reflection & Fair Feedback',
     icon: '⭐',
     sectionKey: 'section_feedback',
-    instruction: 'Leave your official rating and review! Submitting feedback completes your tour and unlocks your official 2-Page Career Booklet at the top of your screen!',
+    instruction: 'Leave your official rating and review! Submitting feedback completes your tour and unlocks your official Career Booklet at the top of your screen!',
     actionHint: '👉 Rate 1 to 5 stars and submit your student review to complete',
     audioUrl: '/audio/tutorial/tutorial_short_step4.mp3',
-    speechText: 'Congratulations! Leave your official fair rating and student reflection below. Submitting your feedback completes the quick tour and unlocks your official 2-Page printable Career Booklet at the top!'
+    speechText: 'Congratulations! Leave your official fair rating and student reflection below. Submitting your feedback completes the quick tour and unlocks your official printable Career Booklet at the top!'
   }
 ];
 
@@ -1101,6 +1102,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_cognitive_wordle',
     instruction: 'Guess the secret 5-letter professional English word in 6 attempts! Color-coded tiles guide your deductive vocabulary trials.',
     actionHint: '👉 Enter letters on the keyboard and press Enter to guess',
+    audioUrl: '/audio/tutorial/tutorial_exp_step12.mp3',
     speechText: 'Test your vocabulary with Wordle! Guess the secret five-letter professional word in six attempts with green and yellow tile clues.'
   },
   {
@@ -1169,10 +1171,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     title: 'Student Ambassador Business Card',
     icon: '🪪',
     sectionKey: 'section_roadmap_bizcard',
-    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code printed on Page 2 of your booklet.',
+    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code directly in your booklet.',
     actionHint: '👉 Review your credentials and live verification QR code',
     audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
-    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code printed on Page Two of your booklet.'
+    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code directly in your booklet.'
   },
   {
     step: 18,
@@ -1224,10 +1226,9 @@ const TUTORIAL_EXPANDED_STEPS = [
     title: 'Student Reflection & Fair Feedback',
     icon: '✍️',
     sectionKey: 'section_feedback',
-    instruction: 'Leave your official fair rating and student reflection below to complete Section Five of your booklet! Enter your name, choose your star rating, and click Submit Feedback.',
+    instruction: 'Leave your official fair rating and student reflection below to complete your booklet! Enter your name, choose your star rating, and click Submit Feedback.',
     actionHint: '👉 Enter your reflection and submit feedback',
-    audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
-    speechText: 'Congratulations on exploring our exhibits! Leave your star rating and student reflection below. Submitting your feedback locks in Section Five of your official printable booklet.'
+    speechText: 'Congratulations on exploring our exhibits! Leave your star rating and student reflection below. Submitting your feedback completes your official printable booklet.'
   },
   {
     step: 22,
@@ -1237,10 +1238,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     title: 'Visitor Reflections & Booklet Unlock',
     icon: '⭐',
     sectionKey: 'section_reflections_final',
-    instruction: 'Review reflections submitted by fellow students, parents, and teachers! Your 2-Page printable Career Booklet is now fully compiled and ready at the top of your screen.',
+    instruction: 'Review reflections submitted by fellow students, parents, and teachers! Your printable Career Booklet is now fully compiled and ready at the top of your screen.',
     actionHint: '👉 Review community reflections and click Finish Tutorial 🎉',
     audioUrl: '/audio/tutorial/tutorial_exp_step22.mp3',
-    speechText: 'Explore reflections and thoughts submitted by students, parents, and faculty on the live Feedback Wall! Your official two-page Career Booklet is ready at the top of your screen.'
+    speechText: 'Explore reflections and thoughts submitted by students, parents, and faculty on the live Feedback Wall! Your official Career Booklet is ready at the top of your screen.'
   }
 ];
 
