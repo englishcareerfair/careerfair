@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v21.4-hide-teleprompter-until-roleplay-selected';
+const CACHE_NAME = 'cf-cache-v21.5-tutorial-prerecorded-voice';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
@@ -36,6 +36,7 @@ const STATIC_ASSETS = [
   '/audio/tutorial/tutorial_short_step1.mp3',
   '/audio/tutorial/tutorial_short_step2.mp3',
   '/audio/tutorial/tutorial_short_step3.mp3',
+  '/audio/tutorial/tutorial_short_step4.mp3',
   '/audio/tutorial/tutorial_exp_step0.mp3',
   '/audio/tutorial/tutorial_exp_step1.mp3',
   '/audio/tutorial/tutorial_exp_step2.mp3',
@@ -46,6 +47,7 @@ const STATIC_ASSETS = [
   '/audio/tutorial/tutorial_exp_step7.mp3',
   '/audio/tutorial/tutorial_exp_step8.mp3',
   '/audio/tutorial/tutorial_exp_step9.mp3',
+  '/audio/tutorial/tutorial_exp_step10.mp3',
 ];
 
 self.addEventListener('install', (event) => {

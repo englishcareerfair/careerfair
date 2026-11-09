@@ -839,6 +839,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_career',
     instruction: 'Explore 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. Pinning automatically generates your personalized college roadmap!',
     actionHint: '👉 Click "⭐ Pin to Your Booklet" on any career card below',
+    audioUrl: '/audio/tutorial/tutorial_short_step0.mp3',
     speechText: 'Welcome to Career Fair 2026! Let us begin by choosing your target career from thirty-two global pathways. When you pin a career, its academic roadmap and top colleges are automatically added to your booklet. Click Pin to Your Booklet on your favorite career!'
   },
   {
@@ -851,6 +852,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_speech',
     instruction: 'Spoken articulation is vital for career success. Test your speech below—your pronunciation, cadence, and fluency scores directly populate Section 4 of your printable booklet!',
     actionHint: '👉 Tap the microphone or click "Try Demo" to test speech diagnostics',
+    audioUrl: '/audio/tutorial/tutorial_short_step1.mp3',
     speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Tap the microphone to record your voice or test a phrase!'
   },
   {
@@ -864,6 +866,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_wordle_quick',
     instruction: 'Sharpen your vocabulary with Wordle 2026! Guess the 5-letter professional word in 6 attempts. Each attempt gives instant color-coded feedback!',
     actionHint: '👉 Enter a 5-letter word and submit your guess',
+    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
     speechText: 'Test your vocabulary with Wordle 2026! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
   },
   {
@@ -876,6 +879,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_feedback',
     instruction: 'Leave your official rating and review! Your feedback is officially recorded on our exhibition wall and featured on Page 2 of your Career Booklet!',
     actionHint: '👉 Rate 1 to 5 stars and share your reflection in the feedback form',
+    audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
     speechText: 'Share your fair experience! Rate the exhibits and leave a quick comment. Your official reflection is stamped directly onto Page Two of your booklet, right before your student business card!'
   },
   {
@@ -889,6 +893,7 @@ const TUTORIAL_SHORT_STEPS = [
     sectionKey: 'section_booklet',
     instruction: 'Congratulations! Your official 2-Page Executive Career Booklet & Business Card are ready. Click the glowing "Your Booklet" button at the top of your screen to download your print-ready PDF!',
     actionHint: '👉 Click the glowing "Your Booklet" button in the top navigation bar',
+    audioUrl: '/audio/tutorial/tutorial_short_step4.mp3',
     speechText: 'Congratulations! Your personalized Career Booklet is fully generated. Look at the top of your screen and click the glowing Your Booklet button to download your print-ready PDF!'
   }
 ];
@@ -904,6 +909,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_career',
     instruction: 'Explore 32 high-impact career pathways. Filter by Healthcare, Aviation, Tech, Corporate, or Law, inspect required skills and salary projections, and pin your dream career.',
     actionHint: '👉 Click cluster filters (e.g. Healthcare, Aviation) or pin a career',
+    audioUrl: '/audio/tutorial/tutorial_exp_step0.mp3',
     speechText: 'Welcome to Career Fair 2026 at Kanakia International School! Here are thirty-two high-impact global career pathways where English fluency is essential. Filter by aviation, technology, healthcare, or law, and click Pin to Your Booklet to select your target career!'
   },
   {
@@ -916,6 +922,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_colleges',
     instruction: 'Discover accredited university benchmarks, NAAC "A++" institutions, QS global rankings, and degree prerequisites for your chosen field.',
     actionHint: '👉 Search universities or filter by Indian vs International accreditation',
+    audioUrl: '/audio/tutorial/tutorial_exp_step1.mp3',
     speechText: 'Explore top accredited universities, global QS rankings, and degree paths. Discover the exact institutions and admission benchmarks needed to achieve your dream career!'
   },
   {
@@ -928,6 +935,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_exams',
     instruction: 'Compare CEFR levels, IELTS, TOEFL, Duolingo, and Cambridge score standards required for international licensure and university admissions.',
     actionHint: '👉 Use the score conversion calculator and review test formats',
+    audioUrl: '/audio/tutorial/tutorial_exp_step2.mp3',
     speechText: 'Master global English proficiency benchmarks! Compare CEFR levels with IELTS, TOEFL, and Duolingo scores required for international licensure and university admissions.'
   },
   {
@@ -940,6 +948,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_speak',
     instruction: 'Master international professional terminology! Practice pronouncing complex career terms with real-time phonetic breakdowns, syllable stress guides, and waveform feedback.',
     actionHint: '👉 Listen to a model pronunciation and speak the term aloud',
+    audioUrl: '/audio/tutorial/tutorial_exp_step3.mp3',
     speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our visual phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
   },
   {
@@ -952,6 +961,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_speech',
     instruction: 'Test your spoken articulation with multi-metric AI analysis: pace, pitch variation, lexical sophistication, and fluency. Your scores feed directly into your booklet!',
     actionHint: '👉 Click the microphone to record your speech or test sample audio',
+    audioUrl: '/audio/tutorial/tutorial_exp_step4.mp3',
     speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Your scores feed directly into your booklet!'
   },
   {
@@ -964,6 +974,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_teleprompter',
     instruction: 'Experience broadcast journalism! Rehearse international breaking news broadcast scripts in front of a live webcam mirror with adjustable teleprompter scrolling speed.',
     actionHint: '👉 Adjust the teleprompter scroll speed or practice reading a news script',
+    audioUrl: '/audio/tutorial/tutorial_exp_step5.mp3',
     speechText: 'Step into the shoes of a broadcast news anchor! Practice reading breaking international news scripts with an adjustable teleprompter mirror and live webcam video. Master poise, speed control, and camera presence!'
   },
   {
@@ -976,6 +987,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_cognitive',
     instruction: 'Compete in 11 interactive arcade games and Gemini AI quests: The Scribe, The Etymologist, Wordle 2026, Vocab Hangman, and Spelling Bee to climb the live leaderboard!',
     actionHint: '👉 Launch Wordle, Hangman, or any quest card',
+    audioUrl: '/audio/tutorial/tutorial_exp_step6.mp3',
     speechText: 'Have fun while sharpening your vocabulary! Explore eleven interactive games including The Scribe, The Etymologist, Wordle 2026, Hangman, and Spelling Bee. Earn points and climb the live exhibition leaderboard!'
   },
   {
@@ -989,6 +1001,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_quiz',
     instruction: 'Take our 5-question aptitude diagnostic! Discover your personality alignment and find the top global professions matched to your unique talents.',
     actionHint: '👉 Answer the 5 quiz questions to find your optimal career match',
+    audioUrl: '/audio/tutorial/tutorial_exp_step7.mp3',
     speechText: 'Take our interactive Career Aptitude Quiz! Answer five quick diagnostic questions to discover your personality alignment and find the global careers best suited for your skills and interests!'
   },
   {
@@ -1002,6 +1015,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_roadmap',
     instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, licensure milestones, and executive leadership goals.',
     actionHint: '👉 Select your current class to generate your personalized timeline',
+    audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
     speechText: 'This is your personalized Strategic Career Blueprint. It maps out your multi-year progression from undergraduate degrees to professional licensure and executive leadership milestones.'
   },
   {
@@ -1014,6 +1028,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_feedback',
     instruction: 'Share your fair experience! Rate the exhibits and leave your reflections. Your feedback is recorded on the exhibition wall and printed on Page 2 of your booklet.',
     actionHint: '👉 Rate 1 to 5 stars and submit your student review',
+    audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
     speechText: 'Share your official exhibition feedback and star rating! Your reflection is published to the exhibition feedback wall and stamped onto Page Two of your official Career Booklet, right above your student business card!'
   },
   {
@@ -1027,6 +1042,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_booklet',
     instruction: 'Congratulations! You have explored every exhibit across Career Fair 2026. Look at the top of your screen—click the glowing "Your Booklet" button to download your official 2-Page printable booklet and cut-out business card!',
     actionHint: '👉 Click the glowing "Your Booklet" button at the top of the page',
+    audioUrl: '/audio/tutorial/tutorial_exp_step10.mp3',
     speechText: 'Congratulations on completing the full exhibition tour! Your official Two-Page Career Booklet is ready. Look at the top of your screen and click the glowing Your Booklet button to download your print-ready PDF!'
   }
 ];
@@ -1225,6 +1241,31 @@ function startTutorialWithMode(mode) {
   renderInSiteTutorialStep(0);
 }
 
+function fallbackTutorialSpeech(text, sessionId) {
+  if (sessionId && sessionId !== currentTutorialAudioSessionId) return;
+  if (!('speechSynthesis' in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+  } catch (_) {}
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-IN';
+  utt.rate = 0.95;
+  utt.onend = () => {
+    if (sessionId === currentTutorialAudioSessionId) {
+      isTutorialSpeechActive = false;
+      updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
+    }
+  };
+  utt.onerror = () => {
+    if (sessionId === currentTutorialAudioSessionId) {
+      isTutorialSpeechActive = false;
+      updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
+    }
+  };
+  try { window.speechSynthesis.speak(utt); } catch (_) {}
+}
+
 function playTutorialStepAudio(stepData) {
   stopAllVoice();
   if (activeTutorialAudio) {
@@ -1238,7 +1279,7 @@ function playTutorialStepAudio(stepData) {
   if (!stepData) return;
   const sessionId = ++currentTutorialAudioSessionId;
 
-  updateTutorialHudStatus('speaking', 'River');
+  updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
   isTutorialSpeechActive = true;
 
   if (stepData.audioUrl) {
@@ -1251,7 +1292,7 @@ function playTutorialStepAudio(stepData) {
         if (sessionId !== currentTutorialAudioSessionId) return;
         isTutorialSpeechActive = true;
         if (!isTutorialPaused) {
-          updateTutorialHudStatus('speaking', 'River');
+          updateTutorialHudStatus('speaking', 'River (Studio Pre-recorded)');
         }
       };
 
@@ -1265,20 +1306,20 @@ function playTutorialStepAudio(stepData) {
       audio.onended = () => {
         if (sessionId !== currentTutorialAudioSessionId) return;
         isTutorialSpeechActive = false;
-        updateTutorialHudStatus('idle', 'Ready');
+        updateTutorialHudStatus('idle', 'River (Studio Pre-recorded)');
       };
 
       audio.onerror = () => {
         if (sessionId !== currentTutorialAudioSessionId) return;
         if (stepData.speechText) {
-          fallbackIndianNeuralSpeech(stepData.speechText, null, sessionId);
+          fallbackTutorialSpeech(stepData.speechText, sessionId);
         }
       };
 
       audio.play().catch(err => {
         if (sessionId !== currentTutorialAudioSessionId) return;
         if (stepData.speechText) {
-          fallbackIndianNeuralSpeech(stepData.speechText, null, sessionId);
+          fallbackTutorialSpeech(stepData.speechText, sessionId);
         }
       });
       return;
@@ -1288,7 +1329,7 @@ function playTutorialStepAudio(stepData) {
   }
 
   if (stepData.speechText) {
-    fallbackIndianNeuralSpeech(stepData.speechText, null, sessionId);
+    fallbackTutorialSpeech(stepData.speechText, sessionId);
   }
 }
 
@@ -1302,7 +1343,7 @@ function updateTutorialHudStatus(state, labelText) {
     statusEl.classList.add('speaking');
     statusEl.classList.remove('paused');
     if (equalizer) equalizer.style.display = 'inline-flex';
-    if (labelEl) labelEl.textContent = labelText || 'River';
+    if (labelEl) labelEl.textContent = labelText || 'River (Studio Pre-recorded)';
   } else if (state === 'paused') {
     statusEl.classList.remove('speaking');
     statusEl.classList.add('paused');
@@ -1311,7 +1352,7 @@ function updateTutorialHudStatus(state, labelText) {
   } else {
     statusEl.classList.remove('speaking', 'paused');
     if (equalizer) equalizer.style.display = 'none';
-    if (labelEl) labelEl.textContent = labelText || 'River';
+    if (labelEl) labelEl.textContent = labelText || 'River (Studio Pre-recorded)';
   }
 }
 
