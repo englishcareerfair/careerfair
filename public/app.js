@@ -970,7 +970,7 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 3,
     tab: 'exams',
-    targetSelector: '#exams-cards-container',
+    targetSelector: null,
     badge: 'COMPLETE TOUR · STEP 4 OF 23',
     title: 'English Proficiency Testing & Exams',
     icon: '📋',
@@ -1334,8 +1334,16 @@ function smoothScrollSlow(targetY, customDuration = null) {
 }
 
 let tutorialGliderAnimId = null;
+let tutorialGliderTimeoutId = null;
+let currentGliderTab = null;
 
 function cancelTutorialGlider() {
+  currentGliderTab = null;
+  document.documentElement.style.scrollBehavior = '';
+  if (tutorialGliderTimeoutId) {
+    clearTimeout(tutorialGliderTimeoutId);
+    tutorialGliderTimeoutId = null;
+  }
   if (tutorialGliderAnimId) {
     cancelAnimationFrame(tutorialGliderAnimId);
     tutorialGliderAnimId = null;
@@ -1385,6 +1393,8 @@ function startCollegesTabCycling() {
 }
 
 function startTutorialNarrationGlider(tabKey) {
+  // If already gliding or scheduled for this tab, do not spawn another instance
+  if (currentGliderTab === tabKey) return;
   cancelTutorialGlider();
   cancelCollegesCycle();
   if (!isTutorialRunning) return;
@@ -1394,45 +1404,81 @@ function startTutorialNarrationGlider(tabKey) {
     return;
   }
 
-  const targetSec = document.getElementById(`sec-${tabKey}`);
+  const targetSec = document.getElementById('sec-' + tabKey);
   if (!targetSec) return;
 
-  setTimeout(() => {
-    if (!isTutorialRunning) return;
-    const topNav = document.querySelector('.navbar') || document.querySelector('header');
-    const topNavHeight = topNav ? topNav.offsetHeight : 64;
+  currentGliderTab = tabKey;
+
+  tutorialGliderTimeoutId = setTimeout(() => {
+    tutorialGliderTimeoutId = null;
+    if (!isTutorialRunning || currentGliderTab !== tabKey) return;
+
+    // Set scrollBehavior to 'auto' so rapid requestAnimationFrame updates glide smoothly at 60fps without being throttled/reset by browser's smooth interpolator
+    document.documentElement.style.scrollBehavior = 'auto';
 
     // Always start at top of tab (guarantees downward scroll motion)
     window.scrollTo(0, 0);
 
     const totalHeight = targetSec.scrollHeight || targetSec.offsetHeight;
     const viewportHeight = window.innerHeight;
-    const maxScroll = Math.max(0, totalHeight - viewportHeight + 140);
-    const distance = maxScroll;
+    const maxScroll = Math.max(0, totalHeight - viewportHeight + 120);
 
-    if (distance <= 40) return;
+    // Target distance: in careers, glide through ~1280px (matching user video showcase)
+    // in other tabs (exams, games, roadmap), glide up to maxScroll
+    const targetDistance = (tabKey === 'careers') ? Math.min(maxScroll, 1280) : maxScroll;
+    if (targetDistance <= 40) {
+      document.documentElement.style.scrollBehavior = '';
+      return;
+    }
 
-    // Glide smoothly in slow motion over 14 to 18 seconds so user gets to see each item
-    const duration = Math.min(18000, Math.max(12000, Math.round(distance * 14)));
-    const startTime = performance.now();
+    // Calibrated speed matching user reference video: 210 px/sec
+    const v = 210; // px/sec
+    const tRamp = 0.35; // 350ms soft start
+
+    let startTime = null;
+    let pausedDuration = 0;
+    let pauseStart = null;
 
     function glideStep(now) {
-      if (!isTutorialRunning) return;
-      const elapsed = now - startTime;
-      const progress = Math.min(1, elapsed / duration);
-      // Gentle smooth curve
-      const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
-      window.scrollTo(0, Math.round(distance * ease));
-
-      if (progress < 1) {
-        tutorialGliderAnimId = requestAnimationFrame(glideStep);
-      } else {
-        tutorialGliderAnimId = null;
+      if (!isTutorialRunning || currentGliderTab !== tabKey) {
+        document.documentElement.style.scrollBehavior = '';
+        return;
       }
+
+      if (isTutorialPaused) {
+        if (!pauseStart) pauseStart = now;
+        tutorialGliderAnimId = requestAnimationFrame(glideStep);
+        return;
+      }
+
+      if (pauseStart) {
+        pausedDuration += (now - pauseStart);
+        pauseStart = null;
+      }
+
+      if (!startTime) startTime = now;
+      const t = Math.max(0, (now - startTime - pausedDuration) / 1000); // seconds
+
+      let y;
+      if (t < tRamp) {
+        y = 0.5 * (v / tRamp) * t * t;
+      } else {
+        y = (0.5 * v * tRamp) + v * (t - tRamp);
+      }
+
+      if (y >= targetDistance) {
+        window.scrollTo(0, targetDistance);
+        document.documentElement.style.scrollBehavior = '';
+        tutorialGliderAnimId = null;
+        return;
+      }
+
+      window.scrollTo(0, Math.round(y));
+      tutorialGliderAnimId = requestAnimationFrame(glideStep);
     }
 
     tutorialGliderAnimId = requestAnimationFrame(glideStep);
-  }, 200);
+  }, 120);
 }
 
 function scrollTutorialTargetIntoView(selector, options = {}) {
@@ -2067,6 +2113,12 @@ function renderInSiteTutorialStep(stepIndex) {
       return;
     }
 
+    if (data.tab === 'careers' || data.tab === 'exams') {
+      // User request: Smooth slow-motion downward glide at calibrated 210 px/s pace across the entire card grid
+      // Do not interrupt the glide with scrollTutorialTargetIntoView
+      return;
+    }
+
     if (scrollTarget) {
       scrollTutorialTargetIntoView(scrollTarget);
     }
@@ -2087,6 +2139,7 @@ function renderInSiteTutorialStep(stepIndex) {
   });
   // Single smooth downward scroll invocation after DOM is laid out
   setTimeout(highlightAndScrollTarget, 140);
+  startTutorialNarrationGlider(data.tab);
 
   // If final reflections step: first highlight reflections card, then scroll to top to showcase Your Booklet!
   if (data.sectionKey === 'section_reflections_final') {
@@ -4271,8 +4324,19 @@ function switchTab(tabId, options = {}) {
     window.AppRouter.onTabSwitched(tabId);
   }
 
+  // If leaving hero tab, pause YouTube iframe so audio does not leak into other tabs
+  if (tabId !== 'hero') {
+    const heroIframe = $('#hero-youtube-iframe');
+    if (heroIframe && heroIframe.contentWindow) {
+      try {
+        heroIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
+      } catch (_) {}
+      heroIframe.dataset.wasHidden = 'true';
+    }
+  }
+
   // Trigger section initializers (always ensure hero, careers, colleges, exams, speak, speechLab, teleprompter are initialized)
-  if (tabId === 'hero') renderHeroStream();
+  if (tabId === 'hero') renderHeroStream({ forceResume: true });
   if (tabId === 'careers') renderCareers();
   if (tabId === 'colleges') renderColleges();
   if (tabId === 'exams') renderExams();
@@ -14143,7 +14207,7 @@ function buildYouTubeEmbedUrl(input, autoplay = true) {
   return `https://www.youtube.com/embed/${id}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(origin)}&widget_referrer=${encodeURIComponent(origin)}${autoParam}`;
 }
 
-function renderHeroStream() {
+function renderHeroStream(options = {}) {
   const iframe = $('#hero-youtube-iframe');
   const standby = $('#hero-stream-standby');
   const loader = $('#hero-stream-loader');
@@ -14172,12 +14236,29 @@ function renderHeroStream() {
 
   if (isActive && videoId) {
     const embedUrl = buildYouTubeEmbedUrl(videoId, isAutoplay);
-    const needsSrcUpdate = iframe.dataset.currentSrc !== embedUrl || !iframe.src || !iframe.src.includes(videoId);
+    const isReturningFromOtherTab = Boolean(options.forceResume || iframe.dataset.wasHidden === 'true');
+    const needsSrcUpdate = isReturningFromOtherTab || iframe.dataset.currentSrc !== embedUrl || !iframe.src || !iframe.src.includes(videoId);
 
     if (needsSrcUpdate) {
+      // Show animated loader IMMEDIATELY so black screen is NEVER visible to user
       showStreamLoader();
-      iframe.src = embedUrl;
+      iframe.dataset.wasHidden = 'false';
+
+      // Always give the iframe a fresh rendering cycle so Chromium re-creates video surface fresh
+      const sep = embedUrl.includes('?') ? '&' : '?';
+      const freshUrl = isReturningFromOtherTab ? `${embedUrl}${sep}t_rel=${Date.now()}` : embedUrl;
+      iframe.src = freshUrl;
       iframe.dataset.currentSrc = embedUrl;
+
+      // Trigger YouTube play command via postMessage
+      try {
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
+      } catch (_) {}
+    } else {
+      // Just ensure play command is active
+      try {
+        iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: '' }), '*');
+      } catch (_) {}
     }
 
     iframe.removeAttribute('hidden');
@@ -14280,6 +14361,18 @@ document.addEventListener('visibilitychange', () => {
     stopAllVoice();
     if (STATE.isRecording && STATE.speechRecognition) {
       try { STATE.speechRecognition.stop(); } catch (_) {}
+    }
+    const heroIframe = $('#hero-youtube-iframe');
+    if (heroIframe && heroIframe.contentWindow) {
+      try {
+        heroIframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }), '*');
+      } catch (_) {}
+      heroIframe.dataset.wasHidden = 'true';
+    }
+  } else {
+    const activeTab = $('.tab-btn.active')?.dataset.tab;
+    if (activeTab === 'hero') {
+      renderHeroStream({ forceResume: true });
     }
   }
 });
