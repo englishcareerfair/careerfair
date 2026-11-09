@@ -871,138 +871,137 @@ const TUTORIAL_SHORT_STEPS = [
   },
   {
     step: 3,
-    tab: 'feedback',
-    targetSelector: '#feedback',
-    badge: 'SHORT TOUR · STEP 4 OF 5',
-    title: 'Student Reflection & Fair Feedback',
-    icon: '⭐',
-    sectionKey: 'section_feedback',
-    instruction: 'Leave your official rating and review! Your feedback is officially recorded on our exhibition wall and featured on Page 2 of your Career Booklet!',
-    actionHint: '👉 Rate 1 to 5 stars and share your reflection in the feedback form',
-    audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
-    speechText: 'Share your fair experience! Rate the exhibits and leave a quick comment. Your official reflection is stamped directly onto Page Two of your booklet, right before your student business card!'
-  },
-  {
-    step: 4,
     tab: 'roadmap',
     subtool: 'bizcard',
     targetSelector: '#student-card-preview',
+    badge: 'SHORT TOUR · STEP 4 OF 5',
+    title: 'Student Ambassador Business Card',
+    icon: '🪪',
+    sectionKey: 'section_bizcard_quick',
+    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code printed on Page 2 of your booklet.',
+    actionHint: '👉 Review your business card details and live verification QR code',
+    audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
+    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career title, and class are encoded into a live verification QR code printed on Page Two of your booklet.'
+  },
+  {
+    step: 4,
+    tab: 'feedback',
+    targetSelector: '#feedback',
     badge: 'SHORT TOUR · STEP 5 OF 5',
-    title: 'Your Booklet is Ready! (Download at Top)',
-    icon: '📖',
-    sectionKey: 'section_booklet',
-    instruction: 'Congratulations! Your official 2-Page Executive Career Booklet & Business Card are ready. Click the glowing "Your Booklet" button at the top of your screen to download your print-ready PDF!',
-    actionHint: '👉 Click the glowing "Your Booklet" button in the top navigation bar',
+    title: 'Student Reflection & Fair Feedback',
+    icon: '⭐',
+    sectionKey: 'section_feedback',
+    instruction: 'Leave your official rating and review! Submitting feedback completes your tour and unlocks your official 2-Page Career Booklet at the top of your screen!',
+    actionHint: '👉 Rate 1 to 5 stars and submit your student review to complete',
     audioUrl: '/audio/tutorial/tutorial_short_step4.mp3',
-    speechText: 'Congratulations! Your personalized Career Booklet is fully generated. Look at the top of your screen and click the glowing Your Booklet button to download your print-ready PDF!'
+    speechText: 'Congratulations! Leave your official fair rating and student reflection below. Submitting your feedback completes the quick tour and unlocks your official 2-Page printable Career Booklet at the top!'
   }
 ];
 
 const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 0,
-    tab: 'careers',
-    targetSelector: '#careers',
+    tab: 'hero',
+    targetSelector: '#sec-hero',
     badge: 'COMPLETE TOUR · STEP 1 OF 11',
-    title: '32+ Global Careers Directory',
-    icon: '🎯',
-    sectionKey: 'section_career',
-    instruction: 'Explore 32 high-impact career pathways. Filter by Healthcare, Aviation, Tech, Corporate, or Law, inspect required skills and salary projections, and pin your dream career.',
-    actionHint: '👉 Click cluster filters (e.g. Healthcare, Aviation) or pin a career',
+    title: 'Student Career Intelligence Overview',
+    icon: '⚡',
+    sectionKey: 'section_overview',
+    instruction: 'Welcome to Career Fair 2026 at Kanakia International School! Discover how articulate English powers over 32 global professions and explore our interactive fair exhibits.',
+    actionHint: '👉 Explore fair highlights and click Next Exhibit to begin',
     audioUrl: '/audio/tutorial/tutorial_exp_step0.mp3',
-    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! Here are thirty-two high-impact global career pathways where English fluency is essential. Filter by aviation, technology, healthcare, or law, and click Pin to Your Booklet to select your target career!'
+    speechText: 'Welcome to Career Fair 2026 at Kanakia International School! English is the universal superpower that unlocks over thirty-two global careers, from commercial aviation to pediatric surgery. Follow along as we showcase every exhibit across the fair!'
   },
   {
     step: 1,
+    tab: 'careers',
+    targetSelector: '#careers',
+    badge: 'COMPLETE TOUR · STEP 2 OF 11',
+    title: '32+ Global Careers Directory',
+    icon: '🎯',
+    sectionKey: 'section_career',
+    instruction: 'Explore 32 high-impact career pathways. Filter by Healthcare, Aviation, Tech, Corporate, or Law, inspect required skills and salary projections, and pin your target career.',
+    actionHint: '👉 Click "⭐ Pin to Your Booklet" on any career card below',
+    audioUrl: '/audio/tutorial/tutorial_exp_step1.mp3',
+    speechText: 'Here are thirty-two high-impact global careers where English fluency is essential. Filter by healthcare, aviation, technology, or law, and click Pin to Your Booklet on your target career!'
+  },
+  {
+    step: 2,
     tab: 'colleges',
     targetSelector: '#colleges',
-    badge: 'COMPLETE TOUR · STEP 2 OF 11',
+    badge: 'COMPLETE TOUR · STEP 3 OF 11',
     title: 'Premier Higher Education & Universities',
     icon: '🏛️',
     sectionKey: 'section_colleges',
     instruction: 'Discover accredited university benchmarks, NAAC "A++" institutions, QS global rankings, and degree prerequisites for your chosen field.',
     actionHint: '👉 Search universities or filter by Indian vs International accreditation',
-    audioUrl: '/audio/tutorial/tutorial_exp_step1.mp3',
-    speechText: 'Explore top accredited universities, global QS rankings, and degree paths. Discover the exact institutions and admission benchmarks needed to achieve your dream career!'
-  },
-  {
-    step: 2,
-    tab: 'exams',
-    targetSelector: '#exams',
-    badge: 'COMPLETE TOUR · STEP 3 OF 11',
-    title: 'English Proficiency Testing & Score Conversion',
-    icon: '📋',
-    sectionKey: 'section_exams',
-    instruction: 'Compare CEFR levels, IELTS, TOEFL, Duolingo, and Cambridge score standards required for international licensure and university admissions.',
-    actionHint: '👉 Use the score conversion calculator and review test formats',
     audioUrl: '/audio/tutorial/tutorial_exp_step2.mp3',
-    speechText: 'Master global English proficiency benchmarks! Compare CEFR levels with IELTS, TOEFL, and Duolingo scores required for international licensure and university admissions.'
+    speechText: 'Explore top accredited universities, NAAC A-double-plus institutions, global QS rankings, and degree paths. Discover the exact institutions needed to achieve your dream career!'
   },
   {
     step: 3,
+    tab: 'exams',
+    targetSelector: '#exams',
+    badge: 'COMPLETE TOUR · STEP 4 OF 11',
+    title: 'English Proficiency Testing & Exams',
+    icon: '📋',
+    sectionKey: 'section_exams',
+    instruction: 'Compare CEFR levels, IELTS, TOEFL, Duolingo, CUET, and CLAT score standards required for admissions and professional licensure.',
+    actionHint: '👉 Use the score conversion calculator and review test formats',
+    audioUrl: '/audio/tutorial/tutorial_exp_step3.mp3',
+    speechText: 'Master global English proficiency benchmarks! Compare CEFR levels with IELTS, TOEFL, Duolingo, CUET, and CLAT score standards required for admissions and professional licensure.'
+  },
+  {
+    step: 4,
     tab: 'speak',
     targetSelector: '#sec-speak',
-    badge: 'COMPLETE TOUR · STEP 4 OF 11',
-    title: 'AI Pronunciation Studio & Phonetic Breakdown',
+    badge: 'COMPLETE TOUR · STEP 5 OF 11',
+    title: 'AI Pronunciation Studio & Phonetics',
     icon: '🗣️',
     sectionKey: 'section_speak',
     instruction: 'Master international professional terminology! Practice pronouncing complex career terms with real-time phonetic breakdowns, syllable stress guides, and waveform feedback.',
     actionHint: '👉 Listen to a model pronunciation and speak the term aloud',
-    audioUrl: '/audio/tutorial/tutorial_exp_step3.mp3',
-    speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our visual phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
+    audioUrl: '/audio/tutorial/tutorial_exp_step4.mp3',
+    speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
   },
   {
-    step: 4,
+    step: 5,
     tab: 'speechLab',
     targetSelector: '#speech-lab',
-    badge: 'COMPLETE TOUR · STEP 5 OF 11',
+    badge: 'COMPLETE TOUR · STEP 6 OF 11',
     title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
     instruction: 'Test your spoken articulation with multi-metric AI analysis: pace, pitch variation, lexical sophistication, and fluency. Your scores feed directly into your booklet!',
     actionHint: '👉 Click the microphone to record your speech or test sample audio',
-    audioUrl: '/audio/tutorial/tutorial_exp_step4.mp3',
+    audioUrl: '/audio/tutorial/tutorial_exp_step5.mp3',
     speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Your scores feed directly into your booklet!'
   },
   {
-    step: 5,
+    step: 6,
     tab: 'teleprompter',
     targetSelector: '#teleprompter',
-    badge: 'COMPLETE TOUR · STEP 6 OF 11',
+    badge: 'COMPLETE TOUR · STEP 7 OF 11',
     title: 'News Anchor Studio & Live Teleprompter',
     icon: '📺',
     sectionKey: 'section_teleprompter',
-    instruction: 'Experience broadcast journalism! Rehearse international breaking news broadcast scripts in front of a live webcam mirror with adjustable teleprompter scrolling speed.',
-    actionHint: '👉 Adjust the teleprompter scroll speed or practice reading a news script',
-    audioUrl: '/audio/tutorial/tutorial_exp_step5.mp3',
+    instruction: 'Experience broadcast journalism! Choose a roleplay script from the dropdown to activate the teleprompter mirror and rehearse live on webcam.',
+    actionHint: '👉 Select a roleplay script to start the teleprompter mirror',
+    audioUrl: '/audio/tutorial/tutorial_exp_step6.mp3',
     speechText: 'Step into the shoes of a broadcast news anchor! Practice reading breaking international news scripts with an adjustable teleprompter mirror and live webcam video. Master poise, speed control, and camera presence!'
   },
   {
-    step: 6,
+    step: 7,
     tab: 'games',
     targetSelector: '#game-picker-tabs',
-    badge: 'COMPLETE TOUR · STEP 7 OF 11',
-    title: 'Language Arcade Games & AI Quests',
+    badge: 'COMPLETE TOUR · STEP 8 OF 11',
+    title: 'Language Arcade Games & Quests',
     icon: '🎮',
     sectionKey: 'section_cognitive',
     instruction: 'Compete in 11 interactive arcade games and Gemini AI quests: The Scribe, The Etymologist, Wordle 2026, Vocab Hangman, and Spelling Bee to climb the live leaderboard!',
     actionHint: '👉 Launch Wordle, Hangman, or any quest card',
-    audioUrl: '/audio/tutorial/tutorial_exp_step6.mp3',
-    speechText: 'Have fun while sharpening your vocabulary! Explore eleven interactive games including The Scribe, The Etymologist, Wordle 2026, Hangman, and Spelling Bee. Earn points and climb the live exhibition leaderboard!'
-  },
-  {
-    step: 7,
-    tab: 'roadmap',
-    subtool: 'quiz',
-    targetSelector: '#plan-tool-arena',
-    badge: 'COMPLETE TOUR · STEP 8 OF 11',
-    title: 'Interactive Career Aptitude Discovery Quiz',
-    icon: '🧩',
-    sectionKey: 'section_quiz',
-    instruction: 'Take our 5-question aptitude diagnostic! Discover your personality alignment and find the top global professions matched to your unique talents.',
-    actionHint: '👉 Answer the 5 quiz questions to find your optimal career match',
     audioUrl: '/audio/tutorial/tutorial_exp_step7.mp3',
-    speechText: 'Take our interactive Career Aptitude Quiz! Answer five quick diagnostic questions to discover your personality alignment and find the global careers best suited for your skills and interests!'
+    speechText: 'Have fun while sharpening your vocabulary! Explore eleven interactive games including The Scribe, The Etymologist, Wordle 2026, Hangman, and Spelling Bee. Earn points and climb the live exhibition leaderboard!'
   },
   {
     step: 8,
@@ -1010,40 +1009,39 @@ const TUTORIAL_EXPANDED_STEPS = [
     subtool: 'myplan',
     targetSelector: '#plan-tool-arena',
     badge: 'COMPLETE TOUR · STEP 9 OF 11',
-    title: '"My Plan" Strategic Career Blueprint',
+    title: '"My Plan" Strategic Blueprint & Quiz',
     icon: '🗺️',
     sectionKey: 'section_roadmap',
-    instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, licensure milestones, and executive leadership goals.',
-    actionHint: '👉 Select your current class to generate your personalized timeline',
+    instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, aptitude discovery quiz, and your Student Ambassador Business Card.',
+    actionHint: '👉 Explore your timeline, take the aptitude quiz, or customize your business card',
     audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
-    speechText: 'This is your personalized Strategic Career Blueprint. It maps out your multi-year progression from undergraduate degrees to professional licensure and executive leadership milestones.'
+    speechText: 'This is your personalized Strategic Career Blueprint, Aptitude Discovery Quiz, and Student Ambassador Business Card! Map your multi-year progression and customize your credentials.'
   },
   {
     step: 9,
-    tab: 'feedback',
-    targetSelector: '#feedback',
+    tab: 'leaderboard',
+    targetSelector: '#leaderboard',
     badge: 'COMPLETE TOUR · STEP 10 OF 11',
-    title: 'Student Reflection & Fair Feedback',
-    icon: '⭐',
-    sectionKey: 'section_feedback',
-    instruction: 'Share your fair experience! Rate the exhibits and leave your reflections. Your feedback is recorded on the exhibition wall and printed on Page 2 of your booklet.',
-    actionHint: '👉 Rate 1 to 5 stars and submit your student review',
+    title: 'Live Fair Leaderboard & Hall of Fame',
+    icon: '🏆',
+    sectionKey: 'section_leaderboard',
+    instruction: 'See where you stand among fellow students! The live leaderboard ranks top performers across all arcade quests, speech diagnostics, and vocabulary challenges.',
+    actionHint: '👉 Check out the top 10 rankings and quest achievements',
     audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
-    speechText: 'Share your official exhibition feedback and star rating! Your reflection is published to the exhibition feedback wall and stamped onto Page Two of your official Career Booklet, right above your student business card!'
+    speechText: 'Check out the live exhibition leaderboard! See top scores and rankings from students across all arcade games, speech diagnostics, and vocabulary challenges. Compete to claim the top spot on the hall of fame!'
   },
   {
     step: 10,
-    tab: 'roadmap',
-    subtool: 'bizcard',
-    targetSelector: '#student-card-preview',
+    tab: 'feedback',
+    targetSelector: '#feedback',
     badge: 'COMPLETE TOUR · STEP 11 OF 11',
-    title: 'Your Booklet is Ready! (Download at Top)',
-    icon: '📖',
-    sectionKey: 'section_booklet',
-    instruction: 'Congratulations! You have explored every exhibit across Career Fair 2026. Look at the top of your screen—click the glowing "Your Booklet" button to download your official 2-Page printable booklet and cut-out business card!',
-    actionHint: '👉 Click the glowing "Your Booklet" button at the top of the page',
+    title: 'Student Reflection & Fair Feedback',
+    icon: '⭐',
+    sectionKey: 'section_feedback',
+    instruction: 'Congratulations on exploring every exhibit across Career Fair 2026! Leave your star rating and student reflection below to complete the tour and unlock your official printable booklet.',
+    actionHint: '👉 Rate 1 to 5 stars and submit your student review to complete',
     audioUrl: '/audio/tutorial/tutorial_exp_step10.mp3',
-    speechText: 'Congratulations on completing the full exhibition tour! Your official Two-Page Career Booklet is ready. Look at the top of your screen and click the glowing Your Booklet button to download your print-ready PDF!'
+    speechText: 'Congratulations on exploring every single exhibit across Career Fair 2026! Leave your star rating and student reflection below. Your feedback will complete the tour and unlock your official print-ready Career Booklet at the top!'
   }
 ];
 
@@ -1407,29 +1405,26 @@ function isTutorialInteractiveStep(mode, stepIndex) {
 
   if (mode === 'short') {
     // In Short Tour:
-    // Step 0: Choose & Pin Your Career (section_career)
-    // Step 1: Spoken English AI Diagnostic (section_speech)
-    // Step 2: Vocabulary Challenge Wordle 2026 (section_wordle_quick)
-    // Step 3: Student Reflection & Fair Feedback (section_feedback)
+    // Step 0: Careers (section_career)
+    // Step 1: Speech Lab (section_speech)
+    // Step 2: Wordle (section_wordle_quick)
+    // Step 4: Feedback (section_feedback)
     return ['section_career', 'section_speech', 'section_wordle_quick', 'section_feedback'].includes(step.sectionKey);
   } else if (mode === 'expanded') {
     // In Complete Tour:
-    // Interactive steps:
-    // Step 0: Careers (section_career)
-    // Step 3: Pronunciation Studio (section_speak)
-    // Step 4: 6D Voice Coach (section_speech)
-    // Step 5: Teleprompter Studio (section_teleprompter)
-    // Step 6: Language Arcade & AI Quests (section_cognitive)
-    // Step 7: Quiz (section_quiz)
+    // Step 1: Careers (section_career)
+    // Step 4: Speak (section_speak)
+    // Step 5: Speech Lab (section_speech)
+    // Step 6: Teleprompter (section_teleprompter)
+    // Step 7: Arcade Games (section_cognitive)
     // Step 8: My Plan (section_roadmap)
-    // Step 9: Feedback (section_feedback)
+    // Step 10: Feedback (section_feedback)
     return [
       'section_career',
       'section_speak',
       'section_speech',
       'section_teleprompter',
       'section_cognitive',
-      'section_quiz',
       'section_roadmap',
       'section_feedback'
     ].includes(step.sectionKey);
