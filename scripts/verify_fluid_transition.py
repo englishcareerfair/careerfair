@@ -7,8 +7,8 @@ from PIL import Image
 
 PORT = 8820
 CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-PUBLIC_DIR = r"C:\Users\shwet\OneDrive\Desktop\careerfair\careerfair\public"
-ARTIFACTS_DIR = r"C:\Users\shwet\OneDrive\Desktop\careerfair\careerfair\artifacts\theme_animation"
+PUBLIC_DIR = r"D:\TANMAY\careerfair\careerfair\public"
+ARTIFACTS_DIR = r"D:\TANMAY\careerfair\careerfair\artifacts\theme_animation"
 BRAIN_DIR = r"C:\Users\shwet\.gemini\antigravity\brain\2c64a71e-dd2b-48c1-8ab5-f07715083bdc"
 os.makedirs(ARTIFACTS_DIR, exist_ok=True)
 

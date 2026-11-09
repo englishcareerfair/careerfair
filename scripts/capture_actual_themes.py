@@ -7,7 +7,7 @@ from PIL import Image
 
 PORT = 8815
 CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
-PUBLIC_DIR = r"C:\Users\shwet\OneDrive\Desktop\careerfair\careerfair\public"
+PUBLIC_DIR = r"D:\TANMAY\careerfair\careerfair\public"
 BRAIN_DIR = r"C:\Users\shwet\.gemini\antigravity\brain\2c64a71e-dd2b-48c1-8ab5-f07715083bdc"
 
 class QuietHandler(SimpleHTTPRequestHandler):
