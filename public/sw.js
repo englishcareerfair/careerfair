@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v22.0-slow-smooth-scroll-and-game-box';
+const CACHE_NAME = 'cf-cache-v22.1-revert-name-qr-lock';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

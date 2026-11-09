@@ -10476,20 +10476,6 @@ function renderQrCode(containerEl, url, size = 68) {
 }
 
 function showEnlargedQrModal(name, title, creds, verifyUrl, phone = '', email = '') {
-  if (!name || !name.trim() || name === 'YOUR FULL NAME' || name === 'Explorer') {
-    showToast('Please enter your full name first to generate your verification QR code! 🪪');
-    const bcInput = document.getElementById('biz-name') || document.getElementById('bizcard-name-input');
-    if (bcInput) {
-      bcInput.focus();
-      bcInput.style.borderColor = '#ef4444';
-      bcInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.5)';
-      bcInput.addEventListener('input', () => {
-        bcInput.style.borderColor = '';
-        bcInput.style.boxShadow = '';
-      }, { once: true });
-    }
-    return;
-  }
   let modal = $('#modal-qr-enlarged');
   if (!modal) {
     modal = document.createElement('div');
@@ -11071,36 +11057,12 @@ function renderFutureBusinessCard(mount) {
     // Render crisp scan-ready vector QR code
     const qrMount = $('#bc-qr-mount');
     if (qrMount) {
-      if (!name || name === 'YOUR FULL NAME' || name === 'Explorer') {
-        qrMount.innerHTML = `
-          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;background:rgba(255,255,255,0.06);border-radius:6px;color:var(--text-muted);font-size:10px;text-align:center;padding:4px;gap:2px;">
-            <span style="font-size:20px;line-height:1;">🔒</span>
-            <span style="font-weight:700;color:var(--accent-cyan);font-size:9.5px;letter-spacing:0.02em;">Enter Name</span>
-            <span style="font-size:8.5px;opacity:0.75;">to unlock QR</span>
-          </div>
-        `;
-        qrMount.title = "Please enter your full name to generate and view your verified credential QR code";
-        qrMount.style.cursor = "pointer";
-        qrMount.onclick = () => {
-          showToast('Please enter your full name first to unlock your verification QR code! 🪪');
-          if (nameInput) {
-            nameInput.focus();
-            nameInput.style.borderColor = '#ef4444';
-            nameInput.style.boxShadow = '0 0 12px rgba(239, 68, 68, 0.5)';
-            nameInput.addEventListener('input', () => {
-              nameInput.style.borderColor = '';
-              nameInput.style.boxShadow = '';
-            }, { once: true });
-          }
-        };
-      } else {
-        renderQrCode(qrMount, verifyUrl, 74);
-        qrMount.title = "Click to view & scan full-size verification badge";
-        qrMount.style.cursor = "pointer";
-        qrMount.onclick = () => {
-          showEnlargedQrModal(name, career, creds, verifyUrl, phone, email);
-        };
-      }
+      renderQrCode(qrMount, verifyUrl, 74);
+      qrMount.title = "Click to view & scan full-size verification badge";
+      qrMount.style.cursor = "pointer";
+      qrMount.onclick = () => {
+        showEnlargedQrModal(name, career, creds, verifyUrl, phone, email);
+      };
     }
 
     if (animatePulse && cardEl) {
