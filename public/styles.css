@@ -6019,9 +6019,14 @@ input[data-capitalize="name"] {
 
 
 /* Do not display phone QR scan option on phone / mobile screens */
-@media (max-width: 768px), (hover: none) and (pointer: coarse) and (max-width: 1024px) {
+@media (max-width: 900px), (hover: none) and (pointer: coarse), (pointer: none) {
   .feedback-qr-pill,
   #feedback-qr-mount {
     display: none !important;
   }
+}
+
+/* Strictly hide teleprompter ticker bar until user chooses a roleplay */
+#teleprompter-box:not(.has-roleplay) {
+  display: none !important;
 }

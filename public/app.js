@@ -414,7 +414,20 @@ async function speak(text, btn = null) {
         if (!contentType.includes('audio')) {
           try {
             responseJson = await res.json();
-            if (responseJson && (responseJson.status === 'quota_exhausted' || responseJson.status === 'invalid_key' || responseJson.statusCode === 429 || responseJson.statusCode === 401)) {
+            const jsonStatus = String(responseJson?.status || '').toLowerCase();
+            const jsonMsg = String(responseJson?.message || responseJson?.detail || '').toLowerCase();
+            if (responseJson && (
+              jsonStatus === 'quota_exhausted' ||
+              jsonStatus === 'quota_exceeded' ||
+              jsonStatus === 'invalid_key' ||
+              responseJson.statusCode === 429 ||
+              responseJson.statusCode === 401 ||
+              jsonMsg.includes('quota') ||
+              jsonMsg.includes('credit') ||
+              jsonMsg.includes('unauthorized') ||
+              jsonMsg.includes('invalid') ||
+              jsonMsg.includes('limit')
+            )) {
               isQuotaOrInvalid = true;
             }
           } catch (_) {}
@@ -447,6 +460,20 @@ async function speak(text, btn = null) {
         }
 
         if (res.ok && contentType.includes('audio')) {
+          const promotedHeader = res.headers.get('x-eleven-promoted') === 'true';
+          const keyIdxHeader = parseInt(res.headers.get('x-eleven-key-index') || '0', 10);
+          if (promotedHeader && keyIdxHeader > 0) {
+            let currentPool = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+            if (currentPool.length > keyIdxHeader) {
+              const newPool = currentPool.slice(keyIdxHeader);
+              const joined = newPool.join('\n');
+              localStorage.setItem('cf_eleven_keys', joined);
+              localStorage.setItem('cf_eleven_key', newPool[0] || '');
+              STATE.config.eleven_keys = joined;
+              STATE.config.eleven_key = newPool[0] || '';
+              if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
+            }
+          }
           const audioBlob = await res.blob();
           if (sessionId !== currentSpeechSessionId) return;
 
@@ -5856,9 +5883,12 @@ function initTeleprompter() {
     const prompterBox = $('#teleprompter-box');
 
     if (!data) {
-      if (prompterBox) prompterBox.style.display = 'none';
-      if (activeS1) activeS1.textContent = '"Select a script above to begin teleprompter roleplay."';
-      if (activeS2) activeS2.textContent = '"Select a script above to begin teleprompter roleplay."';
+      if (prompterBox) {
+        prompterBox.style.setProperty('display', 'none', 'important');
+        prompterBox.classList.remove('has-roleplay');
+      }
+      if (activeS1) activeS1.textContent = '';
+      if (activeS2) activeS2.textContent = '';
       if (lowerTag) lowerTag.textContent = 'STUDIO READY';
       const nameVal = capitalizeName(nameInput?.value.trim() || '') || 'STUDENT';
       if (lowerCopy) lowerCopy.textContent = `${nameVal.toUpperCase()} · SELECT SCRIPT ABOVE · KANAKIA INTERNATIONAL SCHOOL`;
@@ -5870,7 +5900,10 @@ function initTeleprompter() {
       return;
     }
 
-    if (prompterBox) prompterBox.style.display = 'flex';
+    if (prompterBox) {
+      prompterBox.style.setProperty('display', 'flex', 'important');
+      prompterBox.classList.add('has-roleplay');
+    }
     if (activeS1) activeS1.textContent = `"${data.text}"`;
     if (activeS2) activeS2.textContent = `"${data.text}"`;
     if (lowerTag) lowerTag.textContent = data.tag;
@@ -13241,26 +13274,38 @@ function initAdminWorkspace() {
   $('#btn-test-tts-voice')?.addEventListener('click', async function() {
     const testStatus = $('#admin-tts-test-status');
 
-    // If already playing or active, speak() will handle stopping!
+    // Auto-compact first: if Main is blank while backups exist, promote Backup 1 to Main immediately on screen!
+    if (typeof window.compactAndSyncElevenKeys === 'function') {
+      window.compactAndSyncElevenKeys(false);
+    }
+
     const isCurrentlyPlaying = this.classList.contains('speaking-active') || this.classList.contains('playing') || this.textContent.includes('Stop');
 
-    if (!isCurrentlyPlaying && testStatus) {
+    if (isCurrentlyPlaying) {
+      stopAllVoice();
+      if (testStatus) {
+        testStatus.innerHTML = '<span style="color:var(--text-muted);">⏹️ Voice test stopped.</span>';
+      }
+      return;
+    }
+
+    if (testStatus) {
       testStatus.innerHTML = '<span style="color:var(--accent-cyan);">🔊 Synthesizing live voice test...</span>';
     }
 
-    // Watchdog timer (12s) to prevent any infinite hang on Synthesizing status
+    // Watchdog timer (7s) to guarantee no infinite hang on Synthesizing status
     if (window._testVoiceWatchdog) clearTimeout(window._testVoiceWatchdog);
     window._testVoiceWatchdog = setTimeout(() => {
       const ts = $('#admin-tts-test-status');
       const btn = $('#btn-test-tts-voice');
       if (ts && ts.textContent.includes('Synthesizing')) {
-        ts.innerHTML = '<span style="color:var(--accent-amber, #f59e0b);">⚠️ Synthesis took longer than expected. Using high-fidelity Indian Neural Voice fallback.</span>';
+        ts.innerHTML = '<span style="color:var(--accent-cyan);">ℹ️ Playing via authentic Indian English Neural Voice (en-IN fallback).</span>';
         if (btn) {
           btn.innerHTML = btn.dataset.origHtml || 'Test Humanoid Voice 🔊';
           btn.classList.remove('speaking-active', 'playing');
         }
       }
-    }, 12000);
+    }, 7000);
 
     const customVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
     const testText = customVoiceId
@@ -14491,6 +14536,7 @@ window.initDynamicApiPools = function() {
       showToast('ℹ️ Backup ElevenLabs key promoted to Main');
     }
   };
+  window.compactAndSyncElevenKeys = compactAndSyncElevenKeys;
 
   const renderElevenBoxes = (keys) => {
     if (!elevenContainer) return;

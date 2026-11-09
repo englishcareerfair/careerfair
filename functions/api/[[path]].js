@@ -2783,156 +2783,175 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       });
     }
 
-    let elevenKey = elevenKeyPool[0];
+    let audioBuffer = null;
+    let activeVoiceName = 'Studio Voice';
+    let activeVoiceId = '';
+    let isHealed = false;
+    let lastErrMsg = '';
+    let lastStatus = 0;
+    let successfulKeyIndex = -1;
 
-    try {
-      // 1. Fetch available voices in user account
-      let accountVoices = [];
-      let accountIndianVoice = null;
-      let isFreeUser = true;
+    // Failover loop across all ElevenLabs keys in pool (Main & Backups)
+    for (let kIdx = 0; kIdx < elevenKeyPool.length; kIdx++) {
+      const elevenKey = elevenKeyPool[kIdx];
 
       try {
-        const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
-          headers: { 'xi-api-key': elevenKey }
-        });
-        if (vRes.ok) {
-          const vData = await vRes.json();
-          accountVoices = vData.voices || [];
-          accountIndianVoice = accountVoices.find(v => {
-            const acc = (v.labels?.accent || '').toLowerCase();
-            const desc = (v.description || '').toLowerCase();
-            const name = (v.name || '').toLowerCase();
-            return acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || name.includes('priya') || name.includes('deepika') || name.includes('ravi') || name.includes('kabir') || desc.includes('indian');
+        // 1. Fetch available voices in user account
+        let accountVoices = [];
+        let accountIndianVoice = null;
+        let isKeyValid = true;
+
+        try {
+          const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+            headers: { 'xi-api-key': elevenKey }
           });
-        } else if (vRes.status === 401) {
-          return json({
-            fallback: true,
-            status: 'invalid_key',
-            message: 'ElevenLabs API key is invalid or unauthorized.'
-          });
-        }
-      } catch (e) {}
-
-      // Check subscription tier
-      try {
-        const subRes = await fetch('https://api.elevenlabs.io/v1/user/subscription', {
-          headers: { 'xi-api-key': elevenKey }
-        });
-        if (subRes.ok) {
-          const s = await subRes.json();
-          if (s && s.tier && s.tier.toLowerCase() !== 'free') isFreeUser = false;
-        }
-      } catch (e) {}
-
-      // 2. Resolve Voice Candidate Pool:
-      // If user is Free Tier and requested a known Library voice (e.g. Aditi / XyEeR27UzfaUps3yGyxO),
-      // we immediately include premade candidates so there is ZERO delay or hard error.
-      const candidateVoiceIds = [];
-      if (requestedVoiceId) candidateVoiceIds.push(requestedVoiceId);
-      if (accountIndianVoice) candidateVoiceIds.push(accountIndianVoice.voice_id);
-      
-      // Add account's premade voices
-      for (const v of accountVoices) {
-        if ((v.category === 'premade' || !v.category) && !candidateVoiceIds.includes(v.voice_id)) {
-          candidateVoiceIds.push(v.voice_id);
-        }
-      }
-      // Add universal guaranteed premade voices
-      for (const uv of UNIVERSAL_PREMADE_VOICES) {
-        if (!candidateVoiceIds.includes(uv.id)) {
-          candidateVoiceIds.push(uv.id);
-        }
-      }
-
-      // Try synthesis across candidates with failover for 402/400
-      let audioBuffer = null;
-      let activeVoiceName = 'Studio Voice';
-      let activeVoiceId = '';
-      let isHealed = false;
-      let lastErrMsg = '';
-      let lastStatus = 0;
-
-      const modelsToTry = ['eleven_multilingual_v2', 'eleven_turbo_v2_5', 'eleven_flash_v2_5'];
-
-      for (let i = 0; i < Math.min(candidateVoiceIds.length, 4); i++) {
-        const vid = candidateVoiceIds[i];
-        const voiceObj = accountVoices.find(v => v.voice_id === vid) || UNIVERSAL_PREMADE_VOICES.find(v => v.id === vid);
-        const vName = voiceObj ? voiceObj.name : vid;
-
-        for (const model of modelsToTry) {
-          try {
-            const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'xi-api-key': elevenKey
-              },
-              body: JSON.stringify({
-                text: text,
-                model_id: model,
-                voice_settings: { stability: 0.65, similarity_boost: 0.75 }
-              })
+          if (vRes.ok) {
+            const vData = await vRes.json();
+            accountVoices = vData.voices || [];
+            accountIndianVoice = accountVoices.find(v => {
+              const acc = (v.labels?.accent || '').toLowerCase();
+              const desc = (v.description || '').toLowerCase();
+              const name = (v.name || '').toLowerCase();
+              return acc.includes('indian') || acc.includes('hindi') || name.includes('ankit') || name.includes('aditi') || name.includes('akash') || name.includes('priya') || name.includes('deepika') || name.includes('ravi') || name.includes('kabir') || desc.includes('indian');
             });
+          } else if (vRes.status === 401 || vRes.status === 403) {
+            isKeyValid = false;
+            lastStatus = vRes.status;
+            lastErrMsg = 'ElevenLabs key invalid or unauthorized.';
+          } else if (vRes.status === 429) {
+            isKeyValid = false;
+            lastStatus = 429;
+            lastErrMsg = 'ElevenLabs key quota exhausted.';
+          }
+        } catch (_) {}
 
-            if (ttsRes.ok) {
-              audioBuffer = await ttsRes.arrayBuffer();
-              activeVoiceName = vName;
-              activeVoiceId = vid;
-              if (i > 0) isHealed = true;
-              break;
-            } else {
-              lastStatus = ttsRes.status;
-              const errTxt = await ttsRes.text().catch(() => '');
-              try {
-                const parsed = JSON.parse(errTxt);
-                lastErrMsg = parsed.detail?.message || parsed.message || errTxt;
-              } catch {
-                lastErrMsg = errTxt;
-              }
-              // If 402 (Free users cannot use library voices), immediately break model loop and try next voice (premade)
-              if (ttsRes.status === 402) {
-                break;
-              }
-            }
-          } catch (e) {
-            lastErrMsg = e.message;
+        if (!isKeyValid) {
+          continue; // Key failed, try next backup key immediately
+        }
+
+        // 2. Resolve Voice Candidate Pool
+        const candidateVoiceIds = [];
+        if (requestedVoiceId) candidateVoiceIds.push(requestedVoiceId);
+        if (accountIndianVoice) candidateVoiceIds.push(accountIndianVoice.voice_id);
+
+        for (const v of accountVoices) {
+          if ((v.category === 'premade' || !v.category) && !candidateVoiceIds.includes(v.voice_id)) {
+            candidateVoiceIds.push(v.voice_id);
+          }
+        }
+        for (const uv of UNIVERSAL_PREMADE_VOICES) {
+          if (!candidateVoiceIds.includes(uv.id)) {
+            candidateVoiceIds.push(uv.id);
           }
         }
 
-        if (audioBuffer) break;
-      }
+        const modelsToTry = ['eleven_multilingual_v2', 'eleven_turbo_v2_5', 'eleven_flash_v2_5'];
 
-      if (audioBuffer) {
-        return new Response(audioBuffer, {
-          headers: {
-            'Content-Type': 'audio/mpeg',
-            'x-eleven-voice': `${activeVoiceName}${isHealed ? ' (Studio Free-Tier Voice)' : ''}`,
-            'x-eleven-voice-id': activeVoiceId,
-            'x-eleven-healed': isHealed ? 'true' : 'false',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id, x-eleven-healed'
+        for (let i = 0; i < Math.min(candidateVoiceIds.length, 4); i++) {
+          const vid = candidateVoiceIds[i];
+          const voiceObj = accountVoices.find(v => v.voice_id === vid) || UNIVERSAL_PREMADE_VOICES.find(v => v.id === vid);
+          const vName = voiceObj ? voiceObj.name : vid;
+
+          for (const model of modelsToTry) {
+            try {
+              const ttsRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'xi-api-key': elevenKey
+                },
+                body: JSON.stringify({
+                  text: text,
+                  model_id: model,
+                  voice_settings: { stability: 0.65, similarity_boost: 0.75 }
+                })
+              });
+
+              if (ttsRes.ok) {
+                audioBuffer = await ttsRes.arrayBuffer();
+                activeVoiceName = vName;
+                activeVoiceId = vid;
+                if (i > 0) isHealed = true;
+                successfulKeyIndex = kIdx;
+                break;
+              } else {
+                lastStatus = ttsRes.status;
+                const errTxt = await ttsRes.text().catch(() => '');
+                try {
+                  const parsed = JSON.parse(errTxt);
+                  lastErrMsg = parsed.detail?.message || parsed.message || errTxt;
+                } catch {
+                  lastErrMsg = errTxt;
+                }
+
+                const isQuotaError = lastStatus === 429 || (lastErrMsg && (lastErrMsg.toLowerCase().includes('quota') || lastErrMsg.toLowerCase().includes('credit')));
+                if (isQuotaError || lastStatus === 401) {
+                  break; // Break model loop, advance to next key in pool
+                }
+
+                if (ttsRes.status === 402) {
+                  break; // Free tier cannot use library voice, try next candidate
+                }
+              }
+            } catch (e) {
+              lastErrMsg = e.message;
+            }
           }
-        });
+
+          if (audioBuffer) break;
+        }
+
+        if (audioBuffer) {
+          // If a promoted backup key succeeded, auto-persist the updated pool in D1
+          if (db && kIdx > 0) {
+            const promotedPool = elevenKeyPool.slice(kIdx);
+            try {
+              await kvSet(db, 'eleven_keys', promotedPool.join('\n'));
+              await kvSet(db, 'eleven_key', promotedPool[0] || '');
+            } catch (_) {}
+          }
+          break; // Audio ready, stop checking keys
+        }
+      } catch (keyErr) {
+        lastErrMsg = keyErr.message;
       }
+    }
 
-      // If all ElevenLabs attempts failed (quota exhausted, invalid key, etc.):
-      return json({
-        fallback: true,
-        status: lastStatus === 429 ? 'quota_exhausted' : (lastStatus === 402 ? 'free_tier_library_notice' : 'eleven_fallback'),
-        statusCode: lastStatus,
-        message: lastStatus === 402
-          ? 'ElevenLabs Free Plan does not allow Community VoiceLab voices via API. Switched smoothly to Indian Neural Voice (en-IN).'
-          : (lastStatus === 429 ? 'ElevenLabs monthly character quota consumed. Playing instant Indian Neural Voice (en-IN).' : 'ElevenLabs offline. Playing instant Indian Neural Voice (en-IN).')
-      });
-
-    } catch (e) {
-      return json({
-        fallback: true,
-        status: 'error',
-        message: 'Speech synthesis fallback active: ' + e.message
+    if (audioBuffer) {
+      return new Response(audioBuffer, {
+        headers: {
+          'Content-Type': 'audio/mpeg',
+          'x-eleven-voice': `${activeVoiceName}${isHealed ? ' (Studio Free-Tier Voice)' : ''}`,
+          'x-eleven-voice-id': activeVoiceId,
+          'x-eleven-healed': isHealed ? 'true' : 'false',
+          'x-eleven-promoted': successfulKeyIndex > 0 ? 'true' : 'false',
+          'x-eleven-key-index': String(successfulKeyIndex),
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'x-eleven-voice, x-eleven-voice-id, x-eleven-healed, x-eleven-promoted, x-eleven-key-index'
+        }
       });
     }
+
+    // If all keys in pool failed:
+    const isQuotaOverall = lastStatus === 429 || (lastErrMsg && (lastErrMsg.toLowerCase().includes('quota') || lastErrMsg.toLowerCase().includes('credit')));
+    return json({
+      fallback: true,
+      status: isQuotaOverall ? 'quota_exhausted' : (lastStatus === 402 ? 'free_tier_library_notice' : 'eleven_fallback'),
+      statusCode: lastStatus || 429,
+      allExhausted: true,
+      message: isQuotaOverall
+        ? 'ElevenLabs key quota reached across pool. Playing authentic Indian Neural Voice (en-IN).'
+        : (lastStatus === 402 ? 'ElevenLabs Free Plan does not allow Community VoiceLab voices via API. Switched smoothly to Indian Neural Voice (en-IN).' : 'ElevenLabs offline. Playing instant Indian Neural Voice (en-IN).')
+    });
+
+  } catch (e) {
+    return json({
+      fallback: true,
+      status: 'error',
+      message: 'Speech synthesis fallback active: ' + e.message
+    });
   }
+}
 
   // ── 12. GET /export/data (Permanent Cloudflare D1 Dated Data Export) ─────────
   if ((path === '/export/data' || path === '/export-data') && method === 'GET') {

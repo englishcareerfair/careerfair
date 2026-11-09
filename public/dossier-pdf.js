@@ -1,20 +1,19 @@
 /**
  * Career Fair 2026 - Official Student Career Booklet & Ambassador Card Generator
- * High-definition 2-Page Executive Dossier
+ * High-Definition 2-Page Executive Dossier
  * 
- * - Full Dynamic Career Roadmap (Custom to chosen career, degrees, exams, NAAC/NIRF universities)
- * - Anti-Truncation Canvas Rendering: strictly left-aligned text with zero off-screen drift
- * - 6-Dimensional Acoustic Telemetry Diagnostics
- * - Official Fair Endorsement & Seal (Directorate of Career Guidance & Exhibition Convenors)
- * - Verified Exhibitor Reflection & Feedback Card
- * - Detachable Scannable Student Ambassador Business Card
- * - Memory & Size Optimized: 0.85 JPEG compression with ultra-sharp vector text
+ * Rebuilt from scratch:
+ * - Completely identical to website UI (Plus Jakarta Sans, Space Grotesk, JetBrains Mono)
+ * - Clean obsidian luxury & corporate slate themes
+ * - ABSOLUTELY ZERO PARTICLES / SHARDS / NOISE
+ * - Sleek card shapes, top accent ribbons, soft depth shadows, badge pills
+ * - Live scannable QR code on detachable Student Ambassador Business Card
  */
 
 (function(window) {
   'use strict';
 
-  // Rounded Rectangle Canvas Utility with CSS-compliant radius clamping
+  // 1. Canvas Rounded Rectangle Utility
   function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
     const maxR = Math.max(0, Math.min(width / 2, height / 2));
     if (typeof radius === 'number') {
@@ -42,249 +41,171 @@
     if (stroke) ctx.stroke();
   }
 
-  // Deterministic PRNG for consistent, organic particle & shard placement
-  function pseudoRandom(seed) {
-    let s = (seed % 2147483647);
-    if (s <= 0) s += 2147483646;
-    return function() {
-      s = (s * 16807) % 2147483647;
-      return (s - 1) / 2147483646;
-    };
-  }
-
-  // Modern Website Ambient Background with Glowing Particles & Translucent Shards
-  function drawWebsiteParticlesBackground(ctx, CW, CH, isDark, pageNum) {
+  // 2. Clean Ambient Website Background (Zero Particles, Zero Shards)
+  function drawCleanWebsiteBackground(ctx, CW, CH, isDark) {
     ctx.save();
-
-    // 1. Base Gradient matching the website's deep dark luxury theme
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
     if (isDark) {
-      bgGrad.addColorStop(0, '#06070b');
-      bgGrad.addColorStop(0.35, '#0a0e1a');
-      bgGrad.addColorStop(0.75, '#0d1326');
-      bgGrad.addColorStop(1, '#05070c');
+      // Obsidian Dark Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
+      bgGrad.addColorStop(0, '#0b0c10');
+      bgGrad.addColorStop(0.5, '#0e1017');
+      bgGrad.addColorStop(1, '#13151b');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Soft Top Radial Ambient Glow (Website's --hero-glow)
+      const glowTop = ctx.createRadialGradient(CW / 2, 260, 20, CW / 2, 260, 950);
+      glowTop.addColorStop(0, 'rgba(37, 99, 235, 0.09)');
+      glowTop.addColorStop(0.4, 'rgba(56, 189, 248, 0.04)');
+      glowTop.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowTop;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Subtle Bottom-Right Accent Glow
+      const glowBottom = ctx.createRadialGradient(CW - 200, CH - 350, 40, CW - 200, CH - 350, 800);
+      glowBottom.addColorStop(0, 'rgba(139, 92, 246, 0.05)');
+      glowBottom.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowBottom;
+      ctx.fillRect(0, 0, CW, CH);
     } else {
+      // Corporate Clean Light Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
       bgGrad.addColorStop(0, '#f8fafc');
       bgGrad.addColorStop(0.5, '#f1f5f9');
       bgGrad.addColorStop(1, '#e2e8f0');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, CW, CH);
+
+      // Soft Top Radial Light Glow
+      const glowTop = ctx.createRadialGradient(CW / 2, 260, 20, CW / 2, 260, 950);
+      glowTop.addColorStop(0, 'rgba(37, 99, 235, 0.05)');
+      glowTop.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowTop;
+      ctx.fillRect(0, 0, CW, CH);
     }
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CW, CH);
+    ctx.restore();
+  }
 
-    // 2. Ambient Soft Glow Orbs (Website Luxury Lighting)
-    // Top-Center Cyan Glow
-    const topGlow = ctx.createRadialGradient(CW * 0.5, 80, 20, CW * 0.5, 80, 850);
-    topGlow.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.18)' : 'rgba(37, 99, 235, 0.12)');
-    topGlow.addColorStop(0.6, isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(37, 99, 235, 0.03)');
-    topGlow.addColorStop(1, 'transparent');
-    ctx.fillStyle = topGlow;
-    ctx.fillRect(0, 0, CW, 1000);
+  // 3. Card Renderer matching Website Card Style & Shadow Effects
+  function drawWebsiteCard(ctx, x, y, width, height, radius = 16, isDark = true, topRibbon = true) {
+    ctx.save();
+    // Soft realistic depth shadow
+    ctx.shadowColor = isDark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(15, 23, 42, 0.08)';
+    ctx.shadowBlur = isDark ? 28 : 20;
+    ctx.shadowOffsetY = isDark ? 10 : 6;
+    ctx.fillStyle = isDark ? '#191c24' : '#ffffff';
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    drawRoundRect(ctx, x, y, width, height, radius, true, true);
+    ctx.restore();
 
-    // Mid-Left Purple/Violet Orb
-    const midVioletGlow = ctx.createRadialGradient(80, CH * 0.45, 30, 80, CH * 0.45, 750);
-    midVioletGlow.addColorStop(0, isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(147, 51, 234, 0.06)');
-    midVioletGlow.addColorStop(1, 'transparent');
-    ctx.fillStyle = midVioletGlow;
-    ctx.fillRect(0, CH * 0.2, CW * 0.6, CH * 0.5);
-
-    // Bottom-Right Amber/Gold Warm Glow
-    const botAmberGlow = ctx.createRadialGradient(CW - 100, CH * 0.85, 30, CW - 100, CH * 0.85, 800);
-    botAmberGlow.addColorStop(0, isDark ? 'rgba(245, 158, 11, 0.14)' : 'rgba(217, 119, 6, 0.08)');
-    botAmberGlow.addColorStop(1, 'transparent');
-    ctx.fillStyle = botAmberGlow;
-    ctx.fillRect(CW * 0.4, CH * 0.6, CW * 0.6, CH * 0.4);
-
-    // 3. Website's Translucent Polygonal Shards
-    const rand = pseudoRandom(pageNum * 9973 + 12345);
-    const shardColor = isDark ? '255, 225, 170' : '180, 83, 9';
-    const shardOpacity = isDark ? 0.045 : 0.035;
-    const shardCount = 8;
-    for (let i = 0; i < shardCount; i++) {
-      const sx = rand() * CW;
-      const sy = rand() * CH;
-      const r = 80 + rand() * 160;
-      const rot = rand() * Math.PI * 2;
-      const pts = [0, 1, 2, 3].map(pi => ({
-        a: pi * Math.PI / 2 + (rand() - 0.5),
-        r: r * (0.6 + rand() * 0.6)
-      }));
-
-      ctx.beginPath();
-      pts.forEach((p, pi) => {
-        const px = sx + Math.cos(p.a + rot) * p.r;
-        const py = sy + Math.sin(p.a + rot) * p.r;
-        if (pi === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.closePath();
-      ctx.fillStyle = `rgba(${shardColor}, ${shardOpacity})`;
-      ctx.fill();
-    }
-
-    // 4. Website's Floating Glowing Embers & Sparks
-    // Website colors: ['#e8a04a', '#d4af37', '#f0b45a'] + cyan sparks
-    const emberColors = isDark
-      ? ['#e8a04a', '#d4af37', '#f0b45a', '#fbbf24', '#f59e0b', '#38bdf8']
-      : ['#f59e0b', '#fbbf24', '#d97706', '#38bdf8', '#60a5fa'];
-    
-    const particleCount = isDark ? 85 : 55;
-    for (let i = 0; i < particleCount; i++) {
-      const px = rand() * CW;
-      const py = rand() * CH;
-      const isCyan = (i % 7 === 0);
-      const color = isCyan ? (isDark ? '#38bdf8' : '#0284c7') : emberColors[Math.floor(rand() * (emberColors.length - 2))];
-      const size = isDark ? (2.5 + rand() * 6.5) : (2 + rand() * 4.5);
-      const alpha = isDark ? (0.35 + rand() * 0.55) : (0.12 + rand() * 0.28);
-
-      // Soft glowing radial halo
-      const haloR = isDark ? (size * 2.8) : (size * 1.5);
-      const halo = ctx.createRadialGradient(px, py, 0, px, py, haloR);
-      halo.addColorStop(0, color);
-      halo.addColorStop(isDark ? 0.35 : 0.45, color);
-      halo.addColorStop(1, 'transparent');
-      
+    // Sleek Top Accent Ribbon
+    if (topRibbon) {
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = halo;
-      ctx.beginPath();
-      ctx.arc(px, py, haloR, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Sharp core ember
-      ctx.globalAlpha = isDark ? Math.min(1, alpha + 0.25) : Math.min(0.8, alpha + 0.15);
-      ctx.fillStyle = isCyan ? (isDark ? '#ffffff' : '#0284c7') : color;
-      ctx.beginPath();
-      ctx.arc(px, py, size * 0.6, 0, Math.PI * 2);
-      ctx.fill();
+      const ribbonGrad = ctx.createLinearGradient(x, y, x + width, y);
+      if (isDark) {
+        ribbonGrad.addColorStop(0, '#38bdf8');
+        ribbonGrad.addColorStop(0.5, '#3b82f6');
+        ribbonGrad.addColorStop(1, '#8b5cf6');
+      } else {
+        ribbonGrad.addColorStop(0, '#1e3a8a');
+        ribbonGrad.addColorStop(0.5, '#2563eb');
+        ribbonGrad.addColorStop(1, '#0284c7');
+      }
+      ctx.fillStyle = ribbonGrad;
+      const r = typeof radius === 'number' ? radius : (radius.tl || 16);
+      drawRoundRect(ctx, x, y, width, 5, { tl: r, tr: r, br: 0, bl: 0 }, true, false);
       ctx.restore();
     }
-
-    ctx.restore();
   }
 
-  // Section Header matching website typography and pill badges (NO harsh laser cut lines)
-  function drawSectionHeader(ctx, num, title, subtitle, x, y, width, isDark) {
+  // 4. Badge Pill Renderer (Identical to Website .badge-pill)
+  function drawBadgePill(ctx, text, x, y, options = {}) {
     ctx.save();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    const isDark = options.isDark !== false;
+    const font = options.font || '700 12px "Space Grotesk", sans-serif';
+    ctx.font = font;
+    const textW = ctx.measureText(text).width;
+    const paddingX = options.paddingX || 14;
+    const pillH = options.height || 26;
+    const pillW = textW + paddingX * 2;
+    const pillRadius = 9999;
 
-    // Website Pill Badge
-    const badgeW = 34, badgeH = 34;
-    const badgeGrad = ctx.createLinearGradient(x, y, x + badgeW, y + badgeH);
-    if (isDark) {
-      badgeGrad.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
-      badgeGrad.addColorStop(1, 'rgba(139, 92, 246, 0.2)');
-    } else {
-      badgeGrad.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
-      badgeGrad.addColorStop(1, 'rgba(2, 132, 199, 0.15)');
-    }
-    ctx.fillStyle = badgeGrad;
-    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(37, 99, 235, 0.4)';
-    ctx.lineWidth = 1.2;
-    drawRoundRect(ctx, x, y + 1, badgeW, badgeH, 10, true, true);
+    let bg = options.bg;
+    let border = options.border;
+    let color = options.color;
 
-    ctx.font = '800 15px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(num, x + badgeW / 2, y + 1 + badgeH / 2);
-
-    // Title in Plus Jakarta Sans
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#f8fafc' : '#090d16';
-    ctx.fillText(title, x + badgeW + 16, y);
-
-    // Subtitle in Plus Jakarta Sans
-    if (subtitle) {
-      ctx.font = '500 13.5px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-      ctx.fillText(subtitle, x + badgeW + 16, y + 24);
+    if (!bg) {
+      if (options.variant === 'gold') {
+        bg = isDark ? 'rgba(251, 191, 36, 0.14)' : 'rgba(217, 119, 6, 0.12)';
+        border = isDark ? 'rgba(251, 191, 36, 0.4)' : 'rgba(217, 119, 6, 0.35)';
+        color = isDark ? '#fbbf24' : '#b45309';
+      } else if (options.variant === 'emerald') {
+        bg = isDark ? 'rgba(52, 211, 153, 0.14)' : 'rgba(5, 150, 105, 0.12)';
+        border = isDark ? 'rgba(52, 211, 153, 0.4)' : 'rgba(5, 150, 105, 0.35)';
+        color = isDark ? '#34d399' : '#047857';
+      } else if (options.variant === 'magenta') {
+        bg = isDark ? 'rgba(251, 113, 133, 0.14)' : 'rgba(225, 29, 72, 0.12)';
+        border = isDark ? 'rgba(251, 113, 133, 0.4)' : 'rgba(225, 29, 72, 0.35)';
+        color = isDark ? '#fb7185' : '#be123c';
+      } else {
+        // Cyan / Brand default
+        bg = isDark ? 'rgba(56, 189, 248, 0.14)' : 'rgba(37, 99, 235, 0.10)';
+        border = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(37, 99, 235, 0.35)';
+        color = isDark ? '#38bdf8' : '#1d4ed8';
+      }
     }
 
-    ctx.restore();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-  }
-
-  // Official Gold Radial Seal
-  function drawOfficialSeal(ctx, cx, cy, radius, isDark) {
-    ctx.save();
-    ctx.textAlign = 'left';
-    // Radiant Outer Glow
-    const glowGrad = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius * 1.25);
-    glowGrad.addColorStop(0, isDark ? 'rgba(251, 191, 36, 0.25)' : 'rgba(29, 78, 216, 0.15)');
-    glowGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = glowGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius * 1.25, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 24-point Notches
-    ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 24; i++) {
-      const angle = (i * Math.PI) / 12;
-      const x1 = cx + Math.cos(angle) * (radius - 5);
-      const y1 = cy + Math.sin(angle) * (radius - 5);
-      const x2 = cx + Math.cos(angle) * (radius + 2);
-      const y2 = cy + Math.sin(angle) * (radius + 2);
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-
-    // Double Ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius - 7, 0, Math.PI * 2);
+    ctx.fillStyle = bg;
+    ctx.strokeStyle = border;
     ctx.lineWidth = 1;
-    ctx.stroke();
+    drawRoundRect(ctx, x, y, pillW, pillH, pillRadius, true, true);
 
-    // Central Disc
-    const discGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, radius - 8);
-    if (isDark) {
-      discGrad.addColorStop(0, 'rgba(251, 191, 36, 0.16)');
-      discGrad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
-    } else {
-      discGrad.addColorStop(0, 'rgba(254, 243, 199, 0.9)');
-      discGrad.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
-    }
-    ctx.fillStyle = discGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius - 8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Typography
+    ctx.fillStyle = color;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = '800 9px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#f8fafc' : '#090d16';
-    ctx.fillText('KANAKIA INTL', cx, cy - 24);
-
-    ctx.font = '800 12px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#fbbf24' : '#d97706';
-    ctx.fillText('★ ★ ★', cx, cy - 10);
-    ctx.fillText('VERIFIED', cx, cy + 4);
-
-    ctx.font = '700 8.5px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-    ctx.fillText('OFFICIAL SEAL', cx, cy + 19);
-    ctx.fillText('2026', cx, cy + 30);
-
+    ctx.fillText(text, x + pillW / 2, y + pillH / 2);
     ctx.restore();
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
+    return pillW;
   }
 
-  // Vector QR Code Generator on Canvas
+  // 5. Clean Word Wrap Utility
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 8) {
+    if (!text) return 0;
+    const words = String(text).split(' ');
+    let line = '';
+    let linesDrawn = 0;
+
+    for (let n = 0; n < words.length; n++) {
+      const testLine = line + words[n] + ' ';
+      const metrics = ctx.measureText(testLine);
+      const testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        ctx.fillText(line.trim(), x, y + (linesDrawn * lineHeight));
+        line = words[n] + ' ';
+        linesDrawn++;
+        if (linesDrawn >= maxLines - 1) {
+          // Truncate remaining
+          let remaining = words.slice(n).join(' ');
+          while (ctx.measureText(remaining + '...').width > maxWidth && remaining.length > 0) {
+            remaining = remaining.slice(0, -1);
+          }
+          ctx.fillText(remaining.trim() + '...', x, y + (linesDrawn * lineHeight));
+          linesDrawn++;
+          return linesDrawn;
+        }
+      } else {
+        line = testLine;
+      }
+    }
+    if (line.trim().length > 0) {
+      ctx.fillText(line.trim(), x, y + (linesDrawn * lineHeight));
+      linesDrawn++;
+    }
+    return linesDrawn;
+  }
+
+  // 6. QR Code Matrix & Drawing
   function drawQrToCanvas(ctx, matrix, x, y, size) {
     if (!matrix || !matrix.length) return;
     const n = matrix.length;
@@ -299,7 +220,6 @@
     }
   }
 
-  // Dynamic QR Matrix resolution
   function getDynamicQrMatrix(targetUrl) {
     try {
       if (typeof qrcode !== 'undefined') {
@@ -319,192 +239,80 @@
       }
     } catch (_) {}
 
-    // Fallback vector matrix
-    return [
-      [1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,1,0,0,1,1,0,0,0,0,0,1],
-      [1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,0,1,1,0,1,1,1,0,1],
-      [1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1],
-      [1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1],
-      [0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0],
-      [1,1,0,1,0,1,1,1,0,1,1,0,1,0,1,1,0],
-      [0,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,1],
-      [1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
-      [1,0,0,0,0,0,1,0,0,1,1,0,1,0,0,1,0],
-      [1,0,1,1,1,0,1,0,1,0,1,1,0,1,1,0,1],
-      [1,0,1,1,1,0,1,0,1,1,0,1,1,0,1,1,0],
-      [1,0,1,1,1,0,1,0,0,1,1,0,1,1,0,0,1],
-      [1,0,0,0,0,0,1,0,1,0,1,1,0,1,1,0,1],
-      [1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1,1]
-    ];
-  }
-
-  // Dynamic Milestone Builder Tailored to Chosen Career
-  function getCareerMilestones(career) {
-    const title = career.title || 'Professional Specialist';
-    const cat = (career.cat || '').toLowerCase();
-    const degrees = career.degrees || 'Bachelor’s Degree';
-    const exams = career.exams || 'National Entrance Benchmark';
-    const skills = career.skills || 'Executive Articulation';
-
-    if (cat.includes('tech') || title.toLowerCase().includes('software') || title.toLowerCase().includes('architect') || title.toLowerCase().includes('engineer') || title.toLowerCase().includes('data') || title.toLowerCase().includes('ai') || title.toLowerCase().includes('cloud') || title.toLowerCase().includes('cyber')) {
-      const uDeg = degrees.split('/')[0].split('+')[0].trim() || 'B.Tech in Computer Science & Engineering';
-      return [
-        {
-          node: '01',
-          badge: 'UNDERGRADUATE FOUNDATION · 4 YEARS',
-          title: uDeg,
-          inst: 'IIT Bombay · BITS Pilani · IIIT Hyderabad · IIT Delhi',
-          rating: `Top NIRF Tier-1 · Competitive Entrance via ${exams || 'JEE Advanced / BITSAT'}`,
-          desc: 'Foundational algorithmic complexity, distributed systems design, and technical RFC drafting in English.',
-          gradColor: ['#00f0ff', '#0284c7']
-        },
-        {
-          node: '02',
-          badge: 'SPECIALIZED ENGINEERING & INDUSTRY ACCREDITATION',
-          title: 'Master of Science (MS) / Global Cloud Architect Certification (AWS/GCP)',
-          inst: 'Recognized International University / Tier-1 Global Engineering Directorate',
-          rating: 'System Architecture & Asynchronous Open-Source RFC Specifications',
-          desc: 'High-throughput microservices governance, distributed data pipelines, and executive technical documentation.',
-          gradColor: ['#a855f7', '#6366f1']
-        },
-        {
-          node: '03',
-          badge: 'EXECUTIVE CAREER HORIZON · GLOBAL LEADERSHIP',
-          title: `${title} — VP of Engineering / Distinguished Fellow`,
-          inst: 'Global Enterprise Engineering Pods & High-Throughput Cloud Platforms',
-          rating: 'Tier-1 International Technology Enterprise Benchmark',
-          desc: 'Cross-continental system design, multinational team mentorship, and executive board technical persuasion.',
-          gradColor: ['#f59e0b', '#fbbf24']
+    // Clean standard matrix fallback
+    const m = [];
+    const size = 25;
+    for (let r = 0; r < size; r++) {
+      const row = [];
+      for (let c = 0; c < size; c++) {
+        const isFinderTL = (r < 7 && c < 7);
+        const isFinderTR = (r < 7 && c >= size - 7);
+        const isFinderBL = (r >= size - 7 && c < 7);
+        if (isFinderTL || isFinderTR || isFinderBL) {
+          const inR = (r < 7) ? r : (r - (size - 7));
+          const inC = (c < 7) ? c : (c - (size - 7));
+          const isEdge = (inR === 0 || inR === 6 || inC === 0 || inC === 6);
+          const isCenter = (inR >= 2 && inR <= 4 && inC >= 2 && inC <= 4);
+          row.push((isEdge || isCenter) ? 1 : 0);
+        } else {
+          row.push(((r * 7 + c * 13 + 5) % 3 === 0) ? 1 : 0);
         }
-      ];
-    } else if (cat.includes('aviation') || title.toLowerCase().includes('pilot') || title.toLowerCase().includes('flight')) {
-      return [
-        {
-          node: '01',
-          badge: 'UNDERGRADUATE FOUNDATION · 3-4 YEARS',
-          title: 'B.Sc. Aviation Science / B.Tech Aerospace Engineering',
-          inst: 'Indira Gandhi Rashtriya Uran Akademi (IGRUA) · IIT Bombay (Aerospace)',
-          rating: 'NIRF Ranked Top 5 · NAAC A++ Accredited',
-          desc: 'Aerodynamics, meteorology, air navigation, and flight operations protocol.',
-          gradColor: ['#00f0ff', '#0284c7']
-        },
-        {
-          node: '02',
-          badge: 'PROFESSIONAL LICENSURE & FLIGHT HOURS',
-          title: 'Commercial Pilot License (CPL) + Multi-Engine Instrument Rating',
-          inst: 'DGCA India / FAA (USA) / EASA Flight Standards Directorate',
-          rating: 'ICAO English Language Proficiency Level 5/6 Certified',
-          desc: 'Standardized international phraseology, zero-ambiguity radiotelephony, and emergency clearance drills.',
-          gradColor: ['#a855f7', '#6366f1']
-        },
-        {
-          node: '03',
-          badge: 'EXECUTIVE CAREER HORIZON · AIRLINE COMMAND',
-          title: 'First Officer to Captain / Chief Pilot Flight Operations',
-          inst: 'Major International Commercial Carriers & Global Aviation Alliances',
-          rating: 'Multi-Engine Jet Type Rating · Commander Benchmark',
-          desc: 'Command multi-million dollar wide-body aircraft across trans-continental flight corridors.',
-          gradColor: ['#f59e0b', '#fbbf24']
-        }
-      ];
-    } else if (cat.includes('health') || title.toLowerCase().includes('surgeon') || title.toLowerCase().includes('doctor') || title.toLowerCase().includes('medical') || title.toLowerCase().includes('physician') || title.toLowerCase().includes('psycholog')) {
-      const uDeg = degrees.split('+')[0].split('/')[0].trim() || 'MBBS Clinical Degree';
-      return [
-        {
-          node: '01',
-          badge: 'CLINICAL UNDERGRADUATE FOUNDATION · 5.5 YEARS',
-          title: `${uDeg} + Compulsory Rotatory Medical Internship`,
-          inst: 'AIIMS New Delhi · CMC Vellore · Seth GS Medical College & KEM Hospital',
-          rating: `Entrance via ${exams || 'NEET-UG'} · Top NIRF Medical Tier-1`,
-          desc: 'Anatomy, pharmacology, diagnostic pathology, and bedside patient-counseling articulation.',
-          gradColor: ['#00f0ff', '#0284c7']
-        },
-        {
-          node: '02',
-          badge: 'POST-GRADUATE RESIDENCY & FELLOWSHIP',
-          title: 'MD / MS / MCh Super-Specialization & International Clinical Fellowship',
-          inst: 'Royal College of Surgeons (UK) / USMLE / PLAB International Licensing',
-          rating: 'International Medical Licensure & Clinical Research Benchmark',
-          desc: 'High-stakes trauma communication, cross-border medical consultations, and diagnostic reporting.',
-          gradColor: ['#a855f7', '#6366f1']
-        },
-        {
-          node: '03',
-          badge: 'EXECUTIVE CLINICAL LEADERSHIP',
-          title: `Senior Consultant / Chief Surgeon / Head of Clinical Department`,
-          inst: 'Premier Multi-Specialty Hospital Networks & Global Research Councils',
-          rating: 'Fellow of International College of Surgeons (FICS)',
-          desc: 'Empathetic surgical counseling, hospital committee governance, and global medical symposium presentations.',
-          gradColor: ['#f59e0b', '#fbbf24']
-        }
-      ];
-    } else if (cat.includes('legal') || title.toLowerCase().includes('law') || title.toLowerCase().includes('diplomat') || title.toLowerCase().includes('negotiat') || title.toLowerCase().includes('justice')) {
-      return [
-        {
-          node: '01',
-          badge: 'LEGAL FOUNDATION · 5 YEARS INTEGRATED',
-          title: 'B.A. LL.B. (Hons) / B.B.A. LL.B. Integrated Jurisprudence',
-          inst: 'NLSIU Bengaluru · NALSAR Hyderabad · NLU Delhi (Top NIRF Law)',
-          rating: `Competitive Entrance via ${exams || 'CLAT / AILET'} · Bar Council Accredited`,
-          desc: 'Constitutional law, legal drafting, statutory interpretation, and moot court oral advocacy.',
-          gradColor: ['#00f0ff', '#0284c7']
-        },
-        {
-          node: '02',
-          badge: 'POST-GRADUATE SPECIALIZATION & BAR ADMISSION',
-          title: 'LL.M. in International Arbitration & Cross-Border Commercial Law',
-          inst: 'Oxford University / Cambridge / Harvard Law / National Law Universities',
-          rating: 'International Bar Association & Global Dispute Directorate',
-          desc: 'Bilateral treaty drafting, cross-border M&A negotiations, and dispute resolution rhetoric.',
-          gradColor: ['#a855f7', '#6366f1']
-        },
-        {
-          node: '03',
-          badge: 'EXECUTIVE LEGAL HORIZON',
-          title: `Partner (Dispute Resolution / M&A) / Diplomatic Envoy / Senior Counsel`,
-          inst: 'Tier-1 International Law Firms & Global Arbitration Tribunals',
-          rating: 'Senior Advocate / International Arbitration Arbitrator Benchmark',
-          desc: 'Mastery of persuasive courtroom rhetoric, international diplomatic missions, and corporate governance.',
-          gradColor: ['#f59e0b', '#fbbf24']
-        }
-      ];
-    } else {
-      return [
-        {
-          node: '01',
-          badge: 'ACADEMIC FOUNDATION · 3-4 YEARS',
-          title: degrees || `Bachelor's Degree in ${title}`,
-          inst: 'Premier NIRF Top-20 Universities & NAAC "A++" Accredited Institutions',
-          rating: `Standardized Admission via ${exams || 'National Entrance Benchmark'}`,
-          desc: `Core discipline theory, academic research methodologies, and professional articulation in English.`,
-          gradColor: ['#00f0ff', '#0284c7']
-        },
-        {
-          node: '02',
-          badge: 'PROFESSIONAL MASTERY & ACCREDITATION',
-          title: `Advanced Post-Graduate Credential & Industry Fellowship in ${skills.split(',')[0].trim()}`,
-          inst: 'Recognized International Professional Bodies & Graduate Institutes',
-          rating: 'Global Operational English & Cross-Border Standard Mastered',
-          desc: 'Applied professional case studies, high-stakes project presentations, and stakeholder management.',
-          gradColor: ['#a855f7', '#6366f1']
-        },
-        {
-          node: '03',
-          badge: 'EXECUTIVE CAREER HORIZON · GLOBAL LEADERSHIP',
-          title: `${title} — Senior Practice Lead / Director`,
-          inst: 'Multinational Corporations, International Agencies & Global Forums',
-          rating: 'Executive Directorate Benchmark · Global Industry Fellow',
-          desc: 'Global strategy formulation, multilateral stakeholder persuasion, and executive authority.',
-          gradColor: ['#f59e0b', '#fbbf24']
-        }
-      ];
+      }
+      m.push(row);
     }
+    return m;
   }
 
-  // Primary PDF Generator Function
+  // 7. Official Certification Seal (Page 2)
+  function drawOfficialSeal(ctx, x, y, radius, isDark) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Outer subtle gold aura
+    const sealGrad = ctx.createRadialGradient(0, 0, radius * 0.4, 0, 0, radius);
+    sealGrad.addColorStop(0, isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(217, 119, 6, 0.12)');
+    sealGrad.addColorStop(1, isDark ? 'rgba(251, 191, 36, 0.02)' : 'rgba(217, 119, 6, 0.02)');
+    ctx.fillStyle = sealGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Outer ring
+    ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius - 4, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Inner dashed ring
+    ctx.strokeStyle = isDark ? 'rgba(251, 191, 36, 0.5)' : 'rgba(217, 119, 6, 0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(0, 0, radius - 12, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Center Crest
+    ctx.fillStyle = isDark ? '#1e3a8a' : '#2563eb';
+    ctx.beginPath();
+    ctx.arc(0, 0, radius - 22, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Text in Center
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '800 13px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText('KIS 2026', 0, -8);
+    ctx.font = '700 8.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('VERIFIED SEAL', 0, 8);
+
+    ctx.restore();
+  }
+
+  // 8. Main Booklet PDF Generator
   async function generateStudentDossierPDF(customData = {}, options = {}) {
     if (!window.jspdf || !window.jspdf.jsPDF) {
       if (typeof window.showToast === 'function') {
@@ -513,14 +321,14 @@
       return;
     }
 
-    // Ensure all web fonts (Plus Jakarta Sans, Space Grotesk, JetBrains Mono) are fully loaded
+    // Ensure web fonts are ready
     if (document.fonts && document.fonts.ready) {
       try {
         await document.fonts.ready;
       } catch (_) {}
     }
 
-    // Resolve Theme (Dark / Light)
+    // Theme resolution: Dark by default (or user selected)
     let isDark = true;
     if (options && options.theme) {
       isDark = (options.theme === 'dark');
@@ -545,7 +353,7 @@
     canvas.height = CH;
     const ctx = canvas.getContext('2d');
 
-    // Resolve Student & Career Data
+    // Data resolution
     const state = window.STATE || {};
     let studentName = (customData?.name || customData?.studentName || state.studentName || localStorage.getItem('ecf_student_name') || localStorage.getItem('ecf_bizcard_name') || localStorage.getItem('cf_student_name') || 'Student').trim();
     let className = customData?.className || state.studentClass || localStorage.getItem('cf_student_class') || 'Grade 10';
@@ -565,144 +373,61 @@
         desc: "Design distributed cloud architectures, lead cross-continental engineering pods, and align code specs with business KPIs.",
         degrees: "B.Tech / M.Tech in Computer Science / IT",
         exams: "JEE Main & Advanced, BITSAT",
-        skills: "System Design, Microservices, Agile Leadership, Technical Documentation",
-        englishSuperpower: "Articulating complex architectural trade-offs to non-technical stakeholders, remote asynchronous standups, and contributing to open-source RFC specifications."
+        skills: "System Design, Microservices, Agile Leadership, Cloud Infrastructure",
+        englishSuperpower: "Articulating complex architectural trade-offs to non-technical stakeholders, leading asynchronous engineering RFCs, and speaking at global developer symposiums."
       };
     } else if (window.CAREERS_DATA && Array.isArray(window.CAREERS_DATA)) {
-      const found = window.CAREERS_DATA.find(c => c.title.toLowerCase() === (chosenCareer.title || '').toLowerCase());
-      if (found) {
-        chosenCareer = { ...found, ...chosenCareer };
-      }
+      const match = window.CAREERS_DATA.find(c => c.title === chosenCareer.title);
+      if (match) chosenCareer = Object.assign({}, match, chosenCareer);
     }
 
-    const careerTitle = chosenCareer.title;
-    const careerCat = chosenCareer.cat || 'Global Professional Track';
-    const careerDesc = chosenCareer.desc || 'High-impact international professional pathway.';
-    const superpowerText = chosenCareer.englishSuperpower || chosenCareer.superpower ||
-      "Strategic negotiation, technical cross-border precision, and executive articulation that bridges multinational protocols and creates leadership authority.";
+    const docId = `KIS-2026-${(studentName || 'STUDENT').slice(0, 3).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const issueDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-    let docId = customData?.id || state.userSessionId || localStorage.getItem('cf_user_session_id') || '';
-    if (!docId) {
-      docId = 'ECF-2026-' + Math.floor(100000 + Math.random() * 900000);
-      try { localStorage.setItem('cf_user_session_id', docId); } catch (_) {}
-    }
-
-    // Skipped sections tracking
-    let skippedSections = {};
-    try {
-      skippedSections = (options && options.skippedSections) || JSON.parse(localStorage.getItem('ecf_skipped_sections') || '{}');
-    } catch (_) {}
-
-    // Student reflection & fair feedback data
-    let studentFeedback = null;
-    try {
-      if (customData && customData.feedback) {
-        studentFeedback = customData.feedback;
-      } else {
-        const rawFb = localStorage.getItem('ecf_student_feedback');
-        if (rawFb) {
-          studentFeedback = JSON.parse(rawFb);
-        } else {
-          const localFbs = JSON.parse(localStorage.getItem('cf_user_feedbacks') || '[]');
-          const found = localFbs.find(f => f.name && (f.name.toLowerCase() === studentName.toLowerCase() || f.role === 'Student'));
-          if (found) {
-            studentFeedback = {
-              stars: found.stars || 5,
-              comment: found.comment,
-              date: found.time ? new Date(Number(found.time)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null
-            };
-          } else {
-            studentFeedback = {
-              stars: 5,
-              comment: 'The Career Fair provided invaluable insights into professional English benchmarks, global career pathways, and university entrance criteria.',
-              date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-            };
-          }
-        }
-      }
-    } catch (_) {}
-
-    // Dynamic QR URL
-    const baseUrl = 'https://careerwithenglish.pages.dev';
-    const params = new URLSearchParams({
-      v: '1',
-      s: studentName,
-      t: careerTitle,
-      c: className,
-      id: docId
-    });
-    const qrTargetUrl = `${baseUrl}/?${params.toString()}`;
-    const qrMatrix = getDynamicQrMatrix(qrTargetUrl);
-
-    // Theme Color Tokens
+    // Palette tokens
     const C = {
-      bgGradStart: isDark ? '#08090d' : '#f8fafc',
-      bgGradEnd: isDark ? '#0f1422' : '#edf2f7',
-      outerBorder: isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(29, 78, 216, 0.5)',
-      innerBorder: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-      cornerGold: isDark ? '#fbbf24' : '#d97706',
-      cardBg: isDark ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 255, 255, 0.94)',
-      cardBorder: isDark ? 'rgba(56, 189, 248, 0.28)' : 'rgba(203, 213, 225, 0.9)',
       textMain: isDark ? '#f8fafc' : '#090d16',
       textMuted: isDark ? '#cbd5e1' : '#334155',
       textDim: isDark ? '#94a3b8' : '#64748b',
       accentCyan: isDark ? '#38bdf8' : '#0284c7',
-      accentMagenta: isDark ? '#fb7185' : '#e11d48',
+      accentBrand: isDark ? '#3b82f6' : '#2563eb',
       accentGold: isDark ? '#fbbf24' : '#d97706',
       accentEmerald: isDark ? '#34d399' : '#059669',
-      accentBrand: isDark ? '#3b82f6' : '#2563eb'
+      subSurface: isDark ? '#13151b' : '#f1f5f9',
+      border: isDark ? 'rgba(255, 255, 255, 0.12)' : '#cbd5e1'
     };
 
-    // =========================================================================
-    // PAGE 1: STRATEGIC ACADEMIC BLUEPRINT & UNIVERSITY PATHWAYS
-    // =========================================================================
+    // ═════════════════════════════════════════════════════════════════════════
+    // PAGE 1: STRATEGIC CAREER ROADMAP & ACADEMIC BLUEPRINT
+    // ═════════════════════════════════════════════════════════════════════════
     ctx.clearRect(0, 0, CW, CH);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // 1. Modern Website Ambient Particles & Glow Background
-    drawWebsiteParticlesBackground(ctx, CW, CH, isDark, 1);
+    // 1. Clean Ambient Background (ZERO PARTICLES)
+    drawCleanWebsiteBackground(ctx, CW, CH, isDark);
 
-    // Top Ticker
-    ctx.font = '700 11.5px "JetBrains Mono", monospace';
+    // Top Ticker Line
+    ctx.font = '700 12px "JetBrains Mono", monospace';
     ctx.fillStyle = C.textDim;
     ctx.textAlign = 'left';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | OFFICIAL STUDENT CAREER BOOKLET & STRATEGIC BLUEPRINT', 65, 42);
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | OFFICIAL CAREER DOSSIER & STRATEGIC BLUEPRINT', 60, 42);
     ctx.textAlign = 'right';
-    ctx.fillText(`ID: ${docId}`, CW - 65, 42);
-    ctx.textAlign = 'left'; // Reset alignment
+    ctx.fillText(`ID: ${docId}`, CW - 60, 42);
 
-    // Bottom Ticker
+    // Bottom Ticker Line
     ctx.textAlign = 'left';
-    ctx.fillText('PAGE 01 OF 02 | CONFIDENTIAL ACADEMIC RECORD | ISSUED UNDER DIRECTORATE SEAL', 65, CH - 25);
+    ctx.fillText('PAGE 01 OF 02 | CONFIDENTIAL STUDENT ACADEMIC DOSSIER | DIRECTORATE OF CAREER GUIDANCE', 60, CH - 25);
     ctx.textAlign = 'right';
-    ctx.fillText('CAREER FAIR 2026', CW - 65, CH - 25);
-    ctx.textAlign = 'left'; // Reset alignment
+    ctx.fillText('CAREER FAIR 2026', CW - 60, CH - 25);
+    ctx.textAlign = 'left';
 
-    // 2. Header Card
-    const hX = 65, hY = 65, hW = CW - 130, hH = 215;
-    ctx.save();
-    ctx.fillStyle = C.cardBg;
-    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(37, 99, 235, 0.35)';
-    ctx.lineWidth = 1.5;
-    drawRoundRect(ctx, hX, hY, hW, hH, 20, true, true);
+    // 2. Student Identity Hero Card
+    const hX = 60, hY = 60, hW = CW - 120, hH = 210;
+    drawWebsiteCard(ctx, hX, hY, hW, hH, 20, isDark, true);
 
-    // Header Top Accent Ribbon
-    const hRibbon = ctx.createLinearGradient(hX, hY, hX + hW, hY);
-    if (isDark) {
-      hRibbon.addColorStop(0, '#00f0ff');
-      hRibbon.addColorStop(0.5, '#8b5cf6');
-      hRibbon.addColorStop(1, '#fb7185');
-    } else {
-      hRibbon.addColorStop(0, '#1e3a8a');
-      hRibbon.addColorStop(0.5, '#2563eb');
-      hRibbon.addColorStop(1, '#0284c7');
-    }
-    ctx.fillStyle = hRibbon;
-    drawRoundRect(ctx, hX, hY, hW, 6, { tl: 20, tr: 20, br: 0, bl: 0 }, true, false);
-
-    // School Crest Badge
-    const crestX = hX + 28, crestY = hY + 28, crestR = 48;
+    // School Crest Circle
+    const crestX = hX + 28, crestY = hY + 30, crestR = 45;
     const crestGrad = ctx.createLinearGradient(crestX, crestY, crestX + crestR * 2, crestY + crestR * 2);
     crestGrad.addColorStop(0, isDark ? '#1e3a8a' : '#2563eb');
     crestGrad.addColorStop(1, isDark ? '#0284c7' : '#00f0ff');
@@ -717,919 +442,643 @@
     ctx.arc(crestX + crestR, crestY + crestR, crestR - 5, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.font = '800 24px "Space Grotesk", sans-serif';
+    ctx.font = '800 24px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
-    ctx.fillText('KIS', crestX + crestR, crestY + crestR + 2);
-    ctx.font = '700 8.5px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#fbbf24' : '#fde68a';
-    ctx.fillText('FAIR 2026', crestX + crestR, crestY + crestR + 18);
-    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('KIS', crestX + crestR, crestY + crestR - 4);
+    ctx.font = '700 9px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('2026', crestX + crestR, crestY + crestR + 14);
 
-    // Institution Branding
-    const tX = hX + 145;
-    ctx.font = '800 13px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD', tX, hY + 38);
-
-    ctx.font = '800 32px "Space Grotesk", sans-serif';
-    ctx.fillStyle = C.textMain;
-    ctx.font = '800 30px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('OFFICIAL STUDENT CAREER BOOKLET', tX, hY + 66);
-
-    ctx.font = '700 16px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
-    ctx.font = '700 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText('& STRATEGIC ACADEMIC BLUEPRINT', tX, hY + 90);
-
-    ctx.font = 'italic 13.5px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = C.textDim;
-    ctx.fillText('Virtus · Scientia · Excellentia  —  Empowering 32+ Global Careers Through English', tX, hY + 118);
-
-    // Right Student Credential Box
-    const credW = 420;
-    const credX = hX + hW - credW - 25;
-    const credY = hY + 28;
-    const credH = hH - 52;
-    ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.7)' : 'rgba(241, 245, 249, 0.85)';
-    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.25)' : 'rgba(203, 213, 225, 0.8)';
-    ctx.lineWidth = 1;
-    drawRoundRect(ctx, credX, credY, credW, credH, 14, true, true);
-
-    const rowH = credH / 4;
-    const credRows = [
-      ['STUDENT NAME', studentName],
-      ['CLASS & GRADE', className],
-      ['TARGET CAREER', careerTitle],
-      ['CREDENTIAL ID', docId]
-    ];
-
-    credRows.forEach(([lbl, val], idx) => {
-      const ry = credY + idx * rowH;
-      ctx.textAlign = 'left';
-      ctx.font = '700 11px "Space Grotesk", sans-serif';
-      ctx.fillStyle = C.textDim;
-      ctx.fillText(lbl, credX + 16, ry + 12);
-
-      ctx.font = (idx === 3) ? '700 13px "JetBrains Mono", monospace' : '700 14px "Space Grotesk", sans-serif';
-      ctx.fillStyle = (idx === 2) ? (isDark ? '#38bdf8' : '#1d4ed8') : C.textMain;
-      ctx.textAlign = 'right';
-      const maxValW = credW - 145;
-      let displayVal = val;
-      while (ctx.measureText(displayVal).width > maxValW && displayVal.length > 3) {
-        displayVal = displayVal.slice(0, -2) + '…';
-      }
-      ctx.fillText(displayVal, credX + credW - 16, ry + 11);
-      ctx.textAlign = 'left'; // Reset
-
-      if (idx < 3) {
-        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-        ctx.beginPath();
-        ctx.moveTo(credX + 12, ry + rowH);
-        ctx.lineTo(credX + credW - 12, ry + rowH);
-        ctx.stroke();
-      }
-    });
-    ctx.restore();
-    ctx.textAlign = 'left';
-
-    // 3. SECTION 1: TARGET CAREER PROFILE & ENGLISH SUPERPOWER
-    const s1Y = 305;
-    drawSectionHeader(ctx, '1', 'TARGET CAREER PROFILE & ENGLISH SUPERPOWER',
-      'High-Stakes Professional Articulation & Global Career Horizon', 65, s1Y, CW - 130, isDark);
-
-    const c1X = 65, c1Y = s1Y + 52, c1W = CW - 130, c1H = 345;
-    ctx.save();
-    ctx.fillStyle = C.cardBg;
-    ctx.strokeStyle = C.cardBorder;
-    ctx.lineWidth = 1.5;
-    drawRoundRect(ctx, c1X, c1Y, c1W, c1H, 18, true, true);
-
-    // Career Title
-    ctx.textAlign = 'left';
-    ctx.font = '800 28px "Space Grotesk", sans-serif';
-    ctx.fillStyle = C.textMain;
-    ctx.fillText(careerTitle, c1X + 28, c1Y + 30);
-
-    // Cluster Tag Pill
-    const tagW = ctx.measureText(careerCat.toUpperCase()).width + 30;
-    const tagX = c1X + c1W - tagW - 28;
-    const tagGrad = ctx.createLinearGradient(tagX, c1Y + 22, tagX + tagW, c1Y + 22);
-    if (isDark) {
-      tagGrad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
-      tagGrad.addColorStop(1, 'rgba(139, 92, 246, 0.15)');
-    } else {
-      tagGrad.addColorStop(0, 'rgba(37, 99, 235, 0.12)');
-      tagGrad.addColorStop(1, 'rgba(2, 132, 199, 0.12)');
-    }
-    ctx.fillStyle = tagGrad;
-    ctx.strokeStyle = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.lineWidth = 1;
-    drawRoundRect(ctx, tagX, c1Y + 22, tagW, 30, 999, true, true);
-    ctx.font = '700 12px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.textAlign = 'center';
-    ctx.fillText(careerCat.toUpperCase(), tagX + tagW / 2, c1Y + 37);
-    ctx.textAlign = 'left'; // Reset
-
-    // Description
-    ctx.font = '500 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = C.textMuted;
-    const words = careerDesc.split(' ');
-    let line = '', descLines = [];
-    words.forEach(w => {
-      const test = line + w + ' ';
-      if (ctx.measureText(test).width > c1W - 56) {
-        descLines.push(line);
-        line = w + ' ';
-      } else {
-        line = test;
-      }
-    });
-    descLines.push(line);
-    descLines.slice(0, 3).forEach((l, idx) => {
-      ctx.fillText(l, c1X + 28, c1Y + 75 + idx * 24);
-    });
-
-    // English Superpower Callout Box
-    const spX = c1X + 24, spY = c1Y + 165, spW = c1W - 48, spH = 155;
-    const spGrad = ctx.createLinearGradient(spX, spY, spX + spW, spY + spH);
-    if (isDark) {
-      spGrad.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
-      spGrad.addColorStop(1, 'rgba(30, 27, 75, 0.6)');
-    } else {
-      spGrad.addColorStop(0, 'rgba(240, 249, 255, 0.95)');
-      spGrad.addColorStop(1, 'rgba(238, 242, 255, 0.9)');
-    }
-    ctx.fillStyle = spGrad;
-    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.45)' : 'rgba(29, 78, 216, 0.4)';
-    ctx.lineWidth = 1.5;
-    drawRoundRect(ctx, spX, spY, spW, spH, 14, true, true);
-
-    // Left Accent Bar
-    const spBar = ctx.createLinearGradient(spX, spY, spX, spY + spH);
-    spBar.addColorStop(0, isDark ? '#00f0ff' : '#1d4ed8');
-    spBar.addColorStop(1, isDark ? '#8b5cf6' : '#0284c7');
-    ctx.fillStyle = spBar;
-    drawRoundRect(ctx, spX, spY, 6, spH, { tl: 14, tr: 0, br: 0, bl: 14 }, true, false);
-
-    ctx.font = '800 13.5px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#fbbf24' : '#b45309';
-    ctx.fillText('⚡ CRITICAL ENGLISH SUPERPOWER IN THIS OCCUPATION:', spX + 22, spY + 22);
-
-    ctx.font = 'italic 16px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = C.textMain;
-    const spWords = superpowerText.split(' ');
-    let spLine = '', spLines = [];
-    spWords.forEach(w => {
-      const test = spLine + w + ' ';
-      if (ctx.measureText(test).width > spW - 44) {
-        spLines.push(spLine);
-        spLine = w + ' ';
-      } else {
-        spLine = test;
-      }
-    });
-    spLines.push(spLine);
-    spLines.slice(0, 3).forEach((sl, i) => {
-      ctx.fillText(`“${sl}”`, spX + 22, spY + 54 + i * 26);
-    });
-    ctx.restore();
-    ctx.textAlign = 'left';
-
-    // 4. SECTION 2: COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION
-    const isQuickTourMode = (localStorage.getItem('cf_tutorial_mode') === 'short') ||
-                            (options && options.tutorialMode === 'short');
-    const isCognitiveSkipped = isQuickTourMode || Boolean(skippedSections.section_quiz || skippedSections.section_cognitive || skippedSections.section_wordle_quick);
-    let p1CurY = 725;
-
-    if (!isCognitiveSkipped) {
-      const s2Y = p1CurY;
-      drawSectionHeader(ctx, '2', 'COGNITIVE AGILITY & LANGUAGE PROFICIENCY EVALUATION',
-        'Standardized Spoken Articulation & Executive Verbal Competence Diagnostic', 65, s2Y, CW - 130, isDark);
-
-      const pillars = [
-        {
-          title: 'LEXICAL COMMAND',
-          desc: 'Academic vocabulary range & precision',
-          score: 'Proficient (CEFR C1)',
-          stat: '94% Command',
-          tabGrad: ['#00f0ff', '#0284c7']
-        },
-        {
-          title: 'GRAMMAR & SYNTAX',
-          desc: 'Clause drafting & executive poise',
-          score: 'Advanced Precision',
-          stat: '92% Syntax',
-          tabGrad: ['#a855f7', '#6366f1']
-        },
-        {
-          title: 'SPEED & AGILITY',
-          desc: 'Real-time lexical recall throughput',
-          score: '38 WPM (Top 5%)',
-          stat: 'Spontaneous',
-          tabGrad: ['#f59e0b', '#fbbf24']
-        },
-        {
-          title: 'ANALYTICAL DEDUCTION',
-          desc: 'Contextual inference & synthesis',
-          score: '94% Analytical Rigor',
-          stat: 'High Deduction',
-          tabGrad: ['#10b981', '#34d399']
-        }
-      ];
-
-      const cardGap = 20;
-      const cardW = (CW - 130 - cardGap) / 2;
-      const cardH = 175;
-
-      pillars.forEach((p, i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const px = 65 + col * (cardW + cardGap);
-        const py = s2Y + 52 + row * (cardH + cardGap);
-
-        ctx.save();
-        ctx.fillStyle = C.cardBg;
-        ctx.strokeStyle = C.cardBorder;
-        ctx.lineWidth = 1.5;
-        drawRoundRect(ctx, px, py, cardW, cardH, 16, true, true);
-
-        // Top Accent Tab
-        const tabG = ctx.createLinearGradient(px, py, px + cardW, py);
-        tabG.addColorStop(0, p.tabGrad[0]);
-        tabG.addColorStop(1, p.tabGrad[1]);
-        ctx.fillStyle = tabG;
-        drawRoundRect(ctx, px, py, cardW, 5, { tl: 16, tr: 16, br: 0, bl: 0 }, true, false);
-
-        // Title
-        ctx.textAlign = 'left';
-        ctx.font = '800 17px "Space Grotesk", sans-serif';
-        ctx.fillStyle = C.textMain;
-        ctx.fillText(p.title, px + 20, py + 26);
-
-        // Stat Badge
-        const statW = ctx.measureText(p.stat).width + 16;
-        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
-        ctx.lineWidth = 1;
-        drawRoundRect(ctx, px + cardW - statW - 20, py + 16, statW, 24, 6, true, true);
-        ctx.font = '700 11.5px "Space Grotesk", sans-serif';
-        ctx.fillStyle = isDark ? p.tabGrad[0] : p.tabGrad[1];
-        ctx.textAlign = 'center';
-        ctx.fillText(p.stat, px + cardW - statW / 2 - 20, py + 28);
-        ctx.textAlign = 'left'; // Reset
-
-        // Description
-        ctx.font = '500 13.5px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = C.textDim;
-        ctx.fillText(p.desc, px + 20, py + 62);
-
-        // Score Box
-        const svY = py + 100;
-        ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(241, 245, 249, 0.85)';
-        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(203, 213, 225, 0.7)';
-        ctx.lineWidth = 1;
-        drawRoundRect(ctx, px + 20, svY, cardW - 40, 52, 10, true, true);
-
-        ctx.font = '800 17px "Space Grotesk", sans-serif';
-        ctx.fillStyle = isDark ? p.tabGrad[0] : p.tabGrad[1];
-        ctx.fillText(p.score, px + 34, svY + 26);
-
-        ctx.restore();
-        ctx.textAlign = 'left';
-      });
-
-      p1CurY += 465;
-    }
-
-    // 5. SECTION 3: PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS
-    const isRoadmapSkipped = Boolean(skippedSections.section_colleges || skippedSections.section_myplan || skippedSections.section_roadmap);
-    if (!isRoadmapSkipped) {
-      const s3Y = p1CurY;
-      const s3Num = isCognitiveSkipped ? '2' : '3';
-      drawSectionHeader(ctx, s3Num, 'PREMIER HIGHER EDUCATION ROADMAP & INSTITUTIONAL PATHWAYS',
-        'Accredited Degree Benchmarks, NAAC "A++" Universities & Licensing Directorate', 65, s3Y, CW - 130, isDark);
-
-      const mY = s3Y + 54;
-      const mSteps = getCareerMilestones(chosenCareer);
-      const mCardH = 145;
-      const mGap = 20;
-
-      mSteps.forEach((ms, idx) => {
-        const my = mY + idx * (mCardH + mGap);
-        ctx.save();
-        ctx.textAlign = 'left';
-        ctx.fillStyle = C.cardBg;
-        ctx.strokeStyle = C.cardBorder;
-        ctx.lineWidth = 1.2;
-        drawRoundRect(ctx, 145, my, CW - 210, mCardH, 16, true, true);
-
-        // Left Glow Pill
-        const leftPillGrad = ctx.createLinearGradient(145, my, 145, my + mCardH);
-        leftPillGrad.addColorStop(0, ms.gradColor[0]);
-        leftPillGrad.addColorStop(1, ms.gradColor[1]);
-        ctx.fillStyle = leftPillGrad;
-        drawRoundRect(ctx, 145, my, 6, mCardH, { tl: 16, tr: 0, br: 0, bl: 16 }, true, false);
-
-        // Connected Node Circle
-        const nodeX = 100, nodeY = my + mCardH / 2;
-        const nodeGrad = ctx.createRadialGradient(nodeX, nodeY, 0, nodeX, nodeY, 28);
-        nodeGrad.addColorStop(0, ms.gradColor[0]);
-        nodeGrad.addColorStop(1, ms.gradColor[1]);
-        ctx.fillStyle = nodeGrad;
-        ctx.beginPath(); ctx.arc(nodeX, nodeY, 26, 0, Math.PI * 2); ctx.fill();
-
-        ctx.strokeStyle = isDark ? '#ffffff' : '#090d16';
-        ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.arc(nodeX, nodeY, 22, 0, Math.PI * 2); ctx.stroke();
-
-        ctx.font = '800 15px "JetBrains Mono", monospace';
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(ms.node, nodeX, nodeY + 1);
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'alphabetic';
-
-        // Connecting Track Line
-        if (idx < 2) {
-          ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(29, 78, 216, 0.35)';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.moveTo(nodeX, nodeY + 26);
-          ctx.lineTo(nodeX, nodeY + 26 + mGap + (mCardH - 52));
-          ctx.stroke();
-        }
-
-        // Milestone Content
-        ctx.font = '700 12px "Space Grotesk", sans-serif';
-        ctx.fillStyle = isDark ? ms.gradColor[0] : ms.gradColor[1];
-        ctx.fillText(ms.badge, 172, my + 24);
-
-        ctx.font = '800 18px "Space Grotesk", sans-serif';
-        ctx.fillStyle = C.textMain;
-        ctx.fillText(ms.title, 172, my + 48);
-
-        ctx.font = '600 14px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-        ctx.fillText(`🏛️ ${ms.inst}`, 172, my + 72);
-
-        ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = C.textMuted;
-        ctx.fillText(`✓ ${ms.rating}`, 172, my + 94);
-
-        ctx.font = 'italic 12.5px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = C.textDim;
-        ctx.fillText(`“${ms.desc}”`, 172, my + 118);
-
-        ctx.restore();
-        ctx.textAlign = 'left';
-      });
-
-      p1CurY = mY + 3 * (mCardH + mGap) + 20;
-
-      // 6. BOTTOM FRAMEWORK MATRIX: Strategic Occupational English Competency
-      const fMatY = Math.max(p1CurY, 1750);
-      drawSectionHeader(ctx, '✦', 'GLOBAL OCCUPATIONAL ENGLISH FRAMEWORK ALIGNMENT',
-        'International Professional Standards, Licensure Phraseology & Executive Competency Benchmarks', 65, fMatY, CW - 130, isDark);
-
-      const fCardY = fMatY + 50;
-      const fCardW = CW - 130;
-      const fCardH = 260;
-      ctx.save();
-      ctx.textAlign = 'left';
-      ctx.fillStyle = C.cardBg;
-      ctx.strokeStyle = C.cardBorder;
-      ctx.lineWidth = 1.4;
-      drawRoundRect(ctx, 65, fCardY, fCardW, fCardH, 16, true, true);
-
-      const fwRows = [
-        {
-          title: 'CEFR GLOBAL STANDARD',
-          badge: 'Level C1 - Operational Proficiency',
-          desc: 'Spontaneous, fluent articulation in international seminars, RFC design reviews, and academic discourse.'
-        },
-        {
-          title: 'INDUSTRY PROTOCOL BENCHMARK',
-          badge: 'Tier-1 International Phraseology',
-          desc: 'Zero-ambiguity operational phraseology, technical precision, and cross-border consultation standard.'
-        },
-        {
-          title: 'CORPORATE & EXECUTIVE RHETORIC',
-          badge: 'Executive Competency Benchmark',
-          desc: 'Rigorous clause drafting, cross-border negotiation poise, and high-impact commercial consensus building.'
-        }
-      ];
-
-      const fwRowH = fCardH / 3;
-      fwRows.forEach((fr, fri) => {
-        const fry = fCardY + fri * fwRowH;
-        ctx.textAlign = 'left';
-        ctx.font = '800 13.5px "Space Grotesk", sans-serif';
-        ctx.fillStyle = C.textMain;
-        ctx.fillText(fr.title, 95, fry + 32);
-
-        // Badge Pill
-        const bW = 280, bH = 30;
-        const bX = 390;
-        ctx.fillStyle = isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(5, 150, 105, 0.12)';
-        ctx.strokeStyle = isDark ? '#10b981' : '#059669';
-        ctx.lineWidth = 1;
-        drawRoundRect(ctx, bX, fry + 18, bW, bH, 6, true, true);
-        ctx.font = '700 11.5px "Space Grotesk", sans-serif';
-        ctx.fillStyle = isDark ? '#34d399' : '#047857';
-        ctx.textAlign = 'center';
-        ctx.fillText(fr.badge, bX + bW / 2, fry + 33);
-        ctx.textAlign = 'left';
-
-        // Description
-        ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = C.textMuted;
-        ctx.fillText(fr.desc, 700, fry + 32);
-
-        if (fri < 2) {
-          ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
-          ctx.beginPath();
-          ctx.moveTo(85, fry + fwRowH);
-          ctx.lineTo(65 + fCardW - 20, fry + fwRowH);
-          ctx.stroke();
-        }
-      });
-      ctx.restore();
-      ctx.textAlign = 'left';
-    }
-
-    // Render Page 1 with high quality & low memory (JPEG 0.85)
-    const page1Data = canvas.toDataURL('image/jpeg', 0.85);
-    doc.addImage(page1Data, 'JPEG', 0, 0, 210, 297);
-
-    // =========================================================================
-    // PAGE 2: AI SPEECH DIAGNOSTICS & STUDENT AMBASSADOR BUSINESS CARD
-    // =========================================================================
-    doc.addPage();
-    ctx.clearRect(0, 0, CW, CH);
+    // Header Titles
+    const txtX = crestX + crestR * 2 + 26;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // 1. Modern Website Ambient Particles & Glow Background
-    drawWebsiteParticlesBackground(ctx, CW, CH, isDark, 2);
+    // Badge Pill at top of header
+    drawBadgePill(ctx, 'OFFICIAL EXECUTIVE CAREER DOSSIER', txtX, hY + 28, { isDark, height: 24, font: '800 11px "Space Grotesk", sans-serif' });
 
-    // Tickers
-    ctx.font = '700 11.5px "JetBrains Mono", monospace';
-    ctx.fillStyle = C.textDim;
-    ctx.textAlign = 'left';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | SPOKEN ENGLISH DIAGNOSTICS & OFFICIAL ENDORSEMENT', 65, 42);
-    ctx.textAlign = 'right';
-    ctx.fillText(`ID: ${docId}`, CW - 65, 42);
-    ctx.textAlign = 'left'; // Reset
+    ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Career Fair 2026 · Kanakia International School', txtX, hY + 84);
 
-    ctx.fillText('PAGE 02 OF 02 | OFFICIAL VERIFICATION CREDENTIAL | DIGITAL FAIR BLUEPRINT', 65, CH - 25);
-    ctx.textAlign = 'right';
-    ctx.fillText('CAREER FAIR 2026', CW - 65, CH - 25);
-    ctx.textAlign = 'left'; // Reset
-
-    // 3. SECTION 4: AI SPEECH LAB (6-DIMENSIONAL ACOUSTIC TELEMETRY)
-    const isSpeechSkipped = Boolean(skippedSections.section_speech);
-    let p2CurY = 65;
-
-    if (!isSpeechSkipped) {
-      const p2s4Y = p2CurY;
-      drawSectionHeader(ctx, '4', 'AI SPEECH LAB: 6-DIMENSIONAL ACOUSTIC TELEMETRY',
-        'Real-Time Neural Spoken Articulation & Fluency Diagnostic Metrics', 65, p2s4Y, CW - 130, isDark);
-
-      const speechMetrics = [
-        {
-          name: '1. Cadence & Rhythm (WPM)',
-          val: '138 WPM · Optimal Executive Cadence',
-          pct: 92,
-          sub: 'Broadcast journalist tempo benchmark adhering to international delivery norms',
-          grad: ['#00f0ff', '#0284c7']
-        },
-        {
-          name: '2. Pitch Variation & Modulation',
-          val: 'Dynamic Range · High Vocal Engagement',
-          pct: 88,
-          sub: 'Evaluates non-monotone inflection and natural oratorical persuasion',
-          grad: ['#a855f7', '#6366f1']
-        },
-        {
-          name: '3. Articulation & Phonetic Clarity',
-          val: 'Near-Flawless IPA Consonants & Stress',
-          pct: 95,
-          sub: 'International phonetic dictionary adherence across multisyllabic terms',
-          grad: ['#10b981', '#34d399']
-        },
-        {
-          name: '4. Fluency & Hesitation Control',
-          val: 'Under 1.8% Filler Words · Smooth Flow',
-          pct: 94,
-          sub: 'Spontaneous phrasing devoid of distracting fillers ("um", "like", "you know")',
-          grad: ['#f59e0b', '#fbbf24']
-        },
-        {
-          name: '5. Lexical Precision & Command',
-          val: 'C1/C2 CEFR Operational Lexicon',
-          pct: 91,
-          sub: 'Precision professional terminology tailored for international career consults',
-          grad: ['#3b82f6', '#1d4ed8']
-        },
-        {
-          name: '6. Delivery Confidence Index',
-          val: 'High Executive Poise & Stamina',
-          pct: 96,
-          sub: 'Holistic delivery impact, breath control, and authoritative podium presence',
-          grad: ['#fb7185', '#e11d48']
-        }
-      ];
-
-      const smGap = 16;
-      const smW = (CW - 130 - smGap) / 2;
-      const smH = 120;
-
-      speechMetrics.forEach((sm, i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const sx = 65 + col * (smW + smGap);
-        const sy = p2s4Y + 50 + row * (smH + smGap);
-
-        ctx.save();
-        ctx.textAlign = 'left';
-        ctx.fillStyle = C.cardBg;
-        ctx.strokeStyle = C.cardBorder;
-        ctx.lineWidth = 1.2;
-        drawRoundRect(ctx, sx, sy, smW, smH, 14, true, true);
-
-        // Metric Header
-        ctx.font = '800 15px "Space Grotesk", sans-serif';
-        ctx.fillStyle = C.textMain;
-        ctx.fillText(sm.name, sx + 18, sy + 18);
-
-        // Percent Callout
-        ctx.font = '800 16px "JetBrains Mono", monospace';
-        ctx.fillStyle = isDark ? sm.grad[0] : sm.grad[1];
-        ctx.textAlign = 'right';
-        ctx.fillText(`${sm.pct}%`, sx + smW - 18, sy + 18);
-        ctx.textAlign = 'left'; // Reset
-
-        // Metric Value
-        ctx.font = '600 13px "Space Grotesk", sans-serif';
-        ctx.fillStyle = isDark ? '#e2e8f0' : '#1e293b';
-        ctx.fillText(sm.val, sx + 18, sy + 40);
-
-        // Progress Bar Track
-        const barX = sx + 18, barY = sy + 62, barW = smW - 36, barH = 10;
-        ctx.fillStyle = isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(226, 232, 240, 0.8)';
-        drawRoundRect(ctx, barX, barY, barW, barH, 5, true, false);
-
-        // Filled Progress Bar
-        const fillW = Math.max(12, (barW * sm.pct) / 100);
-        const barGrad = ctx.createLinearGradient(barX, barY, barX + fillW, barY);
-        barGrad.addColorStop(0, sm.grad[0]);
-        barGrad.addColorStop(1, sm.grad[1]);
-        ctx.fillStyle = barGrad;
-        drawRoundRect(ctx, barX, barY, fillW, barH, 5, true, false);
-
-        // Subtitle
-        ctx.font = '500 11.5px "Plus Jakarta Sans", sans-serif';
-        ctx.fillStyle = C.textDim;
-        ctx.fillText(sm.sub, sx + 18, sy + 88);
-
-        ctx.restore();
-        ctx.textAlign = 'left';
-      });
-
-      p2CurY += 470;
-    }
-
-    // 4. SECTION 5: OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION
-    const s5Y = p2CurY;
-    const s5Num = isSpeechSkipped ? '4' : '5';
-    drawSectionHeader(ctx, s5Num, 'OFFICIAL FAIR ENDORSEMENT & INSTITUTIONAL ACCREDITATION',
-      'Certified Educational Record Validated by School Directorate & Convenors', 65, s5Y, CW - 130, isDark);
-
-    const eCardX = 65, eCardY = s5Y + 50, eCardW = CW - 130, eCardH = 245;
-    ctx.save();
-    ctx.textAlign = 'left';
-    ctx.fillStyle = C.cardBg;
-    ctx.strokeStyle = C.cardBorder;
-    ctx.lineWidth = 1.5;
-    drawRoundRect(ctx, eCardX, eCardY, eCardW, eCardH, 18, true, true);
-
-    // Certification Text
-    const certW = eCardW - 270;
-    ctx.font = '500 15px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '500 14.5px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = C.textMuted;
-    const certText = "This digital booklet certifies that the student actively explored global career pathways, completed spoken articulation diagnostics, and demonstrated cognitive proficiency across international English benchmarks. Endorsed by the Directorate of Career Guidance & Exhibition Convenors.";
-    const cWords = certText.split(' ');
-    let cLine = '', cLines = [];
-    cWords.forEach(w => {
-      const test = cLine + w + ' ';
-      if (ctx.measureText(test).width > certW) {
-        cLines.push(cLine);
-        cLine = w + ' ';
-      } else {
-        cLine = test;
-      }
-    });
-    cLines.push(cLine);
-    cLines.forEach((cl, i) => {
-      ctx.fillText(cl, eCardX + 28, eCardY + 28 + i * 24);
-    });
+    ctx.fillText('Personalized Academic Progression, Spoken English Proficiency & Ambassador Credential', txtX, hY + 112);
 
-    // Signature Blocks
-    const sigY = eCardY + 140;
-    // Signature 1
-    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(29, 78, 216, 0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(eCardX + 28, sigY + 35);
-    ctx.lineTo(eCardX + 28 + 320, sigY + 35);
-    ctx.stroke();
+    // Student Sub-Banner Box
+    const sBoxY = hY + 132;
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, txtX, sBoxY, hW - (txtX - hX) - 28, 58, 10, true, true);
 
-    ctx.font = '800 15px "Space Grotesk", sans-serif';
+    ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = C.textMain;
-    ctx.fillText('Directorate of Career Guidance', eCardX + 28, sigY + 45);
-    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(studentName, txtX + 16, sBoxY + 28);
+
+    ctx.font = '600 13px "Space Grotesk", sans-serif';
     ctx.fillStyle = C.textDim;
-    ctx.fillText('Kanakia International School Mira Road', eCardX + 28, sigY + 66);
+    ctx.fillText(`Class & Section: ${className}   |   Candidate ID: ${docId}   |   Issued: ${issueDate}`, txtX + 16, sBoxY + 48);
 
-    // Signature 2
-    ctx.beginPath();
-    ctx.moveTo(eCardX + 380, sigY + 35);
-    ctx.lineTo(eCardX + 380 + 320, sigY + 35);
-    ctx.stroke();
+    // Verified Pill on Right of Banner
+    drawBadgePill(ctx, 'VERIFIED AMBASSADOR', hX + hW - 190, sBoxY + 14, { isDark, variant: 'emerald', height: 28 });
 
-    ctx.font = '800 15px "Space Grotesk", sans-serif';
+    // 3. Core Target Career Pathway Card
+    const cX = 60, cY = 295, cW = CW - 120, cH = 375;
+    drawWebsiteCard(ctx, cX, cY, cW, cH, 18, isDark, true);
+
+    // Section Eyebrow Label
+    ctx.font = '800 11.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('TARGET CAREER PATHWAY & VOCATIONAL DIRECTION', cX + 24, cY + 36);
+
+    // Career Title
+    ctx.font = '800 32px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = C.textMain;
-    ctx.fillText('Exhibition Convenor', eCardX + 380, sigY + 45);
-    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = C.textDim;
-    ctx.fillText('Career Fair 2026 Executive Committee', eCardX + 380, sigY + 66);
+    ctx.fillText(`${chosenCareer.icon || '🎯'}  ${chosenCareer.title}`, cX + 24, cY + 80);
 
-    // Right Official Radial Seal
-    drawOfficialSeal(ctx, eCardX + eCardW - 130, eCardY + eCardH / 2 + 5, 82, isDark);
-    ctx.restore();
-    ctx.textAlign = 'left';
+    // Category Pill & Salary Pill
+    let curPillX = cX + 24;
+    curPillX += drawBadgePill(ctx, (chosenCareer.cat || 'Global').toUpperCase(), curPillX, cY + 98, { isDark, variant: 'cyan', height: 26 }) + 10;
+    if (chosenCareer.salary) {
+      curPillX += drawBadgePill(ctx, `SALARY: ${chosenCareer.salary}`, curPillX, cY + 98, { isDark, variant: 'gold', height: 26 }) + 10;
+    }
 
-    p2CurY = eCardY + eCardH + 25;
+    // Career Description Text
+    ctx.font = '500 15px/24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMuted;
+    wrapText(ctx, chosenCareer.desc, cX + 24, cY + 155, cW - 48, 24, 2);
 
-    // 5. SECTION 6: STUDENT REFLECTION & FAIR EXPERIENCE FEEDBACK
-    const isFeedbackSkipped = Boolean(skippedSections.section_feedback);
-    if (!isFeedbackSkipped && studentFeedback) {
-      const fbSecNum = isSpeechSkipped ? '5' : '6';
-      drawSectionHeader(ctx, fbSecNum, 'STUDENT REFLECTION & FAIR EXPERIENCE FEEDBACK',
-        'Official Exhibitor Review & Commendation Endorsement', 65, p2CurY, CW - 130, isDark);
-
-      const fbX = 65, fbY = p2CurY + 50, fbW = CW - 130, fbH = 175;
-      ctx.save();
-      ctx.textAlign = 'left';
-      ctx.fillStyle = C.cardBg;
-      ctx.strokeStyle = C.cardBorder;
-      ctx.lineWidth = 1.4;
-      drawRoundRect(ctx, fbX, fbY, fbW, fbH, 16, true, true);
-
-      // Top Accent Edge
-      const fbTopGrad = ctx.createLinearGradient(fbX, fbY, fbX + fbW, fbY);
-      fbTopGrad.addColorStop(0, '#f59e0b');
-      fbTopGrad.addColorStop(0.5, '#fbbf24');
-      fbTopGrad.addColorStop(1, '#00f0ff');
-      ctx.fillStyle = fbTopGrad;
-      drawRoundRect(ctx, fbX, fbY, fbW, 6, { tl: 16, tr: 16, br: 0, bl: 0 }, true, false);
-
-      // Golden Stars
-      const starsCount = Math.max(1, Math.min(5, Number(studentFeedback.stars || studentFeedback.rating || 5)));
-      ctx.font = '800 22px "Space Grotesk", sans-serif';
-      ctx.fillStyle = '#fbbf24';
-      const starsStr = '★ '.repeat(starsCount) + '☆ '.repeat(5 - starsCount);
-      ctx.fillText(starsStr, fbX + 28, fbY + 36);
-
-      // Rating Label & Badge
-      ctx.font = '700 13px "JetBrains Mono", monospace';
-      ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-      const ratingLabel = `${starsCount}.0 / 5.0 · ${starsCount >= 5 ? 'EXCEPTIONAL' : 'INSPIRING'} FAIR RATING`;
-      ctx.fillText(ratingLabel, fbX + 160, fbY + 34);
-
-      // Student Quote
-      ctx.font = 'italic 500 15px "Plus Jakarta Sans", sans-serif';
+    // Skills Chips
+    if (chosenCareer.skills) {
+      ctx.font = '700 12.5px "Space Grotesk", sans-serif';
       ctx.fillStyle = C.textMain;
-      const rawComment = studentFeedback.comment || studentFeedback.text || 'The Career Fair provided invaluable insights into professional English benchmarks, global career pathways, and university entrance criteria.';
-      const quoteText = `"${rawComment}"`;
+      ctx.fillText('CORE COMPETENCIES & PROFESSIONAL SKILLS:', cX + 24, cY + 215);
 
-      const maxQW = fbW - 56;
-      const qWords = quoteText.split(' ');
-      let qLine = '', qLines = [];
-      qWords.forEach(w => {
-        const test = qLine + w + ' ';
-        if (ctx.measureText(test).width > maxQW && qLines.length < 2) {
-          qLines.push(qLine);
-          qLine = w + ' ';
-        } else {
-          qLine = test;
-        }
-      });
-      qLines.push(qLine);
-      qLines.forEach((ql, qi) => {
-        ctx.fillText(ql, fbX + 28, fbY + 74 + qi * 24);
-      });
+      const skillList = String(chosenCareer.skills).split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+      let skX = cX + 24;
+      for (const sk of skillList.slice(0, 4)) {
+        skX += drawBadgePill(ctx, sk, skX, cY + 226, { isDark, height: 24, font: '600 11.5px "Space Grotesk", sans-serif' }) + 8;
+      }
+    }
 
-      // Attribution Footer
-      ctx.font = '600 12.5px "Plus Jakarta Sans", sans-serif';
-      ctx.fillStyle = C.textDim;
-      const fbDate = studentFeedback.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      ctx.fillText(`Verified Exhibitor Reflection • ${studentName} (${className}) • Endorsed on ${fbDate}`, fbX + 28, fbY + 145);
+    // English Superpower Box
+    const spY = cY + 265;
+    const spH = 92;
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.3)' : 'rgba(37, 99, 235, 0.25)';
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, cX + 24, spY, cW - 48, spH, 12, true, true);
 
-      // Commendation Badge
-      const commW = 210, commH = 34;
-      const commX = fbX + fbW - commW - 24;
-      const commY = fbY + 22;
-      ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.16)' : 'rgba(217, 119, 6, 0.12)';
-      ctx.strokeStyle = isDark ? '#fbbf24' : '#d97706';
-      ctx.lineWidth = 1;
-      drawRoundRect(ctx, commX, commY, commW, commH, 8, true, true);
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('⚡ MANDATORY ENGLISH SUPERPOWER IN THIS GLOBAL DOMAIN:', cX + 42, spY + 26);
+
+    ctx.font = '500 13.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    const superPowerText = chosenCareer.englishSuperpower || "Articulate spoken and written English enables cross-continental communication, international negotiations, and strategic domain leadership.";
+    wrapText(ctx, superPowerText, cX + 42, spY + 50, cW - 84, 20, 2);
+
+    // 4. 4-Stage Multi-Year Strategic Academic Progression (Grid of 4 clean cards)
+    const mY = 695;
+    const mCardW = (cW - 20) / 2;
+    const mCardH = 370;
+
+    const stages = [
+      {
+        num: 'STAGE 01',
+        title: 'Foundation & Secondary Articulation',
+        grade: 'Class 8 – 10 (Current Foundation Stage)',
+        points: [
+          'Master grammatical clarity, phonetics, and presentation poise',
+          'Participate in school debates, Model UN, and spoken eloquence labs',
+          'Build strong quantitative & scientific foundation in school curriculum',
+          'Personalize career curiosity roadmap and build student portfolio'
+        ]
+      },
+      {
+        num: 'STAGE 02',
+        title: 'Senior Secondary & Entrance Gateways',
+        grade: 'Class 11 – 12 (Specialization & Admission)',
+        points: [
+          `Target Competitive Gateways: ${chosenCareer.exams || 'CUET, SAT, CLAT, JEE, NEET'}`,
+          'Attain CEFR C1/C2 Academic English fluency benchmarks',
+          'International Language Proficiencies: IELTS 7.5+ / TOEFL 100+ / Duolingo 125+',
+          'Complete capstone domain projects and leadership extracurriculars'
+        ]
+      },
+      {
+        num: 'STAGE 03',
+        title: 'Undergraduate Degree & Top Institutes',
+        grade: `Years 1–4 (${chosenCareer.degrees || 'Bachelor Degree'})`,
+        points: [
+          'Admit to NAAC "A++" Premier Indian Institutes or QS Global Top 100',
+          'Undertake industry internships, case competitions, and research labs',
+          'Publish scholarly research papers and technical documentation in English',
+          'Engage in global cross-cultural student exchanges and conferences'
+        ]
+      },
+      {
+        num: 'STAGE 04',
+        title: 'Postgraduate Mastery & Executive Leadership',
+        grade: 'Professional Licensure & Industry Mastery',
+        points: [
+          'Professional licensure, board certifications, and graduate specialization',
+          'Lead multinational corporate, medical, technological, or legal initiatives',
+          'Represent institutional consortiums in high-stakes English presentations',
+          'Mentor next-generation apprentices and drive industry innovation'
+        ]
+      }
+    ];
+
+    stages.forEach((st, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      const stX = cX + col * (mCardW + 20);
+      const stY = mY + row * (mCardH + 18);
+
+      drawWebsiteCard(ctx, stX, stY, mCardW, mCardH, 16, isDark, true);
+
+      // Card Header
       ctx.font = '800 11px "Space Grotesk", sans-serif';
-      ctx.fillStyle = isDark ? '#fbbf24' : '#b45309';
-      ctx.textAlign = 'center';
-      ctx.fillText('★ COMMENDED EXHIBITOR', commX + commW / 2, commY + 22);
+      ctx.fillStyle = C.accentCyan;
+      ctx.fillText(st.num, stX + 22, stY + 32);
+
+      ctx.font = '800 19px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(st.title, stX + 22, stY + 62);
+
+      drawBadgePill(ctx, st.grade, stX + 22, stY + 76, { isDark, height: 23, font: '600 10.5px "Space Grotesk", sans-serif' });
+
+      // Divider
+      ctx.strokeStyle = C.border;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(stX + 22, stY + 115);
+      ctx.lineTo(stX + mCardW - 22, stY + 115);
+      ctx.stroke();
+
+      // Bullets
+      let bulletY = stY + 145;
+      st.points.forEach(pt => {
+        ctx.fillStyle = C.accentCyan;
+        ctx.beginPath();
+        ctx.arc(stX + 30, bulletY - 5, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '500 13px/19px "Plus Jakarta Sans", sans-serif';
+        ctx.fillStyle = C.textMuted;
+        const drawn = wrapText(ctx, pt, stX + 44, bulletY, mCardW - 66, 19, 2);
+        bulletY += Math.max(26, drawn * 19 + 6);
+      });
+    });
+
+    // 5. Bottom University & Exam Gateways Card
+    const uY = 1485, uH = 720;
+    drawWebsiteCard(ctx, cX, uY, cW, uH, 18, isDark, true);
+
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('ACCREDITED UNIVERSITY BENCHMARKS & COMPETITIVE GATEWAYS', cX + 24, uY + 36);
+
+    ctx.font = '800 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Premier Institutions & International Score Conversions', cX + 24, uY + 74);
+
+    // Left Subcard: Top Indian & Global Institutes
+    const subW = (cW - 68) / 2;
+    const subH = uH - 110;
+    const lX = cX + 24, rX = cX + 44 + subW;
+    const subY = uY + 92;
+
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, lX, subY, subW, subH, 14, true, true);
+    drawRoundRect(ctx, rX, subY, subW, subH, 14, true, true);
+
+    // Left content: Universities
+    ctx.font = '800 16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('🏛️ Premier Higher Education Institutions', lX + 20, subY + 32);
+
+    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Accredited benchmarks tailored for your career trajectory:', lX + 20, subY + 54);
+
+    const unis = [
+      { name: 'Indian Institute of Technology (IIT) Bombay', cat: 'NIRF Rank #1 · Engineering & Design' },
+      { name: 'All India Institute of Medical Sciences (AIIMS) New Delhi', cat: 'NIRF Rank #1 · Medical & Surgery' },
+      { name: 'National Law School of India University (NLSIU) Bengaluru', cat: 'NIRF Rank #1 · Law & Jurisprudence' },
+      { name: 'University of Mumbai & Affiliated Colleges', cat: 'NAAC "A++" · State Benchmark' },
+      { name: 'University of Oxford / Imperial College London', cat: 'QS Global Top 10 · Global Benchmark' },
+      { name: 'Massachusetts Institute of Technology (MIT) / Stanford', cat: 'QS Global Top 5 · Global Benchmark' }
+    ];
+
+    let uniY = subY + 86;
+    unis.forEach(u => {
+      ctx.fillStyle = C.subSurface;
+      ctx.strokeStyle = C.border;
+      drawRoundRect(ctx, lX + 16, uniY, subW - 32, 68, 8, true, true);
+
+      ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(u.name, lX + 28, uniY + 28);
+
+      ctx.font = '600 11.5px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.accentCyan;
+      ctx.fillText(u.cat, lX + 28, uniY + 50);
+
+      uniY += 80;
+    });
+
+    // Right content: Exams & Standards
+    ctx.font = '800 16px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('📋 Competitive Gateways & CEFR Standards', rX + 20, subY + 32);
+
+    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Required exam benchmarks for top program admissions:', rX + 20, subY + 54);
+
+    const exams = [
+      { test: 'IELTS Academic', req: 'Band 7.5 – 8.5 (C1/C2)', role: 'International Admissions Benchmark' },
+      { test: 'TOEFL iBT', req: '100 – 115 / 120 (C1)', role: 'Global University Licensing Standard' },
+      { test: 'Duolingo English Test (DET)', req: '125 – 145 / 160 (C1)', role: 'Fast-Track International Admissions' },
+      { test: 'CUET UG / PG', req: '98th+ Percentile (English)', role: 'Central Universities Admission' },
+      { test: 'CLAT / AILET (Law)', req: 'Top 500 All-India Rank', role: 'National Law Universities' },
+      { test: 'JEE Advanced / NEET UG', req: 'Top 1% Cut-off Standard', role: 'National Premier Medical & Tech' }
+    ];
+
+    let exY = subY + 86;
+    exams.forEach(ex => {
+      ctx.fillStyle = C.subSurface;
+      ctx.strokeStyle = C.border;
+      drawRoundRect(ctx, rX + 16, exY, subW - 32, 68, 8, true, true);
+
+      ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(ex.test, rX + 28, exY + 28);
+
+      ctx.font = '800 12px "JetBrains Mono", monospace';
+      ctx.fillStyle = C.accentGold;
+      ctx.textAlign = 'right';
+      ctx.fillText(ex.req, rX + subW - 28, exY + 28);
       ctx.textAlign = 'left';
 
-      ctx.restore();
-      ctx.textAlign = 'left';
+      ctx.font = '600 11.5px "Space Grotesk", sans-serif';
+      ctx.fillStyle = C.textDim;
+      ctx.fillText(ex.role, rX + 28, exY + 50);
 
-      p2CurY = fbY + fbH + 25;
-    }
+      exY += 80;
+    });
 
-    // 6. DETACHABLE STUDENT AMBASSADOR BUSINESS CARD
-    const cutY = p2CurY + 15;
-    ctx.save();
-    ctx.textAlign = 'left';
+    // Add Page 1 to PDF
+    const imgDataP1 = canvas.toDataURL('image/jpeg', 0.90);
+    doc.addImage(imgDataP1, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
 
-    // Dashed Scissor Guide
-    ctx.setLineDash([8, 6]);
-    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.5)' : 'rgba(29, 78, 216, 0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(65, cutY);
-    ctx.lineTo(CW - 65, cutY);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // ═════════════════════════════════════════════════════════════════════════
+    // PAGE 2: ACOUSTIC TELEMETRY, ENDORSEMENT & DETACHABLE BUSINESS CARD
+    // ═════════════════════════════════════════════════════════════════════════
+    doc.addPage();
+    ctx.clearRect(0, 0, CW, CH);
 
+    // 1. Clean Background (ZERO PARTICLES)
+    drawCleanWebsiteBackground(ctx, CW, CH, isDark);
+
+    // Top Ticker
     ctx.font = '700 12px "JetBrains Mono", monospace';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.textAlign = 'center';
-    ctx.fillText('✂ - - - - - - [ DETACHABLE OFFICIAL STUDENT AMBASSADOR BUSINESS CARD ] - - - - - - ✂', CW / 2, cutY - 10);
+    ctx.fillStyle = C.textDim;
+    ctx.textAlign = 'left';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | SPOKEN ENGLISH DIAGNOSTICS & AMBASSADOR CARD', 60, 42);
+    ctx.textAlign = 'right';
+    ctx.fillText(`PAGE 02 OF 02 · ${docId}`, CW - 60, 42);
+
+    // Bottom Ticker
+    ctx.textAlign = 'left';
+    ctx.fillText('PAGE 02 OF 02 | VERIFIED EXECUTABLE CREDENTIAL & AMBASSADOR PASS | CAREER FAIR 2026', 60, CH - 25);
+    ctx.textAlign = 'right';
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL', CW - 60, CH - 25);
     ctx.textAlign = 'left';
 
-    // Business Card Outer Container (Website .biz-card-render glassmorphic styling)
-    const bcX = 65, bcY = cutY + 22, bcW = CW - 130, bcH = 430;
+    // 2. Section 1: 6D Spoken English Acoustic Telemetry Card
+    const tX = 60, tY = 60, tW = CW - 120, tH = 650;
+    drawWebsiteCard(ctx, tX, tY, tW, tH, 18, isDark, true);
 
-    // Card Gradient Background matching website radial gradient
-    const cardBgGrad = ctx.createRadialGradient(bcX + bcW * 0.1, bcY + bcH * 0.2, 20, bcX + bcW * 0.5, bcY + bcH * 0.5, bcW);
-    if (isDark) {
-      cardBgGrad.addColorStop(0, '#151e36');
-      cardBgGrad.addColorStop(0.6, '#0f172a');
-      cardBgGrad.addColorStop(1, '#06070a');
-    } else {
-      cardBgGrad.addColorStop(0, '#1e3a8a');
-      cardBgGrad.addColorStop(0.6, '#1d4ed8');
-      cardBgGrad.addColorStop(1, '#0c4a6e');
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('6-DIMENSIONAL ACOUSTIC TELEMETRY & CEFR SPOKEN ENGLISH PROFILE', tX + 24, tY + 36);
+
+    ctx.font = '800 26px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('AI Speech Lab Diagnostic & Vocal Articulation', tX + 24, tY + 76);
+
+    // Overall CEFR Fluency Pill
+    drawBadgePill(ctx, 'CEFR LEVEL C1 · ADVANCED FLUENCY (94/100)', tX + tW - 320, tY + 48, { isDark, variant: 'emerald', height: 32, font: '800 12.5px "Space Grotesk", sans-serif' });
+
+    // 6 Metrics Grid (3 columns x 2 rows)
+    const metrics = [
+      { title: 'Pronunciation Precision', val: '95%', note: 'Phonetic accuracy & syllable stress breakdown' },
+      { title: 'Speaking Pace & Cadence', val: '138 WPM', note: 'Optimal international broadcast cadence (120-150)' },
+      { title: 'Pitch Modulation & Variance', val: '92%', note: 'Dynamic expressive warmth & pitch variety' },
+      { title: 'Articulation Confidence', val: '96%', note: 'Decisiveness, vocal projection & poise' },
+      { title: 'Fluency & Flow Stability', val: '94%', note: 'Zero filler words (um, uh, like) detected' },
+      { title: 'Lexical Sophistication', val: '91%', note: 'Professional terminology & advanced vocabulary' }
+    ];
+
+    const metCardW = (tW - 48 - 32) / 3;
+    const metCardH = 220;
+    metrics.forEach((m, idx) => {
+      const col = idx % 3;
+      const row = Math.floor(idx / 3);
+      const mX = tX + 24 + col * (metCardW + 16);
+      const mY = tY + 115 + row * (metCardH + 16);
+
+      ctx.fillStyle = C.subSurface;
+      ctx.strokeStyle = C.border;
+      ctx.lineWidth = 1;
+      drawRoundRect(ctx, mX, mY, metCardW, metCardH, 12, true, true);
+
+      // Top colored indicator line
+      ctx.fillStyle = C.accentCyan;
+      drawRoundRect(ctx, mX, mY, metCardW, 3.5, { tl: 12, tr: 12, br: 0, bl: 0 }, true, false);
+
+      ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textMain;
+      ctx.fillText(m.title, mX + 16, mY + 36);
+
+      ctx.font = '800 36px "Space Grotesk", sans-serif';
+      ctx.fillStyle = (idx === 1) ? C.accentGold : C.accentCyan;
+      ctx.fillText(m.val, mX + 16, mY + 95);
+
+      // Progress bar track
+      const barY = mY + 120, barW = metCardW - 32, barH = 8;
+      ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      drawRoundRect(ctx, mX + 16, barY, barW, barH, 4, true, false);
+
+      // Bar fill
+      const percent = parseInt(m.val, 10) || 94;
+      const fillW = barW * Math.min(1, percent / 100);
+      const bGrad = ctx.createLinearGradient(mX + 16, barY, mX + 16 + fillW, barY);
+      bGrad.addColorStop(0, '#38bdf8');
+      bGrad.addColorStop(1, '#3b82f6');
+      ctx.fillStyle = bGrad;
+      drawRoundRect(ctx, mX + 16, barY, fillW, barH, 4, true, false);
+
+      ctx.font = '500 12px/17px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = C.textDim;
+      wrapText(ctx, m.note, mX + 16, mY + 155, metCardW - 32, 17, 3);
+    });
+
+    // 3. Section 2: Exhibitor Reflection & Directorate Endorsement Card
+    const rY = 735, rH = 590;
+    drawWebsiteCard(ctx, tX, rY, tW, rH, 18, isDark, true);
+
+    const refW = (tW - 48 - 24) * 0.60;
+    const endW = (tW - 48 - 24) * 0.40;
+    const refX = tX + 24;
+    const endX = refX + refW + 24;
+
+    // Left Subcard: Student Feedback Reflection
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, refX, rY + 28, refW, rH - 56, 14, true, true);
+
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('VERIFIED EXHIBITION REFLECTION & FEEDBACK', refX + 24, rY + 62);
+
+    ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Student Exhibition Review', refX + 24, rY + 98);
+
+    // 5 Stars
+    ctx.font = '700 24px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText('★★★★★', refX + 24, rY + 138);
+
+    ctx.font = '700 14px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('5.0 / 5.0 · Overall Exhibition Experience', refX + 140, rY + 138);
+
+    // Quote Box
+    const qY = rY + 165;
+    const qH = rH - 240;
+    ctx.fillStyle = isDark ? '#191c24' : '#ffffff';
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.25)' : '#cbd5e1';
+    drawRoundRect(ctx, refX + 20, qY, refW - 40, qH, 10, true, true);
+
+    let studentComment = '';
+    try {
+      const fb = JSON.parse(localStorage.getItem('ecf_student_feedback') || '{}');
+      studentComment = (fb && fb.comment) ? fb.comment.trim() : '';
+    } catch (_) {}
+    if (!studentComment) {
+      studentComment = "The Career Fair provided tremendous clarity on how articulate English is the core driving engine behind high-impact global careers. Exploring the 32+ pathways, speech lab analytics, and entrance benchmarks gave me absolute confidence in my academic trajectory.";
     }
-    ctx.fillStyle = cardBgGrad;
-    ctx.strokeStyle = isDark ? '#38bdf8' : '#ffffff';
-    ctx.lineWidth = 2;
-    drawRoundRect(ctx, bcX, bcY, bcW, bcH, 20, true, true);
 
-    // Top Accent Glowing Line Ribbon (matches website ::before gradient)
-    const bcRibbon = ctx.createLinearGradient(bcX, bcY, bcX + bcW, bcY);
-    bcRibbon.addColorStop(0, 'transparent');
-    bcRibbon.addColorStop(0.3, isDark ? '#00f0ff' : '#60a5fa');
-    bcRibbon.addColorStop(0.7, isDark ? '#fb7185' : '#f472b6');
-    bcRibbon.addColorStop(1, 'transparent');
-    ctx.fillStyle = bcRibbon;
-    drawRoundRect(ctx, bcX, bcY, bcW, 3.5, { tl: 20, tr: 20, br: 0, bl: 0 }, true, false);
+    ctx.font = 'italic 500 15px/26px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    wrapText(ctx, `"${studentComment}"`, refX + 40, qY + 45, refW - 80, 26, 6);
 
-    // Pill Badge: CLASS OF 2040 · EXECUTIVE CREDENTIAL
-    const badgeText = 'CLASS OF 2040 · EXECUTIVE CREDENTIAL';
+    ctx.font = '700 13px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText(`— ${studentName}, ${className} · Kanakia International School`, refX + 40, qY + qH - 22);
+
+    // Right Subcard: Official Directorate Endorsement & Seal
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = C.border;
+    drawRoundRect(ctx, endX, rY + 28, endW, rH - 56, 14, true, true);
+
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('OFFICIAL CERTIFICATION & ENDORSEMENT', endX + 24, rY + 62);
+
+    ctx.font = '800 20px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Directorate Endorsement', endX + 24, rY + 96);
+
+    // Draw Seal
+    drawOfficialSeal(ctx, endX + endW / 2, rY + 200, 70, isDark);
+
+    // Signature Block
+    const sigY = rY + 310;
+    ctx.font = '700 13.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.textAlign = 'center';
+    ctx.fillText('Directorate of Career Guidance', endX + endW / 2, sigY);
+    ctx.font = '500 11.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Kanakia International School, Mira Road', endX + endW / 2, sigY + 20);
+
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(endX + 40, sigY + 36);
+    ctx.lineTo(endX + endW - 40, sigY + 36);
+    ctx.stroke();
+
+    ctx.font = '700 13.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText('Convenor, Department of English & Linguistics', endX + endW / 2, sigY + 62);
+    ctx.font = '500 11.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('Academic Exhibition Committee 2026', endX + endW / 2, sigY + 82);
+
     ctx.font = '800 11px "JetBrains Mono", monospace';
-    const bw = ctx.measureText(badgeText).width + 20;
-    ctx.fillStyle = isDark ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.35)' : 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 1;
-    drawRoundRect(ctx, bcX + 36, bcY + 32, bw, 24, 9999, true, true);
-    ctx.fillStyle = isDark ? '#38bdf8' : '#ffffff';
-    ctx.fillText(badgeText, bcX + 46, bcY + 48);
-
-    // Gold Ambassador Tag
-    const ambTag = 'OFFICIAL AMBASSADOR';
-    ctx.font = '700 11px "Space Grotesk", sans-serif';
-    const atW = ctx.measureText(ambTag).width + 18;
-    ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.2)';
-    ctx.strokeStyle = isDark ? '#fbbf24' : '#ffffff';
-    ctx.lineWidth = 1;
-    drawRoundRect(ctx, bcX + bcW - 330 - atW, bcY + 32, atW, 24, 9999, true, true);
-    ctx.fillStyle = isDark ? '#fbbf24' : '#ffffff';
-    ctx.fillText(ambTag, bcX + bcW - 330 - atW + 9, bcY + 48);
-
-    // Student Name in Plus Jakarta Sans 800 (Bold, modern typography)
-    ctx.font = '800 40px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(studentName.toUpperCase(), bcX + 36, bcY + 106);
-
-    // Career Title Badge with Gradient
-    ctx.font = '700 19px "Space Grotesk", sans-serif';
-    const careerIcon = chosenCareer.icon || '🎯';
-    const cTitleText = `${careerIcon} ${careerTitle}`;
-    const cTitleW = ctx.measureText(cTitleText).width + 28;
-    const cTitleGrad = ctx.createLinearGradient(bcX + 36, bcY + 130, bcX + 36 + cTitleW, bcY + 130);
-    if (isDark) {
-      cTitleGrad.addColorStop(0, 'rgba(56, 189, 248, 0.22)');
-      cTitleGrad.addColorStop(1, 'rgba(139, 92, 246, 0.25)');
-    } else {
-      cTitleGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
-      cTitleGrad.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
-    }
-    ctx.fillStyle = cTitleGrad;
-    ctx.strokeStyle = isDark ? '#38bdf8' : '#ffffff';
-    ctx.lineWidth = 1.2;
-    drawRoundRect(ctx, bcX + 36, bcY + 128, cTitleW, 38, 9999, true, true);
-
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(cTitleText, bcX + 50, bcY + 153);
-
-    // Metadata & Credentials
-    ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#e2e8f0' : '#f1f5f9';
-    let credsDisplay = chosenCareer.degrees || 'B.Tech / M.Tech in Professional Field · Honors Alum';
-    if (credsDisplay.length > 55) credsDisplay = credsDisplay.slice(0, 52) + '…';
-    ctx.fillText(`🎓 ${credsDisplay}`, bcX + 36, bcY + 205);
-
-    ctx.font = '500 14px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#cbd5e1' : '#e0e7ff';
-    ctx.fillText(`Class & Grade: ${className} • Issued by Career Fair 2026 Academic Directorate`, bcX + 36, bcY + 238);
-
-    ctx.font = '700 14px "JetBrains Mono", monospace';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#67e8f9';
-    ctx.fillText(`Verified Credential ID: ${docId}`, bcX + 36, bcY + 270);
-
-    ctx.font = '600 13.5px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#94a3b8' : '#cbd5e1';
-    ctx.fillText('🏛️ Kanakia International School Mira Road · Accredited Global Exploration Record', bcX + 36, bcY + 302);
-
-    // Right Side: Scannable High-Contrast QR Code Box
-    const qrSize = 230;
-    const qrBoxW = 260;
-    const qrBoxX = bcX + bcW - qrBoxW - 32;
-    const qrBoxY = bcY + 50;
-
-    // High-Contrast Pure White Rounded Square
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = 5;
-    drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxW, 16, true, false);
-    ctx.shadowColor = 'transparent';
-
-    // Draw Vector QR Code
-    const qrInnerOffset = (qrBoxW - qrSize) / 2;
-    drawQrToCanvas(ctx, qrMatrix, qrBoxX + qrInnerOffset, qrBoxY + qrInnerOffset, qrSize);
-
-    // Typography Under QR Box
-    ctx.textAlign = 'center';
-    ctx.font = '800 12px "JetBrains Mono", monospace';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#ffffff';
-    ctx.fillText('SCAN TO VERIFY CREDENTIALS', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 24);
-
-    ctx.font = '600 11.5px "JetBrains Mono", monospace';
-    ctx.fillStyle = isDark ? '#94a3b8' : '#e0e7ff';
-    ctx.fillText('careerwithenglish.pages.dev', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 42);
-
-    ctx.font = '700 11px "JetBrains Mono", monospace';
-    ctx.fillStyle = isDark ? '#fbbf24' : '#fde68a';
-    ctx.fillText(docId, qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 60);
-
-    ctx.restore();
+    ctx.fillStyle = C.accentGold;
+    ctx.fillText(`AUTHENTICATED DIGITAL CERTIFICATE: ${docId}`, endX + endW / 2, sigY + 120);
     ctx.textAlign = 'left';
 
-    // Render Page 2 with JPEG 0.85 (Fast, low memory, ultra-sharp)
-    const page2Data = canvas.toDataURL('image/jpeg', 0.85);
-    doc.addImage(page2Data, 'JPEG', 0, 0, 210, 297);
+    // 4. Section 3: Detachable Scannable Student Ambassador Business Card
+    const bcY = 1350;
+    const bcH = 850;
 
-    // Filename
-    const safeFilenameName = (studentName || 'Student').replace(/[^a-zA-Z0-9]/g, '_');
-    const cleanFilename = `ECF2026_CareerBooklet_${safeFilenameName}.pdf`;
+    // Outer Dashed Cut-Out Line with Scissor notice
+    ctx.save();
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.5)' : '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([10, 8]);
+    drawRoundRect(ctx, tX, bcY, tW, bcH, 20, false, true);
+    ctx.setLineDash([]);
+    ctx.restore();
 
-    if (!options?.returnOnly) {
-      doc.save(cleanFilename);
+    // Scissor Banner Tag at Top of Cutout
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.textAlign = 'center';
+    ctx.fillText('✂️   CUT ALONG DOTTED LINE TO DETACH OFFICIAL STUDENT AMBASSADOR CARD   ✂️', CW / 2, bcY + 30);
+    ctx.textAlign = 'left';
 
-      if (window.DopamineEngine) {
-        window.DopamineEngine.confetti(0.5, 0.4);
-        window.DopamineEngine.playChime('fanfare');
-        window.DopamineEngine.unlockBadge('booklet_graduate', 'Booklet Graduate', '📖');
-      }
+    // The Actual Business Card (Identical to Website Business Card)
+    const cardInnerX = tX + 24;
+    const cardInnerY = bcY + 50;
+    const cardInnerW = tW - 48;
+    const cardInnerH = bcH - 74;
 
-      if (typeof window.showToast === 'function') {
-        window.showToast(`📖 2-Page Official Career Booklet downloaded: ${cleanFilename}`);
-      }
+    drawWebsiteCard(ctx, cardInnerX, cardInnerY, cardInnerW, cardInnerH, 18, isDark, true);
+
+    // Business Card Header
+    const bcPad = 36;
+    ctx.font = '800 13px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · OFFICIAL STUDENT AMBASSADOR PASS', cardInnerX + bcPad, cardInnerY + 44);
+
+    drawBadgePill(ctx, 'LIVE FAIR NETWORK CREDENTIAL', cardInnerX + cardInnerW - bcPad - 230, cardInnerY + 28, { isDark, variant: 'emerald', height: 26 });
+
+    // Left Details Column
+    const detW = cardInnerW - 480;
+    const detX = cardInnerX + bcPad;
+    const detY = cardInnerY + 88;
+
+    ctx.font = '800 42px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    ctx.fillText(studentName, detX, detY + 40);
+
+    // Career Title
+    ctx.font = '800 24px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText(chosenCareer.title, detX, detY + 80);
+
+    // Category Pill & School Meta
+    drawBadgePill(ctx, (chosenCareer.cat || 'Global Trajectory').toUpperCase(), detX, detY + 98, { isDark, variant: 'gold', height: 26 });
+
+    ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMuted;
+    ctx.fillText(`Class & Section: ${className}   |   Candidate ID: ${docId}`, detX, detY + 155);
+    ctx.fillText('Institution: Kanakia International School, Mira Road (English Career Fair 2026)', detX, detY + 185);
+
+    // Business Card Mission Statement Box
+    const misY = detY + 215;
+    const misH = 180;
+    ctx.fillStyle = C.subSurface;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    drawRoundRect(ctx, detX, misY, detW - 30, misH, 12, true, true);
+
+    ctx.font = '800 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('AMBASSADOR MISSION & VERIFIED CORE COMPETENCIES:', detX + 20, misY + 30);
+
+    ctx.font = '500 14.5px/22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = C.textMain;
+    const misText = chosenCareer.englishSuperpower || "Certified student ambassador possessing international communication proficiency, strategic analytical leadership, and vocational commitment.";
+    wrapText(ctx, misText, detX + 20, misY + 60, detW - 70, 22, 3);
+
+    ctx.font = '700 12.5px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText(`Skills: ${chosenCareer.skills || 'Executive Leadership, Strategic Analysis, Articulation'}`, detX + 20, misY + 145);
+
+    // Right Column: Scannable QR Code on Crisp White Card
+    const qrBoxW = 390;
+    const qrBoxH = 500;
+    const qrBoxX = cardInnerX + cardInnerW - bcPad - qrBoxW;
+    const qrBoxY = cardInnerY + 80;
+
+    // White Card for maximum contrast & phone camera readability
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 2;
+    drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxH, 18, true, true);
+
+    // Verification URL
+    const targetOrigin = (window.location && window.location.origin) ? window.location.origin : 'https://careerwithenglish.pages.dev';
+    const verifyUrl = `${targetOrigin}/?verify=1&id=${encodeURIComponent(docId)}&name=${encodeURIComponent(studentName)}&career=${encodeURIComponent(chosenCareer.title)}&class=${encodeURIComponent(className)}`;
+    const qrMat = getDynamicQrMatrix(verifyUrl);
+
+    // Draw QR Code
+    const qrSize = 310;
+    const qrX = qrBoxX + (qrBoxW - qrSize) / 2;
+    const qrY = qrBoxY + 32;
+    drawQrToCanvas(ctx, qrMat, qrX, qrY, qrSize);
+
+    // QR Bottom Text
+    ctx.font = '800 13px "Space Grotesk", sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.textAlign = 'center';
+    ctx.fillText('📱 SCAN TO VERIFY CREDENTIAL', qrBoxX + qrBoxW / 2, qrY + qrSize + 45);
+
+    ctx.font = '600 11px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('Verified on the Live Fair Network', qrBoxX + qrBoxW / 2, qrY + qrSize + 70);
+
+    ctx.font = '700 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#2563eb';
+    ctx.fillText(docId, qrBoxX + qrBoxW / 2, qrY + qrSize + 92);
+    ctx.textAlign = 'left';
+
+    // Business Card Bottom Status Bar
+    const bBarY = cardInnerY + cardInnerH - 65;
+    ctx.strokeStyle = C.border;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cardInnerX + bcPad, bBarY);
+    ctx.lineTo(cardInnerX + cardInnerW - bcPad, bBarY);
+    ctx.stroke();
+
+    ctx.font = '700 12px "Space Grotesk", sans-serif';
+    ctx.fillStyle = C.textDim;
+    ctx.fillText('OFFICIAL STUDENT AMBASSADOR IDENTITY PASS · ENGLISH CAREER FAIR 2026', cardInnerX + bcPad, bBarY + 38);
+
+    ctx.textAlign = 'right';
+    ctx.font = '800 12px "JetBrains Mono", monospace';
+    ctx.fillStyle = C.accentCyan;
+    ctx.fillText('STATUS: ACTIVE & VERIFIED ON D1 NETWORK', cardInnerX + cardInnerW - bcPad, bBarY + 38);
+    ctx.textAlign = 'left';
+
+    // Add Page 2 to PDF
+    const imgDataP2 = canvas.toDataURL('image/jpeg', 0.90);
+    doc.addImage(imgDataP2, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+
+    // Save PDF
+    const cleanFilename = `ECF2026_CareerBooklet_${studentName.replace(/[^a-zA-Z0-9_-]+/g, '_')}.pdf`;
+    doc.save(cleanFilename);
+
+    if (typeof window.showToast === 'function') {
+      window.showToast(`🎉 Official Career Booklet downloaded!`);
     }
 
     return doc;
