@@ -14,12 +14,18 @@
 (function(window) {
   'use strict';
 
-  // Rounded Rectangle Canvas Utility
+  // Rounded Rectangle Canvas Utility with CSS-compliant radius clamping
   function drawRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    const maxR = Math.max(0, Math.min(width / 2, height / 2));
     if (typeof radius === 'number') {
-      radius = { tl: radius, tr: radius, br: radius, bl: radius };
+      const r = Math.min(radius, maxR);
+      radius = { tl: r, tr: r, br: r, bl: r };
     } else {
       radius = Object.assign({ tl: 0, tr: 0, br: 0, bl: 0 }, radius);
+      radius.tl = Math.min(radius.tl, maxR);
+      radius.tr = Math.min(radius.tr, maxR);
+      radius.br = Math.min(radius.br, maxR);
+      radius.bl = Math.min(radius.bl, maxR);
     }
     ctx.beginPath();
     ctx.moveTo(x + radius.tl, y);
@@ -36,81 +42,167 @@
     if (stroke) ctx.stroke();
   }
 
-  // Architectural Cyber-Corner Accents
-  function drawCornerBrackets(ctx, x, y, w, h, len, lw, color) {
+  // Deterministic PRNG for consistent, organic particle & shard placement
+  function pseudoRandom(seed) {
+    let s = (seed % 2147483647);
+    if (s <= 0) s += 2147483646;
+    return function() {
+      s = (s * 16807) % 2147483647;
+      return (s - 1) / 2147483646;
+    };
+  }
+
+  // Modern Website Ambient Background with Glowing Particles & Translucent Shards
+  function drawWebsiteParticlesBackground(ctx, CW, CH, isDark, pageNum) {
     ctx.save();
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lw;
-    ctx.beginPath();
-    // Top-Left
-    ctx.moveTo(x, y + len); ctx.lineTo(x, y); ctx.lineTo(x + len, y);
-    // Top-Right
-    ctx.moveTo(x + w - len, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + len);
-    // Bottom-Left
-    ctx.moveTo(x, y + h - len); ctx.lineTo(x, y + h); ctx.lineTo(x + len, y + h);
-    // Bottom-Right
-    ctx.moveTo(x + w - len, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - len);
-    ctx.stroke();
+
+    // 1. Base Gradient matching the website's deep dark luxury theme
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
+    if (isDark) {
+      bgGrad.addColorStop(0, '#06070b');
+      bgGrad.addColorStop(0.35, '#0a0e1a');
+      bgGrad.addColorStop(0.75, '#0d1326');
+      bgGrad.addColorStop(1, '#05070c');
+    } else {
+      bgGrad.addColorStop(0, '#f8fafc');
+      bgGrad.addColorStop(0.5, '#f1f5f9');
+      bgGrad.addColorStop(1, '#e2e8f0');
+    }
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // 2. Ambient Soft Glow Orbs (Website Luxury Lighting)
+    // Top-Center Cyan Glow
+    const topGlow = ctx.createRadialGradient(CW * 0.5, 80, 20, CW * 0.5, 80, 850);
+    topGlow.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.18)' : 'rgba(37, 99, 235, 0.12)');
+    topGlow.addColorStop(0.6, isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(37, 99, 235, 0.03)');
+    topGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = topGlow;
+    ctx.fillRect(0, 0, CW, 1000);
+
+    // Mid-Left Purple/Violet Orb
+    const midVioletGlow = ctx.createRadialGradient(80, CH * 0.45, 30, 80, CH * 0.45, 750);
+    midVioletGlow.addColorStop(0, isDark ? 'rgba(139, 92, 246, 0.12)' : 'rgba(147, 51, 234, 0.06)');
+    midVioletGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = midVioletGlow;
+    ctx.fillRect(0, CH * 0.2, CW * 0.6, CH * 0.5);
+
+    // Bottom-Right Amber/Gold Warm Glow
+    const botAmberGlow = ctx.createRadialGradient(CW - 100, CH * 0.85, 30, CW - 100, CH * 0.85, 800);
+    botAmberGlow.addColorStop(0, isDark ? 'rgba(245, 158, 11, 0.14)' : 'rgba(217, 119, 6, 0.08)');
+    botAmberGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = botAmberGlow;
+    ctx.fillRect(CW * 0.4, CH * 0.6, CW * 0.6, CH * 0.4);
+
+    // 3. Website's Translucent Polygonal Shards
+    const rand = pseudoRandom(pageNum * 9973 + 12345);
+    const shardColor = isDark ? '255, 225, 170' : '180, 83, 9';
+    const shardOpacity = isDark ? 0.045 : 0.035;
+    const shardCount = 8;
+    for (let i = 0; i < shardCount; i++) {
+      const sx = rand() * CW;
+      const sy = rand() * CH;
+      const r = 80 + rand() * 160;
+      const rot = rand() * Math.PI * 2;
+      const pts = [0, 1, 2, 3].map(pi => ({
+        a: pi * Math.PI / 2 + (rand() - 0.5),
+        r: r * (0.6 + rand() * 0.6)
+      }));
+
+      ctx.beginPath();
+      pts.forEach((p, pi) => {
+        const px = sx + Math.cos(p.a + rot) * p.r;
+        const py = sy + Math.sin(p.a + rot) * p.r;
+        if (pi === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${shardColor}, ${shardOpacity})`;
+      ctx.fill();
+    }
+
+    // 4. Website's Floating Glowing Embers & Sparks
+    // Website colors: ['#e8a04a', '#d4af37', '#f0b45a'] + cyan sparks
+    const emberColors = isDark
+      ? ['#e8a04a', '#d4af37', '#f0b45a', '#fbbf24', '#f59e0b', '#38bdf8']
+      : ['#f59e0b', '#fbbf24', '#d97706', '#38bdf8', '#60a5fa'];
+    
+    const particleCount = isDark ? 85 : 55;
+    for (let i = 0; i < particleCount; i++) {
+      const px = rand() * CW;
+      const py = rand() * CH;
+      const isCyan = (i % 7 === 0);
+      const color = isCyan ? (isDark ? '#38bdf8' : '#0284c7') : emberColors[Math.floor(rand() * (emberColors.length - 2))];
+      const size = isDark ? (2.5 + rand() * 6.5) : (2 + rand() * 4.5);
+      const alpha = isDark ? (0.35 + rand() * 0.55) : (0.12 + rand() * 0.28);
+
+      // Soft glowing radial halo
+      const haloR = isDark ? (size * 2.8) : (size * 1.5);
+      const halo = ctx.createRadialGradient(px, py, 0, px, py, haloR);
+      halo.addColorStop(0, color);
+      halo.addColorStop(isDark ? 0.35 : 0.45, color);
+      halo.addColorStop(1, 'transparent');
+      
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(px, py, haloR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sharp core ember
+      ctx.globalAlpha = isDark ? Math.min(1, alpha + 0.25) : Math.min(0.8, alpha + 0.15);
+      ctx.fillStyle = isCyan ? (isDark ? '#ffffff' : '#0284c7') : color;
+      ctx.beginPath();
+      ctx.arc(px, py, size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
-  // Section Header Banner with Accent Pill & Typography
+  // Section Header matching website typography and pill badges (NO harsh laser cut lines)
   function drawSectionHeader(ctx, num, title, subtitle, x, y, width, isDark) {
     ctx.save();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // Vertical Accent Pill
-    const grad = ctx.createLinearGradient(x, y, x, y + 36);
+    // Website Pill Badge
+    const badgeW = 34, badgeH = 34;
+    const badgeGrad = ctx.createLinearGradient(x, y, x + badgeW, y + badgeH);
     if (isDark) {
-      grad.addColorStop(0, '#00f0ff');
-      grad.addColorStop(1, '#8b5cf6');
+      badgeGrad.addColorStop(0, 'rgba(56, 189, 248, 0.2)');
+      badgeGrad.addColorStop(1, 'rgba(139, 92, 246, 0.2)');
     } else {
-      grad.addColorStop(0, '#1d4ed8');
-      grad.addColorStop(1, '#0284c7');
+      badgeGrad.addColorStop(0, 'rgba(37, 99, 235, 0.15)');
+      badgeGrad.addColorStop(1, 'rgba(2, 132, 199, 0.15)');
     }
-    ctx.fillStyle = grad;
-    drawRoundRect(ctx, x, y, 6, 36, 3, true, false);
+    ctx.fillStyle = badgeGrad;
+    ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.45)' : 'rgba(37, 99, 235, 0.4)';
+    ctx.lineWidth = 1.2;
+    drawRoundRect(ctx, x, y + 1, badgeW, badgeH, 10, true, true);
 
-    // Number Badge
-    const badgeBg = isDark ? 'rgba(0, 240, 255, 0.12)' : 'rgba(29, 78, 216, 0.1)';
-    const badgeText = isDark ? '#38bdf8' : '#1d4ed8';
-    ctx.fillStyle = badgeBg;
-    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.3)' : 'rgba(29, 78, 216, 0.25)';
-    ctx.lineWidth = 1;
-    drawRoundRect(ctx, x + 16, y + 2, 32, 32, 8, true, true);
-    ctx.font = '700 16px "Space Grotesk", sans-serif';
-    ctx.fillStyle = badgeText;
+    ctx.font = '800 15px "Space Grotesk", sans-serif';
+    ctx.fillStyle = isDark ? '#38bdf8' : '#1d4ed8';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(num, x + 32, y + 18);
+    ctx.fillText(num, x + badgeW / 2, y + 1 + badgeH / 2);
 
-    // Title
-    ctx.font = '700 24px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#f8fafc' : '#090d16';
+    // Title in Plus Jakarta Sans
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(title, x + 58, y + 1);
+    ctx.font = '800 22px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = isDark ? '#f8fafc' : '#090d16';
+    ctx.fillText(title, x + badgeW + 16, y);
 
-    // Subtitle
-    ctx.font = '500 14px "Plus Jakarta Sans", sans-serif';
-    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
-    ctx.fillText(subtitle, x + 58, y + 23);
-
-    // Trailing Decorative Line
-    const titleWidth = ctx.measureText(title).width;
-    const lineX = x + 68 + titleWidth;
-    if (lineX < x + width - 10) {
-      const lineGrad = ctx.createLinearGradient(lineX, y + 12, x + width, y + 12);
-      lineGrad.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(29, 78, 216, 0.35)');
-      lineGrad.addColorStop(1, 'transparent');
-      ctx.strokeStyle = lineGrad;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(lineX, y + 13);
-      ctx.lineTo(x + width, y + 13);
-      ctx.stroke();
+    // Subtitle in Plus Jakarta Sans
+    if (subtitle) {
+      ctx.font = '500 13.5px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+      ctx.fillText(subtitle, x + badgeW + 16, y + 24);
     }
+
     ctx.restore();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
@@ -421,6 +513,13 @@
       return;
     }
 
+    // Ensure all web fonts (Plus Jakarta Sans, Space Grotesk, JetBrains Mono) are fully loaded
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch (_) {}
+    }
+
     // Resolve Theme (Dark / Light)
     let isDark = true;
     if (options && options.theme) {
@@ -561,45 +660,23 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // 1. Background Gradient
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CH);
-    bgGrad.addColorStop(0, C.bgGradStart);
-    bgGrad.addColorStop(1, C.bgGradEnd);
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Top Ambient Glow
-    const topGlow = ctx.createRadialGradient(CW / 2, 0, 50, CW / 2, 0, 900);
-    topGlow.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.16)' : 'rgba(37, 99, 235, 0.1)');
-    topGlow.addColorStop(1, 'transparent');
-    ctx.fillStyle = topGlow;
-    ctx.fillRect(0, 0, CW, 800);
-
-    // Outer Architectural Double Framing
-    ctx.strokeStyle = C.outerBorder;
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(35, 35, CW - 70, CH - 70);
-
-    ctx.strokeStyle = C.innerBorder;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(45, 45, CW - 90, CH - 90);
-
-    drawCornerBrackets(ctx, 35, 35, CW - 70, CH - 70, 36, 4, C.cornerGold);
+    // 1. Modern Website Ambient Particles & Glow Background
+    drawWebsiteParticlesBackground(ctx, CW, CH, isDark, 1);
 
     // Top Ticker
     ctx.font = '700 11.5px "JetBrains Mono", monospace';
     ctx.fillStyle = C.textDim;
     ctx.textAlign = 'left';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | OFFICIAL STUDENT CAREER BOOKLET & STRATEGIC BLUEPRINT', 55, 27);
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | OFFICIAL STUDENT CAREER BOOKLET & STRATEGIC BLUEPRINT', 65, 42);
     ctx.textAlign = 'right';
-    ctx.fillText(`ID: ${docId}`, CW - 55, 27);
+    ctx.fillText(`ID: ${docId}`, CW - 65, 42);
     ctx.textAlign = 'left'; // Reset alignment
 
     // Bottom Ticker
     ctx.textAlign = 'left';
-    ctx.fillText('PAGE 01 OF 02 | CONFIDENTIAL ACADEMIC RECORD | ISSUED UNDER DIRECTORATE SEAL', 55, CH - 20);
+    ctx.fillText('PAGE 01 OF 02 | CONFIDENTIAL ACADEMIC RECORD | ISSUED UNDER DIRECTORATE SEAL', 65, CH - 25);
     ctx.textAlign = 'right';
-    ctx.fillText('CAREER FAIR 2026', CW - 55, CH - 20);
+    ctx.fillText('CAREER FAIR 2026', CW - 65, CH - 25);
     ctx.textAlign = 'left'; // Reset alignment
 
     // 2. Header Card
@@ -657,10 +734,12 @@
 
     ctx.font = '800 32px "Space Grotesk", sans-serif';
     ctx.fillStyle = C.textMain;
+    ctx.font = '800 30px "Plus Jakarta Sans", sans-serif';
     ctx.fillText('OFFICIAL STUDENT CAREER BOOKLET', tX, hY + 66);
 
     ctx.font = '700 16px "Space Grotesk", sans-serif';
     ctx.fillStyle = isDark ? '#94a3b8' : '#475569';
+    ctx.font = '700 16px "Plus Jakarta Sans", sans-serif';
     ctx.fillText('& STRATEGIC ACADEMIC BLUEPRINT', tX, hY + 90);
 
     ctx.font = 'italic 13.5px "Plus Jakarta Sans", sans-serif';
@@ -695,8 +774,11 @@
       ctx.font = (idx === 3) ? '700 13px "JetBrains Mono", monospace' : '700 14px "Space Grotesk", sans-serif';
       ctx.fillStyle = (idx === 2) ? (isDark ? '#38bdf8' : '#1d4ed8') : C.textMain;
       ctx.textAlign = 'right';
-      let maxLen = 22;
-      let displayVal = val.length > maxLen ? val.slice(0, maxLen - 1) + '…' : val;
+      const maxValW = credW - 145;
+      let displayVal = val;
+      while (ctx.measureText(displayVal).width > maxValW && displayVal.length > 3) {
+        displayVal = displayVal.slice(0, -2) + '…';
+      }
       ctx.fillText(displayVal, credX + credW - 16, ry + 11);
       ctx.textAlign = 'left'; // Reset
 
@@ -1090,38 +1172,21 @@
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
 
-    // 1. Background
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Top Ambient Glow for Page 2
-    const p2Glow = ctx.createRadialGradient(CW / 2, 0, 50, CW / 2, 0, 800);
-    p2Glow.addColorStop(0, isDark ? 'rgba(139, 92, 246, 0.14)' : 'rgba(37, 99, 235, 0.08)');
-    p2Glow.addColorStop(1, 'transparent');
-    ctx.fillStyle = p2Glow;
-    ctx.fillRect(0, 0, CW, 700);
-
-    // 2. Framing
-    ctx.strokeStyle = C.outerBorder;
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(35, 35, CW - 70, CH - 70);
-    ctx.strokeStyle = C.innerBorder;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(45, 45, CW - 90, CH - 90);
-    drawCornerBrackets(ctx, 35, 35, CW - 70, CH - 70, 36, 4, C.cornerGold);
+    // 1. Modern Website Ambient Particles & Glow Background
+    drawWebsiteParticlesBackground(ctx, CW, CH, isDark, 2);
 
     // Tickers
     ctx.font = '700 11.5px "JetBrains Mono", monospace';
     ctx.fillStyle = C.textDim;
     ctx.textAlign = 'left';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | SPOKEN ENGLISH DIAGNOSTICS & OFFICIAL ENDORSEMENT', 55, 27);
+    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD | SPOKEN ENGLISH DIAGNOSTICS & OFFICIAL ENDORSEMENT', 65, 42);
     ctx.textAlign = 'right';
-    ctx.fillText(`ID: ${docId}`, CW - 55, 27);
+    ctx.fillText(`ID: ${docId}`, CW - 65, 42);
     ctx.textAlign = 'left'; // Reset
 
-    ctx.fillText('PAGE 02 OF 02 | OFFICIAL VERIFICATION CREDENTIAL | DIGITAL FAIR BLUEPRINT', 55, CH - 20);
+    ctx.fillText('PAGE 02 OF 02 | OFFICIAL VERIFICATION CREDENTIAL | DIGITAL FAIR BLUEPRINT', 65, CH - 25);
     ctx.textAlign = 'right';
-    ctx.fillText('CAREER FAIR 2026', CW - 55, CH - 20);
+    ctx.fillText('CAREER FAIR 2026', CW - 65, CH - 25);
     ctx.textAlign = 'left'; // Reset
 
     // 3. SECTION 4: AI SPEECH LAB (6-DIMENSIONAL ACOUSTIC TELEMETRY)
@@ -1415,35 +1480,44 @@
     ctx.fillText('✂ - - - - - - [ DETACHABLE OFFICIAL STUDENT AMBASSADOR BUSINESS CARD ] - - - - - - ✂', CW / 2, cutY - 10);
     ctx.textAlign = 'left';
 
-    // Business Card Outer Container
+    // Business Card Outer Container (Website .biz-card-render glassmorphic styling)
     const bcX = 65, bcY = cutY + 22, bcW = CW - 130, bcH = 430;
 
-    // Card Gradient Background
-    const cardBgGrad = ctx.createLinearGradient(bcX, bcY, bcX + bcW, bcY + bcH);
+    // Card Gradient Background matching website radial gradient
+    const cardBgGrad = ctx.createRadialGradient(bcX + bcW * 0.1, bcY + bcH * 0.2, 20, bcX + bcW * 0.5, bcY + bcH * 0.5, bcW);
     if (isDark) {
-      cardBgGrad.addColorStop(0, '#06070a');
-      cardBgGrad.addColorStop(0.45, '#0f172a');
-      cardBgGrad.addColorStop(1, '#1e1b4b');
+      cardBgGrad.addColorStop(0, '#151e36');
+      cardBgGrad.addColorStop(0.6, '#0f172a');
+      cardBgGrad.addColorStop(1, '#06070a');
     } else {
       cardBgGrad.addColorStop(0, '#1e3a8a');
-      cardBgGrad.addColorStop(0.55, '#1d4ed8');
-      cardBgGrad.addColorStop(1, '#0284c7');
+      cardBgGrad.addColorStop(0.6, '#1d4ed8');
+      cardBgGrad.addColorStop(1, '#0c4a6e');
     }
     ctx.fillStyle = cardBgGrad;
-    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.5)' : 'rgba(255, 255, 255, 0.6)';
+    ctx.strokeStyle = isDark ? '#38bdf8' : '#ffffff';
     ctx.lineWidth = 2;
-    drawRoundRect(ctx, bcX, bcY, bcW, bcH, 22, true, true);
+    drawRoundRect(ctx, bcX, bcY, bcW, bcH, 20, true, true);
 
-    // Inner Gold Accent Frame
-    ctx.strokeStyle = isDark ? 'rgba(251, 191, 36, 0.35)' : 'rgba(254, 243, 199, 0.4)';
+    // Top Accent Glowing Line Ribbon (matches website ::before gradient)
+    const bcRibbon = ctx.createLinearGradient(bcX, bcY, bcX + bcW, bcY);
+    bcRibbon.addColorStop(0, 'transparent');
+    bcRibbon.addColorStop(0.3, isDark ? '#00f0ff' : '#60a5fa');
+    bcRibbon.addColorStop(0.7, isDark ? '#fb7185' : '#f472b6');
+    bcRibbon.addColorStop(1, 'transparent');
+    ctx.fillStyle = bcRibbon;
+    drawRoundRect(ctx, bcX, bcY, bcW, 3.5, { tl: 20, tr: 20, br: 0, bl: 0 }, true, false);
+
+    // Pill Badge: CLASS OF 2040 · EXECUTIVE CREDENTIAL
+    const badgeText = 'CLASS OF 2040 · EXECUTIVE CREDENTIAL';
+    ctx.font = '800 11px "JetBrains Mono", monospace';
+    const bw = ctx.measureText(badgeText).width + 20;
+    ctx.fillStyle = isDark ? 'rgba(0, 240, 255, 0.12)' : 'rgba(255, 255, 255, 0.2)';
+    ctx.strokeStyle = isDark ? 'rgba(0, 240, 255, 0.35)' : 'rgba(255, 255, 255, 0.4)';
     ctx.lineWidth = 1;
-    drawRoundRect(ctx, bcX + 12, bcY + 12, bcW - 24, bcH - 24, 16, false, true);
-
-    // Card Top Branding
-    ctx.textAlign = 'left';
-    ctx.font = '800 14px "Space Grotesk", sans-serif';
-    ctx.fillStyle = isDark ? '#38bdf8' : '#93c5fd';
-    ctx.fillText('KANAKIA INTERNATIONAL SCHOOL · MIRA ROAD', bcX + 36, bcY + 44);
+    drawRoundRect(ctx, bcX + 36, bcY + 32, bw, 24, 9999, true, true);
+    ctx.fillStyle = isDark ? '#38bdf8' : '#ffffff';
+    ctx.fillText(badgeText, bcX + 46, bcY + 48);
 
     // Gold Ambassador Tag
     const ambTag = 'OFFICIAL AMBASSADOR';
@@ -1452,24 +1526,24 @@
     ctx.fillStyle = isDark ? 'rgba(245, 158, 11, 0.18)' : 'rgba(255, 255, 255, 0.2)';
     ctx.strokeStyle = isDark ? '#fbbf24' : '#ffffff';
     ctx.lineWidth = 1;
-    drawRoundRect(ctx, bcX + bcW - 350 - atW, bcY + 30, atW, 24, 999, true, true);
+    drawRoundRect(ctx, bcX + bcW - 330 - atW, bcY + 32, atW, 24, 9999, true, true);
     ctx.fillStyle = isDark ? '#fbbf24' : '#ffffff';
-    ctx.fillText(ambTag, bcX + bcW - 350 - atW + 9, bcY + 46);
+    ctx.fillText(ambTag, bcX + bcW - 330 - atW + 9, bcY + 48);
 
-    // Student Name in Bold Space Grotesk
-    ctx.font = '800 42px "Space Grotesk", sans-serif';
+    // Student Name in Plus Jakarta Sans 800 (Bold, modern typography)
+    ctx.font = '800 40px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(studentName.toUpperCase(), bcX + 36, bcY + 110);
+    ctx.fillText(studentName.toUpperCase(), bcX + 36, bcY + 106);
 
     // Career Title Badge with Gradient
-    ctx.font = '700 20px "Space Grotesk", sans-serif';
+    ctx.font = '700 19px "Space Grotesk", sans-serif';
     const careerIcon = chosenCareer.icon || '🎯';
     const cTitleText = `${careerIcon} ${careerTitle}`;
-    const cTitleW = ctx.measureText(cTitleText).width + 30;
-    const cTitleGrad = ctx.createLinearGradient(bcX + 36, bcY + 138, bcX + 36 + cTitleW, bcY + 138);
+    const cTitleW = ctx.measureText(cTitleText).width + 28;
+    const cTitleGrad = ctx.createLinearGradient(bcX + 36, bcY + 130, bcX + 36 + cTitleW, bcY + 130);
     if (isDark) {
-      cTitleGrad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
-      cTitleGrad.addColorStop(1, 'rgba(139, 92, 246, 0.3)');
+      cTitleGrad.addColorStop(0, 'rgba(56, 189, 248, 0.22)');
+      cTitleGrad.addColorStop(1, 'rgba(139, 92, 246, 0.25)');
     } else {
       cTitleGrad.addColorStop(0, 'rgba(255, 255, 255, 0.25)');
       cTitleGrad.addColorStop(1, 'rgba(255, 255, 255, 0.15)');
@@ -1477,38 +1551,42 @@
     ctx.fillStyle = cTitleGrad;
     ctx.strokeStyle = isDark ? '#38bdf8' : '#ffffff';
     ctx.lineWidth = 1.2;
-    drawRoundRect(ctx, bcX + 36, bcY + 138, cTitleW, 40, 10, true, true);
+    drawRoundRect(ctx, bcX + 36, bcY + 128, cTitleW, 38, 9999, true, true);
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(cTitleText, bcX + 51, bcY + 165);
+    ctx.fillText(cTitleText, bcX + 50, bcY + 153);
 
-    // Metadata Lines
-    ctx.font = '600 16px "Plus Jakarta Sans", sans-serif';
+    // Metadata & Credentials
+    ctx.font = '600 15px "Plus Jakarta Sans", sans-serif';
+    ctx.fillStyle = isDark ? '#e2e8f0' : '#f1f5f9';
+    let credsDisplay = chosenCareer.degrees || 'B.Tech / M.Tech in Professional Field · Honors Alum';
+    if (credsDisplay.length > 55) credsDisplay = credsDisplay.slice(0, 52) + '…';
+    ctx.fillText(`🎓 ${credsDisplay}`, bcX + 36, bcY + 205);
+
+    ctx.font = '500 14px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = isDark ? '#cbd5e1' : '#e0e7ff';
-    ctx.fillText(`Class & Section: ${className}`, bcX + 36, bcY + 215);
+    ctx.fillText(`Class & Grade: ${className} • Issued by Career Fair 2026 Academic Directorate`, bcX + 36, bcY + 238);
 
-    ctx.fillText(`Issuing Body: Career Fair 2026 Academic Directorate`, bcX + 36, bcY + 248);
-
-    ctx.font = '700 15px "JetBrains Mono", monospace';
+    ctx.font = '700 14px "JetBrains Mono", monospace';
     ctx.fillStyle = isDark ? '#38bdf8' : '#67e8f9';
-    ctx.fillText(`Verified Credential ID: ${docId}`, bcX + 36, bcY + 282);
+    ctx.fillText(`Verified Credential ID: ${docId}`, bcX + 36, bcY + 270);
 
-    ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '600 13.5px "Plus Jakarta Sans", sans-serif';
     ctx.fillStyle = isDark ? '#94a3b8' : '#cbd5e1';
-    ctx.fillText('Accredited Student Career Exploration Record · Valid Across Global Fair Partner Events', bcX + 36, bcY + 316);
+    ctx.fillText('🏛️ Kanakia International School Mira Road · Accredited Global Exploration Record', bcX + 36, bcY + 302);
 
     // Right Side: Scannable High-Contrast QR Code Box
-    const qrSize = 250;
-    const qrBoxW = 280;
+    const qrSize = 230;
+    const qrBoxW = 260;
     const qrBoxX = bcX + bcW - qrBoxW - 32;
     const qrBoxY = bcY + 50;
 
     // High-Contrast Pure White Rounded Square
     ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-    ctx.shadowBlur = 15;
-    ctx.shadowOffsetY = 4;
-    drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxW, 18, true, false);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 5;
+    drawRoundRect(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxW, 16, true, false);
     ctx.shadowColor = 'transparent';
 
     // Draw Vector QR Code
@@ -1517,17 +1595,17 @@
 
     // Typography Under QR Box
     ctx.textAlign = 'center';
-    ctx.font = '800 13px "JetBrains Mono", monospace';
+    ctx.font = '800 12px "JetBrains Mono", monospace';
     ctx.fillStyle = isDark ? '#38bdf8' : '#ffffff';
-    ctx.fillText('SCAN TO VERIFY CREDENTIALS', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 25);
+    ctx.fillText('SCAN TO VERIFY CREDENTIALS', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 24);
 
-    ctx.font = '600 12px "JetBrains Mono", monospace';
+    ctx.font = '600 11.5px "JetBrains Mono", monospace';
     ctx.fillStyle = isDark ? '#94a3b8' : '#e0e7ff';
-    ctx.fillText('careerwithenglish.pages.dev', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 45);
+    ctx.fillText('careerwithenglish.pages.dev', qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 42);
 
     ctx.font = '700 11px "JetBrains Mono", monospace';
     ctx.fillStyle = isDark ? '#fbbf24' : '#fde68a';
-    ctx.fillText(docId, qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 63);
+    ctx.fillText(docId, qrBoxX + qrBoxW / 2, qrBoxY + qrBoxW + 60);
 
     ctx.restore();
     ctx.textAlign = 'left';
