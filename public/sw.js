@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v21.6-every-tab-in-line';
+const CACHE_NAME = 'cf-cache-v21.7-showcase-all-games';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

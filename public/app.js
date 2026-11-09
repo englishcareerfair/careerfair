@@ -832,40 +832,40 @@ const TUTORIAL_SHORT_STEPS = [
   {
     step: 0,
     tab: 'careers',
-    targetSelector: '#careers',
-    badge: 'SHORT TOUR · STEP 1 OF 5',
-    title: 'Choose & Pin Your Career',
+    targetSelector: '.btn-pin-career',
+    badge: 'QUICK TOUR · STEP 1 OF 5',
+    title: 'Pick & Pin Your Career Pathway',
     icon: '🎯',
     sectionKey: 'section_career',
-    instruction: 'Explore 32 global careers below and click "⭐ Pin to Your Booklet" on your favorite career. Pinning automatically generates your personalized college roadmap!',
-    actionHint: '👉 Click "⭐ Pin to Your Booklet" on any career card below',
+    instruction: 'Select your target career from 32 global pathways. Click "⭐ Pin to Your Booklet" on any card to lock in your career blueprint and top colleges.',
+    actionHint: '👉 Click "⭐ Pin to Your Booklet" on your favorite career card',
     audioUrl: '/audio/tutorial/tutorial_short_step0.mp3',
     speechText: 'Welcome to Career Fair 2026! Let us begin by choosing your target career from thirty-two global pathways. When you pin a career, its academic roadmap and top colleges are automatically added to your booklet. Click Pin to Your Booklet on your favorite career!'
   },
   {
     step: 1,
     tab: 'speechLab',
-    targetSelector: '#speech-lab',
-    badge: 'SHORT TOUR · STEP 2 OF 5',
-    title: 'Spoken English AI Diagnostic',
+    targetSelector: '#btn-speech-lab-record',
+    badge: 'QUICK TOUR · STEP 2 OF 5',
+    title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
-    instruction: 'Spoken articulation is vital for career success. Test your speech below—your pronunciation, cadence, and fluency scores directly populate Section 4 of your printable booklet!',
-    actionHint: '👉 Tap the microphone or click "Try Demo" to test speech diagnostics',
+    instruction: 'Spoken English is a vital career skill! Click the microphone button to test your speech articulation. When you are ready, click "Next Exhibit ▶" to proceed.',
+    actionHint: '👉 Tap the microphone button to start recording, speak, then click Next Exhibit',
     audioUrl: '/audio/tutorial/tutorial_short_step1.mp3',
-    speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Tap the microphone to record your voice or test a phrase!'
+    speechText: 'This is the AI Speech Lab. Spoken English is a vital career skill. Your pronunciation, pace, and clarity scores here directly populate Section Four of your printable booklet. Take your time to test your speech, then click Next Exhibit!'
   },
   {
     step: 2,
     tab: 'games',
     game: 'wordle',
-    targetSelector: '#game-arena-mount',
-    badge: 'SHORT TOUR · STEP 3 OF 5',
+    targetSelector: '#game-picker-tabs button[data-game="wordle"]',
+    badge: 'QUICK TOUR · STEP 3 OF 5',
     title: 'Vocabulary Challenge: Wordle 2026',
     icon: '🟩',
     sectionKey: 'section_wordle_quick',
-    instruction: 'Sharpen your vocabulary with Wordle 2026! Guess the 5-letter professional word in 6 attempts. Each attempt gives instant color-coded feedback!',
-    actionHint: '👉 Enter a 5-letter word and submit your guess',
+    instruction: 'Test your vocabulary power in our most popular arcade game! Guess the secret 5-letter professional English word in 6 attempts.',
+    actionHint: '👉 Type letters on the on-screen keyboard to make your guess',
     audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
     speechText: 'Test your vocabulary with Wordle 2026! Guess the five-letter professional English word in six tries. Type letters on the keyboard to make your guess and test your word power!'
   },
@@ -873,8 +873,8 @@ const TUTORIAL_SHORT_STEPS = [
     step: 3,
     tab: 'roadmap',
     subtool: 'bizcard',
-    targetSelector: '#student-card-preview',
-    badge: 'SHORT TOUR · STEP 4 OF 5',
+    targetSelector: '#plan-tools-tabs button[data-tool="bizcard"]',
+    badge: 'QUICK TOUR · STEP 4 OF 5',
     title: 'Student Ambassador Business Card',
     icon: '🪪',
     sectionKey: 'section_bizcard_quick',
@@ -886,8 +886,8 @@ const TUTORIAL_SHORT_STEPS = [
   {
     step: 4,
     tab: 'feedback',
-    targetSelector: '#feedback',
-    badge: 'SHORT TOUR · STEP 5 OF 5',
+    targetSelector: '#btn-submit-feedback',
+    badge: 'QUICK TOUR · STEP 5 OF 5',
     title: 'Student Reflection & Fair Feedback',
     icon: '⭐',
     sectionKey: 'section_feedback',
@@ -902,8 +902,8 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 0,
     tab: 'hero',
-    targetSelector: '#sec-hero',
-    badge: 'COMPLETE TOUR · STEP 1 OF 11',
+    targetSelector: '#sec-hero .hero-actions button:first-child',
+    badge: 'COMPLETE TOUR · STEP 1 OF 20',
     title: 'Student Career Intelligence Overview',
     icon: '⚡',
     sectionKey: 'section_overview',
@@ -915,8 +915,8 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 1,
     tab: 'careers',
-    targetSelector: '#careers',
-    badge: 'COMPLETE TOUR · STEP 2 OF 11',
+    targetSelector: '.btn-pin-career',
+    badge: 'COMPLETE TOUR · STEP 2 OF 20',
     title: '32+ Global Careers Directory',
     icon: '🎯',
     sectionKey: 'section_career',
@@ -928,8 +928,8 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 2,
     tab: 'colleges',
-    targetSelector: '#colleges',
-    badge: 'COMPLETE TOUR · STEP 3 OF 11',
+    targetSelector: '#college-accreditation-filter',
+    badge: 'COMPLETE TOUR · STEP 3 OF 20',
     title: 'Premier Higher Education & Universities',
     icon: '🏛️',
     sectionKey: 'section_colleges',
@@ -941,8 +941,8 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 3,
     tab: 'exams',
-    targetSelector: '#exams',
-    badge: 'COMPLETE TOUR · STEP 4 OF 11',
+    targetSelector: '#sec-exams',
+    badge: 'COMPLETE TOUR · STEP 4 OF 20',
     title: 'English Proficiency Testing & Exams',
     icon: '📋',
     sectionKey: 'section_exams',
@@ -954,8 +954,8 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 4,
     tab: 'speak',
-    targetSelector: '#sec-speak',
-    badge: 'COMPLETE TOUR · STEP 5 OF 11',
+    targetSelector: '#btn-listen-target',
+    badge: 'COMPLETE TOUR · STEP 5 OF 20',
     title: 'AI Pronunciation Studio & Phonetics',
     icon: '🗣️',
     sectionKey: 'section_speak',
@@ -967,21 +967,21 @@ const TUTORIAL_EXPANDED_STEPS = [
   {
     step: 5,
     tab: 'speechLab',
-    targetSelector: '#speech-lab',
-    badge: 'COMPLETE TOUR · STEP 6 OF 11',
+    targetSelector: '#btn-speech-lab-record',
+    badge: 'COMPLETE TOUR · STEP 6 OF 20',
     title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
-    instruction: 'Test your spoken articulation with multi-metric AI analysis: pace, pitch variation, lexical sophistication, and fluency. Your scores feed directly into your booklet!',
-    actionHint: '👉 Click the microphone to record your speech or test sample audio',
+    instruction: 'Test your spoken articulation with multi-metric AI analysis: pace, pitch variation, lexical sophistication, and fluency. Take your time to test your voice, then click "Next Exhibit ▶"!',
+    actionHint: '👉 Click the microphone to record your speech, test sample audio, then click Next Exhibit',
     audioUrl: '/audio/tutorial/tutorial_exp_step5.mp3',
-    speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Your scores feed directly into your booklet!'
+    speechText: 'This is our cutting-edge AI Speech Lab. Speak into your microphone to receive a multi-metric diagnostic of your pace, pitch variance, articulation confidence, and fluency. Take your time to test your voice, then click Next Exhibit when ready!'
   },
   {
     step: 6,
     tab: 'teleprompter',
-    targetSelector: '#teleprompter',
-    badge: 'COMPLETE TOUR · STEP 7 OF 11',
+    targetSelector: '#anchor-script-select',
+    badge: 'COMPLETE TOUR · STEP 7 OF 20',
     title: 'News Anchor Studio & Live Teleprompter',
     icon: '📺',
     sectionKey: 'section_teleprompter',
@@ -990,57 +990,186 @@ const TUTORIAL_EXPANDED_STEPS = [
     audioUrl: '/audio/tutorial/tutorial_exp_step6.mp3',
     speechText: 'Step into the shoes of a broadcast news anchor! Practice reading breaking international news scripts with an adjustable teleprompter mirror and live webcam video. Master poise, speed control, and camera presence!'
   },
+  // ── 10 GAMES SHOWCASED IN SEQUENCE ──
   {
     step: 7,
     tab: 'games',
-    targetSelector: '#game-picker-tabs',
-    badge: 'COMPLETE TOUR · STEP 8 OF 11',
-    title: 'Language Arcade Games & Quests',
-    icon: '🎮',
-    sectionKey: 'section_cognitive',
-    instruction: 'Compete in 11 interactive arcade games and Gemini AI quests: The Scribe, The Etymologist, Wordle 2026, Vocab Hangman, and Spelling Bee to climb the live leaderboard!',
-    actionHint: '👉 Launch Wordle, Hangman, or any quest card',
+    game: 'quest-scribe',
+    targetSelector: '#game-picker-tabs button[data-game="quest-scribe"]',
+    badge: 'COMPLETE TOUR · STEP 8 OF 20',
+    title: 'The Scribe: Branching Narrative Quest',
+    icon: '📜',
+    sectionKey: 'section_cognitive_scribe',
+    instruction: 'The Scribe is an interactive dark-fantasy narrative powered by Gemini AI! Choose your path and watch Gemini weave literary prose and branching consequences.',
+    actionHint: '👉 Choose a narrative path or click Next Exhibit to see the next game',
     audioUrl: '/audio/tutorial/tutorial_exp_step7.mp3',
-    speechText: 'Have fun while sharpening your vocabulary! Explore eleven interactive games including The Scribe, The Etymologist, Wordle 2026, Hangman, and Spelling Bee. Earn points and climb the live exhibition leaderboard!'
+    speechText: 'Explore The Scribe! This is an interactive gothic narrative powered by Gemini AI. Choose your story choices and sharpen your literary prose!'
   },
   {
     step: 8,
+    tab: 'games',
+    game: 'quest-etym',
+    targetSelector: '#game-picker-tabs button[data-game="quest-etym"]',
+    badge: 'COMPLETE TOUR · STEP 9 OF 20',
+    title: 'The Etymologist: Ancient Root-Word Detective',
+    icon: '🏛️',
+    sectionKey: 'section_cognitive_etym',
+    instruction: 'Unearth ancient Latin and Greek root lineages! Discover how international vocabulary was forged and solve linguistic origin riddles.',
+    actionHint: '👉 Investigate root words and solve the mystery origin riddle',
+    audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
+    speechText: 'Welcome to The Etymologist! Unearth ancient Greek and Latin roots to discover how modern English terms were forged and solve origin riddles.'
+  },
+  {
+    step: 9,
+    tab: 'games',
+    game: 'quest-bard',
+    targetSelector: '#game-picker-tabs button[data-game="quest-bard"]',
+    badge: 'COMPLETE TOUR · STEP 10 OF 20',
+    title: "The Bard's Mirror: Poetic Mirror & Critic",
+    icon: '🪞',
+    sectionKey: 'section_cognitive_bard',
+    instruction: 'Commission Shakespearean sonnets, romantic ballads, or submit your own writing for an instant AI literary critique on rhythm and rhetoric.',
+    actionHint: '👉 Generate a poetic verse or request a rhetorical critique',
+    audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
+    speechText: "Step into The Bard's Mirror! Commission Shakespearean sonnets or submit your writing for an intelligent literary critique on tone and rhetoric."
+  },
+  {
+    step: 10,
+    tab: 'games',
+    game: 'quest-oracle',
+    targetSelector: '#game-picker-tabs button[data-game="quest-oracle"]',
+    badge: 'COMPLETE TOUR · STEP 11 OF 20',
+    title: 'The Career Oracle: Literary Divination',
+    icon: '🔮',
+    sectionKey: 'section_cognitive_oracle',
+    instruction: 'Answer 3 personality divination questions to uncover your destiny in an unexpected English-powered global career!',
+    actionHint: '👉 Answer the oracle questions to discover your literary destiny',
+    audioUrl: '/audio/tutorial/tutorial_exp_step10.mp3',
+    speechText: 'Consult The Career Oracle! Answer three personality divination questions to reveal your natural talents in an unexpected global career.'
+  },
+  {
+    step: 11,
+    tab: 'games',
+    game: 'quest-cipher',
+    targetSelector: '#game-picker-tabs button[data-game="quest-cipher"]',
+    badge: 'COMPLETE TOUR · STEP 12 OF 20',
+    title: 'The Ink Cipher: University Archive Mystery',
+    icon: '🔍',
+    sectionKey: 'section_cognitive_cipher',
+    instruction: 'Investigate a historic university archive mystery with an illuminated lens cursor, questioning academic suspects to solve the case.',
+    actionHint: '👉 Inspect evidence documents and question suspects with your lens cursor',
+    audioUrl: '/audio/tutorial/tutorial_exp_step11.mp3',
+    speechText: 'Investigate The Ink Cipher! Examine archival documents, question suspects, and use deductive English reasoning to solve a historic mystery.'
+  },
+  {
+    step: 12,
+    tab: 'games',
+    game: 'wordle',
+    targetSelector: '#game-picker-tabs button[data-game="wordle"]',
+    badge: 'COMPLETE TOUR · STEP 13 OF 20',
+    title: 'Wordle 2026: 5-Letter Vocabulary Challenge',
+    icon: '🟩',
+    sectionKey: 'section_cognitive_wordle',
+    instruction: 'Guess the secret 5-letter professional English word in 6 attempts! Color-coded tiles guide your deductive vocabulary trials.',
+    actionHint: '👉 Enter letters on the keyboard and press Enter to guess',
+    audioUrl: '/audio/tutorial/tutorial_exp_step12.mp3',
+    speechText: 'Test your vocabulary with Wordle 2026! Guess the secret five-letter professional word in six attempts with green and yellow tile clues.'
+  },
+  {
+    step: 13,
+    tab: 'games',
+    game: 'flashcards',
+    targetSelector: '#game-picker-tabs button[data-game="flashcards"]',
+    badge: 'COMPLETE TOUR · STEP 14 OF 20',
+    title: 'Flash Cards Studio: Interactive Drills',
+    icon: '🃏',
+    sectionKey: 'section_cognitive_flashcards',
+    instruction: 'Flip interactive flash cards to master high-frequency corporate, legal, medical, and aviation terminology with instant self-assessment.',
+    actionHint: '👉 Click a card to flip and reveal its definition and context',
+    audioUrl: '/audio/tutorial/tutorial_exp_step13.mp3',
+    speechText: 'Practice with Flash Cards Studio! Flip terminology cards across legal, medical, and aviation fields to build quick recall.'
+  },
+  {
+    step: 14,
+    tab: 'games',
+    game: 'dict',
+    targetSelector: '#game-picker-tabs button[data-game="dict"]',
+    badge: 'COMPLETE TOUR · STEP 15 OF 20',
+    title: 'Live Dictionary & Lexicon Search',
+    icon: '📖',
+    sectionKey: 'section_cognitive_dict',
+    instruction: 'Look up any word for instant definitions, grammatical parts of speech, synonyms, sample sentences, and audio pronunciation.',
+    actionHint: '👉 Search a vocabulary term or check phonetic pronunciation',
+    audioUrl: '/audio/tutorial/tutorial_exp_step14.mp3',
+    speechText: 'Use the Live Dictionary and Word Check! Look up any word for instant definitions, grammatical parts of speech, synonyms, and phonetics.'
+  },
+  {
+    step: 15,
+    tab: 'games',
+    game: 'spelling',
+    targetSelector: '#game-picker-tabs button[data-game="spelling"]',
+    badge: 'COMPLETE TOUR · STEP 16 OF 20',
+    title: 'Spelling Bee Challenge: Audio-Guided Trials',
+    icon: '🐝',
+    sectionKey: 'section_cognitive_spelling',
+    instruction: 'Listen to audio pronunciations, contextual clues, and word origins to type the correct spelling and earn maximum leaderboard points.',
+    actionHint: '👉 Listen to the audio voice prompt and type the correct spelling',
+    audioUrl: '/audio/tutorial/tutorial_exp_step15.mp3',
+    speechText: 'Compete in the Spelling Bee Challenge! Listen to acoustic voice prompts and contextual clues to spell complex words and score points.'
+  },
+  {
+    step: 16,
+    tab: 'games',
+    game: 'hangman',
+    targetSelector: '#game-picker-tabs button[data-game="hangman"]',
+    badge: 'COMPLETE TOUR · STEP 17 OF 20',
+    title: 'English Word Hangman: Career Vocabulary',
+    icon: '🪢',
+    sectionKey: 'section_cognitive_hangman',
+    instruction: 'Guess letters to reveal the hidden career-related phrase before the gallows completes! Train your spelling and vocabulary recognition.',
+    actionHint: '👉 Tap letter buttons to guess the hidden career phrase',
+    audioUrl: '/audio/tutorial/tutorial_exp_step16.mp3',
+    speechText: 'Play English Word Hangman! Guess letters to uncover hidden career terminology before running out of attempts.'
+  },
+  // ── FINAL THREE TABS STRICTLY IN LINE ──
+  {
+    step: 17,
     tab: 'roadmap',
     subtool: 'myplan',
-    targetSelector: '#plan-tool-arena',
-    badge: 'COMPLETE TOUR · STEP 9 OF 11',
+    targetSelector: '#plan-tools-tabs button[data-tool="myplan"]',
+    badge: 'COMPLETE TOUR · STEP 18 OF 20',
     title: '"My Plan" Strategic Blueprint & Quiz',
     icon: '🗺️',
     sectionKey: 'section_roadmap',
     instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, aptitude discovery quiz, and your Student Ambassador Business Card.',
     actionHint: '👉 Explore your timeline, take the aptitude quiz, or customize your business card',
-    audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
+    audioUrl: '/audio/tutorial/tutorial_exp_step17.mp3',
     speechText: 'This is your personalized Strategic Career Blueprint, Aptitude Discovery Quiz, and Student Ambassador Business Card! Map your multi-year progression and customize your credentials.'
   },
   {
-    step: 9,
+    step: 18,
     tab: 'leaderboard',
-    targetSelector: '#leaderboard',
-    badge: 'COMPLETE TOUR · STEP 10 OF 11',
+    targetSelector: '#btn-refresh-leaderboard',
+    badge: 'COMPLETE TOUR · STEP 19 OF 20',
     title: 'Live Fair Leaderboard & Hall of Fame',
     icon: '🏆',
     sectionKey: 'section_leaderboard',
     instruction: 'See where you stand among fellow students! The live leaderboard ranks top performers across all arcade quests, speech diagnostics, and vocabulary challenges.',
-    actionHint: '👉 Check out the top 10 rankings and quest achievements',
-    audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
+    actionHint: '👉 Check out the top rankings and quest achievements',
+    audioUrl: '/audio/tutorial/tutorial_exp_step18.mp3',
     speechText: 'Check out the live exhibition leaderboard! See top scores and rankings from students across all arcade games, speech diagnostics, and vocabulary challenges. Compete to claim the top spot on the hall of fame!'
   },
   {
-    step: 10,
+    step: 19,
     tab: 'feedback',
-    targetSelector: '#feedback',
-    badge: 'COMPLETE TOUR · STEP 11 OF 11',
+    targetSelector: '#btn-submit-feedback',
+    badge: 'COMPLETE TOUR · STEP 20 OF 20',
     title: 'Student Reflection & Fair Feedback',
     icon: '⭐',
     sectionKey: 'section_feedback',
     instruction: 'Congratulations on exploring every exhibit across Career Fair 2026! Leave your star rating and student reflection below to complete the tour and unlock your official printable booklet.',
     actionHint: '👉 Rate 1 to 5 stars and submit your student review to complete',
-    audioUrl: '/audio/tutorial/tutorial_exp_step10.mp3',
+    audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
     speechText: 'Congratulations on exploring every single exhibit across Career Fair 2026! Leave your star rating and student reflection below. Your feedback will complete the tour and unlock your official print-ready Career Booklet at the top!'
   }
 ];
@@ -1403,33 +1532,9 @@ function isTutorialInteractiveStep(mode, stepIndex) {
   const step = steps[stepIndex];
   if (!step) return false;
 
-  if (mode === 'short') {
-    // In Short Tour:
-    // Step 0: Careers (section_career)
-    // Step 1: Speech Lab (section_speech)
-    // Step 2: Wordle (section_wordle_quick)
-    // Step 4: Feedback (section_feedback)
-    return ['section_career', 'section_speech', 'section_wordle_quick', 'section_feedback'].includes(step.sectionKey);
-  } else if (mode === 'expanded') {
-    // In Complete Tour:
-    // Step 1: Careers (section_career)
-    // Step 4: Speak (section_speak)
-    // Step 5: Speech Lab (section_speech)
-    // Step 6: Teleprompter (section_teleprompter)
-    // Step 7: Arcade Games (section_cognitive)
-    // Step 8: My Plan (section_roadmap)
-    // Step 10: Feedback (section_feedback)
-    return [
-      'section_career',
-      'section_speak',
-      'section_speech',
-      'section_teleprompter',
-      'section_cognitive',
-      'section_roadmap',
-      'section_feedback'
-    ].includes(step.sectionKey);
-  }
-  return false;
+  // Only Careers requires pinning, and Feedback requires submission to complete
+  // 6D Voice Coach, Games, and all other exhibits show Next Exhibit so the user has full time!
+  return ['section_career', 'section_feedback'].includes(step.sectionKey);
 }
 
 function triggerTutorialAutoAdvance(actionTitle, confirmationMsg, celebrationType = 'success') {
@@ -1567,13 +1672,25 @@ function renderInSiteTutorialStep(stepIndex) {
     renderGameArena(data.game);
   }
 
-  // Scroll smoothly to target element with ideal showcase centering
-  setTimeout(() => {
-    scrollTutorialTargetIntoView(data.targetSelector);
-  }, 220);
-
-  // Remove pin glow
+  // Remove previous button highlights & pin glows across document
+  document.querySelectorAll('.tutorial-button-highlight').forEach(el => el.classList.remove('tutorial-button-highlight'));
   document.querySelectorAll('.tutorial-pin-glow').forEach(el => el.classList.remove('tutorial-pin-glow'));
+
+  function highlightAndScrollTarget() {
+    if (!data.targetSelector) return;
+    const targetEl = document.querySelector(data.targetSelector);
+    if (targetEl) {
+      targetEl.classList.add('tutorial-button-highlight');
+      if (data.tab === 'games' && targetEl.closest('#game-picker-tabs')) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+      scrollTutorialTargetIntoView(data.targetSelector);
+    }
+  }
+
+  // Trigger highlight & scroll immediately and after section mount
+  highlightAndScrollTarget();
+  setTimeout(highlightAndScrollTarget, 180);
 
   const isCareerStep = (data.sectionKey === 'section_career');
   const isFinalStep = (stepIndex === steps.length - 1);
@@ -4893,9 +5010,7 @@ function initSpeechLab() {
     recBtn.dataset.bound = 'true';
     recBtn.addEventListener('click', () => {
       startSpeechLabAudio();
-      if (isTutorialRunning && isTutorialOnSection('section_speech')) {
-        triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
-      }
+      // Do not auto-advance: student must have ample time to speak and review scores
     });
   }
   if (stopBtn && !stopBtn.dataset.bound) {
@@ -4917,7 +5032,11 @@ function initSpeechLab() {
         speak(currentSpeechLabSentence, this);
       }
       if (isTutorialRunning && isTutorialOnSection('section_speech')) {
-        triggerTutorialAutoAdvance('Speech Diagnostic Tested', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
+        const reactionEl = document.getElementById('tutorial-hud-reaction');
+        if (reactionEl) {
+          reactionEl.style.display = 'inline-flex';
+          reactionEl.textContent = '🎙️ Sample Loaded! Review scores & click Next Exhibit';
+        }
       }
     });
   }
@@ -5164,7 +5283,11 @@ function analyzeSpeechLabSample() {
     localStorage.setItem('cf_coach_6d', JSON.stringify(STATE.studentProfile.coach6D));
   } catch (e) {}
   if (isTutorialRunning && isTutorialOnSection('section_speech')) {
-    triggerTutorialAutoAdvance('Speech Diagnostic Evaluated', 'Awesome! Your spoken English sample has been analyzed for your booklet!');
+    const reactionEl = document.getElementById('tutorial-hud-reaction');
+    if (reactionEl) {
+      reactionEl.style.display = 'inline-flex';
+      reactionEl.textContent = '🎉 6D Diagnostic Complete! Click Next Exhibit ▶ to proceed';
+    }
   }
 
   // Resolve Student Name for Exhibition Leaderboard mapping
@@ -11690,7 +11813,20 @@ async function loadFeedbackWall() {
       }
 
       // Re-fetch authoritative global list immediately
-      setTimeout(loadFeedbackWall, 300);
+      
+      // Re-fetch authoritative global list immediately and scroll down to Recent Visitor Reflections
+      setTimeout(async () => {
+        await loadFeedbackWall();
+        const reflectionsCard = document.querySelector('.feedback-reflections-card') || document.getElementById('feedback-wall-list');
+        if (reflectionsCard) {
+          reflectionsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          reflectionsCard.classList.add('tutorial-button-highlight');
+          setTimeout(() => {
+            reflectionsCard.classList.remove('tutorial-button-highlight');
+          }, 3500);
+        }
+      }, 350);
+
       if (isTutorialRunning && isTutorialOnSection('section_feedback')) {
         triggerTutorialAutoAdvance('Exhibition Review Submitted', 'Thank you for your review! Your reflection is saved for Page 2 of your booklet.');
       }
