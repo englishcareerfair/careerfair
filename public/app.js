@@ -11132,7 +11132,8 @@ async function loadLeaderboard(filterPack = 'All') {
     return;
   }
 
-  const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+  const isMobileScreen = window.innerWidth <= 768;
+  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
 
   scores.forEach((sc, i) => {
     const tr = document.createElement('tr');
@@ -11163,7 +11164,7 @@ async function loadLeaderboard(filterPack = 'All') {
         <div class="leaderboard-name-wrap">
           <strong class="leaderboard-name-text" title="${escapeHtml(sc.name)}">${escapeHtml(sc.name)}</strong>
           ${titleBadgeHtml}
-          ${(titleBtnHtml || delBtnHtml) ? `<span class="admin-score-actions">${titleBtnHtml}${renameBtnHtml}${delBtnHtml}</span>` : ''}
+          ${(titleBtnHtml || renameBtnHtml || delBtnHtml) ? `<span class="admin-score-actions">${titleBtnHtml}${renameBtnHtml}${delBtnHtml}</span>` : ''}
         </div>
       </td>
       <td><span class="badge-pill badge-nirf">${escapeHtml(sc.pack || 'Everyday')}</span></td>
@@ -11369,7 +11370,8 @@ async function loadFeedbackWall() {
         ? `<span class="user-title-badge" title="Official Honor Title">👑 ${escapeHtml(customTitle)}</span>`
         : '';
 
-      const isAdmin = Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+      const isMobileScreen = window.innerWidth <= 768;
+  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
       const adminActionsHtml = isAdmin
         ? `<div class="admin-feedback-actions">
              <button type="button" class="btn btn-sm btn-admin-feedback" title="Change User Name (Admin)" style="background:rgba(0,240,255,0.12);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-name="${encodeURIComponent(f.name || '')}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminChangeFeedbackName(this.dataset.id, decodeURIComponent(this.dataset.name || ''), decodeURIComponent(this.dataset.comment || ''))">

@@ -4962,64 +4962,62 @@ body.obs-overlay-mode .news-lower-third {
   animation: fadeIn 0.3s ease-in-out;
 }
 
-/* ── PHONE / MOBILE SINGLE-LINE OPTIMIZATIONS FOR FEEDBACKS & LEADERBOARD ── */
+/* ── PHONE / MOBILE OPTIMIZATIONS FOR FEEDBACKS & LEADERBOARD (NO ADMIN HANDLING ON MOBILE) ── */
 @media (max-width: 768px) {
+  /* Strictly remove admin handling options on mobile in Feedback and Leaderboard tabs */
+  .admin-feedback-actions,
+  .admin-score-actions,
+  #sec-feedback .admin-feedback-actions,
+  #sec-leaderboard .admin-score-actions {
+    display: none !important;
+  }
+
   .feedback-item {
-    padding: 10px 12px !important;
+    padding: 12px 14px !important;
   }
   .feedback-item-header {
-    gap: 4px !important;
+    gap: 6px !important;
   }
   .feedback-item-author {
-    gap: 3px !important;
+    gap: 6px !important;
   }
   .feedback-author-name {
-    font-size: 13px !important;
-    max-width: 85px !important;
+    font-size: 13.5px !important;
+    max-width: 140px !important; /* Spacious name now that admin buttons are removed on mobile */
   }
   .user-title-badge {
-    font-size: 9.5px !important;
-    padding: 1px 3px !important;
-    max-width: 75px !important;
+    font-size: 10px !important;
+    padding: 2px 5px !important;
+    max-width: 110px !important;
   }
   .feedback-item-badge {
-    font-size: 9.5px !important;
-    padding: 1px 4px !important;
-    max-width: 65px !important;
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    max-width: 100px !important;
+    display: inline-flex !important;
   }
   .feedback-item-meta-group {
-    gap: 4px !important;
+    gap: 6px !important;
   }
   .feedback-item-stars {
-    font-size: 10px !important;
-    gap: 1px !important;
-  }
-  .feedback-item-stars-score {
-    display: none !important; /* Hide '(5/5)' on mobile phones to ensure 100% single-line fit */
-  }
-  .admin-feedback-actions {
+    font-size: 11px !important;
     gap: 2px !important;
   }
-  .admin-feedback-actions .btn {
-    padding: 2px 4px !important;
-    font-size: 9.5px !important;
-    min-height: 24px !important;
-  }
-  .admin-score-actions .btn {
-    padding: 2px 4px !important;
-    font-size: 9.5px !important;
+  .feedback-item-stars-score {
+    display: none !important;
   }
 }
 
 @media (max-width: 420px) {
   .feedback-author-name {
-    max-width: 75px !important;
+    max-width: 115px !important;
   }
   .user-title-badge {
-    max-width: 70px !important;
+    max-width: 90px !important;
   }
   .feedback-item-badge {
-    display: none !important; /* On ultra-narrow screens <= 420px, hide role badge so name + honor title + stars + admin actions are strictly in 1 line */
+    display: inline-flex !important;
+    max-width: 80px !important;
   }
   .feedback-item-stars-icons {
     letter-spacing: -1.5px !important;
