@@ -2206,6 +2206,83 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   }
 
   // ── 9b. Scoped Admin API Keys Management ──────────────────────────────────
+  
+  // ── 9a. Global Exhibition Data Importer (JSON / CSV) ─────────────────────
+  if (path === '/admin/import' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'write:admin', url);
+    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+
+    try {
+      const payload = await request.json();
+      let importedScores = 0;
+      let importedFeedback = 0;
+
+      const rawScores = Array.isArray(payload.scores) ? payload.scores : (Array.isArray(payload.leaderboard) ? payload.leaderboard : []);
+      const rawFeedback = Array.isArray(payload.feedback) ? payload.feedback : [];
+
+      if (db) {
+        // Import scores into D1
+        for (const s of rawScores) {
+          const id = String(s.id || `score_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+          const name = String(s.name || s.student_name || 'Anonymous Student').trim();
+          const pack = String(s.pack || s.speaking_pack || 'Everyday').trim();
+          const level = Number(s.level || 1);
+          const acc = Number(s.acc ?? s.accuracy ?? 50);
+          const fluency = Number(s.fluency ?? 50);
+          const clarity = Number(s.clarity ?? 50);
+          const wpm = Number(s.wpm ?? 120);
+          const className = String(s.class_name || s.class || 'General').trim();
+          const targetCareer = String(s.target_career || s.career || '').trim();
+          const ts = Number(s.ts || s.timestamp || Date.now());
+
+          try {
+            await db.prepare(`
+              INSERT OR REPLACE INTO scores (id, name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(id, name, pack, level, acc, fluency, clarity, wpm, className, targetCareer, ts).run();
+            importedScores++;
+          } catch (insertErr) {
+            console.error('Score insert error:', insertErr);
+          }
+        }
+
+        // Import feedback into D1
+        for (const f of rawFeedback) {
+          const id = String(f.id || `fb_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+          const name = String(f.name || 'Anonymous Visitor').trim();
+          const role = String(f.role || 'Student').trim();
+          const classInfo = String(f.class_info || f.class || '').trim();
+          const rUseful = Number(f.r_useful ?? f.useful ?? 5);
+          const rGames = Number(f.r_games ?? f.games ?? 5);
+          const rSpeaking = Number(f.r_speaking ?? f.speaking ?? 5);
+          const comment = String(f.comment || f.detail || f.review || '').trim();
+          const ts = Number(f.ts || f.timestamp || Date.now());
+          const isPinned = f.is_pinned ? 1 : 0;
+
+          try {
+            await db.prepare(`
+              INSERT OR REPLACE INTO feedback (id, name, role, class_info, r_useful, r_games, r_speaking, comment, ts, is_pinned)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(id, name, role, classInfo, rUseful, rGames, rSpeaking, comment, ts, isPinned).run();
+            importedFeedback++;
+          } catch (fbErr) {
+            console.error('Feedback insert error:', fbErr);
+          }
+        }
+      }
+
+      return json({
+        success: true,
+        importedScores,
+        importedFeedback,
+        message: `Successfully imported ${importedScores} scores and ${importedFeedback} visitor reflections.`
+      });
+    } catch (e) {
+      console.error('Import error:', e);
+      return err('Failed to import exhibition data: ' + e.message, 500);
+    }
+  }
+
   if (path === '/admin/keys' && method === 'GET') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);

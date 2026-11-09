@@ -1527,6 +1527,11 @@ function syncStudentNameToAllSections(name) {
     localStorage.setItem('cf_student_name', name);
     localStorage.setItem('ecf_student_name', name);
     localStorage.setItem('ecf_bizcard_name', name);
+    try {
+      const saved = JSON.parse(localStorage.getItem('cf_bizcard_data') || '{}');
+      saved.name = name;
+      localStorage.setItem('cf_bizcard_data', JSON.stringify(saved));
+    } catch (_) {}
   } catch (_) {}
 
   const bcInput = document.getElementById('biz-name') || document.getElementById('bizcard-name-input');
@@ -1974,7 +1979,10 @@ function renderInSiteTutorialStep(stepIndex) {
       window.switchTab(data.tab, { keepVoice: true, keepScroll: true, skipSubInit: false, fromRouter: true });
     if (data.tab === 'exams' && typeof renderExams === 'function') renderExams();
     if (data.tab === 'speechLab' && typeof initSpeechLab === 'function') initSpeechLab();
-    if (data.tab === 'teleprompter' && typeof initTeleprompter === 'function') initTeleprompter();
+    if (data.tab === 'teleprompter' && typeof initTeleprompter === 'function') {
+      initTeleprompter();
+      if (typeof wireTeleprompterTutorialHighlights === 'function') wireTeleprompterTutorialHighlights();
+    }
     }
     if (window.AppRouter && typeof window.AppRouter.updateUrl === 'function') {
       window.AppRouter.current.tab = data.tab;
@@ -2038,6 +2046,9 @@ function renderInSiteTutorialStep(stepIndex) {
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
       }
+    } else if (data.tab === 'teleprompter') {
+      scrollTarget = targetEl;
+      if (typeof wireTeleprompterTutorialHighlights === 'function') wireTeleprompterTutorialHighlights();
     } else if (data.tab === 'exams') {
       scrollTarget = document.querySelector('#exams-cards-container .card:first-child') || 
                      document.getElementById('exams-cards-container') || targetEl;
@@ -3468,6 +3479,7 @@ function initNavigation() {
       localStorage.setItem('cf_tutorial_completed', 'true');
       localStorage.setItem('cf_dossier_unlocked', 'true');
       sessionStorage.setItem('cf_booklet_session_unlocked', 'true'); if (typeof updateHeaderBookletVisibility === 'function') updateHeaderBookletVisibility();
+  if (typeof initAdminImportControls === 'function') initAdminImportControls();
       setHeaderBookletHighlight(true);
       showToast('🎉 Congratulations on completing the Career Fair tutorial tour! Your Booklet is now unlocked at the top!');
       stopTutorial();
@@ -6168,6 +6180,7 @@ function drawBroadcastLowerThird(ctx, width, height, scale) {
 }
 
 function initTeleprompter() {
+  if (typeof wireTeleprompterTutorialHighlights === 'function') wireTeleprompterTutorialHighlights();
   const cameraBtn = $('#btn-start-camera');
   const scrollBtn = $('#btn-scroll-teleprompter');
   const recordBtn = $('#btn-record-anchor');
@@ -11061,6 +11074,18 @@ function checkIncomingCardVerification() {
 }
 
 function renderFutureBusinessCard(mount) {
+  const savedBizData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('cf_bizcard_data') || '{}');
+    } catch (_) { return {}; }
+  })();
+
+  const studentName = STATE.studentName 
+    || savedBizData.name 
+    || localStorage.getItem('cf_student_name') 
+    || localStorage.getItem('ecf_student_name') 
+    || localStorage.getItem('ecf_bizcard_name') 
+    || '';
   // Determine initial selected career: either existing student targetCareer or Commercial Airline Pilot
   const initialCareer = (STATE.targetCareer && CAREER_CREDENTIALS_MAP[STATE.targetCareer]) 
     ? STATE.targetCareer 
@@ -11109,7 +11134,7 @@ function renderFutureBusinessCard(mount) {
             <span>Your Name:</span>
             <span style="font-size:11.5px;color:#f87171;font-weight:700;padding:1px 6px;background:rgba(239,68,68,0.1);border-radius:4px;">Mandatory *</span>
           </label>
-          <input type="text" id="biz-name" value="" placeholder="Enter your full name">
+          <input type="text" id="biz-name" value="${escapeHtml(studentName)}" placeholder="Enter your full name">
         </div>
 
         <div style="margin-bottom:12px;">
@@ -11214,6 +11239,9 @@ function renderFutureBusinessCard(mount) {
   `;
 
   const nameInput = $('#biz-name');
+  if (nameInput && !nameInput.value && studentName) {
+    nameInput.value = studentName;
+  }
   const careerSelect = $('#biz-career-select');
   const careerCustomContainer = $('#biz-custom-career-container');
   const careerCustomInput = $('#biz-career-custom');
@@ -11259,7 +11287,7 @@ function renderFutureBusinessCard(mount) {
 
   // Helper to update the card preview live
   const updateCard = (animatePulse = false) => {
-    const rawName = (nameInput?.value || '').trim();
+    const rawName = (nameInput?.value || studentName || '').trim();
     const name = capitalizeName(rawName);
     if (nameInput && rawName) nameInput.value = name;
 
@@ -12298,6 +12326,7 @@ function renderAdminView() {
     gateScreen.hidden = true;
     workspaceScreen.hidden = false;
     initAdminWorkspace();
+    if (typeof initAdminImportControls === 'function') initAdminImportControls();
 
   // Global D1 Exhibition Data Downloader Wiring
   $('#btn-download-d1-json')?.addEventListener('click', () => {
@@ -14201,7 +14230,7 @@ function renderHeroStream() {
 
     if (badge) {
       badge.className = 'badge-live-pulse';
-      badge.textContent = '● LIVE STREAM';
+      badge.textContent = 'LIVE STREAM';
     }
     if (titleEl) {
       titleEl.textContent = title;
@@ -15130,3 +15159,377 @@ window.initDynamicApiPools = function() {
   });
   window.renderAdminBannedIps();
 };
+
+
+// ── Teleprompter News Anchor Tutorial Highlight Switching ──────────────────
+function wireTeleprompterTutorialHighlights() {
+  const scriptSelect = document.getElementById('anchor-script-select');
+  if (!scriptSelect || scriptSelect.dataset.tutHighlightBound) return;
+  scriptSelect.dataset.tutHighlightBound = 'true';
+
+  const onScriptChange = () => {
+    const hasHighlight = scriptSelect.classList.contains('tutorial-button-highlight');
+    const isTeleSection = (typeof isTutorialOnSection === 'function') && isTutorialOnSection('section_teleprompter');
+    const isTutOn = (typeof isTutorialRunning !== 'undefined' && isTutorialRunning) || hasHighlight || isTeleSection;
+
+    if (isTutOn) {
+      scriptSelect.classList.remove('tutorial-button-highlight');
+
+      const camBtn = document.getElementById('btn-start-camera');
+      const recordBtn = document.getElementById('btn-record-anchor');
+      const videoWrapper = document.getElementById('video-stage-wrapper');
+
+      if (camBtn) camBtn.classList.add('tutorial-button-highlight');
+      if (recordBtn) recordBtn.classList.add('tutorial-button-highlight');
+      if (videoWrapper) videoWrapper.classList.add('tutorial-arena-highlight');
+
+      const hudAction = document.getElementById('tutorial-hud-action');
+      if (hudAction) {
+        hudAction.textContent = '👉 Launch camera / OBS feed and click Record Broadcast Clip!';
+      }
+
+      const studioControls = camBtn?.closest('.card');
+      if (studioControls) {
+        studioControls.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  };
+
+  scriptSelect.addEventListener('change', onScriptChange);
+  scriptSelect.addEventListener('input', onScriptChange);
+}
+
+
+// ── Admin Exhibition Data Importer (JSON / CSV, Connected & Separated) ──────
+function parseExhibitionImportData(rawText, fileName = '') {
+  const result = { scores: [], feedback: [], detectedFormat: 'unknown' };
+  const text = (rawText || '').trim();
+  if (!text) return result;
+
+  // 1. Try JSON First
+  if (text.startsWith('{') || text.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed)) {
+        parsed.forEach((item, idx) => {
+          if (!item || typeof item !== 'object') return;
+          if (item.comment || item.r_useful !== undefined || item.role) {
+            result.feedback.push({
+              id: item.id || `fb_${Date.now()}_${idx}`,
+              name: item.name || 'Anonymous Visitor',
+              role: item.role || 'Student',
+              class_info: item.class_info || item.class || '',
+              comment: item.comment || item.review || item.detail || '',
+              r_useful: Number(item.r_useful ?? item.useful ?? 5),
+              r_games: Number(item.r_games ?? item.games ?? 5),
+              r_speaking: Number(item.r_speaking ?? item.speaking ?? 5),
+              ts: Number(item.ts || item.timestamp || Date.now()),
+              is_pinned: item.is_pinned ? 1 : 0
+            });
+          } else {
+            result.scores.push({
+              id: item.id || `score_${Date.now()}_${idx}`,
+              name: item.name || item.student_name || 'Anonymous Student',
+              pack: item.pack || item.speaking_pack || 'Everyday',
+              level: Number(item.level || 1),
+              acc: Number(item.acc ?? item.accuracy ?? 70),
+              fluency: Number(item.fluency ?? 70),
+              clarity: Number(item.clarity ?? 70),
+              wpm: Number(item.wpm ?? 120),
+              class_name: item.class_name || item.class || 'General',
+              target_career: item.target_career || item.career || '',
+              ts: Number(item.ts || item.timestamp || Date.now())
+            });
+          }
+        });
+        result.detectedFormat = 'JSON Array';
+      } else if (typeof parsed === 'object') {
+        const scList = Array.isArray(parsed.scores) ? parsed.scores : (Array.isArray(parsed.leaderboard) ? parsed.leaderboard : []);
+        scList.forEach((s, idx) => {
+          result.scores.push({
+            id: s.id || `score_${Date.now()}_${idx}`,
+            name: s.name || s.student_name || 'Anonymous Student',
+            pack: s.pack || s.speaking_pack || 'Everyday',
+            level: Number(s.level || 1),
+            acc: Number(s.acc ?? s.accuracy ?? 70),
+            fluency: Number(s.fluency ?? 70),
+            clarity: Number(s.clarity ?? 70),
+            wpm: Number(s.wpm ?? 120),
+            class_name: s.class_name || s.class || 'General',
+            target_career: s.target_career || s.career || '',
+            ts: Number(s.ts || s.timestamp || Date.now())
+          });
+        });
+
+        const fbList = Array.isArray(parsed.feedback) ? parsed.feedback : (Array.isArray(parsed.reflections) ? parsed.reflections : []);
+        fbList.forEach((f, idx) => {
+          result.feedback.push({
+            id: f.id || `fb_${Date.now()}_${idx}`,
+            name: f.name || 'Anonymous Visitor',
+            role: f.role || 'Student',
+            class_info: f.class_info || f.class || '',
+            comment: f.comment || f.review || f.detail || '',
+            r_useful: Number(f.r_useful ?? f.useful ?? 5),
+            r_games: Number(f.r_games ?? f.games ?? 5),
+            r_speaking: Number(f.r_speaking ?? f.speaking ?? 5),
+            ts: Number(f.ts || f.timestamp || Date.now()),
+            is_pinned: f.is_pinned ? 1 : 0
+          });
+        });
+        result.detectedFormat = 'Connected JSON Archive';
+      }
+      return result;
+    } catch (_) {}
+  }
+
+  // 2. Parse CSV
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return result;
+
+  function parseCsvRow(row) {
+    const cols = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i];
+      if (char === '"') {
+        if (inQuotes && row[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        cols.push(cur);
+        cur = '';
+      } else {
+        cur += char;
+      }
+    }
+    cols.push(cur);
+    return cols.map(c => c.trim().replace(/^"|"$/g, ''));
+  }
+
+  const header = parseCsvRow(lines[0]).map(h => h.toLowerCase());
+
+  // 2A: Connected Global CSV (Record_Type,ID,Name,Detail,Metric,Timestamp,ISO_Date)
+  if (header.includes('record_type') || header[0] === 'record_type') {
+    result.detectedFormat = 'Connected Global CSV';
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      if (cols.length < 3) continue;
+      const type = (cols[0] || '').toLowerCase();
+      const id = cols[1];
+      const name = cols[2];
+      const detail = cols[3] || '';
+      const metric = Number(cols[4] || 0);
+      const ts = Number(cols[5] || Date.now());
+
+      if (type.includes('score')) {
+        result.scores.push({
+          id,
+          name,
+          pack: 'Everyday',
+          level: 1,
+          acc: metric || 70,
+          fluency: 70,
+          clarity: 70,
+          wpm: 120,
+          class_name: 'General',
+          target_career: '',
+          ts
+        });
+      } else if (type.includes('feedback')) {
+        result.feedback.push({
+          id,
+          name,
+          role: 'Student',
+          class_info: '',
+          comment: detail,
+          r_useful: metric || 5,
+          r_games: 5,
+          r_speaking: 5,
+          ts
+        });
+      }
+    }
+    return result;
+  }
+
+  // 2B: Separated Leaderboard CSV (ID,Name,Pack,Level,Accuracy,Fluency,Clarity,WPM,Class,TargetCareer,Timestamp)
+  if (header.includes('accuracy') || header.includes('pack') || header.includes('wpm')) {
+    result.detectedFormat = 'Separated Leaderboard CSV';
+    const nameIdx = header.findIndex(h => h === 'name' || h.includes('student'));
+    const packIdx = header.findIndex(h => h === 'pack');
+    const accIdx = header.findIndex(h => h.includes('acc'));
+    const fluIdx = header.findIndex(h => h.includes('flu'));
+    const wpmIdx = header.findIndex(h => h === 'wpm');
+    const tsIdx = header.findIndex(h => h === 'timestamp' || h === 'ts' || h === 'time');
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      if (cols.length < 2) continue;
+      result.scores.push({
+        id: cols[0]?.startsWith('score_') ? cols[0] : `score_${Date.now()}_${i}`,
+        name: (nameIdx >= 0 ? cols[nameIdx] : cols[1]) || 'Student',
+        pack: (packIdx >= 0 ? cols[packIdx] : 'Everyday') || 'Everyday',
+        level: 1,
+        acc: Number((accIdx >= 0 ? cols[accIdx] : 75)) || 75,
+        fluency: Number((fluIdx >= 0 ? cols[fluIdx] : 70)) || 70,
+        clarity: 70,
+        wpm: Number((wpmIdx >= 0 ? cols[wpmIdx] : 120)) || 120,
+        class_name: 'General',
+        target_career: '',
+        ts: Number((tsIdx >= 0 ? cols[tsIdx] : Date.now())) || Date.now()
+      });
+    }
+    return result;
+  }
+
+  // 2C: Separated Feedback CSV (ID,Name,Role,ClassInfo,Useful,Games,Speaking,Comment,Timestamp)
+  if (header.includes('comment') || header.includes('useful') || header.includes('role')) {
+    result.detectedFormat = 'Separated Feedback CSV';
+    const nameIdx = header.findIndex(h => h === 'name');
+    const roleIdx = header.findIndex(h => h === 'role');
+    const classIdx = header.findIndex(h => h.includes('class'));
+    const commentIdx = header.findIndex(h => h === 'comment' || h.includes('review') || h.includes('detail'));
+    const usefulIdx = header.findIndex(h => h.includes('useful'));
+    const tsIdx = header.findIndex(h => h === 'timestamp' || h === 'ts');
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCsvRow(lines[i]);
+      if (cols.length < 2) continue;
+      result.feedback.push({
+        id: cols[0]?.startsWith('fb_') ? cols[0] : `fb_${Date.now()}_${i}`,
+        name: (nameIdx >= 0 ? cols[nameIdx] : cols[1]) || 'Visitor',
+        role: (roleIdx >= 0 ? cols[roleIdx] : 'Student') || 'Student',
+        class_info: (classIdx >= 0 ? cols[classIdx] : '') || '',
+        comment: (commentIdx >= 0 ? cols[commentIdx] : cols[cols.length - 2]) || 'Great exhibition!',
+        r_useful: Number((usefulIdx >= 0 ? cols[usefulIdx] : 5)) || 5,
+        r_games: 5,
+        r_speaking: 5,
+        ts: Number((tsIdx >= 0 ? cols[tsIdx] : Date.now())) || Date.now()
+      });
+    }
+    return result;
+  }
+
+  // Generic fallback
+  result.detectedFormat = 'Generic CSV';
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvRow(lines[i]);
+    if (cols.length < 2) continue;
+    result.feedback.push({
+      id: `fb_${Date.now()}_${i}`,
+      name: cols[0] || 'Visitor',
+      role: 'Visitor',
+      class_info: '',
+      comment: cols.slice(1).join(' - '),
+      r_useful: 5,
+      r_games: 5,
+      r_speaking: 5,
+      ts: Date.now()
+    });
+  }
+  return result;
+}
+
+function initAdminImportControls() {
+  const chooseBtn = $('#btn-admin-choose-import');
+  const fileInput = $('#admin-import-file-input');
+  const previewBox = $('#admin-import-preview-box');
+  const filenameEl = $('#admin-import-filename');
+  const summaryEl = $('#admin-import-summary');
+  const cancelBtn = $('#btn-admin-cancel-import');
+  const executeBtn = $('#btn-admin-execute-import');
+
+  if (!chooseBtn || !fileInput) return;
+  if (chooseBtn.dataset.bound) return;
+  chooseBtn.dataset.bound = 'true';
+
+  let currentParsedData = null;
+
+  chooseBtn.addEventListener('click', () => {
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const parsed = parseExhibitionImportData(text, file.name);
+      currentParsedData = parsed;
+
+      if (!parsed.scores.length && !parsed.feedback.length) {
+        showToast('⚠️ No valid leaderboard scores or feedback records found in file.');
+        if (previewBox) previewBox.style.display = 'none';
+        return;
+      }
+
+      if (filenameEl) filenameEl.textContent = `📄 ${file.name} (${parsed.detectedFormat})`;
+      if (summaryEl) {
+        summaryEl.textContent = `Ready to import: ${parsed.scores.length} Leaderboard Scores, ${parsed.feedback.length} Feedback Reviews`;
+      }
+      if (previewBox) previewBox.style.display = 'block';
+    };
+    reader.readAsText(file);
+  });
+
+  cancelBtn?.addEventListener('click', () => {
+    currentParsedData = null;
+    fileInput.value = '';
+    if (previewBox) previewBox.style.display = 'none';
+  });
+
+  executeBtn?.addEventListener('click', async () => {
+    if (!currentParsedData) return;
+    const { scores, feedback } = currentParsedData;
+    executeBtn.disabled = true;
+    executeBtn.textContent = 'Importing Data...';
+
+    try {
+      // 1. Send to Cloudflare backend
+      const res = await fetch(getApiUrl('api/admin/import'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${STATE.adminKey || localStorage.getItem('cf_admin_key') || ''}`
+        },
+        body: JSON.stringify({ scores, feedback })
+      });
+
+      // 2. Immediate local cache & UI merge for instant reflection
+      if (scores.length) {
+        STATE.scores = [...scores, ...(STATE.scores || [])];
+        localStorage.setItem('cf_scores_cache', JSON.stringify(STATE.scores));
+        if (typeof renderLeaderboardTable === 'function') renderLeaderboardTable(STATE.scores);
+      }
+      if (feedback.length) {
+        STATE.feedback = [...feedback, ...(STATE.feedback || [])];
+        localStorage.setItem('cf_feedback_cache', JSON.stringify(STATE.feedback));
+        if (typeof renderFeedbackCards === 'function') renderFeedbackCards(STATE.feedback);
+      }
+
+      // Refresh admin tables
+      if (typeof loadLeaderboard === 'function') loadLeaderboard();
+      if (typeof loadFeedbackWall === 'function') loadFeedbackWall();
+      if (typeof renderAdminScoresTable === 'function') renderAdminScoresTable(STATE.scores || []);
+      if (typeof renderAdminFeedbackList === 'function') renderAdminFeedbackList(STATE.feedback || []);
+
+      showToast(`🎉 Imported ${scores.length} scores and ${feedback.length} reflections successfully!`);
+      if (previewBox) previewBox.style.display = 'none';
+      fileInput.value = '';
+      currentParsedData = null;
+    } catch (err) {
+      console.error('Import error:', err);
+      showToast('⚠️ Data merged into local session. Network notice: ' + err.message);
+    } finally {
+      executeBtn.disabled = false;
+      executeBtn.innerHTML = '<span>⚡</span> <span>Confirm &amp; Import Data</span>';
+    }
+  });
+}

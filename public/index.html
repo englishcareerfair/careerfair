@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=24.0">
+  <link rel="stylesheet" href="styles.css?v=24.1">
   <script src="/qrcode.min.js"></script>
   <script>
     if (typeof qrcode === 'undefined') {
@@ -41,7 +41,7 @@
     <script src="guide-avatar.js?v=14.0" defer></script>
     <!-- Google Universal Sentence Encoder (USE) & TensorFlow.js for Jobtris Semantic Intelligence -->
   <script src="loader.js?v=14.0"></script>
-  <script src="app.js?v=24.0" defer></script>
+  <script src="app.js?v=24.1" defer></script>
   <!-- Critical Inlined CSS for Instant Loading Screen (Prevents FOUC on First Open) -->
   <style id="loader-critical-css">
     .site-loader {
@@ -594,7 +594,7 @@
                   FAIR LIVE BROADCAST
                 </span>
               </div>
-              <span class="badge-live-pulse" id="stream-live-badge">● LIVE STREAM</span>
+              <span class="badge-live-pulse" id="stream-live-badge">LIVE STREAM</span>
             </div>
             
             <!-- 16:9 Stream Frame / Standby Wrapper -->
@@ -1647,6 +1647,43 @@
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
                 <button class="btn btn-primary btn-sm" id="btn-download-d1-json" type="button">⬇ Download Global JSON</button>
                 <button class="btn btn-secondary btn-sm" id="btn-download-d1-csv" type="button">⬇ Download Global CSV</button>
+              </div>
+            </div>
+          </div>
+
+                    <!-- 3.5 Global Exhibition Data Importer (JSON / CSV) -->
+          <div style="background:var(--surface-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;margin-bottom:20px;box-shadow:var(--card-shadow);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <div>
+                <h4 style="font-size:16px;margin:0 0 4px 0;display:flex;align-items:center;gap:8px;">
+                  <span>📥</span> <span>Import Exhibition Data (JSON / CSV)</span>
+                  <span class="badge-pill" style="background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);font-size:11px;">Connected &amp; Separated</span>
+                </h4>
+                <p style="font-size:12.5px;color:var(--text-muted);margin:0;">
+                  Import feedback reflections, leaderboard scores, or unified exhibition backups via JSON or CSV files. Automatically updates live database and platform displays.
+                </p>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input type="file" id="admin-import-file-input" accept=".json,.csv,application/json,text/csv" style="display:none;">
+                <button class="btn btn-primary btn-sm" id="btn-admin-choose-import" type="button">
+                  <span>📂</span> <span>Select JSON / CSV File</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Import Preview Box -->
+            <div id="admin-import-preview-box" style="display:none;margin-top:12px;padding:12px 14px;border:1px dashed var(--accent-cyan);border-radius:var(--radius-sm);background:rgba(0,240,255,0.04);">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+                <div>
+                  <div style="font-size:13px;font-weight:700;color:var(--text-main);" id="admin-import-filename">filename.json</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:2px;" id="admin-import-summary">Detected: 0 Scores, 0 Feedback reviews</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-secondary btn-sm" id="btn-admin-cancel-import" type="button">Cancel</button>
+                  <button class="btn btn-accent btn-sm" id="btn-admin-execute-import" type="button">
+                    <span>⚡</span> <span>Confirm &amp; Import Data</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v24.0-river-leaderboard-booklet';
+const CACHE_NAME = 'cf-cache-v24.1-admin-import-teleprompter-bizcard';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

@@ -1640,13 +1640,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .badge-live-pulse::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #ef4444;
-  box-shadow: 0 0 8px #ef4444;
-  animation: live-blink 1.2s infinite;
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
 }
 
 @keyframes live-blink {
