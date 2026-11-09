@@ -1434,19 +1434,9 @@ function startTutorialNarrationGlider(tabKey) {
       return;
     }
 
-    // Fast glide speed for Careers & Exams so the user sees all cards and reaches the end swiftly
-    // Careers (~3500-4500px): ~560-680 px/sec (completes in ~6.5s)
-    // Exams (~1200-1800px): ~420-500 px/sec (completes in ~3.8s)
-    let v;
-    if (tabKey === 'careers') {
-      v = Math.max(560, Math.round(targetDistance / 6.5));
-    } else if (tabKey === 'exams') {
-      v = Math.max(420, Math.round(targetDistance / 3.8));
-    } else {
-      v = 240;
-    }
-
-    const tRamp = isCareersOrExams ? 0.22 : 0.35; // Soft start before reaching glide velocity
+    // Calibrated glide velocity: 210 px/s
+    const v = 210; // px/sec
+    const tRamp = 0.35; // 350ms soft start
 
     let startTime = null;
     let pausedDuration = 0;

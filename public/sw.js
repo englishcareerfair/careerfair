@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v24.4-fast-glide-careers-exams';
+const CACHE_NAME = 'cf-cache-v24.5-glide-velocity-210px';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
