@@ -1420,21 +1420,33 @@ function startTutorialNarrationGlider(tabKey) {
     // Always start at top of tab (guarantees downward scroll motion)
     window.scrollTo(0, 0);
 
-    const totalHeight = targetSec.scrollHeight || targetSec.offsetHeight;
+    const isCareersOrExams = (tabKey === 'careers' || tabKey === 'exams');
     const viewportHeight = window.innerHeight;
-    const maxScroll = Math.max(0, totalHeight - viewportHeight + 120);
+    const docScrollable = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
+    const secBottom = Math.max(0, (targetSec.offsetTop + (targetSec.scrollHeight || targetSec.offsetHeight)) - viewportHeight + 40);
+    const maxScroll = Math.max(docScrollable, secBottom);
 
-    // Target distance: in careers, glide through ~1280px (matching user video showcase)
-    // in other tabs (exams, games, roadmap), glide up to maxScroll
-    const targetDistance = (tabKey === 'careers') ? Math.min(maxScroll, 1280) : maxScroll;
+    // For Careers & Exams: scroll till the end of the cards grid (full maxScroll)
+    // For other tabs (games, roadmap), glide down up to maxScroll
+    const targetDistance = isCareersOrExams ? maxScroll : Math.min(maxScroll, 960);
     if (targetDistance <= 40) {
       document.documentElement.style.scrollBehavior = '';
       return;
     }
 
-    // Calibrated speed matching user reference video: 210 px/sec
-    const v = 210; // px/sec
-    const tRamp = 0.35; // 350ms soft start
+    // Fast glide speed for Careers & Exams so the user sees all cards and reaches the end swiftly
+    // Careers (~3500-4500px): ~560-680 px/sec (completes in ~6.5s)
+    // Exams (~1200-1800px): ~420-500 px/sec (completes in ~3.8s)
+    let v;
+    if (tabKey === 'careers') {
+      v = Math.max(560, Math.round(targetDistance / 6.5));
+    } else if (tabKey === 'exams') {
+      v = Math.max(420, Math.round(targetDistance / 3.8));
+    } else {
+      v = 240;
+    }
+
+    const tRamp = isCareersOrExams ? 0.22 : 0.35; // Soft start before reaching glide velocity
 
     let startTime = null;
     let pausedDuration = 0;
@@ -1467,8 +1479,11 @@ function startTutorialNarrationGlider(tabKey) {
         y = (0.5 * v * tRamp) + v * (t - tRamp);
       }
 
-      if (y >= targetDistance) {
-        window.scrollTo(0, targetDistance);
+      // Re-check dynamic document bottom in case dynamic cards or images finished loading
+      const currentLimit = isCareersOrExams ? Math.max(targetDistance, document.documentElement.scrollHeight - window.innerHeight) : targetDistance;
+
+      if (y >= currentLimit) {
+        window.scrollTo(0, currentLimit);
         document.documentElement.style.scrollBehavior = '';
         tutorialGliderAnimId = null;
         return;
