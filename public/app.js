@@ -913,7 +913,7 @@ const TUTORIAL_SHORT_STEPS = [
   {
     step: 4,
     tab: 'feedback',
-    targetSelector: '#btn-submit-feedback',
+    targetSelector: '.feedback-form-card',
     badge: 'QUICK TOUR · STEP 5 OF 5',
     title: 'Student Reflection & Fair Feedback',
     icon: '⭐',
@@ -930,7 +930,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 0,
     tab: 'hero',
     targetSelector: '#sec-hero .hero-actions button:first-child',
-    badge: 'COMPLETE TOUR · STEP 1 OF 20',
+    badge: 'COMPLETE TOUR · STEP 1 OF 23',
     title: 'Student Career Intelligence Overview',
     icon: '⚡',
     sectionKey: 'section_overview',
@@ -943,7 +943,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 1,
     tab: 'careers',
     targetSelector: '.btn-pin-career',
-    badge: 'COMPLETE TOUR · STEP 2 OF 20',
+    badge: 'COMPLETE TOUR · STEP 2 OF 23',
     title: '32+ Global Careers Directory',
     icon: '🎯',
     sectionKey: 'section_career',
@@ -956,7 +956,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 2,
     tab: 'colleges',
     targetSelector: '#college-accreditation-filter',
-    badge: 'COMPLETE TOUR · STEP 3 OF 20',
+    badge: 'COMPLETE TOUR · STEP 3 OF 23',
     title: 'Premier Higher Education & Universities',
     icon: '🏛️',
     sectionKey: 'section_colleges',
@@ -969,7 +969,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 3,
     tab: 'exams',
     targetSelector: '#sec-exams',
-    badge: 'COMPLETE TOUR · STEP 4 OF 20',
+    badge: 'COMPLETE TOUR · STEP 4 OF 23',
     title: 'English Proficiency Testing & Exams',
     icon: '📋',
     sectionKey: 'section_exams',
@@ -982,20 +982,20 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 4,
     tab: 'speak',
     targetSelector: '#btn-listen-target',
-    badge: 'COMPLETE TOUR · STEP 5 OF 20',
+    badge: 'COMPLETE TOUR · STEP 5 OF 23',
     title: 'AI Pronunciation Studio & Phonetics',
     icon: '🗣️',
     sectionKey: 'section_speak',
-    instruction: 'Master international professional terminology! Practice pronouncing complex career terms with real-time phonetic breakdowns, syllable stress guides, and waveform feedback.',
-    actionHint: '👉 Listen to a model pronunciation and speak the term aloud',
+    instruction: 'Master international professional terminology! Practice pronouncing complex career terms with real-time phonetic breakdowns, syllable stress guides, and waveform feedback. When ready, click "Next Exhibit ▶"!',
+    actionHint: '👉 Listen to model pronunciation, speak, and click Next Exhibit ▶ when ready',
     audioUrl: '/audio/tutorial/tutorial_exp_step4.mp3',
-    speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our phonetic breakdown and syllable stress indicators help you master tricky career vocabulary.'
+    speechText: 'Welcome to the Pronunciation Studio! Practice pronouncing international professional terminology. Our phonetic breakdown and syllable stress indicators help you master tricky career vocabulary. Take your time to test your pronunciation, then click Next Exhibit!'
   },
   {
     step: 5,
     tab: 'speechLab',
     targetSelector: '#btn-speech-lab-record',
-    badge: 'COMPLETE TOUR · STEP 6 OF 20',
+    badge: 'COMPLETE TOUR · STEP 6 OF 23',
     title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
@@ -1008,7 +1008,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 6,
     tab: 'teleprompter',
     targetSelector: '#anchor-script-select',
-    badge: 'COMPLETE TOUR · STEP 7 OF 20',
+    badge: 'COMPLETE TOUR · STEP 7 OF 23',
     title: 'News Anchor Studio & Live Teleprompter',
     icon: '📺',
     sectionKey: 'section_teleprompter',
@@ -1023,7 +1023,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'quest-scribe',
     targetSelector: '#game-picker-tabs button[data-game="quest-scribe"]',
-    badge: 'COMPLETE TOUR · STEP 8 OF 20',
+    badge: 'COMPLETE TOUR · STEP 8 OF 23',
     title: 'The Scribe: Branching Narrative Quest',
     icon: '📜',
     sectionKey: 'section_cognitive_scribe',
@@ -1037,7 +1037,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'quest-etym',
     targetSelector: '#game-picker-tabs button[data-game="quest-etym"]',
-    badge: 'COMPLETE TOUR · STEP 9 OF 20',
+    badge: 'COMPLETE TOUR · STEP 9 OF 23',
     title: 'The Etymologist: Ancient Root-Word Detective',
     icon: '🏛️',
     sectionKey: 'section_cognitive_etym',
@@ -1051,7 +1051,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'quest-bard',
     targetSelector: '#game-picker-tabs button[data-game="quest-bard"]',
-    badge: 'COMPLETE TOUR · STEP 10 OF 20',
+    badge: 'COMPLETE TOUR · STEP 10 OF 23',
     title: "The Bard's Mirror: Poetic Mirror & Critic",
     icon: '🪞',
     sectionKey: 'section_cognitive_bard',
@@ -1065,7 +1065,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'quest-oracle',
     targetSelector: '#game-picker-tabs button[data-game="quest-oracle"]',
-    badge: 'COMPLETE TOUR · STEP 11 OF 20',
+    badge: 'COMPLETE TOUR · STEP 11 OF 23',
     title: 'The Career Oracle: Literary Divination',
     icon: '🔮',
     sectionKey: 'section_cognitive_oracle',
@@ -1078,13 +1078,13 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 11,
     tab: 'games',
     game: 'quest-cipher',
-    targetSelector: '#game-picker-tabs button[data-game="quest-cipher"]',
-    badge: 'COMPLETE TOUR · STEP 12 OF 20',
+    targetSelector: '#cipher-lens-box',
+    badge: 'COMPLETE TOUR · STEP 12 OF 23',
     title: 'The Ink Cipher: University Archive Mystery',
     icon: '🔍',
     sectionKey: 'section_cognitive_cipher',
-    instruction: 'Investigate a historic university archive mystery with an illuminated lens cursor, questioning academic suspects to solve the case.',
-    actionHint: '👉 Inspect evidence documents and question suspects with your lens cursor',
+    instruction: 'Investigate a historic university archive mystery with an illuminated lens cursor! Question academic suspects and present evidence to the Dean.',
+    actionHint: '👉 Inspect evidence, question suspects below, or click Next Exhibit',
     audioUrl: '/audio/tutorial/tutorial_exp_step11.mp3',
     speechText: 'Investigate The Ink Cipher! Examine archival documents, question suspects, and use deductive English reasoning to solve a historic mystery.'
   },
@@ -1093,7 +1093,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'wordle',
     targetSelector: '#game-picker-tabs button[data-game="wordle"]',
-    badge: 'COMPLETE TOUR · STEP 13 OF 20',
+    badge: 'COMPLETE TOUR · STEP 13 OF 23',
     title: 'Wordle 2026: 5-Letter Vocabulary Challenge',
     icon: '🟩',
     sectionKey: 'section_cognitive_wordle',
@@ -1107,7 +1107,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'flashcards',
     targetSelector: '#game-picker-tabs button[data-game="flashcards"]',
-    badge: 'COMPLETE TOUR · STEP 14 OF 20',
+    badge: 'COMPLETE TOUR · STEP 14 OF 23',
     title: 'Flash Cards Studio: Interactive Drills',
     icon: '🃏',
     sectionKey: 'section_cognitive_flashcards',
@@ -1121,7 +1121,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'dict',
     targetSelector: '#game-picker-tabs button[data-game="dict"]',
-    badge: 'COMPLETE TOUR · STEP 15 OF 20',
+    badge: 'COMPLETE TOUR · STEP 15 OF 23',
     title: 'Live Dictionary & Lexicon Search',
     icon: '📖',
     sectionKey: 'section_cognitive_dict',
@@ -1135,7 +1135,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'spelling',
     targetSelector: '#game-picker-tabs button[data-game="spelling"]',
-    badge: 'COMPLETE TOUR · STEP 16 OF 20',
+    badge: 'COMPLETE TOUR · STEP 16 OF 23',
     title: 'Spelling Bee Challenge: Audio-Guided Trials',
     icon: '🐝',
     sectionKey: 'section_cognitive_spelling',
@@ -1149,7 +1149,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'hangman',
     targetSelector: '#game-picker-tabs button[data-game="hangman"]',
-    badge: 'COMPLETE TOUR · STEP 17 OF 20',
+    badge: 'COMPLETE TOUR · STEP 17 OF 23',
     title: 'English Word Hangman: Career Vocabulary',
     icon: '🪢',
     sectionKey: 'section_cognitive_hangman',
@@ -1158,26 +1158,54 @@ const TUTORIAL_EXPANDED_STEPS = [
     audioUrl: '/audio/tutorial/tutorial_exp_step16.mp3',
     speechText: 'Play English Word Hangman! Guess letters to uncover hidden career terminology before running out of attempts.'
   },
-  // ── FINAL THREE TABS STRICTLY IN LINE ──
+  // ── ROADMAP SUBTOOLS SHOWCASED IN SEQUENCE ──
   {
     step: 17,
     tab: 'roadmap',
-    subtool: 'myplan',
-    targetSelector: '#plan-tools-tabs button[data-tool="myplan"]',
-    badge: 'COMPLETE TOUR · STEP 18 OF 20',
-    title: '"My Plan" Strategic Blueprint & Quiz',
-    icon: '🗺️',
-    sectionKey: 'section_roadmap',
-    instruction: 'Inspect your multi-year career progression: undergraduate degree, specialized certifications, aptitude discovery quiz, and your Student Ambassador Business Card.',
-    actionHint: '👉 Explore your timeline, take the aptitude quiz, or customize your business card',
-    audioUrl: '/audio/tutorial/tutorial_exp_step17.mp3',
-    speechText: 'This is your personalized Strategic Career Blueprint, Aptitude Discovery Quiz, and Student Ambassador Business Card! Map your multi-year progression and customize your credentials.'
+    subtool: 'bizcard',
+    targetSelector: '#plan-tools-tabs button[data-tool="bizcard"]',
+    badge: 'COMPLETE TOUR · STEP 18 OF 23',
+    title: 'Student Ambassador Business Card',
+    icon: '🪪',
+    sectionKey: 'section_roadmap_bizcard',
+    instruction: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code printed on Page 2 of your booklet.',
+    actionHint: '👉 Review your credentials and live verification QR code',
+    audioUrl: '/audio/tutorial/tutorial_short_step3.mp3',
+    speechText: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code printed on Page Two of your booklet.'
   },
   {
     step: 18,
+    tab: 'roadmap',
+    subtool: 'myplan',
+    targetSelector: '#plan-tools-tabs button[data-tool="myplan"]',
+    badge: 'COMPLETE TOUR · STEP 19 OF 23',
+    title: '"My Plan" Strategic Roadmap Generator',
+    icon: '🗺️',
+    sectionKey: 'section_roadmap_myplan',
+    instruction: 'Map your multi-year progression from high school through entrance exams, undergraduate degree milestones, internships, and global industry credentials.',
+    actionHint: '👉 Inspect your academic timeline and industry certifications',
+    audioUrl: '/audio/tutorial/tutorial_exp_step17.mp3',
+    speechText: 'This is your personalized Strategic Career Roadmap! Map your multi-year progression from high school through university milestones, internships, and global industry credentials.'
+  },
+  {
+    step: 19,
+    tab: 'roadmap',
+    subtool: 'quiz',
+    targetSelector: '#plan-tools-tabs button[data-tool="quiz"]',
+    badge: 'COMPLETE TOUR · STEP 20 OF 23',
+    title: '5-Question Career Aptitude Quiz',
+    icon: '🧭',
+    sectionKey: 'section_roadmap_quiz',
+    instruction: 'Discover your professional strengths! Answer 5 rapid career scenarios to uncover your optimal cognitive work style and top recommended career matches.',
+    actionHint: '👉 Answer the aptitude scenarios to reveal your profile',
+    audioUrl: '/audio/tutorial/tutorial_short_step2.mp3',
+    speechText: 'Discover your strengths with the five-question Career Aptitude Quiz! Answer interactive career scenarios to reveal your cognitive work style and top career recommendations.'
+  },
+  {
+    step: 20,
     tab: 'leaderboard',
     targetSelector: '#btn-refresh-leaderboard',
-    badge: 'COMPLETE TOUR · STEP 19 OF 20',
+    badge: 'COMPLETE TOUR · STEP 21 OF 23',
     title: 'Live Fair Leaderboard & Hall of Fame',
     icon: '🏆',
     sectionKey: 'section_leaderboard',
@@ -1186,18 +1214,32 @@ const TUTORIAL_EXPANDED_STEPS = [
     audioUrl: '/audio/tutorial/tutorial_exp_step18.mp3',
     speechText: 'Check out the live exhibition leaderboard! See top scores and rankings from students across all arcade games, speech diagnostics, and vocabulary challenges. Compete to claim the top spot on the hall of fame!'
   },
+  // ── FINAL FEEDBACK & VISITOR REFLECTIONS IN SEQUENCE ──
   {
-    step: 19,
+    step: 21,
     tab: 'feedback',
-    targetSelector: '#btn-submit-feedback',
-    badge: 'COMPLETE TOUR · STEP 20 OF 20',
+    targetSelector: '.feedback-form-card',
+    badge: 'COMPLETE TOUR · STEP 22 OF 23',
     title: 'Student Reflection & Fair Feedback',
-    icon: '⭐',
+    icon: '✍️',
     sectionKey: 'section_feedback',
-    instruction: 'Congratulations on exploring every exhibit across Career Fair 2026! Leave your star rating and student reflection below to complete the tour and unlock your official printable booklet.',
-    actionHint: '👉 Rate 1 to 5 stars and submit your student review to complete',
+    instruction: 'Leave your official fair rating and student reflection below to complete Section Five of your booklet! Enter your name, choose your star rating, and click Submit Feedback.',
+    actionHint: '👉 Enter your reflection and submit feedback',
     audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
-    speechText: 'Congratulations on exploring every single exhibit across Career Fair 2026! Leave your star rating and student reflection below. Your feedback will complete the tour and unlock your official print-ready Career Booklet at the top!'
+    speechText: 'Congratulations on exploring our exhibits! Leave your star rating and student reflection below. Submitting your feedback locks in Section Five of your official printable booklet.'
+  },
+  {
+    step: 22,
+    tab: 'feedback',
+    targetSelector: '.feedback-reflections-card',
+    badge: 'COMPLETE TOUR · STEP 23 OF 23',
+    title: 'Visitor Reflections & Booklet Unlock',
+    icon: '⭐',
+    sectionKey: 'section_reflections_final',
+    instruction: 'Review reflections submitted by fellow students, parents, and teachers! Your 2-Page printable Career Booklet is now fully compiled and ready at the top of your screen.',
+    actionHint: '👉 Review community reflections and click Finish Tutorial 🎉',
+    audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
+    speechText: 'Explore reflections and thoughts submitted by students, parents, and faculty on the live Feedback Wall! Your official two-page Career Booklet is ready at the top of your screen.'
   }
 ];
 
@@ -1232,6 +1274,7 @@ let tutorialScrollAnimId = null;
 let currentTutorialScrollTargetY = null;
 
 function cancelTutorialScroll() {
+  cancelTutorialGlider();
   if (tutorialScrollAnimId) {
     cancelAnimationFrame(tutorialScrollAnimId);
     tutorialScrollAnimId = null;
@@ -1288,12 +1331,71 @@ function smoothScrollSlow(targetY, customDuration = null) {
   tutorialScrollAnimId = requestAnimationFrame(step);
 }
 
+let tutorialGliderAnimId = null;
+
+function cancelTutorialGlider() {
+  if (tutorialGliderAnimId) {
+    cancelAnimationFrame(tutorialGliderAnimId);
+    tutorialGliderAnimId = null;
+  }
+}
+
+function startTutorialNarrationGlider(tabKey) {
+  cancelTutorialGlider();
+  if (!isTutorialRunning) return;
+
+  const targetSec = document.getElementById(`sec-${tabKey}`);
+  if (!targetSec) return;
+
+  setTimeout(() => {
+    if (!isTutorialRunning) return;
+    const topNav = document.querySelector('.navbar') || document.querySelector('header');
+    const topNavHeight = topNav ? topNav.offsetHeight : 64;
+
+    const rect = targetSec.getBoundingClientRect();
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const startY = Math.max(0, rect.top + currentScrollY - topNavHeight);
+    
+    // Always start at top of tab
+    window.scrollTo(0, startY);
+
+    const totalHeight = targetSec.scrollHeight || targetSec.offsetHeight;
+    const viewportHeight = window.innerHeight;
+    const maxScroll = Math.max(startY, startY + totalHeight - viewportHeight + 80);
+    const distance = maxScroll - startY;
+
+    if (distance <= 40) return;
+
+    // Glide smoothly over 9 to 13 seconds while audio plays
+    const duration = Math.min(13000, Math.max(8500, Math.round(distance * 11)));
+    const startTime = performance.now();
+
+    function glideStep(now) {
+      if (!isTutorialRunning) return;
+      const elapsed = now - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // Gentle smooth curve
+      const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+      window.scrollTo(0, Math.round(startY + distance * ease));
+
+      if (progress < 1) {
+        tutorialGliderAnimId = requestAnimationFrame(glideStep);
+      } else {
+        tutorialGliderAnimId = null;
+      }
+    }
+
+    tutorialGliderAnimId = requestAnimationFrame(glideStep);
+  }, 140);
+}
+
 function scrollTutorialTargetIntoView(selector, options = {}) {
   if (!selector) return;
   const target = (typeof selector === 'string') ? document.querySelector(selector) : selector;
   if (!target) return;
 
   try {
+    cancelTutorialGlider();
     const rect = target.getBoundingClientRect();
     const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
     const targetTop = rect.top + currentScrollY;
@@ -1302,18 +1404,28 @@ function scrollTutorialTargetIntoView(selector, options = {}) {
     const topNavHeight = topNav ? topNav.offsetHeight : 64;
 
     const viewportHeight = window.innerHeight;
-    // Tutorial HUD is at bottom-right corner; keep 80px bottom breathing room
     const bottomMargin = 80;
     const availableHeight = Math.max(180, viewportHeight - topNavHeight - bottomMargin);
 
     let idealTop;
-    if (rect.height <= availableHeight) {
-      // Center the box cleanly in the vertical slice between navbar and bottom margin
+    // Special Ink Cipher handling:
+    // Scroll so that the interrogation box and suspect evidence are comfortably centered
+    if (target.id === 'cipher-question-input' || (target.closest && target.closest('#cipher-lens-box'))) {
+      const qInput = document.getElementById('cipher-question-input');
+      if (qInput) {
+        const qRect = qInput.getBoundingClientRect();
+        const qTop = qRect.top + currentScrollY;
+        idealTop = Math.max(0, Math.round(qTop - topNavHeight - availableHeight / 2));
+      } else {
+        idealTop = Math.max(0, Math.round(targetTop - topNavHeight - 16));
+      }
+    } else if (target.classList && target.classList.contains('feedback-form-card')) {
+      // Feedback form: position top cleanly 16px below navbar so entire form is visible
+      idealTop = Math.max(0, Math.round(targetTop - topNavHeight - 16));
+    } else if (rect.height <= availableHeight) {
       const spaceAround = (availableHeight - rect.height) / 2;
       idealTop = Math.max(0, Math.round(targetTop - topNavHeight - spaceAround));
     } else {
-      // Element is taller than available slice (e.g. tall game arena on mobile):
-      // Position its top 16px below navbar so the full top and controls are immediately visible
       idealTop = Math.max(0, Math.round(targetTop - topNavHeight - 16));
     }
 
@@ -1500,6 +1612,10 @@ function playTutorialStepAudio(stepData) {
 
   updateTutorialHudStatus('speaking', 'River');
   isTutorialSpeechActive = true;
+
+  if (['careers', 'colleges', 'exams'].includes(stepData.tab)) {
+    startTutorialNarrationGlider(stepData.tab);
+  }
 
   if (stepData.audioUrl) {
     try {
@@ -1741,14 +1857,17 @@ function renderInSiteTutorialStep(stepIndex) {
   const closeBtn = document.getElementById('btn-tutorial-hud-close');
   const pauseBtn = document.getElementById('btn-tutorial-pause');
 
-  if (badgeEl) badgeEl.textContent = data.badge;
+  // Dynamically compute badge so it is always 100% synchronized with actual step count
+  if (badgeEl) {
+    badgeEl.textContent = (currentTutorialMode === 'expanded' ? 'COMPLETE TOUR · STEP ' : 'QUICK TOUR · STEP ') + (stepIndex + 1) + ' OF ' + steps.length;
+  }
   if (titleEl) titleEl.textContent = data.title;
   if (iconEl) iconEl.textContent = data.icon;
   if (instructionEl) instructionEl.textContent = data.instruction;
   if (reactionEl) reactionEl.style.display = 'none';
   if (pauseBtn) pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
 
-  // Navigate on page to target tab
+  // Navigate on page to target tab & subroute
   let tabChanged = false;
   if (data.tab) {
     const activeTabBtn = document.querySelector('.tab-btn.active');
@@ -1756,10 +1875,13 @@ function renderInSiteTutorialStep(stepIndex) {
     if (currentActiveTab && currentActiveTab !== data.tab) {
       tabChanged = true;
     }
-    if (window.AppRouter) {
-      window.AppRouter.navigate('/' + (data.tab === 'hero' ? '' : data.tab), { keepVoice: true, keepScroll: true });
-    } else if (typeof window.switchTab === 'function') {
-      window.switchTab(data.tab, { keepVoice: true, keepScroll: true });
+    if (typeof window.switchTab === 'function') {
+      window.switchTab(data.tab, { keepVoice: true, keepScroll: true, skipSubInit: true, fromRouter: true });
+    }
+    if (window.AppRouter && typeof window.AppRouter.updateUrl === 'function') {
+      window.AppRouter.current.tab = data.tab;
+      window.AppRouter.current.subtab = data.game || data.subtool || '';
+      window.AppRouter.updateUrl('/' + (data.tab === 'hero' ? '' : data.tab), true);
     }
   }
 
@@ -1789,16 +1911,31 @@ function renderInSiteTutorialStep(stepIndex) {
     }
 
     // Determine feature box to scroll into view:
-    // In games, scroll till the game arena box (#game-arena-mount) where the feature is fully shown!
-    // In roadmap with subtools (bizcard / myplan), scroll till #plan-tool-arena where the card/plan is fully shown!
     let scrollTarget = null;
     if (data.tab === 'games') {
-      scrollTarget = document.getElementById('game-arena-mount') || targetEl;
+      if (data.game === 'quest-cipher') {
+        // Specifically target the interactive mystery questioning & accusation console
+        // so the clue, suspects, interrogation input, and decision buttons are right in view!
+        scrollTarget = document.getElementById('cipher-question-input') || 
+                       document.getElementById('cipher-lens-box') || 
+                       document.getElementById('game-arena-mount');
+      } else {
+        scrollTarget = document.getElementById('game-arena-mount') || targetEl;
+      }
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
       }
     } else if (data.tab === 'roadmap' && data.subtool) {
       scrollTarget = document.getElementById('plan-tool-arena') || targetEl;
+      if (scrollTarget) {
+        scrollTarget.classList.add('tutorial-arena-highlight');
+      }
+    } else if (data.tab === 'feedback') {
+      if (data.sectionKey === 'section_reflections_final') {
+        scrollTarget = document.querySelector('.feedback-reflections-card') || targetEl;
+      } else {
+        scrollTarget = document.querySelector('.feedback-form-card') || targetEl;
+      }
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
       }
@@ -1811,14 +1948,25 @@ function renderInSiteTutorialStep(stepIndex) {
     }
   }
 
-  // Trigger highlight & smooth slow scroll
+  // Always reset scroll to top (0) when entering a new tab,
+  // so any scroll is guaranteed to be downwards from top to bottom (never scrolling up from down)!
   if (tabChanged) {
     window.scrollTo(0, 0);
-    setTimeout(highlightAndScrollTarget, 100);
-    setTimeout(highlightAndScrollTarget, 260);
-  } else {
-    highlightAndScrollTarget();
-    setTimeout(highlightAndScrollTarget, 180);
+  }
+  // Single smooth scroll invocation after DOM is laid out (prevents lag and animation fighting)
+  setTimeout(highlightAndScrollTarget, 110);
+
+  // If final reflections step: first highlight reflections card, then scroll to top to showcase Your Booklet!
+  if (data.sectionKey === 'section_reflections_final') {
+    setTimeout(() => {
+      if (!isTutorialRunning) return;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setHeaderBookletHighlight(true);
+      const downloadBtn = document.getElementById('btn-download-dossier');
+      if (downloadBtn) {
+        downloadBtn.classList.add('tutorial-button-highlight');
+      }
+    }, 2400);
   }
 
   const isCareerStep = (data.sectionKey === 'section_career');
@@ -3899,10 +4047,12 @@ const AppRouter = {
   // Initializes router listeners and executes initial route on boot
   init() {
     window.addEventListener('popstate', () => {
+      if (isTutorialRunning) return;
       this.routeTo(this.getCurrentPath(), { fromHistory: true });
     });
 
     window.addEventListener('hashchange', () => {
+      if (isTutorialRunning) return;
       this.routeTo(this.getCurrentPath(), { fromHistory: true });
     });
 
@@ -3962,7 +4112,7 @@ function switchTab(tabId, options = {}) {
     }
   };
 
-  if ('startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (!isTutorialRunning && 'startViewTransition' in document && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     document.startViewTransition(performTabSwap);
   } else {
     performTabSwap();
@@ -4387,7 +4537,11 @@ function initSpeakLadder() {
       const text = $('#speak-target-sentence')?.textContent;
       if (text) speak(text, this);
       if (isTutorialRunning && isTutorialOnSection('section_speak')) {
-        triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
+        const reactionEl = document.getElementById('tutorial-hud-reaction');
+        if (reactionEl) {
+          reactionEl.style.display = 'inline-flex';
+          reactionEl.textContent = '🎙️ Model pronunciation played! Practice speaking or click Next Exhibit ▶';
+        }
       }
     });
 
@@ -4413,7 +4567,11 @@ function initSpeakLadder() {
     $('#speak-record-orb')?.addEventListener('click', () => {
       toggleSpeakLadderRecord();
       if (isTutorialRunning && isTutorialOnSection('section_speak')) {
-        triggerTutorialAutoAdvance('Pronunciation Practiced', 'Great articulation! Phonetic breakdown and syllable stress completed.');
+        const reactionEl = document.getElementById('tutorial-hud-reaction');
+        if (reactionEl) {
+          reactionEl.style.display = 'inline-flex';
+          reactionEl.textContent = '🎙️ Articulation tested! Click Next Exhibit ▶ when ready to proceed';
+        }
       }
     });
 
@@ -11675,9 +11833,7 @@ async function loadFeedbackWall() {
         starContainer.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedStars = parseInt(btn.dataset.val || '5', 10);
-        if (isTutorialRunning && isTutorialOnSection('section_feedback')) {
-          triggerTutorialAutoAdvance('Exhibition Rating Selected', 'Thank you for rating our exhibits! Your reflection is saved for Page 2 of your booklet.');
-        }
+
       });
     });
   }
@@ -11963,7 +12119,7 @@ async function loadFeedbackWall() {
       }, 350);
 
       if (isTutorialRunning && isTutorialOnSection('section_feedback')) {
-        triggerTutorialAutoAdvance('Exhibition Review Submitted', 'Thank you for your review! Your reflection is saved for Page 2 of your booklet.');
+        triggerTutorialAutoAdvance('Review Submitted', 'Thank you for your reflection! Reviewing visitor reflections and unlocking your booklet...');
       }
     });
   }

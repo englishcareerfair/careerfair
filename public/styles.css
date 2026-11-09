@@ -5771,41 +5771,139 @@ input[data-capitalize="name"] {
   gap: 8px;
 }
 
-.tutorial-button-highlight {
-  animation: tutorialButtonPulse 1.3s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate !important;
-  outline: 2px solid var(--accent-cyan, #00f0ff) !important;
-  outline-offset: 3px !important;
-  box-shadow: 0 0 20px 4px rgba(0, 240, 255, 0.75), inset 0 0 10px rgba(0, 240, 255, 0.25) !important;
-  position: relative !important;
-  z-index: 1000 !important;
+@property --perimeter-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 
-@keyframes tutorialButtonPulse {
+@keyframes perimeterRotate {
   0% {
-    box-shadow: 0 0 10px 2px rgba(0, 240, 255, 0.5), inset 0 0 6px rgba(0, 240, 255, 0.2);
-    transform: scale(1);
+    --perimeter-angle: 0deg;
   }
   100% {
-    box-shadow: 0 0 24px 6px rgba(0, 240, 255, 0.9), inset 0 0 12px rgba(0, 240, 255, 0.4);
-    transform: scale(1.03);
+    --perimeter-angle: 360deg;
   }
+}
+
+/* Highlighting moves along the perimeter of the shape without popping in and out */
+.tutorial-button-highlight {
+  position: relative !important;
+  z-index: 1000 !important;
+  transform: none !important;
+  outline: none !important;
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.4) !important;
+}
+
+.tutorial-button-highlight::after {
+  content: '';
+  position: absolute;
+  inset: -3.5px;
+  border-radius: inherit;
+  padding: 2.5px;
+  background: conic-gradient(
+    from var(--perimeter-angle, 0deg),
+    transparent 0%,
+    transparent 65%,
+    rgba(0, 240, 255, 0.4) 78%,
+    #00f0ff 92%,
+    #ffffff 97%,
+    #00f0ff 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: perimeterRotate 2.2s linear infinite;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5);
+  z-index: 10;
+}
+
+[data-theme="light"] .tutorial-button-highlight::after {
+  background: conic-gradient(
+    from var(--perimeter-angle, 0deg),
+    transparent 0%,
+    transparent 65%,
+    rgba(2, 132, 199, 0.4) 78%,
+    #0284c7 92%,
+    #38bdf8 97%,
+    #0284c7 100%
+  );
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4);
+}
+
+/* Replaced inputs and selects that do not support ::after */
+select.tutorial-button-highlight,
+input.tutorial-button-highlight {
+  border: 2.5px solid transparent !important;
+  background-clip: padding-box, border-box !important;
+  background-origin: padding-box, border-box !important;
+  background-image: 
+    linear-gradient(var(--bg-subtle, #1e293b), var(--bg-subtle, #1e293b)),
+    conic-gradient(from var(--perimeter-angle, 0deg), transparent 60%, rgba(0, 240, 255, 0.4) 75%, #00f0ff 92%, #ffffff 97%, #00f0ff 100%) !important;
+  animation: perimeterRotate 2.2s linear infinite !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
+}
+
+[data-theme="light"] select.tutorial-button-highlight,
+[data-theme="light"] input.tutorial-button-highlight {
+  background-image: 
+    linear-gradient(#ffffff, #ffffff),
+    conic-gradient(from var(--perimeter-angle, 0deg), transparent 60%, rgba(2, 132, 199, 0.4) 75%, #0284c7 92%, #38bdf8 97%, #0284c7 100%) !important;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.4) !important;
 }
 
 .tutorial-pin-glow {
-  box-shadow: 0 0 16px 3px rgba(255, 42, 133, 0.8) !important;
+  box-shadow: 0 0 18px 3px rgba(255, 42, 133, 0.85) !important;
   border-color: #ff2a85 !important;
 }
 
-/* Feature Box & Game Arena Highlight */
+/* Feature Box & Game Arena Highlight (Perimeter Movement) */
 .tutorial-arena-highlight {
-  border: 1.5px solid var(--accent-cyan, #00f0ff) !important;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+  position: relative !important;
+  border-color: rgba(0, 240, 255, 0.6) !important;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.35), 0 12px 36px rgba(0, 0, 0, 0.45) !important;
   transition: border-color 0.4s ease, box-shadow 0.4s ease;
 }
 
+.tutorial-arena-highlight::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--perimeter-angle, 0deg),
+    transparent 0%,
+    transparent 70%,
+    rgba(0, 240, 255, 0.35) 82%,
+    #00f0ff 94%,
+    #ffffff 98%,
+    #00f0ff 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: perimeterRotate 3.5s linear infinite;
+  z-index: 5;
+}
+
 [data-theme="light"] .tutorial-arena-highlight {
-  border-color: #0284c7 !important;
-  box-shadow: 0 0 25px rgba(2, 132, 199, 0.35), 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+  border-color: rgba(2, 132, 199, 0.6) !important;
+  box-shadow: 0 0 25px rgba(2, 132, 199, 0.25), 0 12px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="light"] .tutorial-arena-highlight::after {
+  background: conic-gradient(
+    from var(--perimeter-angle, 0deg),
+    transparent 0%,
+    transparent 70%,
+    rgba(2, 132, 199, 0.35) 82%,
+    #0284c7 94%,
+    #38bdf8 98%,
+    #0284c7 100%
+  );
 }
 
 @keyframes tutorialEq {
