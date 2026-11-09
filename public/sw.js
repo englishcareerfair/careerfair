@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v21.1-remove-mobile-admin-handling';
+const CACHE_NAME = 'cf-cache-v21.2-key-pool-promotion-voice-test-fix';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

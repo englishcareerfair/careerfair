@@ -264,6 +264,10 @@ function resetAllTtsButtonsToNormal() {
   if (testBtn && (testBtn.textContent.includes('Stop') || testBtn.classList.contains('speaking-active'))) {
     testBtn.innerHTML = testBtn.dataset.origHtml || 'Test Humanoid Voice 🔊';
     testBtn.classList.remove('speaking-active', 'playing');
+    const testStatus = document.getElementById('admin-tts-test-status');
+    if (testStatus && testStatus.textContent.includes('Synthesizing')) {
+      testStatus.innerHTML = '<span style="color:var(--text-muted);">⏹️ Voice test stopped.</span>';
+    }
   }
 
   const tutorialHeaderBtn = document.getElementById('btn-header-tutorial');
@@ -362,6 +366,8 @@ async function speak(text, btn = null) {
       targetBtn.innerHTML = `<span>⏹️</span> <span class="greeting-btn-text">Stop Audio</span>`;
     } else if (targetBtn.id === 'btn-listen-target') {
       targetBtn.innerHTML = `<span>⏹️</span> <span>Stop</span>`;
+    } else if (targetBtn.id === 'btn-test-tts-voice') {
+      targetBtn.innerHTML = `<span>⏹️</span> <span>Stop Voice Test</span>`;
     } else {
       targetBtn.innerHTML = `<span>⏹️</span> <span>Stop</span>`;
     }
@@ -376,75 +382,139 @@ async function speak(text, btn = null) {
 
   // 1. Attempt Studio Humanoid Audio Synthesis via ElevenLabs Backend (/api/tts)
   const canAttemptTts = Boolean(elevenKeyList.length > 0 || STATE.config?.has_eleven_key || STATE.config?.eleven_keys);
+  let synthSuccess = false;
 
   if (canAttemptTts) {
-    try {
-      const res = await fetch(getApiUrl('api/tts'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: text,
-          voiceId: savedVoiceId,
-          accent: 'indian'
-        }),
-        signal: abortSignal
-      });
+    while (elevenKeyList.length > 0 && !synthSuccess) {
+      const activeKey = elevenKeyList[0];
+      try {
+        const res = await fetch(getApiUrl('api/tts'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'xi-api-key': activeKey
+          },
+          body: JSON.stringify({
+            text: text,
+            voiceId: savedVoiceId,
+            accent: 'indian',
+            apiKey: activeKey,
+            keysPool: elevenKeyList
+          }),
+          signal: abortSignal
+        });
 
-      // Discard if stopped or changed during in-flight fetch
-      if (sessionId !== currentSpeechSessionId) return;
-
-      if (res.status === 401 || res.status === 402 || res.status === 429) {
-        console.warn(`ElevenLabs TTS response status: ${res.status}. Falling back smoothly to high-fidelity Indian Neural Speech.`);
-        if (sessionId === currentSpeechSessionId) {
-          fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
-        }
-        return;
-      }
-
-      const contentType = res.headers.get('content-type') || '';
-      if (res.ok && contentType.includes('audio')) {
-        const audioBlob = await res.blob();
+        // Discard if stopped or changed during in-flight fetch
         if (sessionId !== currentSpeechSessionId) return;
 
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        currentTtsAudio = audio;
+        const contentType = res.headers.get('content-type') || '';
+        let isQuotaOrInvalid = res.status === 401 || res.status === 429;
+        let responseJson = null;
 
-        audio.onended = () => {
-          if (sessionId === currentSpeechSessionId) {
-            stopAllVoice();
+        if (!contentType.includes('audio')) {
+          try {
+            responseJson = await res.json();
+            if (responseJson && (responseJson.status === 'quota_exhausted' || responseJson.status === 'invalid_key' || responseJson.statusCode === 429 || responseJson.statusCode === 401)) {
+              isQuotaOrInvalid = true;
+            }
+          } catch (_) {}
+        }
+
+        // Quota / Invalid Key failover: purge dead key and promote next backup to Main!
+        if (isQuotaOrInvalid) {
+          console.warn(`ElevenLabs key ${activeKey.slice(0, 6)}... quota exhausted or invalid. Auto-promoting backup to Main.`);
+          if (typeof window.rotateAndPromoteElevenKey === 'function') {
+            await window.rotateAndPromoteElevenKey('quota_exhausted');
           }
-        };
+          elevenKeyList = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
 
-        audio.onerror = () => {
-          if (sessionId === currentSpeechSessionId) {
-            fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
+          if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+            const testStatus = $('#admin-tts-test-status');
+            if (testStatus) {
+              if (elevenKeyList.length > 0) {
+                testStatus.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">🔄 Key quota reached. Auto-promoted Backup 1 to Main &amp; retrying live synthesis...</span>`;
+              } else {
+                testStatus.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">⚠️ All ElevenLabs keys exhausted. Playing Indian English Neural Voice (en-IN).</span>`;
+              }
+            }
           }
-        };
 
-        if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
-          const testStatus = $('#admin-tts-test-status');
-          if (testStatus) {
-            const isHealed = res.headers.get('x-eleven-healed') === 'true';
-            testStatus.innerHTML = `✅ Audio stream verified! ${isHealed ? '<span style="color:#f59e0b;">(Healed from restricted tier)</span>' : ''}`;
+          if (elevenKeyList.length > 0) {
+            continue; // Retry with promoted key!
+          } else {
+            break; // No more keys, switch to neural fallback
           }
         }
 
+        if (res.ok && contentType.includes('audio')) {
+          const audioBlob = await res.blob();
+          if (sessionId !== currentSpeechSessionId) return;
+
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          currentTtsAudio = audio;
+
+          audio.onended = () => {
+            if (sessionId === currentSpeechSessionId) {
+              stopAllVoice();
+              if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+                const testStatus = $('#admin-tts-test-status');
+                if (testStatus) {
+                  testStatus.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ Voice test complete! (ElevenLabs Studio Audio Verified)</span>`;
+                }
+              }
+            }
+          };
+
+          audio.onerror = () => {
+            if (sessionId === currentSpeechSessionId) {
+              fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
+            }
+          };
+
+          if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+            const testStatus = $('#admin-tts-test-status');
+            if (testStatus) {
+              if (window._testVoiceWatchdog) clearTimeout(window._testVoiceWatchdog);
+              const isHealed = res.headers.get('x-eleven-healed') === 'true';
+              const vHeader = res.headers.get('x-eleven-voice') || 'Studio Voice';
+              testStatus.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ Audio stream verified! Playing "${escapeHtml(vHeader)}"</span> ${isHealed ? '<span style="color:#f59e0b;">(Healed from restricted tier)</span>' : ''}`;
+            }
+          }
+
+          if (sessionId !== currentSpeechSessionId) return;
+          synthSuccess = true;
+          await audio.play();
+          return;
+        }
+
+        // If non-audio fallback response (e.g. 402 library voice notice)
+        if (responseJson && responseJson.fallback) {
+          if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+            const testStatus = $('#admin-tts-test-status');
+            if (testStatus) {
+              testStatus.innerHTML = `<span style="color:var(--accent-cyan);font-weight:600;">ℹ️ ${escapeHtml(responseJson.message || 'Playing via authentic Indian English Neural Voice (en-IN)')}</span>`;
+            }
+          }
+          break;
+        }
+      } catch (e) {
         if (sessionId !== currentSpeechSessionId) return;
-        await audio.play();
-        return;
+        if (e.name === 'AbortError') return;
+        console.warn('TTS attempt exception:', e);
+        break;
       }
-    } catch (e) {
-      if (sessionId !== currentSpeechSessionId) return;
-      if (e.name === 'AbortError') return;
-      console.warn('TTS attempt exception:', e);
     }
   }
 
   // 2. Fallback to High-Fidelity Indian English Browser Neural Speech (en-IN)
-  if (sessionId === currentSpeechSessionId) {
+  if (sessionId === currentSpeechSessionId && !synthSuccess) {
+    if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+      const testStatus = $('#admin-tts-test-status');
+      if (testStatus && testStatus.textContent.includes('Synthesizing')) {
+        testStatus.innerHTML = `<span style="color:var(--accent-cyan);font-weight:600;">ℹ️ Playing via authentic Indian English Neural Voice (en-IN fallback)</span>`;
+      }
+    }
     fallbackIndianNeuralSpeech(text, targetBtn, sessionId);
   }
 }
@@ -492,15 +562,35 @@ function fallbackIndianNeuralSpeech(text, targetBtn, sessionId = null) {
 
   activeSpeechUtterance = utt;
 
+  if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+    const testStatus = $('#admin-tts-test-status');
+    if (testStatus) {
+      if (window._testVoiceWatchdog) clearTimeout(window._testVoiceWatchdog);
+      testStatus.innerHTML = `<span style="color:var(--accent-cyan);font-weight:600;">🔊 Playing Indian English Neural Voice (en-IN fallback) · Verified!</span>`;
+    }
+  }
+
   utt.onend = () => {
     if (!sessionId || sessionId === currentSpeechSessionId) {
       stopAllVoice();
+      if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+        const testStatus = $('#admin-tts-test-status');
+        if (testStatus) {
+          testStatus.innerHTML = `<span style="color:var(--accent-green, #10b981);font-weight:600;">✅ Voice test complete! (Indian English Neural Voice verified)</span>`;
+        }
+      }
     }
   };
 
   utt.onerror = () => {
     if (!sessionId || sessionId === currentSpeechSessionId) {
       stopAllVoice();
+      if (targetBtn && targetBtn.id === 'btn-test-tts-voice') {
+        const testStatus = $('#admin-tts-test-status');
+        if (testStatus) {
+          testStatus.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">⚠️ Voice playback ended.</span>`;
+        }
+      }
     }
   };
 
@@ -12779,6 +12869,17 @@ function initAdminWorkspace() {
         if (!silent) showToast('✅ ElevenLabs verified successfully!');
       } else {
         const errMsg = data.message || 'ElevenLabs key not active.';
+        // Auto-promote backup key if this key is invalid or quota exhausted!
+        const keyPool = (localStorage.getItem('cf_eleven_keys') || '').split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+        if (keyPool.length > 1 && (data.status === 'invalid_key' || data.statusCode === 401 || data.statusCode === 429 || errMsg.includes('Invalid') || errMsg.includes('quota') || errMsg.includes('unauthorized'))) {
+          if (statusEl) {
+            statusEl.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">🔄 Main key invalid/exhausted. Auto-promoting Backup 1 to Main &amp; re-verifying...</span>`;
+          }
+          if (typeof window.rotateAndPromoteElevenKey === 'function') {
+            await window.rotateAndPromoteElevenKey('verification_failed');
+            return verifyAndLoadElevenVoices(silent);
+          }
+        }
         if (statusEl) {
           statusEl.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">⚠️ ${escapeHtml(errMsg)} (Fallback: Browser Indian en-IN active)</span>`;
         }
@@ -12939,6 +13040,10 @@ function initAdminWorkspace() {
       rclone_endpoint: rcloneEndpoint
     });
 
+    // Ensure DOM input boxes visually reflect compacted keys pool immediately!
+    if (typeof window.syncAdminElevenKeyBoxes === 'function') window.syncAdminElevenKeyBoxes();
+    if (typeof window.syncAdminGeminiKeyBoxes === 'function') window.syncAdminGeminiKeyBoxes();
+
     showToast('AI, Voice & Google Drive rclone settings saved successfully');
     if (elevenKey) {
       await verifyAndLoadElevenVoices(true);
@@ -12948,15 +13053,40 @@ function initAdminWorkspace() {
   // Test Humanoid Voice button in Admin - tests the EXACT configured Voice ID directly
   $('#btn-test-tts-voice')?.addEventListener('click', async function() {
     const testStatus = $('#admin-tts-test-status');
-    if (testStatus) {
-      testStatus.textContent = '🔊 Synthesizing live voice test...';
-      testStatus.style.color = 'var(--accent-cyan)';
+
+    // If already playing or active, speak() will handle stopping!
+    const isCurrentlyPlaying = this.classList.contains('speaking-active') || this.classList.contains('playing') || this.textContent.includes('Stop');
+
+    if (!isCurrentlyPlaying && testStatus) {
+      testStatus.innerHTML = '<span style="color:var(--accent-cyan);">🔊 Synthesizing live voice test...</span>';
     }
+
+    // Watchdog timer (12s) to prevent any infinite hang on Synthesizing status
+    if (window._testVoiceWatchdog) clearTimeout(window._testVoiceWatchdog);
+    window._testVoiceWatchdog = setTimeout(() => {
+      const ts = $('#admin-tts-test-status');
+      const btn = $('#btn-test-tts-voice');
+      if (ts && ts.textContent.includes('Synthesizing')) {
+        ts.innerHTML = '<span style="color:var(--accent-amber, #f59e0b);">⚠️ Synthesis took longer than expected. Using high-fidelity Indian Neural Voice fallback.</span>';
+        if (btn) {
+          btn.innerHTML = btn.dataset.origHtml || 'Test Humanoid Voice 🔊';
+          btn.classList.remove('speaking-active', 'playing');
+        }
+      }
+    }, 12000);
+
     const customVoiceId = ($('#admin-eleven-voice')?.value || localStorage.getItem('cf_eleven_voice') || STATE.config.eleven_voice || '').trim();
     const testText = customVoiceId
       ? `Hello! This is a live voice test using voice ID: ${customVoiceId}. Every career pathway speaks with clarity and confidence.`
       : "Welcome to the Career Fair 2026. This voice test demonstrates authentic Indian English pronunciation for all thirty-two careers.";
-    await speak(testText, this);
+    try {
+      await speak(testText, this);
+    } catch (err) {
+      if (testStatus) {
+        testStatus.innerHTML = `<span style="color:var(--accent-amber, #f59e0b);">⚠️ Voice test ended: ${escapeHtml(err.message || 'Synthesis completed')}</span>`;
+      }
+      stopAllVoice();
+    }
   });
 
   // Auto-verify ElevenLabs voices on admin load if key exists
@@ -14002,7 +14132,7 @@ window.renderAdminBannedIps = async function() {
   }
 };
 
-// ─── DYNAMIC API KEYS POOLS (INFINITE MAIN & BACKUP BOXES) ────────────────────
+// ─── DYNAMIC API KEYS POOLS (INFINITE MAIN & BACKUP BOXES WITH AUTO-PROMOTION) ──
 window.initDynamicApiPools = function() {
   // 1. Google Gemini Keys Setup
   const geminiContainer = $('#gemini-keys-container');
@@ -14015,6 +14145,22 @@ window.initDynamicApiPools = function() {
       keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
     }
     return keys;
+  };
+
+  const compactAndSyncGeminiKeys = (showToastNotice = false) => {
+    if (!geminiContainer) return;
+    const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
+    const cleanKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+    const joined = cleanKeys.join('\n');
+    localStorage.setItem('cf_gemini_keys', joined);
+    localStorage.setItem('cf_gemini_key', cleanKeys[0] || '');
+    sessionStorage.setItem('cf_gemini_keys', joined);
+    STATE.config.gemini_keys = joined;
+    STATE.config.gemini_key = cleanKeys[0] || '';
+    renderGeminiBoxes(getGeminiKeysArray());
+    if (showToastNotice && cleanKeys.length > 0) {
+      showToast('ℹ️ Backup Gemini key promoted to Main');
+    }
   };
 
   const renderGeminiBoxes = (keys) => {
@@ -14036,7 +14182,6 @@ window.initDynamicApiPools = function() {
       `;
     }).join('');
 
-    // Wire real-time input change
     geminiContainer.querySelectorAll('.gemini-key-field').forEach(input => {
       const save = () => {
         const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
@@ -14044,12 +14189,26 @@ window.initDynamicApiPools = function() {
         const joined = newKeys.join('\n');
         localStorage.setItem('cf_gemini_keys', joined);
         localStorage.setItem('cf_gemini_key', newKeys[0] || '');
+        sessionStorage.setItem('cf_gemini_keys', joined);
         STATE.config.gemini_keys = joined;
         STATE.config.gemini_key = newKeys[0] || '';
         updateGeminiStatusBadge(newKeys.length);
       };
       input.addEventListener('input', save);
       input.addEventListener('change', save);
+      input.addEventListener('blur', () => {
+        const currentInputs = Array.from(geminiContainer.querySelectorAll('.gemini-key-field'));
+        const activeValues = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        const mainEmptyWithBackups = currentInputs[0] && !currentInputs[0].value.trim() && activeValues.length > 0;
+        let hasGaps = false, seenEmpty = false;
+        for (const inp of currentInputs) {
+          if (!inp.value.trim()) seenEmpty = true;
+          else if (seenEmpty) { hasGaps = true; break; }
+        }
+        if (mainEmptyWithBackups || hasGaps) {
+          compactAndSyncGeminiKeys(true);
+        }
+      });
     });
 
     const activeCount = keys.filter(Boolean).length;
@@ -14078,7 +14237,36 @@ window.initDynamicApiPools = function() {
     const joined = current.filter(Boolean).join('\n');
     localStorage.setItem('cf_gemini_keys', joined);
     localStorage.setItem('cf_gemini_key', current.filter(Boolean)[0] || '');
+    sessionStorage.setItem('cf_gemini_keys', joined);
     renderGeminiBoxes(current);
+  };
+
+  window.rotateAndPromoteGeminiKey = async function(reason = 'quota_exhausted') {
+    let rawGeminiKeys = (localStorage.getItem('cf_gemini_keys') || localStorage.getItem('cf_gemini_key') || STATE.config.gemini_keys || '').trim();
+    let keyList = rawGeminiKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    if (keyList.length === 0) return null;
+
+    const deadKey = keyList.shift();
+    console.warn(`Gemini key ${deadKey.slice(0, 6)}... (${reason}) purged from pool.`);
+
+    const newJoined = keyList.join('\n');
+    localStorage.setItem('cf_gemini_keys', newJoined);
+    localStorage.setItem('cf_gemini_key', keyList[0] || '');
+    sessionStorage.setItem('cf_gemini_keys', newJoined);
+    STATE.config.gemini_keys = newJoined;
+    STATE.config.gemini_key = keyList[0] || '';
+
+    if (typeof window.syncAdminGeminiKeyBoxes === 'function') {
+      window.syncAdminGeminiKeyBoxes();
+    }
+
+    try {
+      if (typeof fetchApi === 'function') {
+        await fetchApi('admin/config', 'PUT', { gemini_keys: newJoined, gemini_key: keyList[0] || '' });
+      }
+    } catch (_) {}
+
+    return keyList[0] || null;
   };
 
   addGeminiBtn?.addEventListener('click', () => {
@@ -14089,7 +14277,7 @@ window.initDynamicApiPools = function() {
 
   renderGeminiBoxes(getGeminiKeysArray());
 
-  // 2. ElevenLabs Keys Setup
+  // 2. ElevenLabs Keys Setup (Main & Backups with Auto-Promotion & Quota Purge)
   const elevenContainer = $('#eleven-keys-container');
   const addElevenBtn = $('#btn-add-eleven-key');
 
@@ -14100,6 +14288,21 @@ window.initDynamicApiPools = function() {
       keys.push(''); // Ensure at start at least 3 boxes (Main, Backup 1, Backup 2)
     }
     return keys;
+  };
+
+  const compactAndSyncElevenKeys = (showToastNotice = false) => {
+    if (!elevenContainer) return;
+    const currentInputs = Array.from(elevenContainer.querySelectorAll('.eleven-key-field'));
+    const cleanKeys = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+    const joined = cleanKeys.join('\n');
+    localStorage.setItem('cf_eleven_keys', joined);
+    localStorage.setItem('cf_eleven_key', cleanKeys[0] || '');
+    STATE.config.eleven_keys = joined;
+    STATE.config.eleven_key = cleanKeys[0] || '';
+    renderElevenBoxes(getElevenKeysArray());
+    if (showToastNotice && cleanKeys.length > 0) {
+      showToast('ℹ️ Backup ElevenLabs key promoted to Main');
+    }
   };
 
   const renderElevenBoxes = (keys) => {
@@ -14133,6 +14336,20 @@ window.initDynamicApiPools = function() {
       };
       input.addEventListener('input', save);
       input.addEventListener('change', save);
+      input.addEventListener('blur', () => {
+        const currentInputs = Array.from(elevenContainer.querySelectorAll('.eleven-key-field'));
+        const activeValues = currentInputs.map(inp => inp.value.trim()).filter(Boolean);
+        // If Main is blank while backups exist, or if gaps exist between boxes:
+        const mainEmptyWithBackups = currentInputs[0] && !currentInputs[0].value.trim() && activeValues.length > 0;
+        let hasGaps = false, seenEmpty = false;
+        for (const inp of currentInputs) {
+          if (!inp.value.trim()) seenEmpty = true;
+          else if (seenEmpty) { hasGaps = true; break; }
+        }
+        if (mainEmptyWithBackups || hasGaps) {
+          compactAndSyncElevenKeys(true);
+        }
+      });
     });
 
     const activeCount = keys.filter(Boolean).length;
@@ -14164,6 +14381,45 @@ window.initDynamicApiPools = function() {
     renderElevenBoxes(current);
   };
 
+  // Global key rotation & promotion handler: purges dead key and visibly promotes next backup to Main!
+  window.rotateAndPromoteElevenKey = async function(reason = 'quota_exhausted') {
+    let rawElevenKeys = (localStorage.getItem('cf_eleven_keys') || localStorage.getItem('cf_eleven_key') || STATE.config.eleven_keys || STATE.config.eleven_key || '').trim();
+    let keyList = rawElevenKeys.split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
+    if (keyList.length === 0) return null;
+
+    const deadKey = keyList.shift(); // Purge exhausted main key
+    console.warn(`ElevenLabs key ${deadKey.slice(0, 6)}... (${reason}) purged from pool.`);
+
+    const newJoined = keyList.join('\n');
+    localStorage.setItem('cf_eleven_keys', newJoined);
+    localStorage.setItem('cf_eleven_key', keyList[0] || '');
+    STATE.config.eleven_keys = newJoined;
+    STATE.config.eleven_key = keyList[0] || '';
+
+    // Visually shift the input boxes so Backup 1 becomes Main on screen!
+    if (typeof window.syncAdminElevenKeyBoxes === 'function') {
+      window.syncAdminElevenKeyBoxes();
+    }
+
+    // Persist to Cloudflare D1 Backend asynchronously
+    try {
+      if (typeof fetchApi === 'function') {
+        await fetchApi('admin/config', 'PUT', {
+          eleven_keys: newJoined,
+          eleven_key: keyList[0] || ''
+        });
+      }
+    } catch (_) {}
+
+    if (keyList.length > 0) {
+      showToast('🔄 ElevenLabs quota reached: Backup 1 promoted to Main!', 4000);
+    } else {
+      showToast('⚠️ All ElevenLabs keys consumed. Switched to high-fidelity Indian Neural Voice (en-IN).', 5000);
+    }
+
+    return keyList[0] || null;
+  };
+
   addElevenBtn?.addEventListener('click', () => {
     const current = getElevenKeysArray();
     current.push('');
@@ -14172,7 +14428,7 @@ window.initDynamicApiPools = function() {
 
   renderElevenBoxes(getElevenKeysArray());
 
-  // 3. Initialize Ban IP Button Listener
+    // 3. Initialize Ban IP Button Listener
   $('#btn-admin-ban-ip')?.addEventListener('click', () => {
     window.adminBanIp();
   });

@@ -2547,12 +2547,17 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (method === 'POST') {
       try { body = await request.json(); } catch { body = {}; }
     }
-    let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || url.searchParams.get('key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
-    if (elevenKey && elevenKey.includes('\n')) {
-      elevenKey = elevenKey.split(/[\r\n,]+/)[0].trim();
-    }
+    let rawVoicesKeys = (body.keysPool && Array.isArray(body.keysPool) && body.keysPool.length ? body.keysPool.join('\n') : '')
+      || (await kvGet(db, 'eleven_keys', ''))
+      || (await kvGet(db, 'eleven_key', ''))
+      || body.apiKey
+      || request.headers.get('xi-api-key')
+      || url.searchParams.get('key')
+      || env.ELEVEN_KEY
+      || '';
+    let elevenKeyPool = String(rawVoicesKeys).split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
 
-    if (!elevenKey) {
+    if (!elevenKeyPool.length) {
       return json({
         ok: false,
         status: 'missing_key',
@@ -2560,20 +2565,58 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       });
     }
 
-    try {
-      const vRes = await fetch('https://api.elevenlabs.io/v1/voices', {
-        headers: { 'xi-api-key': elevenKey }
-      });
+    let elevenKey = elevenKeyPool[0];
+    let vRes = null;
+    let successfulKeyIdx = 0;
 
-      if (!vRes.ok) {
-        const errDetail = await vRes.text().catch(() => '');
+    for (let k = 0; k < elevenKeyPool.length; k++) {
+      const curKey = elevenKeyPool[k];
+      try {
+        const testRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+          headers: { 'xi-api-key': curKey }
+        });
+        if (testRes.ok) {
+          vRes = testRes;
+          elevenKey = curKey;
+          successfulKeyIdx = k;
+          break;
+        } else if (testRes.status === 401 || testRes.status === 429) {
+          if (k < elevenKeyPool.length - 1) {
+            console.warn(`ElevenLabs key ${curKey.slice(0, 6)}... failed (${testRes.status}). Trying backup key ${k + 1}.`);
+            continue;
+          } else {
+            vRes = testRes;
+            elevenKey = curKey;
+            break;
+          }
+        } else {
+          vRes = testRes;
+          elevenKey = curKey;
+          break;
+        }
+      } catch (err) {
+        if (k === elevenKeyPool.length - 1) throw err;
+      }
+    }
+
+    // Auto-heal D1 key pool if a backup key succeeded
+    if (successfulKeyIdx > 0 && db) {
+      const remaining = elevenKeyPool.slice(successfulKeyIdx).join('\n');
+      await kvSet(db, 'eleven_keys', remaining);
+      await kvSet(db, 'eleven_key', elevenKeyPool[successfulKeyIdx] || '');
+    }
+
+    try {
+      if (!vRes || !vRes.ok) {
+        const errDetail = vRes ? await vRes.text().catch(() => '') : '';
+        const st = vRes ? vRes.status : 500;
         return json({
           ok: false,
-          status: vRes.status === 401 ? 'invalid_key' : 'api_error',
-          statusCode: vRes.status,
+          status: st === 401 ? 'invalid_key' : 'api_error',
+          statusCode: st,
           message: errDetail.includes('API key ID used as API key') 
               ? 'You entered the Key ID instead of the Secret API Key. In ElevenLabs (Settings → API Keys), please copy the actual secret key.'
-              : (vRes.status === 401 ? 'Invalid ElevenLabs API Key. Please verify your key on elevenlabs.io.' : `ElevenLabs API error (${vRes.status}): ${errDetail.slice(0, 120)}`)
+              : (st === 401 ? 'Invalid ElevenLabs API Key. Please verify your key on elevenlabs.io.' : `ElevenLabs API error (${st}): ${errDetail.slice(0, 120)}`)
         });
       }
 
@@ -2721,20 +2764,26 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       } catch (_) {}
     }
 
-    // Resolve key from body, header, database KV, or env
-    let elevenKey = (body.apiKey || request.headers.get('xi-api-key') || (await kvGet(db, 'eleven_key', '')) || (await kvGet(db, 'eleven_keys', '')) || env.ELEVEN_KEY || '').trim();
-    if (elevenKey && elevenKey.includes('\n')) {
-      elevenKey = elevenKey.split(/[\r\n,]+/)[0].trim();
-    }
+    // Resolve key pool from body, header, database KV, or env
+    let rawTtsKeys = (body.keysPool && Array.isArray(body.keysPool) && body.keysPool.length ? body.keysPool.join('\n') : '')
+      || (await kvGet(db, 'eleven_keys', ''))
+      || (await kvGet(db, 'eleven_key', ''))
+      || body.apiKey
+      || request.headers.get('xi-api-key')
+      || env.ELEVEN_KEY
+      || '';
+    let elevenKeyPool = String(rawTtsKeys).split(/[\r\n,]+/).map(k => k.trim()).filter(Boolean);
     let requestedVoiceId = (body.voiceId || (await kvGet(db, 'eleven_voice', '')) || env.ELEVEN_VOICE_ID || '').trim();
 
-    if (!elevenKey) {
+    if (!elevenKeyPool.length) {
       return json({
         fallback: true,
         status: 'missing_key',
         message: 'ElevenLabs API key not configured. Add XI-API-KEY in Admin Settings or Cloudflare ELEVEN_KEY.'
       });
     }
+
+    let elevenKey = elevenKeyPool[0];
 
     try {
       // 1. Fetch available voices in user account
