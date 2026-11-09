@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v21.3-hide-phone-feedback-qr';
+const CACHE_NAME = 'cf-cache-v21.4-hide-teleprompter-until-roleplay-selected';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

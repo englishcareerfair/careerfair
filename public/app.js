@@ -1140,6 +1140,11 @@ function syncStudentNameToAllSections(name) {
     speechLabNameInput.dispatchEvent(new Event('input', { bubbles: true }));
     speechLabNameInput.dispatchEvent(new Event('change', { bubbles: true }));
   }
+  const anchorNameInput = document.getElementById('anchor-name-input');
+  if (anchorNameInput) {
+    anchorNameInput.value = name;
+    anchorNameInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
   document.querySelectorAll('.student-name-display').forEach(el => {
     el.textContent = name;
   });
@@ -5689,8 +5694,10 @@ function initTeleprompter() {
     const activeS1 = $('#teleprompter-sentence-1') || s1;
     const activeS2 = $('#teleprompter-sentence-2') || s2;
     const activeTrack = $('#anchor-teleprompter-track') || track;
+    const prompterBox = $('#teleprompter-box');
 
     if (!data) {
+      if (prompterBox) prompterBox.style.display = 'none';
       if (activeS1) activeS1.textContent = '"Select a script above to begin teleprompter roleplay."';
       if (activeS2) activeS2.textContent = '"Select a script above to begin teleprompter roleplay."';
       if (lowerTag) lowerTag.textContent = 'STUDIO READY';
@@ -5704,6 +5711,7 @@ function initTeleprompter() {
       return;
     }
 
+    if (prompterBox) prompterBox.style.display = 'flex';
     if (activeS1) activeS1.textContent = `"${data.text}"`;
     if (activeS2) activeS2.textContent = `"${data.text}"`;
     if (lowerTag) lowerTag.textContent = data.tag;
@@ -5950,7 +5958,7 @@ function initTeleprompter() {
   };
 
   // Prepare initial script & keep prompter stationary until started by user
-  if (nameInput) nameInput.value = '';
+  if (nameInput && !nameInput.value) nameInput.value = (STATE.studentName || localStorage.getItem('cf_student_name') || localStorage.getItem('ecf_student_name') || '');
   applyScript(scriptSelect?.value || '');
   teleprompterState.isPrompterPaused = true;
   teleprompterState.prompterStarted = false;
