@@ -4976,54 +4976,91 @@ body.obs-overlay-mode .news-lower-third {
     padding: 12px 14px !important;
   }
   .feedback-item-header {
-    gap: 6px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
   }
   .feedback-item-author {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
     gap: 6px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
   }
   .feedback-author-name {
-    font-size: 13.5px !important;
-    max-width: 140px !important; /* Spacious name now that admin buttons are removed on mobile */
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    max-width: none !important;
+    white-space: nowrap !important;
   }
   .user-title-badge {
-    font-size: 10px !important;
-    padding: 2px 5px !important;
-    max-width: 110px !important;
+    font-size: 11px !important;
+    padding: 2px 7px !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
   }
   .feedback-item-badge {
-    font-size: 10px !important;
-    padding: 2px 6px !important;
-    max-width: 100px !important;
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    max-width: none !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
     display: inline-flex !important;
+    align-items: center !important;
   }
   .feedback-item-meta-group {
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
     gap: 6px !important;
   }
   .feedback-item-stars {
-    font-size: 11px !important;
+    font-size: 12px !important;
     gap: 2px !important;
   }
   .feedback-item-stars-score {
     display: none !important;
   }
+  .feedback-reflections-card {
+    margin-bottom: 96px !important;
+  }
 }
 
 @media (max-width: 420px) {
+  .feedback-item-header {
+    gap: 6px !important;
+  }
+  .feedback-item-author {
+    gap: 5px !important;
+  }
   .feedback-author-name {
-    max-width: 115px !important;
+    font-size: 13.5px !important;
   }
   .user-title-badge {
-    max-width: 90px !important;
+    font-size: 10.5px !important;
+    padding: 2px 6px !important;
+    max-width: none !important;
   }
   .feedback-item-badge {
-    display: inline-flex !important;
-    max-width: 80px !important;
+    font-size: 10.5px !important;
+    padding: 2px 6px !important;
+    max-width: none !important;
   }
   .feedback-item-stars-icons {
-    letter-spacing: -1.5px !important;
+    letter-spacing: -1px !important;
+  }
+  .feedback-reflections-card {
+    margin-bottom: 96px !important;
   }
 }
-
 
 /* Automatic First Letter Capitalization for User Name Inputs */
 #speak-student-name,

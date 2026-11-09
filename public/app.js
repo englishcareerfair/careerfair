@@ -11739,9 +11739,29 @@ async function loadFeedbackWall() {
       const starCount = Math.max(1, Math.min(5, Number(f.useful ?? f.r_useful ?? 5)));
       const stars = '⭐'.repeat(starCount) + (starCount === 1 ? '☆☆☆☆' : starCount === 2 ? '☆☆☆' : starCount === 3 ? '☆☆' : starCount === 4 ? '☆' : '');
       const timeStr = f.ts ? formatFriendlyTime(f.ts) : '';
-      const roleBadge = f.class_info && f.class_info !== f.role
-        ? `${escapeHtml(f.role || 'Visitor')} · ${escapeHtml(f.class_info)}`
-        : escapeHtml(f.role || 'Visitor');
+      // Clean, professional role and class formatting that never clips on any device
+      const roleStr = (f.role || 'Visitor').trim();
+      const classStr = (f.class_info || '').trim();
+
+      let roleBadgeText;
+      if (roleStr === 'Teacher' || roleStr === 'Faculty') {
+        roleBadgeText = (classStr && !classStr.startsWith('Class ') && classStr !== 'Parent / Guest' && classStr !== 'Teacher' && classStr !== 'Faculty')
+          ? `Faculty · ${classStr}`
+          : 'Faculty';
+      } else if (roleStr === 'Student') {
+        roleBadgeText = (classStr && classStr !== 'Student' && classStr !== 'Parent / Guest')
+          ? `Student · ${classStr}`
+          : 'Student';
+      } else if (roleStr === 'Parent') {
+        roleBadgeText = (classStr && classStr.startsWith('Class '))
+          ? `Parent · ${classStr}`
+          : 'Parent';
+      } else {
+        roleBadgeText = (classStr && classStr !== roleStr && classStr !== 'Parent / Guest')
+          ? `${roleStr} · ${classStr}`
+          : roleStr;
+      }
+      const roleBadge = escapeHtml(roleBadgeText);
 
       const isPinned = Number(f.pinned || 0) === 1;
       const customTitle = userTitlesMap[f.name] || '';
