@@ -3250,6 +3250,18 @@ function initNavigation() {
 
   // Tutorial Mode Choice Modal Listeners
   $('#btn-close-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
+  $('#btn-dismiss-tutorial-choice')?.addEventListener('click', closeTutorialChoiceModal);
+  $('#tutorial-choice-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'tutorial-choice-modal') closeTutorialChoiceModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('tutorial-choice-modal');
+      if (modal && modal.classList.contains('active')) {
+        closeTutorialChoiceModal();
+      }
+    }
+  });
   $('#tutorial-student-name-input')?.addEventListener('input', (e) => {
     e.target.style.borderColor = '';
     e.target.style.boxShadow = '';
