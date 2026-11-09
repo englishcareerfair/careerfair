@@ -1199,6 +1199,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_roadmap_quiz',
     instruction: 'Discover your professional strengths! Answer 5 rapid career scenarios to uncover your optimal cognitive work style and top recommended career matches.',
     actionHint: '👉 Answer the aptitude scenarios to reveal your profile',
+    audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
     speechText: 'Discover your strengths with the five-question Career Aptitude Quiz! Answer interactive career scenarios to reveal your cognitive work style and top career recommendations.'
   },
   {
@@ -1238,7 +1239,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_reflections_final',
     instruction: 'Review reflections submitted by fellow students, parents, and teachers! Your 2-Page printable Career Booklet is now fully compiled and ready at the top of your screen.',
     actionHint: '👉 Review community reflections and click Finish Tutorial 🎉',
-    audioUrl: '/audio/tutorial/tutorial_exp_step19.mp3',
+    audioUrl: '/audio/tutorial/tutorial_exp_step22.mp3',
     speechText: 'Explore reflections and thoughts submitted by students, parents, and faculty on the live Feedback Wall! Your official two-page Career Booklet is ready at the top of your screen.'
   }
 ];
@@ -1440,7 +1441,6 @@ function scrollTutorialTargetIntoView(selector, options = {}) {
   if (!target) return;
 
   try {
-    cancelTutorialGlider();
     const rect = target.getBoundingClientRect();
     const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
     const targetTop = rect.top + currentScrollY;
@@ -1486,10 +1486,14 @@ function scrollTutorialTargetIntoView(selector, options = {}) {
 function updateHeaderBookletVisibility() {
   const btn = document.getElementById('btn-header-dossier');
   if (!btn) return;
-  const isCompleted = localStorage.getItem('cf_tutorial_completed') === 'true' || 
-                      localStorage.getItem('cf_dossier_unlocked') === 'true';
+  // Admin users get booklet access from the very start
+  const isAdmin = Boolean(STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key'));
+  // For non-admin visitors, booklet is only available during active session after completing tour/feedback,
+  // and is removed once the site is reloaded
+  const isUnlockedInSession = sessionStorage.getItem('cf_booklet_session_unlocked') === 'true';
   const isPdfEnabled = window.STATE?.config?.flags?.pdf_export !== false;
-  if (isCompleted && isPdfEnabled) {
+
+  if ((isAdmin || isUnlockedInSession) && isPdfEnabled) {
     btn.style.display = 'inline-flex';
     btn.hidden = false;
   } else {
@@ -1634,8 +1638,38 @@ function startTutorialWithMode(mode) {
   renderInSiteTutorialStep(0);
 }
 
-function fallbackTutorialSpeech(text, sessionId) {
+async function fallbackTutorialSpeech(text, sessionId) {
   if (sessionId && sessionId !== currentTutorialAudioSessionId) return;
+  // Always prefer ElevenLabs River TTS dynamically
+  try {
+    const res = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voiceId: 'SAz9YHcvj6GT2YYXdXww' }) // River Studio Voice
+    });
+    if (res.ok) {
+      const blob = await res.blob();
+      if (sessionId !== currentTutorialAudioSessionId) return;
+      const audioUrl = URL.createObjectURL(blob);
+      const audio = new Audio(audioUrl);
+      activeTutorialAudio = audio;
+      window.currentTtsAudio = audio;
+      audio.onplay = () => {
+        if (sessionId !== currentTutorialAudioSessionId) return;
+        isTutorialSpeechActive = true;
+        updateTutorialHudStatus('speaking', 'River');
+      };
+      audio.onended = () => {
+        if (sessionId !== currentTutorialAudioSessionId) return;
+        isTutorialSpeechActive = false;
+        updateTutorialHudStatus('idle', 'River');
+      };
+      await audio.play();
+      return;
+    }
+  } catch (_) {}
+
+  // Offline fallback to browser speech synthesis
   if (!('speechSynthesis' in window)) return;
   try {
     window.speechSynthesis.cancel();
@@ -1675,9 +1709,8 @@ function playTutorialStepAudio(stepData) {
   updateTutorialHudStatus('speaking', 'River');
   isTutorialSpeechActive = true;
 
-  if (['careers', 'colleges', 'exams'].includes(stepData.tab)) {
-    startTutorialNarrationGlider(stepData.tab);
-  }
+  // Smooth slow-motion downward glide across every tutorial page while voice plays
+  startTutorialNarrationGlider(stepData.tab);
 
   if (stepData.audioUrl) {
     try {
@@ -2002,6 +2035,12 @@ function renderInSiteTutorialStep(stepIndex) {
       } else {
         scrollTarget = document.querySelector('.feedback-form-card') || targetEl;
       }
+      if (scrollTarget) {
+        scrollTarget.classList.add('tutorial-arena-highlight');
+      }
+    } else if (data.tab === 'exams') {
+      scrollTarget = document.querySelector('#exams-cards-container .card:first-child') || 
+                     document.getElementById('exams-cards-container') || targetEl;
       if (scrollTarget) {
         scrollTarget.classList.add('tutorial-arena-highlight');
       }
@@ -3428,7 +3467,7 @@ function initNavigation() {
       }
       localStorage.setItem('cf_tutorial_completed', 'true');
       localStorage.setItem('cf_dossier_unlocked', 'true');
-      if (typeof updateHeaderBookletVisibility === 'function') updateHeaderBookletVisibility();
+      sessionStorage.setItem('cf_booklet_session_unlocked', 'true'); if (typeof updateHeaderBookletVisibility === 'function') updateHeaderBookletVisibility();
       setHeaderBookletHighlight(true);
       showToast('🎉 Congratulations on completing the Career Fair tutorial tour! Your Booklet is now unlocked at the top!');
       stopTutorial();
@@ -4608,8 +4647,11 @@ const AI_SENTENCE_LIBRARY = {
 let isSpeakLadderBound = false;
 function initSpeakLadder() {
   const nameInput = $('#speak-student-name');
+  const activeName = STATE.studentName || localStorage.getItem('cf_student_name') || localStorage.getItem('ecf_student_name') || '';
   if (nameInput) {
-    nameInput.value = '';
+    if (!nameInput.value || nameInput.value !== activeName) {
+      nameInput.value = activeName;
+    }
   }
 
   if (!isSpeakLadderBound) {
@@ -5359,8 +5401,11 @@ function initSpeechLab() {
 
   // Wire Student Name in Speech Lab (Synchronized with Speak Ladder & Leaderboard)
   const labNameInput = $('#speech-lab-student-name');
+  const activeLabName = STATE.studentName || localStorage.getItem('cf_student_name') || localStorage.getItem('ecf_student_name') || '';
   if (labNameInput) {
-    labNameInput.value = '';
+    if (!labNameInput.value || labNameInput.value !== activeLabName) {
+      labNameInput.value = activeLabName;
+    }
     if (!labNameInput.dataset.bound) {
       labNameInput.dataset.bound = 'true';
       labNameInput.addEventListener('keydown', (e) => {
@@ -14236,6 +14281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initPlanTools();
   initLeaderboard();
   renderHeroStream();
+  updateHeaderBookletVisibility();
 
   // Password visibility toggle handler
   $('#btn-toggle-pwd-vis')?.addEventListener('click', () => {

@@ -6519,3 +6519,32 @@ select.tutorial-button-highlight {
 [data-theme="light"] .stream-loader-subtitle {
   color: #64748b;
 }
+
+
+/* Leaderboard Table Scrollbar Removal - Clean Card Interface */
+#sec-leaderboard .table-wrapper,
+.table-wrapper {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE/Edge */
+}
+
+#sec-leaderboard .table-wrapper::-webkit-scrollbar,
+.table-wrapper::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Ensure highlight perimeter does not leak outside scroll container and cause scrollbars */
+.table-wrapper.tutorial-arena-highlight {
+  overflow: hidden !important;
+}
+
+.table-wrapper.tutorial-arena-highlight::after {
+  inset: 0 !important;
+}
