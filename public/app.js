@@ -202,7 +202,19 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     const res = await fetch(primaryUrl, fetchOpts);
     if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
-    if (res.status === 401 || res.status === 403) return null;
+    if (res.status === 401 || res.status === 403) {
+      if (cleanEndpoint.startsWith('admin/') && STATE.adminKey) {
+        const errBody = await res.json().catch(() => null);
+        STATE.adminKey = '';
+        sessionStorage.removeItem('cf_admin_key');
+        localStorage.removeItem('cf_admin_key');
+        const g = $('#admin-gate-screen');
+        const w = $('#admin-workspace-screen');
+        if (g && w) { g.hidden = false; w.hidden = true; }
+        showToast(errBody?.error || (res.status === 403 ? 'Admin access has been removed for this device.' : 'Admin session expired. Please sign in again.'));
+      }
+      return null;
+    }
     if (!isFile && typeof window !== 'undefined' && window.location.hostname !== 'careerwithenglish.pages.dev') {
       try {
         const fallbackRes = await fetch(`${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`, fetchOpts);
@@ -12500,12 +12512,13 @@ function renderAdminView() {
           });
         }
         if (res.status === 401 || res.status === 403) {
+          const errBody = await res.json().catch(() => null);
           STATE.adminKey = '';
           sessionStorage.removeItem('cf_admin_key');
           localStorage.removeItem('cf_admin_key');
           gateScreen.hidden = false;
           workspaceScreen.hidden = true;
-          showToast('Admin password has changed. Please sign in with the current password.');
+          showToast(errBody?.error || (res.status === 403 ? 'Admin access has been removed for this device.' : 'Admin password has changed. Please sign in with the current password.'));
         }
       } catch (_) {}
     })();
@@ -13534,6 +13547,9 @@ function initAdminWorkspace() {
       if (view === 'data') {
         renderAdminModeration();
       }
+      if (view === 'security' && typeof window.renderAdminDevices === 'function') {
+        window.renderAdminDevices();
+      }
       if (view === 'ai') {
         if (typeof window.initDynamicApiPools === 'function') {
           window.initDynamicApiPools();
@@ -14009,6 +14025,23 @@ function initAdminWorkspace() {
     loadLeaderboard();
     renderAdminModeration();
   });
+
+  // ── Admin Devices & IP Access Control Wiring ──────────────────────────────
+  const btnRefreshDevices = $('#btn-admin-refresh-devices');
+  if (btnRefreshDevices && !btnRefreshDevices.dataset.wired) {
+    btnRefreshDevices.dataset.wired = 'true';
+    btnRefreshDevices.addEventListener('click', () => {
+      if (typeof window.renderAdminDevices === 'function') window.renderAdminDevices();
+    });
+  }
+  const btnRevokeDeviceIp = $('#btn-admin-revoke-ip');
+  if (btnRevokeDeviceIp && !btnRevokeDeviceIp.dataset.wired) {
+    btnRevokeDeviceIp.dataset.wired = 'true';
+    btnRevokeDeviceIp.addEventListener('click', () => {
+      if (typeof window.adminRevokeDeviceIp === 'function') window.adminRevokeDeviceIp();
+    });
+  }
+  if (typeof window.renderAdminDevices === 'function') window.renderAdminDevices();
 
   // ── Password Change Form Wiring ───────────────────────────────────────────
   const formChangePwd = $('#form-change-admin-password');
@@ -14770,6 +14803,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let valid = false;
     let backendResponded = false;
+    let loginErrorMsg = 'Incorrect password.';
 
     // Live Cloudflare backend authentication verification
     try {
@@ -14786,6 +14820,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         valid = Boolean(data && data.ok);
         backendResponded = true;
       } else if (res.status === 401 || res.status === 403) {
+        const errData = await res.json().catch(() => null);
+        if (res.status === 403 && errData?.error) loginErrorMsg = errData.error;
         valid = false;
         backendResponded = true;
       }
@@ -14801,6 +14837,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             valid = Boolean(data && data.ok);
             backendResponded = true;
           } else if (fallbackRes.status === 401 || fallbackRes.status === 403) {
+            const errData = await fallbackRes.json().catch(() => null);
+            if (fallbackRes.status === 403 && errData?.error) loginErrorMsg = errData.error;
             valid = false;
             backendResponded = true;
           }
@@ -14837,7 +14875,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       loadLeaderboard();
       showToast('Admin Control Room Unlocked 🔓');
     } else {
-      showToast('Incorrect password.');
+      showToast(loginErrorMsg);
     }
   });
 
@@ -15046,6 +15084,121 @@ window.adminAssignUserTitle = async function(encodedName) {
   await loadLeaderboard();
   if (typeof renderAdminModeration === 'function') {
     await renderAdminModeration();
+  }
+};
+
+window.renderAdminDevices = async function() {
+  const container = $('#admin-devices-list');
+  const ipBadge = $('#admin-current-ip-badge');
+  if (!container) return;
+
+  try {
+    const res = await fetchApi(`admin/devices?_t=${Date.now()}`);
+    if (!res || !res.ok) {
+      container.innerHTML = `<div style="font-size:12.5px;color:var(--text-muted);text-align:center;padding:14px;">Unable to load device IP history (offline or unavailable).</div>`;
+      return;
+    }
+
+    const currentIp = res.current_ip || 'Unknown';
+    if (ipBadge) {
+      ipBadge.textContent = `Your IP: ${currentIp}`;
+    }
+
+    const devices = Array.isArray(res.devices) ? res.devices : [];
+    if (!devices.length) {
+      container.innerHTML = `<div style="font-size:12.5px;color:var(--text-muted);text-align:center;padding:14px;">No admin device access recorded yet.</div>`;
+      return;
+    }
+
+    const fmtTime = (ts) => {
+      if (!ts) return '—';
+      try {
+        return new Date(ts).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return '—';
+      }
+    };
+
+    container.innerHTML = `
+      <table class="data-table" style="width:100%;font-size:12.5px;border-collapse:collapse;">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 10px;">IP Address</th>
+            <th style="text-align:left;padding:8px 10px;">Device / Browser</th>
+            <th style="text-align:left;padding:8px 10px;">Last Active</th>
+            <th style="text-align:left;padding:8px 10px;">Admin Status</th>
+            <th style="text-align:center;padding:8px 10px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${devices.map(d => {
+            const safeIp = escapeHtml(d.ip || '');
+            const safeDevice = escapeHtml(d.device || 'Unknown Device');
+            const currentTag = d.is_current
+              ? `<span class="badge-pill" style="font-size:10px;padding:1px 6px;margin-left:6px;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">THIS DEVICE</span>`
+              : '';
+            const statusHtml = d.is_blocked
+              ? `<span style="color:#ef4444;font-weight:700;">🔴 Access Removed</span>`
+              : `<span style="color:#10b981;font-weight:700;">🟢 Active</span>`;
+            const actionBtn = d.is_blocked
+              ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Restore Access</button>`
+              : `<button type="button" class="btn btn-primary btn-xs" style="background:#ef4444;border-color:#dc2626;" onclick="window.adminRevokeDeviceIp('${safeIp}', ${Boolean(d.is_current)})">🚫 Remove Access</button>`;
+            return `
+              <tr style="border-top:1px solid var(--border);">
+                <td style="padding:8px 10px;font-family:var(--font-mono);font-weight:700;white-space:nowrap;">${safeIp}${currentTag}</td>
+                <td style="padding:8px 10px;color:var(--text-muted);">${safeDevice}</td>
+                <td style="padding:8px 10px;color:var(--text-dim);white-space:nowrap;">${fmtTime(d.last_seen)}</td>
+                <td style="padding:8px 10px;white-space:nowrap;">${statusHtml}</td>
+                <td style="padding:8px 10px;text-align:center;white-space:nowrap;">${actionBtn}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    console.warn('Render admin devices error:', err);
+  }
+};
+
+window.adminRevokeDeviceIp = async function(ipToRevoke, isCurrent = false) {
+  const input = $('#admin-revoke-ip-input');
+  const ip = (ipToRevoke || input?.value || '').trim();
+  if (!ip) {
+    showToast('Please enter a device IP address.');
+    return;
+  }
+  const msg = isCurrent
+    ? `Remove admin access from YOUR current device IP "${ip}"? You will be locked out immediately.`
+    : `Remove admin panel access from device IP "${ip}"? That device will be locked out of the Admin Control Room.`;
+  if (!confirm(msg)) return;
+
+  const res = await fetchApi('admin/devices/revoke', 'POST', { ip });
+  if (res && res.ok) {
+    if (input && !ipToRevoke) input.value = '';
+    showToast(`Admin access removed for IP "${ip}" 🚫`);
+    if (isCurrent) {
+      STATE.adminKey = '';
+      sessionStorage.removeItem('cf_admin_key');
+      localStorage.removeItem('cf_admin_key');
+      renderAdminView();
+    } else {
+      await window.renderAdminDevices();
+    }
+  } else {
+    showToast('Failed to remove admin access for that IP.');
+  }
+};
+
+window.adminRestoreDeviceIp = async function(ip) {
+  if (!ip) return;
+  if (!confirm(`Restore admin panel access for device IP "${ip}"?`)) return;
+  const res = await fetchApi('admin/devices/restore', 'POST', { ip });
+  if (res && res.ok) {
+    showToast(`Admin access restored for IP "${ip}" ✅`);
+    await window.renderAdminDevices();
+  } else {
+    showToast('Failed to restore admin access.');
   }
 };
 

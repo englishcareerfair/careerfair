@@ -52,6 +52,101 @@ function calculateAccuracy(ref, hyp) {
   return Math.max(0, Math.round((1 - dist / maxLen) * 100));
 }
 
+/** Extract client IP reliably from Cloudflare / proxy headers */
+function getClientIp(req) {
+  const raw = req.headers.get('cf-connecting-ip')
+    || (req.headers.get('x-forwarded-for') || '').split(',')[0]
+    || req.headers.get('x-real-ip')
+    || '';
+  return raw.trim();
+}
+
+/** Summarize User-Agent into readable OS + Browser label */
+function summarizeUserAgent(ua = '') {
+  const s = String(ua || '');
+  let os = 'Unknown Device';
+  if (/Windows/i.test(s)) os = 'Windows';
+  else if (/iPhone|iPad|iPod/i.test(s)) os = 'iOS';
+  else if (/Android/i.test(s)) os = 'Android';
+  else if (/Mac OS X|Macintosh/i.test(s)) os = 'macOS';
+  else if (/Linux/i.test(s)) os = 'Linux';
+
+  let browser = 'Browser';
+  if (/Edg\//i.test(s)) browser = 'Edge';
+  else if (/Chrome\//i.test(s) && !/Edg\//i.test(s)) browser = 'Chrome';
+  else if (/Firefox\//i.test(s)) browser = 'Firefox';
+  else if (/Safari\//i.test(s) && !/Chrome\//i.test(s)) browser = 'Safari';
+  return `${os} · ${browser}`;
+}
+
+async function getAdminBlockedIps(db) {
+  let blocked = [];
+  if (db) {
+    try {
+      const raw = await kvGet(db, 'admin_blocked_ips', '');
+      if (raw) blocked = JSON.parse(raw);
+    } catch {}
+  } else {
+    blocked = Array.isArray(GLOBAL_CACHE.admin_blocked_ips) ? GLOBAL_CACHE.admin_blocked_ips : [];
+  }
+  if (!Array.isArray(blocked)) blocked = [];
+  GLOBAL_CACHE.admin_blocked_ips = blocked;
+  return blocked;
+}
+
+async function getAdminDevices(db) {
+  let devices = [];
+  if (db) {
+    try {
+      const raw = await kvGet(db, 'admin_devices', '');
+      if (raw) devices = JSON.parse(raw);
+    } catch {}
+  } else {
+    devices = Array.isArray(GLOBAL_CACHE.admin_devices) ? GLOBAL_CACHE.admin_devices : [];
+  }
+  if (!Array.isArray(devices)) devices = [];
+  GLOBAL_CACHE.admin_devices = devices;
+  return devices;
+}
+
+async function recordAdminDeviceAccess(req, db, ip, forceWrite = false) {
+  const cleanIp = (ip || 'Local / Unknown').trim();
+  const ua = req.headers.get('user-agent') || '';
+  const deviceLabel = summarizeUserAgent(ua);
+  const now = Date.now();
+  let devices = await getAdminDevices(db);
+  const idx = devices.findIndex(d => d && d.ip === cleanIp);
+  let shouldWrite = forceWrite || idx === -1;
+
+  if (idx >= 0) {
+    const existing = devices[idx];
+    if (!existing.last_seen || (now - existing.last_seen) > 15000 || existing.device !== deviceLabel) {
+      shouldWrite = true;
+    }
+    existing.device = deviceLabel;
+    existing.last_seen = now;
+    existing.hits = (existing.hits || 1) + 1;
+  } else {
+    devices.unshift({
+      ip: cleanIp,
+      device: deviceLabel,
+      first_seen: now,
+      last_seen: now,
+      hits: 1
+    });
+  }
+
+  devices.sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
+  if (devices.length > 100) devices = devices.slice(0, 100);
+  GLOBAL_CACHE.admin_devices = devices;
+
+  if (db && shouldWrite) {
+    try {
+      await kvSet(db, 'admin_devices', JSON.stringify(devices));
+    } catch {}
+  }
+}
+
 /** Web Crypto SHA-256 Digest */
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
@@ -94,7 +189,20 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   }
   const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'botschool').trim();
   if (token === validPwd) {
-    return { ok: true, admin: true, scopes: ['*'] };
+    const clientIp = getClientIp(req);
+    if (clientIp) {
+      const blockedIps = await getAdminBlockedIps(db);
+      if (blockedIps.includes(clientIp)) {
+        return {
+          ok: false,
+          status: 403,
+          error: `Admin access has been removed for your device IP (${clientIp}).`,
+          admin_revoked: true
+        };
+      }
+    }
+    await recordAdminDeviceAccess(req, db, clientIp, Boolean(url && url.pathname.endsWith('/admin/ping')));
+    return { ok: true, admin: true, scopes: ['*'], ip: clientIp || 'Local / Unknown' };
   }
 
   // 2. Check Scoped API Key (ecf_...)
@@ -183,7 +291,9 @@ const GLOBAL_CACHE = {
   ],
   api_keys: [],
   telemetry: [],
-  issues: []
+  issues: [],
+  admin_devices: [],
+  admin_blocked_ips: []
 };
 
 let isDbSchemaReady = false;
@@ -1968,8 +2078,73 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   // ── 9. Admin Moderation Endpoints ──────────────────────────────────────────
   if (path === '/admin/ping' && method === 'GET') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
-    if (!authCheck.ok) return err(authCheck.error, authCheck.status);
-    return json({ ok: true });
+    if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
+    return json({ ok: true, ip: authCheck.ip || getClientIp(request) || 'Local / Unknown' });
+  }
+
+  if (path === '/admin/devices' && method === 'GET') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
+    const currentIp = getClientIp(request) || 'Local / Unknown';
+    const blocked = await getAdminBlockedIps(db);
+    const rawDevices = await getAdminDevices(db);
+    const byIp = new Map();
+    for (const d of rawDevices) {
+      if (!d || !d.ip) continue;
+      byIp.set(d.ip, {
+        ...d,
+        is_current: d.ip === currentIp,
+        is_blocked: blocked.includes(d.ip)
+      });
+    }
+    for (const bIp of blocked) {
+      if (!byIp.has(bIp)) {
+        byIp.set(bIp, {
+          ip: bIp,
+          device: 'Manually Blocked',
+          first_seen: null,
+          last_seen: null,
+          hits: 0,
+          is_current: bIp === currentIp,
+          is_blocked: true
+        });
+      }
+    }
+    const devices = Array.from(byIp.values()).sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
+    return json({ ok: true, current_ip: currentIp, devices, blocked_ips: blocked });
+  }
+
+  if (path === '/admin/devices/revoke' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const targetIp = String(body.ip || '').trim();
+    if (!targetIp) return err('Missing device IP address', 400);
+    const blocked = await getAdminBlockedIps(db);
+    if (!blocked.includes(targetIp)) blocked.push(targetIp);
+    GLOBAL_CACHE.admin_blocked_ips = blocked;
+    if (db) {
+      await ensureDbSchema(db);
+      await kvSet(db, 'admin_blocked_ips', JSON.stringify(blocked));
+    }
+    return json({ ok: true, ip: targetIp, blocked_ips: blocked });
+  }
+
+  if (path === '/admin/devices/restore' && method === 'POST') {
+    const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
+    if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const targetIp = String(body.ip || '').trim();
+    if (!targetIp) return err('Missing device IP address', 400);
+    const blocked = (await getAdminBlockedIps(db)).filter(x => x !== targetIp);
+    GLOBAL_CACHE.admin_blocked_ips = blocked;
+    if (db) {
+      await ensureDbSchema(db);
+      await kvSet(db, 'admin_blocked_ips', JSON.stringify(blocked));
+    }
+    return json({ ok: true, ip: targetIp, blocked_ips: blocked });
   }
 
   if (path === '/admin/change-password' && method === 'POST') {
