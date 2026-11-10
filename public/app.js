@@ -1228,6 +1228,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     sectionKey: 'section_feedback',
     instruction: 'Leave your official fair rating and student reflection below to complete your booklet! Enter your name, choose your star rating, and click Submit Feedback.',
     actionHint: '👉 Enter your reflection and submit feedback',
+    audioUrl: '/audio/tutorial/tutorial_exp_step21.mp3',
     speechText: 'Congratulations on exploring our exhibits! Leave your star rating and student reflection below. Submitting your feedback completes your official printable booklet.'
   },
   {
@@ -1286,6 +1287,8 @@ function cancelTutorialScroll() {
 }
 
 let userInterruptedScrollForStep = null;
+let isGliderProgrammaticScroll = false;
+let lastGliderScrollY = 0;
 
 function onUserScrollInterruption() {
   if (!isTutorialRunning) return;
@@ -1301,6 +1304,22 @@ if (typeof window !== 'undefined') {
   window.addEventListener('keydown', (e) => {
     if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Space', 'Home', 'End'].includes(e.code) || ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) {
       onUserScrollInterruption();
+    }
+  }, { passive: true });
+  // Mousedown / Pointerdown on or near desktop scrollbar to let user take control immediately
+  window.addEventListener('mousedown', (e) => {
+    if (e.clientX >= (window.innerWidth - 25)) {
+      onUserScrollInterruption();
+    }
+  }, { passive: true });
+  // Detect manual scrollbar drag or external user scroll during active glide
+  window.addEventListener('scroll', () => {
+    if (!isTutorialRunning || !currentGliderTab) return;
+    if (!isGliderProgrammaticScroll) {
+      const curY = window.pageYOffset || document.documentElement.scrollTop;
+      if (Math.abs(curY - lastGliderScrollY) > 12) {
+        onUserScrollInterruption();
+      }
     }
   }, { passive: true });
 }
@@ -1451,15 +1470,14 @@ function startTutorialNarrationGlider(tabKey) {
       targetDistance = maxScroll;
       v = 210;
     } else if (tabKey === 'exams') {
-      // User request: "only scroll till here in exams" (Image 1) & "make it fast"
+      // User request: "scrolling in the exams tab with speed 210 px/s" & "only scroll till here in exams"
       const examsContainer = document.getElementById('exams-cards-container');
       const examsRect = examsContainer ? examsContainer.getBoundingClientRect() : null;
       const examsPageBottom = currentScrollY + (examsRect ? examsRect.bottom : (targetSec.offsetTop + targetSec.offsetHeight));
       
       const idealExamsTarget = Math.round(examsPageBottom - viewportHeight + 40);
-      // Ensure it always scrolls past the header banner down into the cards (at least 380px)
-      targetDistance = Math.min(maxScroll, Math.max(380, idealExamsTarget));
-      v = 480; // Fast responsive glide across exams
+      targetDistance = Math.min(maxScroll, Math.max(400, idealExamsTarget));
+      v = 210; // Exact 210 px/s velocity per user request
     } else if (tabKey === 'speechLab') {
       // User request: "only scroll till here in ... AI speech lab" (Image 2)
       const recordBtn = document.getElementById('btn-speech-lab-record');
@@ -1479,7 +1497,7 @@ function startTutorialNarrationGlider(tabKey) {
       return;
     }
 
-    const tRamp = (tabKey === 'exams') ? 0.22 : 0.35; // Soft start
+    const tRamp = 0.35; // Soft start at 210 px/s
 
     let startTime = null;
     let pausedDuration = 0;
@@ -1523,7 +1541,10 @@ function startTutorialNarrationGlider(tabKey) {
         return;
       }
 
+      isGliderProgrammaticScroll = true;
+      lastGliderScrollY = Math.round(y);
       window.scrollTo(0, Math.round(y));
+      isGliderProgrammaticScroll = false;
       tutorialGliderAnimId = requestAnimationFrame(glideStep);
     }
 
@@ -2198,8 +2219,16 @@ function renderInSiteTutorialStep(stepIndex) {
   requestAnimationFrame(() => {
     htmlEl.style.scrollBehavior = prevBehavior;
   });
+  if (tutorialGliderTimeoutId) {
+    clearTimeout(tutorialGliderTimeoutId);
+    tutorialGliderTimeoutId = null;
+  }
+  if (window._tutorialTargetScrollTimeoutId) {
+    clearTimeout(window._tutorialTargetScrollTimeoutId);
+    window._tutorialTargetScrollTimeoutId = null;
+  }
   // Single smooth downward scroll invocation after DOM is laid out
-  setTimeout(highlightAndScrollTarget, 140);
+  window._tutorialTargetScrollTimeoutId = setTimeout(highlightAndScrollTarget, 140);
   startTutorialNarrationGlider(data.tab);
 
   // If final reflections step: first highlight reflections card, then scroll to top to showcase Your Booklet!
