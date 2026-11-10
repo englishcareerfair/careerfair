@@ -14867,12 +14867,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         backendResponded = true;
       } else if (res.status === 401 || res.status === 403) {
         const errData = await res.json().catch(() => null);
-        if (res.status === 403 && (errData?.banned || errData?.admin_revoked)) {
+        if (res.status === 403 && (errData?.banned || errData?.admin_revoked || errData?.brute_force_banned)) {
           if (submitBtn) submitBtn.disabled = false;
           enforceSiteIpBlockOverlay(errData.error);
           return;
         }
-        if (res.status === 403 && errData?.error) loginErrorMsg = errData.error;
+        if (res.status === 401 && typeof errData?.remaining_attempts === 'number') {
+          loginErrorMsg = `Incorrect password. ${errData.remaining_attempts} attempt${errData.remaining_attempts === 1 ? '' : 's'} remaining before automatic IP ban.`;
+        } else if (res.status === 403 && errData?.error) {
+          loginErrorMsg = errData.error;
+        }
         valid = false;
         backendResponded = true;
       }
@@ -14889,12 +14893,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             backendResponded = true;
           } else if (fallbackRes.status === 401 || fallbackRes.status === 403) {
             const errData = await fallbackRes.json().catch(() => null);
-            if (fallbackRes.status === 403 && (errData?.banned || errData?.admin_revoked)) {
+            if (fallbackRes.status === 403 && (errData?.banned || errData?.admin_revoked || errData?.brute_force_banned)) {
               if (submitBtn) submitBtn.disabled = false;
               enforceSiteIpBlockOverlay(errData.error);
               return;
             }
-            if (fallbackRes.status === 403 && errData?.error) loginErrorMsg = errData.error;
+            if (fallbackRes.status === 401 && typeof errData?.remaining_attempts === 'number') {
+              loginErrorMsg = `Incorrect password. ${errData.remaining_attempts} attempt${errData.remaining_attempts === 1 ? '' : 's'} remaining before automatic IP ban.`;
+            } else if (fallbackRes.status === 403 && errData?.error) {
+              loginErrorMsg = errData.error;
+            }
             valid = false;
             backendResponded = true;
           }
@@ -14903,14 +14911,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!backendResponded) {
-      // Pure offline fallback: if password was changed locally/in config, NEVER allow 'botschool'
+      // Pure offline fallback + client-side anti-brute-force protection
+      const now = Date.now();
+      let localFails = [];
+      try {
+        localFails = JSON.parse(localStorage.getItem('cf_bf_fails') || '[]').filter(ts => now - ts <= 5 * 60 * 1000);
+      } catch {}
       const localOverride = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || '';
       valid = localOverride ? (pwd === localOverride) : (pwd === 'botschool');
+      if (!valid) {
+        localFails.push(now);
+        localStorage.setItem('cf_bf_fails', JSON.stringify(localFails));
+        if (localFails.length >= 5) {
+          if (submitBtn) submitBtn.disabled = false;
+          enforceSiteIpBlockOverlay('Access Denied: Brute-force attack detected (5 failed login attempts). Access locked across the site.');
+          return;
+        }
+        const rem = Math.max(0, 5 - localFails.length);
+        loginErrorMsg = `Incorrect password. ${rem} attempt${rem === 1 ? '' : 's'} remaining before lockout.`;
+      }
     }
 
     if (submitBtn) submitBtn.disabled = false;
 
     if (valid) {
+      try { localStorage.removeItem('cf_bf_fails'); } catch {}
       STATE.adminKey = pwd;
       sessionStorage.setItem('cf_admin_key', pwd);
       localStorage.setItem('cf_admin_key', pwd);
@@ -15193,8 +15218,11 @@ window.renderAdminDevices = async function() {
             const currentTag = d.is_current
               ? `<span class="badge-pill" style="font-size:10px;padding:1px 6px;margin-left:6px;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">THIS DEVICE</span>`
               : '';
+            const reasonSub = (d.is_blocked && d.block_reason)
+              ? `<div style="font-size:10.5px;color:#fca5a5;margin-top:2px;">🛡️ ${escapeHtml(d.block_reason)}</div>`
+              : '';
             const statusHtml = d.is_blocked
-              ? `<span style="color:#ef4444;font-weight:700;">🔴 Blocked Across Site</span>`
+              ? `<span style="color:#ef4444;font-weight:700;">🔴 Blocked Across Site</span>${reasonSub}`
               : `<span style="color:#10b981;font-weight:700;">🟢 Active</span>`;
             const actionBtn = d.is_blocked
               ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Unblock IP</button>`
