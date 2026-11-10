@@ -1285,9 +1285,24 @@ function cancelTutorialScroll() {
   currentTutorialScrollTargetY = null;
 }
 
+let userInterruptedScrollForStep = null;
+
+function onUserScrollInterruption() {
+  if (!isTutorialRunning) return;
+  userInterruptedScrollForStep = currentTutorialStepIndex;
+  cancelTutorialGlider();
+  cancelTutorialScroll();
+}
+
 if (typeof window !== 'undefined') {
-  window.addEventListener('wheel', cancelTutorialScroll, { passive: true });
-  window.addEventListener('touchstart', cancelTutorialScroll, { passive: true });
+  window.addEventListener('wheel', onUserScrollInterruption, { passive: true });
+  window.addEventListener('touchmove', onUserScrollInterruption, { passive: true });
+  window.addEventListener('touchstart', onUserScrollInterruption, { passive: true });
+  window.addEventListener('keydown', (e) => {
+    if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Space', 'Home', 'End'].includes(e.code) || ['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', ' '].includes(e.key)) {
+      onUserScrollInterruption();
+    }
+  }, { passive: true });
 }
 
 function easeInOutCubic(t) {
@@ -1394,11 +1409,13 @@ function startCollegesTabCycling() {
 }
 
 function startTutorialNarrationGlider(tabKey) {
+  if (userInterruptedScrollForStep === currentTutorialStepIndex) return;
   // If already gliding or scheduled for this tab, do not spawn another instance
   if (currentGliderTab === tabKey) return;
   cancelTutorialGlider();
   cancelCollegesCycle();
   if (!isTutorialRunning) return;
+  if (userInterruptedScrollForStep === currentTutorialStepIndex) return;
 
   if (tabKey === 'colleges') {
     startCollegesTabCycling();
@@ -1412,7 +1429,7 @@ function startTutorialNarrationGlider(tabKey) {
 
   tutorialGliderTimeoutId = setTimeout(() => {
     tutorialGliderTimeoutId = null;
-    if (!isTutorialRunning || currentGliderTab !== tabKey) return;
+    if (!isTutorialRunning || currentGliderTab !== tabKey || userInterruptedScrollForStep === currentTutorialStepIndex) return;
 
     // Set scrollBehavior to 'auto' so rapid requestAnimationFrame updates glide smoothly at 60fps without being throttled/reset by browser's smooth interpolator
     document.documentElement.style.scrollBehavior = 'auto';
@@ -1421,55 +1438,57 @@ function startTutorialNarrationGlider(tabKey) {
     window.scrollTo(0, 0);
 
     const viewportHeight = window.innerHeight;
+    const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
     const docScrollable = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
     const secBottom = Math.max(0, (targetSec.offsetTop + (targetSec.scrollHeight || targetSec.offsetHeight)) - viewportHeight + 40);
     const maxScroll = Math.max(docScrollable, secBottom);
 
     let targetDistance;
+    let v = 210; // default px/sec
+
     if (tabKey === 'careers') {
       // In careers, scroll all the way through the 32-card directory
       targetDistance = maxScroll;
+      v = 210;
     } else if (tabKey === 'exams') {
-      // User request: \'only scroll till here in exams\' (Image 1)
-      // Scroll down until the bottom row of entrance exam cards is visible above bottom HUD
+      // User request: "only scroll till here in exams" (Image 1) & "make it fast"
       const examsContainer = document.getElementById('exams-cards-container');
-      if (examsContainer) {
-        const examsBottom = examsContainer.offsetTop + examsContainer.offsetHeight;
-        targetDistance = Math.max(0, examsBottom - viewportHeight + 32);
-      } else {
-        targetDistance = Math.min(maxScroll, 1200);
-      }
+      const examsRect = examsContainer ? examsContainer.getBoundingClientRect() : null;
+      const examsPageBottom = currentScrollY + (examsRect ? examsRect.bottom : (targetSec.offsetTop + targetSec.offsetHeight));
+      
+      const idealExamsTarget = Math.round(examsPageBottom - viewportHeight + 40);
+      // Ensure it always scrolls past the header banner down into the cards (at least 380px)
+      targetDistance = Math.min(maxScroll, Math.max(380, idealExamsTarget));
+      v = 480; // Fast responsive glide across exams
     } else if (tabKey === 'speechLab') {
-      // User request: \'only scroll till here in ... AI speech lab\' (Image 2)
-      // Scroll down until the prompter screen and Record Voice controls are comfortably visible above bottom HUD
+      // User request: "only scroll till here in ... AI speech lab" (Image 2)
       const recordBtn = document.getElementById('btn-speech-lab-record');
       const stageCard = recordBtn ? (recordBtn.closest('.card') || recordBtn) : null;
-      if (stageCard) {
-        const stageBottom = stageCard.offsetTop + stageCard.offsetHeight;
-        targetDistance = Math.max(0, stageBottom - viewportHeight + 40);
-      } else {
-        targetDistance = Math.min(maxScroll, 750);
-      }
+      const stageRect = stageCard ? stageCard.getBoundingClientRect() : null;
+      const stagePageBottom = currentScrollY + (stageRect ? stageRect.bottom : (targetSec.offsetTop + targetSec.offsetHeight));
+      
+      const idealStageTarget = Math.round(stagePageBottom - viewportHeight + 44);
+      targetDistance = Math.min(maxScroll, Math.max(280, idealStageTarget));
+      v = 360;
     } else {
-      // In games, roadmap, etc., glide down up to maxScroll or 850px
       targetDistance = Math.min(maxScroll, 850);
+      v = 210;
     }
     if (targetDistance <= 40) {
       document.documentElement.style.scrollBehavior = '';
       return;
     }
 
-    // Calibrated glide velocity: 210 px/s
-    const v = 210; // px/sec
-    const tRamp = 0.35; // 350ms soft start
+    const tRamp = (tabKey === 'exams') ? 0.22 : 0.35; // Soft start
 
     let startTime = null;
     let pausedDuration = 0;
     let pauseStart = null;
 
     function glideStep(now) {
-      if (!isTutorialRunning || currentGliderTab !== tabKey) {
+      if (!isTutorialRunning || currentGliderTab !== tabKey || userInterruptedScrollForStep === currentTutorialStepIndex) {
         document.documentElement.style.scrollBehavior = '';
+        tutorialGliderAnimId = null;
         return;
       }
 
@@ -1851,20 +1870,24 @@ function updateTutorialHudStatus(state, labelText) {
   const equalizer = document.getElementById('tutorial-equalizer');
   if (!statusEl) return;
 
+  const compactPauseIcon = document.getElementById('tutorial-compact-pause-icon');
   if (state === 'speaking') {
     statusEl.classList.add('speaking');
     statusEl.classList.remove('paused');
     if (equalizer) equalizer.style.display = 'inline-flex';
     if (labelEl) labelEl.textContent = labelText || 'River';
+    if (compactPauseIcon) compactPauseIcon.textContent = '⏸️';
   } else if (state === 'paused') {
     statusEl.classList.remove('speaking');
     statusEl.classList.add('paused');
     if (equalizer) equalizer.style.display = 'none';
     if (labelEl) labelEl.textContent = labelText || 'Paused';
+    if (compactPauseIcon) compactPauseIcon.textContent = '▶️';
   } else {
     statusEl.classList.remove('speaking', 'paused');
     if (equalizer) equalizer.style.display = 'none';
     if (labelEl) labelEl.textContent = labelText || 'River';
+    if (compactPauseIcon) compactPauseIcon.textContent = '⏸️';
   }
 }
 
@@ -1891,6 +1914,8 @@ function pauseTutorial() {
   if (pauseBtn) {
     pauseBtn.innerHTML = '<span id="tutorial-pause-icon">▶️</span> <span id="tutorial-pause-text">Resume Voice</span>';
   }
+  const compactPauseIcon = document.getElementById('tutorial-compact-pause-icon');
+  if (compactPauseIcon) compactPauseIcon.textContent = '▶️';
 }
 
 function resumeTutorial() {
@@ -1908,6 +1933,8 @@ function resumeTutorial() {
   if (pauseBtn) {
     pauseBtn.innerHTML = '<span id="tutorial-pause-icon">⏸️</span> <span id="tutorial-pause-text">Pause Voice</span>';
   }
+  const compactPauseIcon = document.getElementById('tutorial-compact-pause-icon');
+  if (compactPauseIcon) compactPauseIcon.textContent = '⏸️';
 }
 
 let tutorialAutoAdvanceTimer = null;
@@ -2019,9 +2046,12 @@ function renderInSiteTutorialStep(stepIndex) {
   if (stepIndex >= steps.length) stepIndex = steps.length - 1;
   currentTutorialStepIndex = stepIndex;
 
+  userInterruptedScrollForStep = null;
   const data = steps[stepIndex];
   const hud = document.getElementById('tutorial-hud');
   if (hud) hud.classList.add('active');
+  const compactPauseIcon = document.getElementById('tutorial-compact-pause-icon');
+  if (compactPauseIcon) compactPauseIcon.textContent = isTutorialPaused ? '▶️' : '⏸️';
 
   const badgeEl = document.getElementById('tutorial-hud-badge');
   const titleEl = document.getElementById('tutorial-hud-title');
@@ -3502,6 +3532,14 @@ function initNavigation() {
   });
   $('#btn-tutorial-stop')?.addEventListener('click', stopTutorial);
   $('#btn-tutorial-pause')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isTutorialPaused) {
+      resumeTutorial();
+    } else {
+      pauseTutorial();
+    }
+  });
+  $('#btn-tutorial-compact-pause')?.addEventListener('click', (e) => {
     e.stopPropagation();
     if (isTutorialPaused) {
       resumeTutorial();

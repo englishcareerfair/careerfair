@@ -6547,3 +6547,34 @@ select.tutorial-button-highlight {
 .table-wrapper.tutorial-arena-highlight::after {
   inset: 0 !important;
 }
+
+.btn-compact-pause {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  color: var(--accent-cyan);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.btn-compact-pause:hover {
+  background: rgba(0, 240, 255, 0.25);
+  border-color: rgba(0, 240, 255, 0.6);
+  transform: scale(1.08);
+}
+[data-theme="light"] .btn-compact-pause {
+  background: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+}
+.in-site-tutorial-hud.expanded .btn-compact-pause {
+  display: none !important;
+}

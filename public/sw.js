@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v24.6-scroll-targets-trim-audio';
+const CACHE_NAME = 'cf-cache-v24.7-compact-pause-exams-user-scroll';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
