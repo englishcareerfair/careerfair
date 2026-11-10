@@ -1420,15 +1420,40 @@ function startTutorialNarrationGlider(tabKey) {
     // Always start at top of tab (guarantees downward scroll motion)
     window.scrollTo(0, 0);
 
-    const isCareersOrExams = (tabKey === 'careers' || tabKey === 'exams');
     const viewportHeight = window.innerHeight;
     const docScrollable = Math.max(0, document.documentElement.scrollHeight - viewportHeight);
     const secBottom = Math.max(0, (targetSec.offsetTop + (targetSec.scrollHeight || targetSec.offsetHeight)) - viewportHeight + 40);
     const maxScroll = Math.max(docScrollable, secBottom);
 
-    // For Careers & Exams: scroll till the end of the cards grid (full maxScroll)
-    // For other tabs (games, roadmap), glide down up to maxScroll
-    const targetDistance = isCareersOrExams ? maxScroll : Math.min(maxScroll, 960);
+    let targetDistance;
+    if (tabKey === 'careers') {
+      // In careers, scroll all the way through the 32-card directory
+      targetDistance = maxScroll;
+    } else if (tabKey === 'exams') {
+      // User request: \'only scroll till here in exams\' (Image 1)
+      // Scroll down until the bottom row of entrance exam cards is visible above bottom HUD
+      const examsContainer = document.getElementById('exams-cards-container');
+      if (examsContainer) {
+        const examsBottom = examsContainer.offsetTop + examsContainer.offsetHeight;
+        targetDistance = Math.max(0, examsBottom - viewportHeight + 32);
+      } else {
+        targetDistance = Math.min(maxScroll, 1200);
+      }
+    } else if (tabKey === 'speechLab') {
+      // User request: \'only scroll till here in ... AI speech lab\' (Image 2)
+      // Scroll down until the prompter screen and Record Voice controls are comfortably visible above bottom HUD
+      const recordBtn = document.getElementById('btn-speech-lab-record');
+      const stageCard = recordBtn ? (recordBtn.closest('.card') || recordBtn) : null;
+      if (stageCard) {
+        const stageBottom = stageCard.offsetTop + stageCard.offsetHeight;
+        targetDistance = Math.max(0, stageBottom - viewportHeight + 40);
+      } else {
+        targetDistance = Math.min(maxScroll, 750);
+      }
+    } else {
+      // In games, roadmap, etc., glide down up to maxScroll or 850px
+      targetDistance = Math.min(maxScroll, 850);
+    }
     if (targetDistance <= 40) {
       document.documentElement.style.scrollBehavior = '';
       return;
@@ -1469,8 +1494,8 @@ function startTutorialNarrationGlider(tabKey) {
         y = (0.5 * v * tRamp) + v * (t - tRamp);
       }
 
-      // Re-check dynamic document bottom in case dynamic cards or images finished loading
-      const currentLimit = isCareersOrExams ? Math.max(targetDistance, document.documentElement.scrollHeight - window.innerHeight) : targetDistance;
+      // Re-check dynamic document bottom for careers (full page), but honor exact targetDistance for exams & speechLab
+      const currentLimit = (tabKey === 'careers') ? Math.max(targetDistance, document.documentElement.scrollHeight - window.innerHeight) : targetDistance;
 
       if (y >= currentLimit) {
         window.scrollTo(0, currentLimit);
@@ -2119,8 +2144,8 @@ function renderInSiteTutorialStep(stepIndex) {
       return;
     }
 
-    if (data.tab === 'careers' || data.tab === 'exams') {
-      // User request: Smooth slow-motion downward glide at calibrated 210 px/s pace across the entire card grid
+    if (data.tab === 'careers' || data.tab === 'exams' || data.tab === 'speechLab') {
+      // User request: Smooth downward glide at calibrated 210 px/s pace across careers, exams, and speech lab
       // Do not interrupt the glide with scrollTutorialTargetIntoView
       return;
     }
