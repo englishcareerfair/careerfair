@@ -2745,7 +2745,6 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
             console.error('Feedback insert error:', fbErr);
           }
         }
-      }
 
         // Import user titles into D1 kv and cache
         if (rawTitles && typeof rawTitles === 'object' && Object.keys(rawTitles).length > 0) {
