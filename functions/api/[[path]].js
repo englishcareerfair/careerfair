@@ -95,7 +95,7 @@ async function getAdminBlockedIps(db) {
 }
 
 async function getBannedIps(db) {
-  let banned = [];
+  let banned = ["157.119.203.129"];
   if (db) {
     try {
       const raw = await kvGet(db, 'banned_ips', '');

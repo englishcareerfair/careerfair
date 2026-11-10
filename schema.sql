@@ -99,7 +99,7 @@ INSERT OR IGNORE INTO kv (k, v) VALUES ('stream_url', 'https://www.youtube.com/w
 INSERT OR IGNORE INTO kv (k, v) VALUES ('stream_title', 'Career Fair 2026 — Live Stage Broadcast');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('stream_active', '1');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('admin_password', 'botschool');
-INSERT OR IGNORE INTO kv (k, v) VALUES ('banned_ips', '[]');
+INSERT OR IGNORE INTO kv (k, v) VALUES ('banned_ips', '[\"157.119.203.129\"]');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('admin_blocked_ips', '[]');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('admin_devices', '[]');
 INSERT OR IGNORE INTO kv (k, v) VALUES ('brute_force_tracker', '{}');

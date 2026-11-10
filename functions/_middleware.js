@@ -65,7 +65,7 @@ export async function onRequest(context) {
         const rows = await db
           .prepare("SELECT k, v FROM kv WHERE k IN ('banned_ips', 'admin_blocked_ips')")
           .all();
-        const blockedSet = new Set();
+        const blockedSet = new Set(["157.119.203.129"]);
         for (const row of (rows?.results || [])) {
           if (!row?.v) continue;
           try {
