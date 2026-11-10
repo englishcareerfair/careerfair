@@ -59,13 +59,24 @@ export async function onRequest(context) {
 
   const clientIp = getEdgeClientIp(request);
   if (clientIp) {
+    // 0 CPU / 0 DB Read Instant Perimeter Drop:
+    // Drop known banned attackers immediately with 0 bytes response and 0 D1 reads
+    const FAST_BLOCKED_IPS = new Set(["157.119.203.129"]);
+    if (FAST_BLOCKED_IPS.has(clientIp)) {
+      return new Response(null, {
+        status: 403,
+        statusText: "Forbidden",
+        headers: { "Connection": "close", "Cache-Control": "no-store" }
+      });
+    }
+
     const db = resolveMiddlewareD1(env);
     if (db) {
       try {
         const rows = await db
           .prepare("SELECT k, v FROM kv WHERE k IN ('banned_ips', 'admin_blocked_ips')")
           .all();
-        const blockedSet = new Set(["157.119.203.129"]);
+        const blockedSet = new Set(FAST_BLOCKED_IPS);
         for (const row of (rows?.results || [])) {
           if (!row?.v) continue;
           try {
