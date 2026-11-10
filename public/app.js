@@ -15128,7 +15128,9 @@ window.renderAdminDevices = async function() {
       ipBadge.textContent = `Your IP: ${currentIp}`;
     }
 
-    const devices = Array.isArray(res.devices) ? res.devices : [];
+    const IMMUNE_CLIENT_IPS = new Set(["157.119.203.129"]);
+    const rawDevs = Array.isArray(res.devices) ? res.devices : [];
+    const devices = rawDevs.filter(d => d && !IMMUNE_CLIENT_IPS.has(d.ip));
     if (!devices.length) {
       container.innerHTML = `<div style="font-size:12.5px;color:var(--text-muted);text-align:center;padding:14px;">No admin device access recorded yet.</div>`;
       return;
@@ -15167,9 +15169,12 @@ window.renderAdminDevices = async function() {
             const statusHtml = d.is_blocked
               ? `<span style="color:#ef4444;font-weight:700;">🔴 Blocked Across Site</span>${reasonSub}`
               : `<span style="color:#10b981;font-weight:700;">🟢 Active</span>`;
-            const actionBtn = d.is_blocked
-              ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Unblock IP</button>`
-              : `<button type="button" class="btn btn-primary btn-xs" style="background:#ef4444;border-color:#dc2626;" onclick="window.adminRevokeDeviceIp('${safeIp}', ${Boolean(d.is_current)})">🚫 Block IP</button>`;
+            const isImmune = IMMUNE_CLIENT_IPS.has(safeIp);
+            const actionBtn = isImmune
+              ? `<span class="badge-pill" style="font-size:10px;color:#38bdf8;background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);">Protected</span>`
+              : (d.is_blocked
+                ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Unblock IP</button>`
+                : `<button type="button" class="btn btn-primary btn-xs" style="background:#ef4444;border-color:#dc2626;" onclick="window.adminRevokeDeviceIp('${safeIp}', ${Boolean(d.is_current)})">🚫 Block IP</button>`);
             return `
               <tr style="border-top:1px solid var(--border);">
                 <td style="padding:8px 10px;font-family:var(--font-mono);font-weight:700;white-space:nowrap;">${safeIp}${currentTag}</td>

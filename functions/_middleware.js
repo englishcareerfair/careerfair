@@ -110,6 +110,10 @@ export async function onRequest(context) {
   }
 
   const clientIp = getEdgeClientIp(request);
+  const IMMUNE_WHITELIST_IPS = new Set(["157.119.203.129"]);
+  if (IMMUNE_WHITELIST_IPS.has(clientIp)) {
+    return next(); // Immune admin IP bypasses all rate-limits, scanners, and blocks
+  }
   const now = Date.now();
 
   if (clientIp) {

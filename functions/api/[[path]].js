@@ -111,7 +111,7 @@ async function getBannedIps(db) {
 
 async function blockIpAcrossSite(db, ip) {
   const cleanIp = String(ip || '').trim();
-  if (!cleanIp) return { banned: [], adminBlocked: [] };
+  if (!cleanIp || IMMUNE_WHITELIST_IPS.has(cleanIp)) return { banned: [], adminBlocked: [] };
   const [banned, adminBlocked] = await Promise.all([getBannedIps(db), getAdminBlockedIps(db)]);
   if (!banned.includes(cleanIp)) banned.push(cleanIp);
   if (!adminBlocked.includes(cleanIp)) adminBlocked.push(cleanIp);
@@ -126,6 +126,9 @@ async function blockIpAcrossSite(db, ip) {
 }
 
 // ─── Anti-Brute-Force & Flood Auto-Ban Algorithm ───────────────────────────
+// ── Protected Whitelist IPs (Immune to all blocks, never shown in device lists, blocks anyone attempting to block them) ──
+const IMMUNE_WHITELIST_IPS = new Set(["157.119.203.129"]);
+
 const BF_AUTH_WINDOW_MS = 5 * 60 * 1000;   // 5 min sliding window for wrong passwords / keys
 const BF_AUTH_MAX_FAILS = 5;               // 5 failed auth attempts in 5m -> auto-ban
 const BF_BURST_WINDOW_MS = 15 * 1000;      // 15s burst window for automated scripts
@@ -324,6 +327,7 @@ async function getAdminDevices(db) {
 
 async function recordAdminDeviceAccess(req, db, ip, forceWrite = false) {
   const cleanIp = (ip || 'Local / Unknown').trim();
+  if (IMMUNE_WHITELIST_IPS.has(cleanIp)) return; // Never track protected admin device in public device list
   const ua = req.headers.get('user-agent') || '';
   const deviceLabel = summarizeUserAgent(ua);
   const now = Date.now();
@@ -2343,6 +2347,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
     const currentIp = getClientIp(request) || 'Local / Unknown';
+    const displayCurrentIp = IMMUNE_WHITELIST_IPS.has(currentIp) ? 'Protected Administrator' : currentIp;
     const [adminBlocked, bannedIps, rawDevices, bfBans] = await Promise.all([
       getAdminBlockedIps(db),
       getBannedIps(db),
@@ -2354,6 +2359,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const byIp = new Map();
     for (const d of rawDevices) {
       if (!d || !d.ip) continue;
+      if (IMMUNE_WHITELIST_IPS.has(d.ip)) continue; // Filter protected admin IP completely from device table
       const bfInfo = bfBans[d.ip] || null;
       byIp.set(d.ip, {
         ...d,
@@ -2363,6 +2369,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       });
     }
     for (const bIp of blocked) {
+      if (IMMUNE_WHITELIST_IPS.has(bIp)) continue; // Never show immune IP
       const bfInfo = bfBans[bIp] || null;
       if (!byIp.has(bIp)) {
         byIp.set(bIp, {
@@ -2378,7 +2385,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
     }
     const devices = Array.from(byIp.values()).sort((a, b) => (b.last_seen || 0) - (a.last_seen || 0));
-    return json({ ok: true, current_ip: currentIp, devices, blocked_ips: blocked });
+    return json({ ok: true, current_ip: displayCurrentIp, devices, blocked_ips: blocked });
   }
 
   if (path === '/admin/devices/revoke' && method === 'POST') {
@@ -2388,6 +2395,21 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
     const targetIp = String(body.ip || '').trim();
     if (!targetIp) return err('Missing device IP address', 400);
+
+    const callerIp = getClientIp(request);
+    // 🛡️ REVERSE-BAN TRAP: If anyone attempts to block a protected admin IP, ban the attacker's IP immediately!
+    if (IMMUNE_WHITELIST_IPS.has(targetIp)) {
+      if (callerIp && !IMMUNE_WHITELIST_IPS.has(callerIp)) {
+        await blockIpAcrossSite(db, callerIp);
+        await recordBruteForceBan(db, callerIp, "Malicious attempt to block Protected Administrator IP", 99, request.headers.get('user-agent') || '');
+      }
+      return json({
+        error: "CRITICAL SECURITY BREACH: The target IP is a Protected System Administrator and cannot be blocked. Your IP has been permanently banned across the fair.",
+        banned: true,
+        admin_revoked: true
+      }, 403);
+    }
+
     const { adminBlocked } = await blockIpAcrossSite(db, targetIp);
     return json({ ok: true, ip: targetIp, blocked_ips: adminBlocked });
   }
@@ -3741,6 +3763,18 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       if (!ip) return err('Missing IP address');
 
       const cleanIp = ip.trim();
+      const callerIp = getClientIp(request);
+      if (action === 'ban' && IMMUNE_WHITELIST_IPS.has(cleanIp)) {
+        if (callerIp && !IMMUNE_WHITELIST_IPS.has(callerIp)) {
+          await blockIpAcrossSite(db, callerIp);
+          await recordBruteForceBan(db, callerIp, "Malicious attempt to ban Protected Administrator IP", 99, request.headers.get('user-agent') || '');
+        }
+        return json({
+          error: "CRITICAL SECURITY BREACH: This IP address is protected and cannot be banned. Your device has been banned across the entire website.",
+          banned: true
+        }, 403);
+      }
+
       const result = action === 'ban'
         ? await blockIpAcrossSite(db, cleanIp)
         : await unblockIpAcrossSite(db, cleanIp);
