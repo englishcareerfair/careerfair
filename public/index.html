@@ -1665,7 +1665,7 @@
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
                 <input type="file" id="admin-import-file-input" accept=".json,.csv,application/json,text/csv" style="display:none;">
-                <button class="btn btn-primary btn-sm" id="btn-admin-choose-import" type="button">
+                <button class="btn btn-primary btn-sm" id="btn-admin-choose-import" type="button" onclick="(function(){ var el = document.getElementById('admin-import-file-input'); if (el) { el.value = ''; el.click(); } })()">
                   <span>📂</span> <span>Select JSON / CSV File</span>
                 </button>
               </div>

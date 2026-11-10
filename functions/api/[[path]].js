@@ -2689,9 +2689,9 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
           try {
             await db.prepare(`
-              INSERT OR REPLACE INTO scores (id, name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).bind(id, name, pack, level, acc, fluency, clarity, wpm, className, targetCareer, ts).run();
+              INSERT INTO scores (name, pack, level, acc, fluency, clarity, wpm, class_name, target_career, ts)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).bind(name, pack, level, acc, fluency, clarity, wpm, className, targetCareer, ts).run();
             importedScores++;
           } catch (insertErr) {
             console.error('Score insert error:', insertErr);
@@ -2713,9 +2713,9 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
           try {
             await db.prepare(`
-              INSERT OR REPLACE INTO feedback (id, name, role, class_info, r_useful, r_games, r_speaking, comment, ts, is_pinned)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).bind(id, name, role, classInfo, rUseful, rGames, rSpeaking, comment, ts, isPinned).run();
+              INSERT INTO feedback (name, role, class_info, r_useful, r_games, r_speaking, comment, approved, pinned, ts)
+              VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+            `).bind(name, role, classInfo, rUseful, rGames, rSpeaking, comment, isPinned, ts).run();
             importedFeedback++;
           } catch (fbErr) {
             console.error('Feedback insert error:', fbErr);

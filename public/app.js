@@ -13544,6 +13544,7 @@ function renderAdminDbStatus(cfg) {
 window.renderAdminDbStatus = renderAdminDbStatus;
 
 function initAdminWorkspace() {
+  if (typeof initAdminImportControls === 'function') initAdminImportControls();
   // Authoritative global API key sync from Cloudflare D1 to synchronize keys across all admin devices
   fetchApi('admin/config').then(adminCfg => {
     if (adminCfg && adminCfg.ok) {
@@ -16038,3 +16039,18 @@ function initAdminImportControls() {
     }
   });
 }
+
+// ── Global Fail-safe Delegated Handler for Admin File Import ──
+document.addEventListener('click', function(e) {
+  var btn = e.target && e.target.closest ? e.target.closest('#btn-admin-choose-import') : null;
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof initAdminImportControls === 'function') initAdminImportControls();
+    var input = document.getElementById('admin-import-file-input');
+    if (input) {
+      input.value = '';
+      input.click();
+    }
+  }
+}, true);
