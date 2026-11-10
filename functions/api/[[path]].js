@@ -94,6 +94,52 @@ async function getAdminBlockedIps(db) {
   return blocked;
 }
 
+async function getBannedIps(db) {
+  let banned = [];
+  if (db) {
+    try {
+      const raw = await kvGet(db, 'banned_ips', '');
+      if (raw) banned = JSON.parse(raw);
+    } catch {}
+  } else {
+    banned = Array.isArray(GLOBAL_CACHE.banned_ips) ? GLOBAL_CACHE.banned_ips : [];
+  }
+  if (!Array.isArray(banned)) banned = [];
+  GLOBAL_CACHE.banned_ips = banned;
+  return banned;
+}
+
+async function blockIpAcrossSite(db, ip) {
+  const cleanIp = String(ip || '').trim();
+  if (!cleanIp) return { banned: [], adminBlocked: [] };
+  const [banned, adminBlocked] = await Promise.all([getBannedIps(db), getAdminBlockedIps(db)]);
+  if (!banned.includes(cleanIp)) banned.push(cleanIp);
+  if (!adminBlocked.includes(cleanIp)) adminBlocked.push(cleanIp);
+  GLOBAL_CACHE.banned_ips = banned;
+  GLOBAL_CACHE.admin_blocked_ips = adminBlocked;
+  if (db) {
+    await ensureDbSchema(db);
+    await kvSet(db, 'banned_ips', JSON.stringify(banned));
+    await kvSet(db, 'admin_blocked_ips', JSON.stringify(adminBlocked));
+  }
+  return { banned, adminBlocked };
+}
+
+async function unblockIpAcrossSite(db, ip) {
+  const cleanIp = String(ip || '').trim();
+  const [bannedRaw, adminBlockedRaw] = await Promise.all([getBannedIps(db), getAdminBlockedIps(db)]);
+  const banned = bannedRaw.filter(x => x !== cleanIp);
+  const adminBlocked = adminBlockedRaw.filter(x => x !== cleanIp);
+  GLOBAL_CACHE.banned_ips = banned;
+  GLOBAL_CACHE.admin_blocked_ips = adminBlocked;
+  if (db) {
+    await ensureDbSchema(db);
+    await kvSet(db, 'banned_ips', JSON.stringify(banned));
+    await kvSet(db, 'admin_blocked_ips', JSON.stringify(adminBlocked));
+  }
+  return { banned, adminBlocked };
+}
+
 async function getAdminDevices(db) {
   let devices = [];
   if (db) {
@@ -293,7 +339,8 @@ const GLOBAL_CACHE = {
   telemetry: [],
   issues: [],
   admin_devices: [],
-  admin_blocked_ips: []
+  admin_blocked_ips: [],
+  banned_ips: []
 };
 
 let isDbSchemaReady = false;
@@ -543,18 +590,19 @@ export async function onRequest(ctx) {
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
 
-  // ── IP Ban Enforcement ──
-  const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || '';
+  // ── Site-Wide IP Ban Enforcement (blocks across ALL routes: public + admin) ──
+  const clientIp = getClientIp(request);
   if (clientIp) {
-    let bannedIps = [];
-    try {
-      if (db) {
-        const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
-        if (row && row.v) bannedIps = JSON.parse(row.v);
-      }
-    } catch {}
-    if (Array.isArray(bannedIps) && bannedIps.includes(clientIp)) {
-      return json({ error: 'Access Denied: Your IP address has been banned by exhibition administrators.', banned: true }, 403);
+    const [bannedIps, adminBlockedIps] = await Promise.all([
+      getBannedIps(db),
+      getAdminBlockedIps(db)
+    ]);
+    if (bannedIps.includes(clientIp) || adminBlockedIps.includes(clientIp)) {
+      return json({
+        error: `Access Denied: Your IP address (${clientIp}) has been blocked across this site by administrators.`,
+        banned: true,
+        admin_revoked: true
+      }, 403);
     }
   }
 
@@ -2086,15 +2134,20 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return json({ error: authCheck.error, admin_revoked: Boolean(authCheck.admin_revoked) }, authCheck.status);
     const currentIp = getClientIp(request) || 'Local / Unknown';
-    const blocked = await getAdminBlockedIps(db);
-    const rawDevices = await getAdminDevices(db);
+    const [adminBlocked, bannedIps, rawDevices] = await Promise.all([
+      getAdminBlockedIps(db),
+      getBannedIps(db),
+      getAdminDevices(db)
+    ]);
+    const blockedSet = new Set([...adminBlocked, ...bannedIps]);
+    const blocked = Array.from(blockedSet);
     const byIp = new Map();
     for (const d of rawDevices) {
       if (!d || !d.ip) continue;
       byIp.set(d.ip, {
         ...d,
         is_current: d.ip === currentIp,
-        is_blocked: blocked.includes(d.ip)
+        is_blocked: blockedSet.has(d.ip)
       });
     }
     for (const bIp of blocked) {
@@ -2121,14 +2174,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
     const targetIp = String(body.ip || '').trim();
     if (!targetIp) return err('Missing device IP address', 400);
-    const blocked = await getAdminBlockedIps(db);
-    if (!blocked.includes(targetIp)) blocked.push(targetIp);
-    GLOBAL_CACHE.admin_blocked_ips = blocked;
-    if (db) {
-      await ensureDbSchema(db);
-      await kvSet(db, 'admin_blocked_ips', JSON.stringify(blocked));
-    }
-    return json({ ok: true, ip: targetIp, blocked_ips: blocked });
+    const { adminBlocked } = await blockIpAcrossSite(db, targetIp);
+    return json({ ok: true, ip: targetIp, blocked_ips: adminBlocked });
   }
 
   if (path === '/admin/devices/restore' && method === 'POST') {
@@ -2138,13 +2185,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
     const targetIp = String(body.ip || '').trim();
     if (!targetIp) return err('Missing device IP address', 400);
-    const blocked = (await getAdminBlockedIps(db)).filter(x => x !== targetIp);
-    GLOBAL_CACHE.admin_blocked_ips = blocked;
-    if (db) {
-      await ensureDbSchema(db);
-      await kvSet(db, 'admin_blocked_ips', JSON.stringify(blocked));
-    }
-    return json({ ok: true, ip: targetIp, blocked_ips: blocked });
+    const { adminBlocked } = await unblockIpAcrossSite(db, targetIp);
+    return json({ ok: true, ip: targetIp, blocked_ips: adminBlocked });
   }
 
   if (path === '/admin/change-password' && method === 'POST') {
@@ -3407,19 +3449,17 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     }
   }
 
-  // ── ADMIN: BAN / UNBAN IP ADDRESS ──────────────────────────────────────────
+  // ── ADMIN: BAN / UNBAN IP ADDRESS (Site-Wide Block) ───────────────────────
   if (path === '/admin/ban-ip') {
     if (method === 'GET') {
       const auth = await verifyAuth(request, env, db, 'read:admin', url);
       if (!auth.ok) return err(auth.error, auth.status);
-      let banned = [];
-      if (db) {
-        try {
-          const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
-          if (row && row.v) banned = JSON.parse(row.v);
-        } catch {}
-      }
-      return json({ ok: true, banned_ips: banned });
+      const [bannedIps, adminBlockedIps] = await Promise.all([
+        getBannedIps(db),
+        getAdminBlockedIps(db)
+      ]);
+      const combined = Array.from(new Set([...bannedIps, ...adminBlockedIps]));
+      return json({ ok: true, banned_ips: combined });
     }
 
     if (method === 'POST') {
@@ -3431,28 +3471,12 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       const { ip, action = 'ban' } = body;
       if (!ip) return err('Missing IP address');
 
-      let banned = [];
-      if (db) {
-        try {
-          const row = await db.prepare("SELECT v FROM kv WHERE k = 'banned_ips'").first();
-          if (row && row.v) banned = JSON.parse(row.v);
-        } catch {}
-      }
-
       const cleanIp = ip.trim();
-      if (action === 'ban') {
-        if (!banned.includes(cleanIp)) banned.push(cleanIp);
-      } else {
-        banned = banned.filter(item => item !== cleanIp);
-      }
+      const result = action === 'ban'
+        ? await blockIpAcrossSite(db, cleanIp)
+        : await unblockIpAcrossSite(db, cleanIp);
 
-      if (db) {
-        try {
-          await db.prepare("INSERT OR REPLACE INTO kv (k, v) VALUES ('banned_ips', ?)").bind(JSON.stringify(banned)).run();
-        } catch {}
-      }
-
-      return json({ ok: true, ip: cleanIp, action, banned_ips: banned });
+      return json({ ok: true, ip: cleanIp, action, banned_ips: result.banned });
     }
   }
 

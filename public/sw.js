@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v25.0-admin-device-ip-access';
+const CACHE_NAME = 'cf-cache-v25.1-sitewide-ip-block';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

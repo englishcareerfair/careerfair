@@ -159,6 +159,37 @@ window.capitalizeName = capitalizeName;
 // Universal Global D1 API Client (Unified across careerwithenglish, futureofenglish & mobile devices)
 const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 
+function enforceSiteIpBlockOverlay(message) {
+  try {
+    STATE.adminKey = '';
+    sessionStorage.removeItem('cf_admin_key');
+    localStorage.removeItem('cf_admin_key');
+  } catch {}
+  try {
+    if (typeof cancelTutorialScroll === 'function') cancelTutorialScroll();
+    if (typeof stopSpeaking === 'function') stopSpeaking();
+  } catch {}
+
+  let overlay = document.getElementById('site-ip-blocked-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'site-ip-blocked-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#070b14;color:#e2e8f0;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;';
+    document.body.innerHTML = '';
+    document.body.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
+  }
+  const safeMsg = escapeHtml(message || 'Your device IP address has been blocked from accessing this website by administrators.');
+  overlay.innerHTML = `
+    <div style="max-width:480px;width:100%;background:#0f172a;border:1px solid rgba(239,68,68,0.45);border-radius:16px;padding:32px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+      <div style="font-size:48px;margin-bottom:12px;">🚫</div>
+      <h1 style="margin:0 0 10px 0;font-size:22px;color:#f87171;">Site Access Blocked</h1>
+      <p style="margin:0;font-size:14.5px;line-height:1.55;color:#94a3b8;">${safeMsg}</p>
+    </div>
+  `;
+}
+window.enforceSiteIpBlockOverlay = enforceSiteIpBlockOverlay;
+
 function getApiUrl(path) {
   const clean = path.replace(/^\/+/, '');
   const isFile = (typeof window !== 'undefined' && window.location.protocol === 'file:');
@@ -203,15 +234,19 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
     if (res.status === 401 || res.status === 403) {
+      const errBody = await res.json().catch(() => null);
+      if (res.status === 403 && (errBody?.banned || errBody?.admin_revoked)) {
+        enforceSiteIpBlockOverlay(errBody.error);
+        return null;
+      }
       if (cleanEndpoint.startsWith('admin/') && STATE.adminKey) {
-        const errBody = await res.json().catch(() => null);
         STATE.adminKey = '';
         sessionStorage.removeItem('cf_admin_key');
         localStorage.removeItem('cf_admin_key');
         const g = $('#admin-gate-screen');
         const w = $('#admin-workspace-screen');
         if (g && w) { g.hidden = false; w.hidden = true; }
-        showToast(errBody?.error || (res.status === 403 ? 'Admin access has been removed for this device.' : 'Admin session expired. Please sign in again.'));
+        showToast(errBody?.error || (res.status === 403 ? 'Access removed for this device.' : 'Admin session expired. Please sign in again.'));
       }
       return null;
     }
@@ -219,6 +254,13 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
       try {
         const fallbackRes = await fetch(`${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`, fetchOpts);
         if (fallbackRes.ok) return await fallbackRes.json();
+        if (fallbackRes.status === 403) {
+          const errBody = await fallbackRes.json().catch(() => null);
+          if (errBody?.banned || errBody?.admin_revoked) {
+            enforceSiteIpBlockOverlay(errBody.error);
+            return null;
+          }
+        }
       } catch (e) {}
     }
   } catch (err) {
@@ -12513,12 +12555,16 @@ function renderAdminView() {
         }
         if (res.status === 401 || res.status === 403) {
           const errBody = await res.json().catch(() => null);
+          if (res.status === 403 && (errBody?.banned || errBody?.admin_revoked)) {
+            enforceSiteIpBlockOverlay(errBody.error);
+            return;
+          }
           STATE.adminKey = '';
           sessionStorage.removeItem('cf_admin_key');
           localStorage.removeItem('cf_admin_key');
           gateScreen.hidden = false;
           workspaceScreen.hidden = true;
-          showToast(errBody?.error || (res.status === 403 ? 'Admin access has been removed for this device.' : 'Admin password has changed. Please sign in with the current password.'));
+          showToast(errBody?.error || (res.status === 403 ? 'Access has been removed for this device.' : 'Admin password has changed. Please sign in with the current password.'));
         }
       } catch (_) {}
     })();
@@ -14821,6 +14867,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         backendResponded = true;
       } else if (res.status === 401 || res.status === 403) {
         const errData = await res.json().catch(() => null);
+        if (res.status === 403 && (errData?.banned || errData?.admin_revoked)) {
+          if (submitBtn) submitBtn.disabled = false;
+          enforceSiteIpBlockOverlay(errData.error);
+          return;
+        }
         if (res.status === 403 && errData?.error) loginErrorMsg = errData.error;
         valid = false;
         backendResponded = true;
@@ -14838,6 +14889,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             backendResponded = true;
           } else if (fallbackRes.status === 401 || fallbackRes.status === 403) {
             const errData = await fallbackRes.json().catch(() => null);
+            if (fallbackRes.status === 403 && (errData?.banned || errData?.admin_revoked)) {
+              if (submitBtn) submitBtn.disabled = false;
+              enforceSiteIpBlockOverlay(errData.error);
+              return;
+            }
             if (fallbackRes.status === 403 && errData?.error) loginErrorMsg = errData.error;
             valid = false;
             backendResponded = true;
@@ -15138,11 +15194,11 @@ window.renderAdminDevices = async function() {
               ? `<span class="badge-pill" style="font-size:10px;padding:1px 6px;margin-left:6px;background:rgba(0,240,255,0.12);color:var(--accent-cyan);border:1px solid rgba(0,240,255,0.3);">THIS DEVICE</span>`
               : '';
             const statusHtml = d.is_blocked
-              ? `<span style="color:#ef4444;font-weight:700;">🔴 Access Removed</span>`
+              ? `<span style="color:#ef4444;font-weight:700;">🔴 Blocked Across Site</span>`
               : `<span style="color:#10b981;font-weight:700;">🟢 Active</span>`;
             const actionBtn = d.is_blocked
-              ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Restore Access</button>`
-              : `<button type="button" class="btn btn-primary btn-xs" style="background:#ef4444;border-color:#dc2626;" onclick="window.adminRevokeDeviceIp('${safeIp}', ${Boolean(d.is_current)})">🚫 Remove Access</button>`;
+              ? `<button type="button" class="btn btn-secondary btn-xs" onclick="window.adminRestoreDeviceIp('${safeIp}')">✅ Unblock IP</button>`
+              : `<button type="button" class="btn btn-primary btn-xs" style="background:#ef4444;border-color:#dc2626;" onclick="window.adminRevokeDeviceIp('${safeIp}', ${Boolean(d.is_current)})">🚫 Block IP</button>`;
             return `
               <tr style="border-top:1px solid var(--border);">
                 <td style="padding:8px 10px;font-family:var(--font-mono);font-weight:700;white-space:nowrap;">${safeIp}${currentTag}</td>
@@ -15169,36 +15225,35 @@ window.adminRevokeDeviceIp = async function(ipToRevoke, isCurrent = false) {
     return;
   }
   const msg = isCurrent
-    ? `Remove admin access from YOUR current device IP "${ip}"? You will be locked out immediately.`
-    : `Remove admin panel access from device IP "${ip}"? That device will be locked out of the Admin Control Room.`;
+    ? `Block YOUR current device IP "${ip}" across the entire site? You will be locked out of the whole website immediately.`
+    : `Block device IP "${ip}" across the entire website? That device will be locked out of both the Fair site and Admin Control Room.`;
   if (!confirm(msg)) return;
 
   const res = await fetchApi('admin/devices/revoke', 'POST', { ip });
   if (res && res.ok) {
     if (input && !ipToRevoke) input.value = '';
-    showToast(`Admin access removed for IP "${ip}" 🚫`);
+    showToast(`IP "${ip}" blocked across the site 🚫`);
     if (isCurrent) {
-      STATE.adminKey = '';
-      sessionStorage.removeItem('cf_admin_key');
-      localStorage.removeItem('cf_admin_key');
-      renderAdminView();
+      enforceSiteIpBlockOverlay(`Access Denied: Your IP address (${ip}) has been blocked across this site by administrators.`);
     } else {
       await window.renderAdminDevices();
+      if (typeof window.renderAdminBannedIps === 'function') window.renderAdminBannedIps();
     }
   } else {
-    showToast('Failed to remove admin access for that IP.');
+    showToast('Failed to block that IP.');
   }
 };
 
 window.adminRestoreDeviceIp = async function(ip) {
   if (!ip) return;
-  if (!confirm(`Restore admin panel access for device IP "${ip}"?`)) return;
+  if (!confirm(`Unblock device IP "${ip}" and restore site & admin access?`)) return;
   const res = await fetchApi('admin/devices/restore', 'POST', { ip });
   if (res && res.ok) {
-    showToast(`Admin access restored for IP "${ip}" ✅`);
+    showToast(`Site & admin access restored for IP "${ip}" ✅`);
     await window.renderAdminDevices();
+    if (typeof window.renderAdminBannedIps === 'function') window.renderAdminBannedIps();
   } else {
-    showToast('Failed to restore admin access.');
+    showToast('Failed to restore access.');
   }
 };
 
@@ -15224,10 +15279,11 @@ window.adminBanIp = async function(ipToBan) {
     console.warn('Ban IP note:', e);
   }
 
-  showToast(`IP "${ip}" has been banned 🚫`);
+  showToast(`IP "${ip}" has been blocked across the site 🚫`);
   const input = $('#admin-ban-ip-input');
   if (input) input.value = '';
   window.renderAdminBannedIps();
+  if (typeof window.renderAdminDevices === 'function') window.renderAdminDevices();
 };
 
 window.adminUnbanIp = async function(ip) {
@@ -15247,8 +15303,9 @@ window.adminUnbanIp = async function(ip) {
     console.warn('Unban IP note:', e);
   }
 
-  showToast(`IP "${ip}" unbanned ✅`);
+  showToast(`IP "${ip}" unblocked ✅`);
   window.renderAdminBannedIps();
+  if (typeof window.renderAdminDevices === 'function') window.renderAdminDevices();
 };
 
 window.renderAdminBannedIps = async function() {
