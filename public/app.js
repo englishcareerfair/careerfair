@@ -15708,7 +15708,7 @@ function wireTeleprompterTutorialHighlights() {
 
 // ── Admin Exhibition Data Importer (JSON / CSV, Connected & Separated) ──────
 function parseExhibitionImportData(rawText, fileName = '') {
-  const result = { scores: [], feedback: [], detectedFormat: 'unknown' };
+  const result = { scores: [], feedback: [], titles: {}, detectedFormat: 'unknown' };
   const text = (rawText || '').trim();
   if (!text) return result;
 
@@ -15782,6 +15782,10 @@ function parseExhibitionImportData(rawText, fileName = '') {
             is_pinned: f.is_pinned ? 1 : 0
           });
         });
+        const incomingTitles = (parsed.user_titles && typeof parsed.user_titles === 'object') ? parsed.user_titles : ((parsed.titles && typeof parsed.titles === 'object') ? parsed.titles : {});
+        for (const [k, v] of Object.entries(incomingTitles)) {
+          if (k && v) result.titles[k] = String(v).trim();
+        }
         result.detectedFormat = 'Connected JSON Archive';
       }
       return result;
@@ -15831,7 +15835,19 @@ function parseExhibitionImportData(rawText, fileName = '') {
       const metric = Number(cols[4] || 0);
       const ts = Number(cols[5] || Date.now());
 
-      if (type.includes('score')) {
+      // Check if row has Title column (Record_Type,ID,Name,Title,Detail,Metric,Timestamp,ISO_Date)
+      const hasTitleCol = header.includes('title');
+      const titleColVal = hasTitleCol ? (cols[header.indexOf('title')] || '') : '';
+      if (titleColVal && name) {
+        result.titles[name] = titleColVal.trim();
+      }
+
+      if (type.includes('title')) {
+        const titleVal = titleColVal || detail || cols[3] || '';
+        if (name && titleVal) {
+          result.titles[name] = titleVal.trim();
+        }
+      } else if (type.includes('score')) {
         result.scores.push({
           id,
           name,
@@ -15842,7 +15858,7 @@ function parseExhibitionImportData(rawText, fileName = '') {
           clarity: 70,
           wpm: 120,
           class_name: 'General',
-          target_career: '',
+          target_career: titleColVal || '',
           ts
         });
       } else if (type.includes('feedback')) {
@@ -15851,7 +15867,7 @@ function parseExhibitionImportData(rawText, fileName = '') {
           name,
           role: 'Student',
           class_info: '',
-          comment: detail,
+          comment: hasTitleCol ? (cols[header.indexOf('detail')] || detail) : detail,
           r_useful: metric || 5,
           r_games: 5,
           r_speaking: 5,
@@ -15977,8 +15993,9 @@ function initAdminImportControls() {
       }
 
       if (filenameEl) filenameEl.textContent = `📄 ${file.name} (${parsed.detectedFormat})`;
+      const titleCount = Object.keys(parsed.titles || {}).length;
       if (summaryEl) {
-        summaryEl.textContent = `Ready to import: ${parsed.scores.length} Leaderboard Scores, ${parsed.feedback.length} Feedback Reviews`;
+        summaryEl.textContent = `Ready to import: ${parsed.scores.length} Scores, ${parsed.feedback.length} Reviews${titleCount ? `, ${titleCount} Titles` : ''}`;
       }
       if (previewBox) previewBox.style.display = 'block';
     };
@@ -15998,14 +16015,15 @@ function initAdminImportControls() {
     executeBtn.textContent = 'Importing Data...';
 
     try {
-      // 1. Send to Cloudflare backend
+      // 1. Send to Cloudflare backend (including titles)
+      const titles = currentParsedData.titles || {};
       const res = await fetch(getApiUrl('api/admin/import'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${STATE.adminKey || localStorage.getItem('cf_admin_key') || ''}`
         },
-        body: JSON.stringify({ scores, feedback })
+        body: JSON.stringify({ scores, feedback, titles, user_titles: titles })
       });
 
       // 2. Immediate local cache & UI merge for instant reflection
@@ -16018,6 +16036,15 @@ function initAdminImportControls() {
         STATE.feedback = [...feedback, ...(STATE.feedback || [])];
         localStorage.setItem('cf_feedback_cache', JSON.stringify(STATE.feedback));
         if (typeof renderFeedbackCards === 'function') renderFeedbackCards(STATE.feedback);
+      }
+      if (titles && Object.keys(titles).length > 0) {
+        let curTitles = {};
+        try {
+          const stored = localStorage.getItem('cf_user_titles');
+          if (stored) curTitles = JSON.parse(stored);
+        } catch {}
+        Object.assign(curTitles, titles);
+        localStorage.setItem('cf_user_titles', JSON.stringify(curTitles));
       }
 
       // Refresh admin tables

@@ -2671,6 +2671,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
 
       const rawScores = Array.isArray(payload.scores) ? payload.scores : (Array.isArray(payload.leaderboard) ? payload.leaderboard : []);
       const rawFeedback = Array.isArray(payload.feedback) ? payload.feedback : [];
+      const rawTitles = (payload.user_titles && typeof payload.user_titles === 'object') ? payload.user_titles : ((payload.titles && typeof payload.titles === 'object') ? payload.titles : {});
+      let importedTitles = 0;
 
       if (db) {
         // Import scores into D1
@@ -2723,11 +2725,33 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         }
       }
 
+        // Import user titles into D1 kv and cache
+        if (rawTitles && typeof rawTitles === 'object' && Object.keys(rawTitles).length > 0) {
+          let currentTitles = {};
+          try {
+            const raw = await kvGet(db, 'user_titles', '{}');
+            if (raw) currentTitles = JSON.parse(raw);
+          } catch {}
+          Object.assign(currentTitles, rawTitles);
+          await kvSet(db, 'user_titles', JSON.stringify(currentTitles));
+          if (!GLOBAL_CACHE.user_titles) GLOBAL_CACHE.user_titles = {};
+          Object.assign(GLOBAL_CACHE.user_titles, currentTitles);
+          importedTitles = Object.keys(rawTitles).length;
+        }
+      } else {
+        if (rawTitles && typeof rawTitles === 'object') {
+          if (!GLOBAL_CACHE.user_titles) GLOBAL_CACHE.user_titles = {};
+          Object.assign(GLOBAL_CACHE.user_titles, rawTitles);
+          importedTitles = Object.keys(rawTitles).length;
+        }
+      }
+
       return json({
         success: true,
         importedScores,
         importedFeedback,
-        message: `Successfully imported ${importedScores} scores and ${importedFeedback} visitor reflections.`
+        importedTitles,
+        message: `Successfully imported ${importedScores} scores, ${importedFeedback} visitor reflections, and ${importedTitles} user titles.`
       });
     } catch (e) {
       console.error('Import error:', e);
@@ -3508,6 +3532,8 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     const format = url.searchParams.get('format') || 'json';
     let feedbackRows = [];
     let scoreRows = [];
+    let issueRows = [];
+    let titlesMap = {};
 
     if (db) {
       try {
@@ -3515,23 +3541,40 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
         feedbackRows = fb.results || [];
         const sc = await db.prepare('SELECT * FROM scores ORDER BY ts DESC').all();
         scoreRows = sc.results || [];
-        let issueRows = [];
         try {
           const iss = await db.prepare('SELECT * FROM user_issues ORDER BY created_at DESC').all();
           issueRows = iss.results || [];
         } catch {}
+        try {
+          const rawTitles = await kvGet(db, 'user_titles', '{}');
+          if (rawTitles) titlesMap = JSON.parse(rawTitles);
+        } catch {}
       } catch (e) {
         console.error('D1 Export error:', e);
       }
+    } else {
+      feedbackRows = GLOBAL_CACHE.feedback || [];
+      scoreRows = GLOBAL_CACHE.scores || [];
+      titlesMap = GLOBAL_CACHE.user_titles || {};
     }
 
     if (format === 'csv') {
-      let csv = 'Record_Type,ID,Name,Detail,Metric,Timestamp,ISO_Date\n';
-      for (const f of feedbackRows) {
-        csv += `Feedback,"${f.id}","${(f.name || '').replace(/"/g, '""')}","${(f.comment || '').replace(/"/g, '""')}",${f.r_useful || 5},${f.ts},"${new Date(Number(f.ts)).toISOString()}"\n`;
+      let csv = 'Record_Type,ID,Name,Title,Detail,Metric,Timestamp,ISO_Date\n';
+      // 1. Export Titles
+      for (const [tName, tVal] of Object.entries(titlesMap || {})) {
+        if (tVal) {
+          csv += `Title,"title_${encodeURIComponent(tName)}","${(tName || '').replace(/"/g, '""')}","${(tVal || '').replace(/"/g, '""')}","Honor Title",0,${Date.now()},"${new Date().toISOString()}"\n`;
+        }
       }
+      // 2. Export Feedback (with assigned titles if available)
+      for (const f of feedbackRows) {
+        const userTitle = titlesMap[f.name] || '';
+        csv += `Feedback,"${f.id}","${(f.name || '').replace(/"/g, '""')}","${(userTitle || '').replace(/"/g, '""')}","${(f.comment || '').replace(/"/g, '""')}",${f.r_useful || 5},${f.ts},"${new Date(Number(f.ts)).toISOString()}"\n`;
+      }
+      // 3. Export Scores (with assigned titles or target_career)
       for (const s of scoreRows) {
-        csv += `Score,"${s.id}","${(s.name || '').replace(/"/g, '""')}","${s.pack} Level ${s.level} (Accuracy ${s.acc}%)",${s.acc},${s.ts},"${new Date(Number(s.ts)).toISOString()}"\n`;
+        const userTitle = titlesMap[s.name] || s.target_career || '';
+        csv += `Score,"${s.id}","${(s.name || '').replace(/"/g, '""')}","${(userTitle || '').replace(/"/g, '""')}","${s.pack} Level ${s.level} (Accuracy ${s.acc}%)",${s.acc},${s.ts},"${new Date(Number(s.ts)).toISOString()}"\n`;
       }
       return new Response(csv, {
         headers: {
@@ -3549,6 +3592,9 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       total_feedback: feedbackRows.length,
       total_scores: scoreRows.length,
       total_issues: (typeof issueRows !== 'undefined' ? issueRows.length : 0),
+      total_titles: Object.keys(titlesMap || {}).length,
+      user_titles: titlesMap,
+      titles: titlesMap,
       feedback: feedbackRows,
       scores: scoreRows,
       issues: (typeof issueRows !== 'undefined' ? issueRows : [])
