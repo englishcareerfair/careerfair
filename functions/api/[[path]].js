@@ -68,7 +68,7 @@ const authed = (req, env, url = null) => {
     } catch (e) {}
   }
   const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
-  return Boolean(pwd) && (pwd === validPwd || pwd === 'botschool' || (env.ADMIN_PASSWORD && pwd === env.ADMIN_PASSWORD.trim()));
+  return Boolean(pwd) && pwd === validPwd;
 };
 
 /** Scoped API Key Authentication Check (supports master password or ecf_... scoped tokens) */
@@ -93,7 +93,7 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
     dbAdminPwd = String(GLOBAL_CACHE.kv.admin_password).trim();
   }
   const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'botschool').trim();
-  if (token === validPwd || token === 'botschool' || (env.ADMIN_PASSWORD && token === env.ADMIN_PASSWORD.trim())) {
+  if (token === validPwd) {
     return { ok: true, admin: true, scopes: ['*'] };
   }
 
@@ -164,7 +164,7 @@ async function kvSet(db, k, v) {
 // ─── Multi-Tier Persistent Global Cache & D1 Auto-Schema ────────────────────
 const GLOBAL_CACHE = {
   kv: {
-    admin_password: 'botschool',
+    admin_password: '',
     stream_url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     stream_title: 'Career Fair 2026 — Live Stage Broadcast',
     stream_active: '1',
@@ -1977,11 +1977,23 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);
     let body;
     try { body = await request.json(); } catch { return err('Invalid JSON'); }
+    const currentPassword = (body.currentPassword || '').trim();
+    if (currentPassword) {
+      let dbAdminPwd = '';
+      if (db) {
+        try { dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim(); } catch {}
+      }
+      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
+      if (currentPassword !== validPwd) {
+        return err('Current password is incorrect', 401);
+      }
+    }
     const newPassword = (body.newPassword || body.password || body.admin_password || '').trim();
     if (!newPassword || newPassword.length < 4) {
       return err('New password must be at least 4 characters long', 400);
     }
     if (db) {
+      await ensureDbSchema(db);
       await kvSet(db, 'admin_password', newPassword);
     }
     if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};

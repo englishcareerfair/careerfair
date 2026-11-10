@@ -182,8 +182,6 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   const adminKey = STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '';
   if (adminKey && !headers['Authorization']) {
     headers['Authorization'] = 'Bearer ' + adminKey;
-  } else if (!headers['Authorization'] && endpoint.startsWith('admin/')) {
-    headers['Authorization'] = 'Bearer botschool';
   }
 
   // API keys are securely kept and resolved on the backend
@@ -204,6 +202,7 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
     const res = await fetch(primaryUrl, fetchOpts);
     if (timeoutId) clearTimeout(timeoutId);
     if (res.ok) return await res.json();
+    if (res.status === 401 || res.status === 403) return null;
     if (!isFile && typeof window !== 'undefined' && window.location.hostname !== 'careerwithenglish.pages.dev') {
       try {
         const fallbackRes = await fetch(`${PRIMARY_D1_ORIGIN}/api/${cleanEndpoint}`, fetchOpts);
@@ -12488,6 +12487,28 @@ function renderAdminView() {
     gateScreen.hidden = true;
     workspaceScreen.hidden = false;
     initAdminWorkspace();
+
+    // Verify stored admin key against live backend so old/changed passwords cannot stay logged in
+    (async () => {
+      try {
+        let res = await fetch(getApiUrl('api/admin/ping'), {
+          headers: { 'Authorization': 'Bearer ' + STATE.adminKey }
+        });
+        if (!res.ok && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+          res = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/ping', {
+            headers: { 'Authorization': 'Bearer ' + STATE.adminKey }
+          });
+        }
+        if (res.status === 401 || res.status === 403) {
+          STATE.adminKey = '';
+          sessionStorage.removeItem('cf_admin_key');
+          localStorage.removeItem('cf_admin_key');
+          gateScreen.hidden = false;
+          workspaceScreen.hidden = true;
+          showToast('Admin password has changed. Please sign in with the current password.');
+        }
+      } catch (_) {}
+    })();
     if (typeof initAdminImportControls === 'function') initAdminImportControls();
 
   // Global D1 Exhibition Data Downloader Wiring
@@ -14017,7 +14038,15 @@ function initAdminWorkspace() {
         return;
       }
 
-      const activeToken = curPwd || STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || 'botschool';
+      if (!curPwd) {
+        if (statusEl) {
+          statusEl.textContent = '❌ Please enter your current password.';
+          statusEl.style.color = '#ef4444';
+        }
+        showToast('Please enter your current password.');
+        return;
+      }
+
       const submitBtn = $('#btn-save-admin-pwd');
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -14029,20 +14058,28 @@ function initAdminWorkspace() {
       }
 
       try {
-        const res = await fetch(getApiUrl('api/admin/change-password'), {
+        const reqOpts = {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + activeToken
+            'Authorization': 'Bearer ' + curPwd
           },
           body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd })
-        });
+        };
+        let res = await fetch(getApiUrl('api/admin/change-password'), reqOpts);
+        if (!res.ok && res.status !== 400 && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+          res = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/change-password', reqOpts);
+        }
+        if (!res.ok && res.status !== 400 && res.status !== 401 && res.status !== 403) {
+          throw new Error('Backend unavailable');
+        }
         const data = await res.json().catch(() => null);
 
         if (res.ok && data?.ok) {
           STATE.adminKey = newPwd;
           sessionStorage.setItem('cf_admin_key', newPwd);
           localStorage.setItem('cf_admin_key', newPwd);
+          localStorage.removeItem('cf_local_admin_pwd');
           if (STATE.config) STATE.config.admin_password = newPwd;
 
           if (statusEl) {
@@ -14060,17 +14097,27 @@ function initAdminWorkspace() {
           showToast(errMsg);
         }
       } catch (err) {
-        // Offline / local fallback
-        STATE.adminKey = newPwd;
-        sessionStorage.setItem('cf_admin_key', newPwd);
-        localStorage.setItem('cf_admin_key', newPwd);
-        if (STATE.config) STATE.config.admin_password = newPwd;
-        if (statusEl) {
-          statusEl.textContent = '✅ Saved locally (offline fallback mode)';
-          statusEl.style.color = '#10b981';
+        // Offline / local fallback: verify current password locally first
+        const localCur = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || 'botschool';
+        if (curPwd !== localCur) {
+          if (statusEl) {
+            statusEl.textContent = '❌ Current password is incorrect.';
+            statusEl.style.color = '#ef4444';
+          }
+          showToast('Current password is incorrect.');
+        } else {
+          STATE.adminKey = newPwd;
+          sessionStorage.setItem('cf_admin_key', newPwd);
+          localStorage.setItem('cf_admin_key', newPwd);
+          localStorage.setItem('cf_local_admin_pwd', newPwd);
+          if (STATE.config) STATE.config.admin_password = newPwd;
+          if (statusEl) {
+            statusEl.textContent = '✅ Saved locally (offline fallback mode)';
+            statusEl.style.color = '#10b981';
+          }
+          showToast('Admin password updated locally! 🔑');
+          formChangePwd.reset();
         }
-        showToast('Admin password updated locally! 🔑');
-        formChangePwd.reset();
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -14082,11 +14129,11 @@ function initAdminWorkspace() {
 
   // Export handlers with secure admin authorization token
   $('#btn-export-scores-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'botschool';
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || '';
     window.open(`/api/admin/export?key=${encodeURIComponent(key)}`);
   });
   $('#btn-export-feedback-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || 'botschool';
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || '';
     window.open(`/api/admin/export-feedback?key=${encodeURIComponent(key)}`);
   });
 
@@ -14721,21 +14768,50 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitBtn = $('#admin-login-form button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
 
-    let valid = (pwd === 'botschool' || (STATE.config?.admin_password && pwd === STATE.config.admin_password));
+    let valid = false;
+    let backendResponded = false;
 
     // Live Cloudflare backend authentication verification
     try {
-      const res = await fetch(getApiUrl('api/admin/ping'), {
+      let res = await fetch(getApiUrl('api/admin/ping'), {
         headers: { 'Authorization': 'Bearer ' + pwd }
       });
+      if (!res.ok && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+        res = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/ping', {
+          headers: { 'Authorization': 'Bearer ' + pwd }
+        });
+      }
       if (res.ok) {
         const data = await res.json().catch(() => null);
-        if (data && data.ok) valid = true;
+        valid = Boolean(data && data.ok);
+        backendResponded = true;
       } else if (res.status === 401 || res.status === 403) {
         valid = false;
+        backendResponded = true;
       }
     } catch (err) {
-      // Offline fallback: keeps valid check above
+      // Try PRIMARY_D1_ORIGIN if relative /api failed due to network/local server
+      if (window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+        try {
+          const fallbackRes = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/ping', {
+            headers: { 'Authorization': 'Bearer ' + pwd }
+          });
+          if (fallbackRes.ok) {
+            const data = await fallbackRes.json().catch(() => null);
+            valid = Boolean(data && data.ok);
+            backendResponded = true;
+          } else if (fallbackRes.status === 401 || fallbackRes.status === 403) {
+            valid = false;
+            backendResponded = true;
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (!backendResponded) {
+      // Pure offline fallback: if password was changed locally/in config, NEVER allow 'botschool'
+      const localOverride = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || '';
+      valid = localOverride ? (pwd === localOverride) : (pwd === 'botschool');
     }
 
     if (submitBtn) submitBtn.disabled = false;

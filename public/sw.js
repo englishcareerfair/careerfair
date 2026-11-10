@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v24.8-kanakia-logo-bizcard-pdf';
+const CACHE_NAME = 'cf-cache-v24.9-admin-auth-fix';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [
