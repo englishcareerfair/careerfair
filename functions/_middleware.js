@@ -61,7 +61,7 @@ export async function onRequest(context) {
   if (clientIp) {
     // 0 CPU / 0 DB Read Instant Perimeter Drop:
     // Drop known banned attackers immediately with 0 bytes response and 0 D1 reads
-    const FAST_BLOCKED_IPS = new Set(["157.119.203.129"]);
+    const FAST_BLOCKED_IPS = new Set();
     if (FAST_BLOCKED_IPS.has(clientIp)) {
       return new Response(null, {
         status: 403,
