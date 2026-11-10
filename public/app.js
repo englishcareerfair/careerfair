@@ -986,7 +986,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 0,
     tab: 'hero',
     targetSelector: '#sec-hero .hero-actions button:first-child',
-    badge: 'COMPLETE TOUR · STEP 1 OF 23',
+    badge: 'COMPLETE TOUR · STEP 1 OF 21',
     title: 'Student Career Intelligence Overview',
     icon: '⚡',
     sectionKey: 'section_overview',
@@ -999,7 +999,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 1,
     tab: 'careers',
     targetSelector: '.btn-pin-career',
-    badge: 'COMPLETE TOUR · STEP 2 OF 23',
+    badge: 'COMPLETE TOUR · STEP 2 OF 21',
     title: '32+ Global Careers Directory',
     icon: '🎯',
     sectionKey: 'section_career',
@@ -1012,7 +1012,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 2,
     tab: 'colleges',
     targetSelector: '#college-accreditation-filter',
-    badge: 'COMPLETE TOUR · STEP 3 OF 23',
+    badge: 'COMPLETE TOUR · STEP 3 OF 21',
     title: 'Premier Higher Education & Universities',
     icon: '🏛️',
     sectionKey: 'section_colleges',
@@ -1025,7 +1025,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 3,
     tab: 'exams',
     targetSelector: null,
-    badge: 'COMPLETE TOUR · STEP 4 OF 23',
+    badge: 'COMPLETE TOUR · STEP 4 OF 21',
     title: 'English Proficiency Testing & Exams',
     icon: '📋',
     sectionKey: 'section_exams',
@@ -1038,7 +1038,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 4,
     tab: 'speak',
     targetSelector: '#speak-record-orb',
-    badge: 'COMPLETE TOUR · STEP 5 OF 23',
+    badge: 'COMPLETE TOUR · STEP 5 OF 21',
     title: 'AI Pronunciation Studio & Phonetics',
     icon: '🗣️',
     sectionKey: 'section_speak',
@@ -1051,7 +1051,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 5,
     tab: 'speechLab',
     targetSelector: '#btn-speech-lab-record',
-    badge: 'COMPLETE TOUR · STEP 6 OF 23',
+    badge: 'COMPLETE TOUR · STEP 6 OF 21',
     title: '6D AI Voice Coach & Speech Diagnostics',
     icon: '🎙️',
     sectionKey: 'section_speech',
@@ -1064,7 +1064,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     step: 6,
     tab: 'teleprompter',
     targetSelector: '#anchor-script-select',
-    badge: 'COMPLETE TOUR · STEP 7 OF 23',
+    badge: 'COMPLETE TOUR · STEP 7 OF 21',
     title: 'News Anchor Studio & Live Teleprompter',
     icon: '📺',
     sectionKey: 'section_teleprompter',
@@ -1079,7 +1079,7 @@ const TUTORIAL_EXPANDED_STEPS = [
     tab: 'games',
     game: 'quest-scribe',
     targetSelector: '#game-picker-tabs button[data-game="quest-scribe"]',
-    badge: 'COMPLETE TOUR · STEP 8 OF 23',
+    badge: 'COMPLETE TOUR · STEP 8 OF 21',
     title: 'The Scribe: Branching Narrative Quest',
     icon: '📜',
     sectionKey: 'section_cognitive_scribe',
@@ -1088,26 +1088,13 @@ const TUTORIAL_EXPANDED_STEPS = [
     audioUrl: '/audio/tutorial/tutorial_exp_step7.mp3',
     speechText: 'Explore The Scribe! This is an interactive gothic narrative powered by Gemini AI. Choose your story choices and sharpen your literary prose!'
   },
+
   {
     step: 8,
     tab: 'games',
-    game: 'quest-etym',
-    targetSelector: '#game-picker-tabs button[data-game="quest-etym"]',
-    badge: 'COMPLETE TOUR · STEP 9 OF 23',
-    title: 'The Etymologist: Ancient Root-Word Detective',
-    icon: '🏛️',
-    sectionKey: 'section_cognitive_etym',
-    instruction: 'Unearth ancient Latin and Greek root lineages! Discover how international vocabulary was forged and solve linguistic origin riddles.',
-    actionHint: '👉 Investigate root words and solve the mystery origin riddle',
-    audioUrl: '/audio/tutorial/tutorial_exp_step8.mp3',
-    speechText: 'Welcome to The Etymologist! Unearth ancient Greek and Latin roots to discover how modern English terms were forged and solve origin riddles.'
-  },
-  {
-    step: 9,
-    tab: 'games',
     game: 'quest-bard',
     targetSelector: '#game-picker-tabs button[data-game="quest-bard"]',
-    badge: 'COMPLETE TOUR · STEP 10 OF 23',
+    badge: 'COMPLETE TOUR · STEP 9 OF 21',
     title: "The Bard's Mirror: Poetic Mirror & Critic",
     icon: '🪞',
     sectionKey: 'section_cognitive_bard',
@@ -1116,26 +1103,13 @@ const TUTORIAL_EXPANDED_STEPS = [
     audioUrl: '/audio/tutorial/tutorial_exp_step9.mp3',
     speechText: "Step into The Bard's Mirror! Commission Shakespearean sonnets or submit your writing for an intelligent literary critique on tone and rhetoric."
   },
+
   {
-    step: 10,
-    tab: 'games',
-    game: 'quest-oracle',
-    targetSelector: '#game-picker-tabs button[data-game="quest-oracle"]',
-    badge: 'COMPLETE TOUR · STEP 11 OF 23',
-    title: 'The Career Oracle: Literary Divination',
-    icon: '🔮',
-    sectionKey: 'section_cognitive_oracle',
-    instruction: 'Answer 3 personality divination questions to uncover your destiny in an unexpected English-powered global career!',
-    actionHint: '👉 Answer the oracle questions to discover your literary destiny',
-    audioUrl: '/audio/tutorial/tutorial_exp_step10.mp3',
-    speechText: 'Consult The Career Oracle! Answer three personality divination questions to reveal your natural talents in an unexpected global career.'
-  },
-  {
-    step: 11,
+    step: 9,
     tab: 'games',
     game: 'quest-cipher',
     targetSelector: '#standalone-quest-mount',
-    badge: 'COMPLETE TOUR · STEP 12 OF 23',
+    badge: 'COMPLETE TOUR · STEP 10 OF 21',
     title: 'The Ink Cipher: University Archive Mystery',
     icon: '🔍',
     sectionKey: 'section_cognitive_cipher',
@@ -1145,11 +1119,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Investigate The Ink Cipher! Examine archival documents, question suspects, and use deductive English reasoning to solve a historic mystery.'
   },
   {
-    step: 12,
+    step: 10,
     tab: 'games',
     game: 'wordle',
     targetSelector: '#game-picker-tabs button[data-game="wordle"]',
-    badge: 'COMPLETE TOUR · STEP 13 OF 23',
+    badge: 'COMPLETE TOUR · STEP 11 OF 21',
     title: 'Wordle: 5-Letter Vocabulary Challenge',
     icon: '🟩',
     sectionKey: 'section_cognitive_wordle',
@@ -1159,11 +1133,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Test your vocabulary with Wordle! Guess the secret five-letter professional word in six attempts with green and yellow tile clues.'
   },
   {
-    step: 13,
+    step: 11,
     tab: 'games',
     game: 'flashcards',
     targetSelector: '#game-picker-tabs button[data-game="flashcards"]',
-    badge: 'COMPLETE TOUR · STEP 14 OF 23',
+    badge: 'COMPLETE TOUR · STEP 12 OF 21',
     title: 'Flash Cards Studio: Interactive Drills',
     icon: '🃏',
     sectionKey: 'section_cognitive_flashcards',
@@ -1173,11 +1147,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Practice with Flash Cards Studio! Flip terminology cards across legal, medical, and aviation fields to build quick recall.'
   },
   {
-    step: 14,
+    step: 12,
     tab: 'games',
     game: 'dict',
     targetSelector: '#game-picker-tabs button[data-game="dict"]',
-    badge: 'COMPLETE TOUR · STEP 15 OF 23',
+    badge: 'COMPLETE TOUR · STEP 13 OF 21',
     title: 'Live Dictionary & Lexicon Search',
     icon: '📖',
     sectionKey: 'section_cognitive_dict',
@@ -1187,11 +1161,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Use the Live Dictionary and Word Check! Look up any word for instant definitions, grammatical parts of speech, synonyms, and phonetics.'
   },
   {
-    step: 15,
+    step: 13,
     tab: 'games',
     game: 'spelling',
     targetSelector: '#game-picker-tabs button[data-game="spelling"]',
-    badge: 'COMPLETE TOUR · STEP 16 OF 23',
+    badge: 'COMPLETE TOUR · STEP 14 OF 21',
     title: 'Spelling Bee Challenge: Audio-Guided Trials',
     icon: '🐝',
     sectionKey: 'section_cognitive_spelling',
@@ -1201,11 +1175,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Compete in the Spelling Bee Challenge! Listen to acoustic voice prompts and contextual clues to spell complex words and score points.'
   },
   {
-    step: 16,
+    step: 14,
     tab: 'games',
     game: 'hangman',
     targetSelector: '#game-picker-tabs button[data-game="hangman"]',
-    badge: 'COMPLETE TOUR · STEP 17 OF 23',
+    badge: 'COMPLETE TOUR · STEP 15 OF 21',
     title: 'English Word Hangman: Career Vocabulary',
     icon: '🪢',
     sectionKey: 'section_cognitive_hangman',
@@ -1216,11 +1190,11 @@ const TUTORIAL_EXPANDED_STEPS = [
   },
   // ── ROADMAP SUBTOOLS SHOWCASED IN SEQUENCE ──
   {
-    step: 17,
+    step: 15,
     tab: 'roadmap',
     subtool: 'bizcard',
     targetSelector: '#plan-tools-tabs button[data-tool="bizcard"]',
-    badge: 'COMPLETE TOUR · STEP 18 OF 23',
+    badge: 'COMPLETE TOUR · STEP 16 OF 21',
     title: 'Student Ambassador Business Card',
     icon: '🪪',
     sectionKey: 'section_roadmap_bizcard',
@@ -1230,11 +1204,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Personalize your official Student Ambassador Business Card! Your name, career pathway, and class are encoded into a live verification QR code directly in your booklet.'
   },
   {
-    step: 18,
+    step: 16,
     tab: 'roadmap',
     subtool: 'myplan',
     targetSelector: '#plan-tools-tabs button[data-tool="myplan"]',
-    badge: 'COMPLETE TOUR · STEP 19 OF 23',
+    badge: 'COMPLETE TOUR · STEP 17 OF 21',
     title: '"My Plan" Strategic Roadmap Generator',
     icon: '🗺️',
     sectionKey: 'section_roadmap_myplan',
@@ -1244,11 +1218,11 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'This is your personalized Strategic Career Roadmap! Map your multi-year progression from high school through university milestones, internships, and global industry credentials.'
   },
   {
-    step: 19,
+    step: 17,
     tab: 'roadmap',
     subtool: 'quiz',
     targetSelector: '#plan-tools-tabs button[data-tool="quiz"]',
-    badge: 'COMPLETE TOUR · STEP 20 OF 23',
+    badge: 'COMPLETE TOUR · STEP 18 OF 21',
     title: '5-Question Career Aptitude Quiz',
     icon: '🧭',
     sectionKey: 'section_roadmap_quiz',
@@ -1258,10 +1232,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Discover your strengths with the five-question Career Aptitude Quiz! Answer interactive career scenarios to reveal your cognitive work style and top career recommendations.'
   },
   {
-    step: 20,
+    step: 18,
     tab: 'leaderboard',
     targetSelector: '#sec-leaderboard .table-wrapper',
-    badge: 'COMPLETE TOUR · STEP 21 OF 23',
+    badge: 'COMPLETE TOUR · STEP 19 OF 21',
     title: 'Live Fair Leaderboard & Hall of Fame',
     icon: '🏆',
     sectionKey: 'section_leaderboard',
@@ -1272,10 +1246,10 @@ const TUTORIAL_EXPANDED_STEPS = [
   },
   // ── FINAL FEEDBACK & VISITOR REFLECTIONS IN SEQUENCE ──
   {
-    step: 21,
+    step: 19,
     tab: 'feedback',
     targetSelector: '.feedback-form-card',
-    badge: 'COMPLETE TOUR · STEP 22 OF 23',
+    badge: 'COMPLETE TOUR · STEP 20 OF 21',
     title: 'Student Reflection & Fair Feedback',
     icon: '✍️',
     sectionKey: 'section_feedback',
@@ -1285,10 +1259,10 @@ const TUTORIAL_EXPANDED_STEPS = [
     speechText: 'Congratulations on exploring our exhibits! Leave your star rating and student reflection below. Submitting your feedback completes your official printable booklet.'
   },
   {
-    step: 22,
+    step: 20,
     tab: 'feedback',
     targetSelector: '.feedback-reflections-card',
-    badge: 'COMPLETE TOUR · STEP 23 OF 23',
+    badge: 'COMPLETE TOUR · STEP 21 OF 21',
     title: 'Visitor Reflections & Booklet Unlock',
     icon: '⭐',
     sectionKey: 'section_reflections_final',
@@ -7424,10 +7398,8 @@ function renderStandaloneQuest(mount, questIdx) {
   if (stage) {
     switch (questIdx) {
       case 0: launchQuestScribe(stage); break;
-      case 1: launchQuestEtym(stage); break;
-      case 2: launchQuestBard(stage); break;
-      case 3: launchQuestOracle(stage); break;
-      case 4: launchQuestCipher(stage); break;
+      case 1: launchQuestBard(stage); break;
+      case 2: launchQuestCipher(stage); break;
       default: launchQuestScribe(stage);
     }
   }
@@ -7445,14 +7417,10 @@ function renderGameArena(gameKey) {
 
   if (gameKey === 'quest-scribe' || gameKey === 'scribe') {
     renderStandaloneQuest(mount, 0);
-  } else if (gameKey === 'quest-etym' || gameKey === 'etym' || gameKey === 'etymologist') {
-    renderStandaloneQuest(mount, 1);
   } else if (gameKey === 'quest-bard' || gameKey === 'bard') {
-    renderStandaloneQuest(mount, 2);
-  } else if (gameKey === 'quest-oracle' || gameKey === 'oracle') {
-    renderStandaloneQuest(mount, 3);
+    renderStandaloneQuest(mount, 1);
   } else if (gameKey === 'quest-cipher' || gameKey === 'cipher') {
-    renderStandaloneQuest(mount, 4);
+    renderStandaloneQuest(mount, 2);
 
   } else if (gameKey === 'gaming-hall') {
     renderGamingHall(mount);
@@ -7517,32 +7485,16 @@ const GAMING_HALL_QUESTS = [
     icon: '📜'
   },
   {
-    id: 'etym',
-    num: 'II',
-    title: 'The Etymologist',
-    tag: 'Root-Word Detective',
-    desc: 'Unearth ancient Latin & Greek root lineages, discover how words were forged, and solve origin riddles.',
-    icon: '🏛️'
-  },
-  {
     id: 'bard',
-    num: 'III',
+    num: 'II',
     title: "The Bard's Mirror",
     tag: 'Poetic Mirror & Critic',
     desc: 'Commission Shakespearean sonnets, Gothic ballads, or submit your own writing for an AI literary critique.',
     icon: '🪞'
   },
   {
-    id: 'oracle',
-    num: 'IV',
-    title: 'The Career Oracle',
-    tag: 'Literary Divination',
-    desc: 'Answer three personality divination questions to uncover your destiny in an unexpected English career in India.',
-    icon: '🔮'
-  },
-  {
     id: 'cipher',
-    num: 'V',
+    num: 'III',
     title: 'The Ink Cipher',
     tag: 'University Archive Mystery',
     desc: 'Investigate a historic Indian university archive with an illuminated lens cursor, questioning suspects to solve the case.',
@@ -8058,10 +8010,8 @@ function renderGamingHall(mount, initialQuestIdx = 0) {
     stageInner.innerHTML = '';
     switch (idx) {
       case 0: launchQuestScribe(stageInner); break;
-      case 1: launchQuestEtym(stageInner); break;
-      case 2: launchQuestBard(stageInner); break;
-      case 3: launchQuestOracle(stageInner); break;
-      case 4: launchQuestCipher(stageInner); break;
+      case 1: launchQuestBard(stageInner); break;
+      case 2: launchQuestCipher(stageInner); break;
       default: launchQuestScribe(stageInner);
     }
     stageInner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -9764,7 +9714,7 @@ function renderDictionaryLookup(mount) {
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
         <div>
           <h3 style="font-size:20px;display:flex;align-items:center;gap:8px;">
-            <span>📖</span> <span>Instant Live Dictionary &amp; Lexicon Check</span>
+            <span>📖</span> <span>Word Check</span>
           </h3>
           <span style="font-size:13px;color:var(--text-dim);">Comprehensive English dictionary definition, lexical exploration, and authentic Indian pronunciation.</span>
         </div>
@@ -10406,15 +10356,7 @@ function renderMyPlan(mount) {
           </div>
         </div>
 
-        <!-- Actions -->
-        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:14px;border-top:1px solid var(--border);">
-          <button class="btn btn-secondary btn-sm" id="btn-copy-blueprint" type="button">
-            <span>📋</span> <span>Copy Roadmap Blueprint</span>
-          </button>
-          <button class="btn btn-secondary btn-sm" id="btn-print-blueprint" type="button" onclick="window.print()">
-            <span>🖨️</span> <span>Print / Save as PDF</span>
-          </button>
-        </div>
+
       </div>
     `;
 
