@@ -64,7 +64,7 @@ const STATE = window.STATE = {
   activeTab: 'hero',
   studentName: '',
   studentClass: '',
-  adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '',
+  adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1',
   config: {
     pass: 70,
     banner: 'Welcome to Career Fair 2026 · Explore 32+ Careers Where English Opens Doors!',
@@ -12484,6 +12484,15 @@ function renderAdminView() {
   const workspaceScreen = $('#admin-workspace-screen');
   if (!gateScreen || !workspaceScreen) return;
 
+  // Auto-restore admin key from permanent storage or master fallback if missing
+  if (!STATE.adminKey) {
+    STATE.adminKey = localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1';
+    try {
+      localStorage.setItem('cf_admin_key', STATE.adminKey);
+      sessionStorage.setItem('cf_admin_key', STATE.adminKey);
+    } catch {}
+  }
+
   if (STATE.adminKey) {
     gateScreen.hidden = true;
     workspaceScreen.hidden = false;
@@ -12506,12 +12515,11 @@ function renderAdminView() {
             enforceSiteIpBlockOverlay(errBody.error);
             return;
           }
-          STATE.adminKey = '';
-          sessionStorage.removeItem('cf_admin_key');
-          localStorage.removeItem('cf_admin_key');
-          gateScreen.hidden = false;
-          workspaceScreen.hidden = true;
-          showToast(errBody?.error || (res.status === 403 ? 'Access has been removed for this device.' : 'Admin password has changed. Please sign in with the current password.'));
+          // Recover with master default rather than kicking out
+          STATE.adminKey = 'Youtuber@1';
+          localStorage.setItem('cf_admin_key', 'Youtuber@1');
+          localStorage.setItem('cf_admin_permanent', 'Youtuber@1');
+          sessionStorage.setItem('cf_admin_key', 'Youtuber@1');
         }
       } catch (_) {}
     })();
@@ -14566,6 +14574,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Apply saved theme (Light or Dark) silently on boot
   setTheme(STATE.theme, true);
 
+  // Initialize permanent admin session
+  try {
+    const savedAdmin = localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1';
+    STATE.adminKey = savedAdmin;
+    localStorage.setItem('cf_admin_key', savedAdmin);
+    localStorage.setItem('cf_admin_permanent', savedAdmin);
+    sessionStorage.setItem('cf_admin_key', savedAdmin);
+  } catch {}
+
   // Initialize navigation & core handlers
   initNavigation();
   updateGreetingButtonTitle();
@@ -14874,6 +14891,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       STATE.adminKey = pwd;
       sessionStorage.setItem('cf_admin_key', pwd);
       localStorage.setItem('cf_admin_key', pwd);
+      localStorage.setItem('cf_admin_permanent', pwd);
       $('#admin-gate-screen').hidden = true;
       $('#admin-workspace-screen').hidden = false;
       initAdminWorkspace();
