@@ -10,7 +10,7 @@
  */
 
 // ── In-Memory Edge State (persists across requests on the same Cloudflare Edge isolate) ──
-const IP_RATE_LIMITS = new Map(); // ip -> { count: number, resetAt: number }
+const IP_RATE_LIMITS = new Map(); // ip -> { count: number, resetAt: number, burstCount: number, burstResetAt: number }
 const AUTO_BANNED_IPS = new Map(); // ip -> banExpiresAt (timestamp)
 
 function isImmuneAdminIp(ip) {
@@ -23,10 +23,14 @@ let CACHED_BLOCKED_SET = new Set();
 let LAST_BLOCKED_FETCH_MS = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60s memory cache for D1 ban list
 
-// ── DDoS Defense Thresholds: 25 requests in 60 seconds ──
+// ── DDoS Defense Thresholds: Multi-Tiered Intelligent Protection ──
+// Tier 1 (Immediate Burst / Flood Trap): >3 API or page requests in 1 second -> Immediate 2-hour Auto-Ban
+const BURST_WINDOW_MS = 1000;          // 1-second burst inspection window
+const BURST_MAX_REQS = 3;              // Maximum 3 dynamic/API requests in 1 second
+// Tier 2 (Sustained Crawl / Heavy Flood): >25 requests in 60 seconds -> 1-hour Auto-Ban
 const RATE_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
 const MAX_REQUESTS_PER_WINDOW = 25;    // Max 25 requests in 60s
-const BAN_DURATION_MS = 60 * 60 * 1000; // 1 hour temporary ban on violation
+const BAN_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours temporary ban on violation
 
 // Malicious scanning path triggers (common automated exploit scanners)
 const SUSPICIOUS_PATTERNS = [
@@ -164,41 +168,80 @@ export async function onRequest(context) {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 3. SLIDING-WINDOW DDoS RATE LIMITER (25 requests in 60s)
+    // 3. MULTI-TIERED DDoS RATE LIMITER (Instant Burst & 60s Window)
     // ─────────────────────────────────────────────────────────────
-    let tracker = IP_RATE_LIMITS.get(clientIp);
-    if (!tracker || now > tracker.resetAt) {
-      tracker = { count: 1, resetAt: now + RATE_WINDOW_MS };
-      IP_RATE_LIMITS.set(clientIp, tracker);
-    } else {
-      tracker.count++;
-      
-      // Clean up old entries from map to prevent memory leak
-      if (IP_RATE_LIMITS.size > 2000) {
-        for (const [ipKey, entry] of IP_RATE_LIMITS.entries()) {
-          if (now > entry.resetAt) IP_RATE_LIMITS.delete(ipKey);
-        }
-      }
+    const isStaticAsset = pathname.endsWith('.png') || pathname.endsWith('.jpg') || pathname.endsWith('.jpeg') ||
+                          pathname.endsWith('.webp') || pathname.endsWith('.svg') || pathname.endsWith('.ico') ||
+                          pathname.endsWith('.woff2') || pathname.endsWith('.mp3');
 
-      // If more than 25 requests in 60 seconds -> trigger DDoS protection & ban for 1 hour
-      if (tracker.count > MAX_REQUESTS_PER_WINDOW) {
-        AUTO_BANNED_IPS.set(clientIp, now + BAN_DURATION_MS);
-        return new Response(
-          JSON.stringify({
-            error: "Too many requests (DDoS protection triggered: limit is 25 requests in 60 seconds). Please slow down.",
-            retry_after_seconds: 3600
-          }),
-          {
-            status: 429,
-            statusText: "Too Many Requests",
-            headers: {
-              "Content-Type": "application/json",
-              "Connection": "close",
-              "Retry-After": "3600",
-              "Cache-Control": "no-store"
-            }
+    // Skip rate-limiting browser bundle static sub-assets so initial page render isn't penalized
+    if (!isStaticAsset) {
+      let tracker = IP_RATE_LIMITS.get(clientIp);
+      if (!tracker) {
+        tracker = { count: 1, resetAt: now + RATE_WINDOW_MS, burstCount: 1, burstResetAt: now + BURST_WINDOW_MS };
+        IP_RATE_LIMITS.set(clientIp, tracker);
+      } else {
+        // --- 3A. INSTANT 1-SECOND BURST CHECK (>3 visits/reqs in 1 second) ---
+        if (now > tracker.burstResetAt) {
+          tracker.burstCount = 1;
+          tracker.burstResetAt = now + BURST_WINDOW_MS;
+        } else {
+          tracker.burstCount++;
+          if (tracker.burstCount > BURST_MAX_REQS) {
+            AUTO_BANNED_IPS.set(clientIp, now + BAN_DURATION_MS);
+            return new Response(
+              JSON.stringify({
+                error: "DDoS Attack Blocked: Exceeded rate limit (>3 requests in 1 second). Your device IP has been banned immediately.",
+                retry_after_seconds: 7200
+              }),
+              {
+                status: 429,
+                statusText: "Too Many Requests - DDoS Burst Ban",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Connection": "close",
+                  "Retry-After": "7200",
+                  "Cache-Control": "no-store",
+                  "X-DDoS-Protection": "Burst-Triggered"
+                }
+              }
+            );
           }
-        );
+        }
+
+        // --- 3B. SUSTAINED 60-SECOND WINDOW CHECK (>25 reqs in 60 seconds) ---
+        if (now > tracker.resetAt) {
+          tracker.count = 1;
+          tracker.resetAt = now + RATE_WINDOW_MS;
+        } else {
+          tracker.count++;
+          if (tracker.count > MAX_REQUESTS_PER_WINDOW) {
+            AUTO_BANNED_IPS.set(clientIp, now + BAN_DURATION_MS);
+            return new Response(
+              JSON.stringify({
+                error: "DDoS Protection Triggered: Exceeded 25 requests in 60 seconds. Your device IP has been banned.",
+                retry_after_seconds: 7200
+              }),
+              {
+                status: 429,
+                statusText: "Too Many Requests",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Connection": "close",
+                  "Retry-After": "7200",
+                  "Cache-Control": "no-store"
+                }
+              }
+            );
+          }
+        }
+
+        // Periodic cleanup to avoid memory leak
+        if (IP_RATE_LIMITS.size > 2000) {
+          for (const [ipKey, entry] of IP_RATE_LIMITS.entries()) {
+            if (now > entry.resetAt && now > entry.burstResetAt) IP_RATE_LIMITS.delete(ipKey);
+          }
+        }
       }
     }
 

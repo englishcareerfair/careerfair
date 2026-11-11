@@ -138,7 +138,9 @@ const IMMUNE_WHITELIST_IPS = {
   has: (ip) => isImmuneAdminIp(ip)
 };
 
-// DDoS & Rate Limit Config: 25 requests in 60s
+// DDoS & Rate Limit Config: Dual-layer (1-second burst & 60-second sustained)
+const BF_BURST_WINDOW_MS = 1000;           // 1-second burst inspection window
+const BF_BURST_MAX_REQS = 3;               // Maximum 3 requests in 1 second
 const BF_FLOOD_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
 const BF_FLOOD_MAX_REQS = 25;              // Maximum 25 requests in 60 seconds
 
@@ -244,6 +246,15 @@ async function checkRequestFlood(req, db, path, method) {
   entry.req_times.push(now);
   tracker[clientIp] = entry;
   GLOBAL_CACHE.brute_force_tracker = tracker;
+
+  const burstCount = entry.req_times.filter(ts => now - ts <= BF_BURST_WINDOW_MS).length;
+  if (burstCount > BF_BURST_MAX_REQS) {
+    const reason = `DDoS Burst Attack: Exceeded 3 requests in 1 second (${burstCount} requests/sec)`;
+    await blockIpAcrossSite(db, clientIp);
+    await recordBruteForceBan(db, clientIp, reason, burstCount, req.headers.get('user-agent') || '');
+    await saveBruteForceTracker(db, tracker);
+    return { banned: true, ip: clientIp, reason };
+  }
 
   const count = entry.req_times.length;
   if (count > BF_FLOOD_MAX_REQS) {
