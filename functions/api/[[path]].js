@@ -753,14 +753,6 @@ export async function onRequest(ctx) {
   // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
-  // Sync admin_password to 'zidane'
-  if (db) {
-    try {
-      await kvSet(db, 'admin_password', 'zidane');
-      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
-      GLOBAL_CACHE.kv.admin_password = 'zidane';
-    } catch {}
-  }
 
   // Automatically purge admin IP from banned lists if present in D1
   if (db) {
