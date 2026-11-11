@@ -129,12 +129,9 @@ async function blockIpAcrossSite(db, ip) {
 // ── Protected Whitelist IPs (Immune to all blocks, never shown in device lists, blocks anyone attempting to block them) ──
 const IMMUNE_WHITELIST_IPS = new Set(["157.119.203.129"]);
 
-const BF_AUTH_WINDOW_MS = 5 * 60 * 1000;   // 5 min sliding window for wrong passwords / keys
-const BF_AUTH_MAX_FAILS = 5;               // 5 failed auth attempts in 5m -> auto-ban
-const BF_BURST_WINDOW_MS = 15 * 1000;      // 15s burst window for automated scripts
-const BF_BURST_MAX_FAILS = 3;              // 3 rapid wrong guesses in 15s -> auto-ban
-const BF_FLOOD_WINDOW_MS = 10 * 1000;      // 10s sliding window for endpoint floods
-const BF_FLOOD_MAX_REQS = 45;              // >45 write/heavy/admin calls in 10s -> auto-ban
+// DDoS & Rate Limit Config: 25 requests in 60s
+const BF_FLOOD_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
+const BF_FLOOD_MAX_REQS = 25;              // Maximum 25 requests in 60 seconds
 
 async function getBruteForceTracker(db) {
   let tracker = {};
@@ -206,35 +203,8 @@ async function recordBruteForceBan(db, ip, reason, attempts, ua = '') {
 }
 
 async function recordFailedAuthAttempt(req, db, label = 'Invalid credentials') {
-  const clientIp = getClientIp(req);
-  if (!clientIp) return { banned: false, remaining_attempts: null };
-  const now = Date.now();
-  const tracker = await getBruteForceTracker(db);
-  const entry = tracker[clientIp] || { auth_fails: [], req_times: [] };
-  entry.auth_fails = (Array.isArray(entry.auth_fails) ? entry.auth_fails : [])
-    .filter(ts => now - ts <= BF_AUTH_WINDOW_MS);
-  entry.auth_fails.push(now);
-  tracker[clientIp] = entry;
-
-  const totalFails = entry.auth_fails.length;
-  const burstFails = entry.auth_fails.filter(ts => now - ts <= BF_BURST_WINDOW_MS).length;
-
-  if (totalFails >= BF_AUTH_MAX_FAILS || burstFails >= BF_BURST_MAX_FAILS) {
-    const reason = burstFails >= BF_BURST_MAX_FAILS
-      ? `Brute-force burst detected (${burstFails} failed attempts in 15s)`
-      : `Brute-force attack detected (${totalFails} failed attempts in 5m)`;
-    await blockIpAcrossSite(db, clientIp);
-    await recordBruteForceBan(db, clientIp, reason, totalFails, req.headers.get('user-agent') || '');
-    await saveBruteForceTracker(db, tracker);
-    return { banned: true, ip: clientIp, reason, attempts: totalFails };
-  }
-
-  await saveBruteForceTracker(db, tracker);
-  return {
-    banned: false,
-    attempts: totalFails,
-    remaining_attempts: Math.max(0, BF_AUTH_MAX_FAILS - totalFails)
-  };
+  // Anti-brute-force auto-ban removed per user request: invalid password attempts will NOT ban any IP
+  return { banned: false, remaining_attempts: null };
 }
 
 async function clearFailedAuthAttempts(db, ip) {
@@ -268,7 +238,7 @@ async function checkRequestFlood(req, db, path, method) {
 
   const count = entry.req_times.length;
   if (count > BF_FLOOD_MAX_REQS) {
-    const reason = `Automated request flood (${count} requests in 10s)`;
+    const reason = `DDoS Protection: Exceeded 25 requests in 60 seconds (${count} requests)`;
     await blockIpAcrossSite(db, clientIp);
     await recordBruteForceBan(db, clientIp, reason, count, req.headers.get('user-agent') || '');
     await saveBruteForceTracker(db, tracker);
@@ -436,18 +406,7 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
       keyRecord = GLOBAL_CACHE.api_keys.find(k => k.key_hash === keyHash && !k.revoked);
     }
     if (!keyRecord) {
-      const bf = await recordFailedAuthAttempt(req, db, 'Invalid or revoked API key');
-      if (bf.banned) {
-        return {
-          ok: false,
-          status: 403,
-          error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
-          banned: true,
-          brute_force_banned: true,
-          admin_revoked: true
-        };
-      }
-      return { ok: false, status: 401, error: 'Invalid or revoked API key', remaining_attempts: bf.remaining_attempts };
+      return { ok: false, status: 401, error: 'Invalid or revoked API key' };
     }
 
     // Update last_used timestamp
@@ -474,18 +433,7 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
     return { ok: true, admin: false, scopes, keyRecord };
   }
 
-  const bf = await recordFailedAuthAttempt(req, db, 'Invalid admin password');
-  if (bf.banned) {
-    return {
-      ok: false,
-      status: 403,
-      error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
-      banned: true,
-      brute_force_banned: true,
-      admin_revoked: true
-    };
-  }
-  return { ok: false, status: 401, error: 'Invalid credentials', remaining_attempts: bf.remaining_attempts };
+  return { ok: false, status: 401, error: 'Invalid credentials' };
 }
 
 /** Get value from D1 kv store with memory fallback */
@@ -2438,15 +2386,6 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
       const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
       if (currentPassword !== validPwd) {
-        const bf = await recordFailedAuthAttempt(request, db, 'Wrong current password');
-        if (bf.banned) {
-          return json({
-            error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
-            banned: true,
-            brute_force_banned: true,
-            admin_revoked: true
-          }, 403);
-        }
         return err('Current password is incorrect', 401);
       }
     }

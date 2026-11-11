@@ -14815,8 +14815,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           enforceSiteIpBlockOverlay(errData.error);
           return;
         }
-        if (res.status === 401 && typeof errData?.remaining_attempts === 'number') {
-          loginErrorMsg = `Incorrect password. ${errData.remaining_attempts} attempt${errData.remaining_attempts === 1 ? '' : 's'} remaining before automatic IP ban.`;
+        if (res.status === 401) {
+          loginErrorMsg = errData?.error || 'Incorrect password.';
         } else if (res.status === 403 && errData?.error) {
           loginErrorMsg = errData.error;
         }
@@ -14841,11 +14841,11 @@ document.addEventListener('DOMContentLoaded', async () => {
               enforceSiteIpBlockOverlay(errData.error);
               return;
             }
-            if (fallbackRes.status === 401 && typeof errData?.remaining_attempts === 'number') {
-              loginErrorMsg = `Incorrect password. ${errData.remaining_attempts} attempt${errData.remaining_attempts === 1 ? '' : 's'} remaining before automatic IP ban.`;
-            } else if (fallbackRes.status === 403 && errData?.error) {
-              loginErrorMsg = errData.error;
-            }
+            if (fallbackRes.status === 401) {
+          loginErrorMsg = errData?.error || 'Incorrect password.';
+        } else if (fallbackRes.status === 403 && errData?.error) {
+          loginErrorMsg = errData.error;
+        }
             valid = false;
             backendResponded = true;
           }
@@ -14854,24 +14854,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (!backendResponded) {
-      // Pure offline fallback + client-side anti-brute-force protection
-      const now = Date.now();
-      let localFails = [];
-      try {
-        localFails = JSON.parse(localStorage.getItem('cf_bf_fails') || '[]').filter(ts => now - ts <= 5 * 60 * 1000);
-      } catch {}
+      // Offline fallback
       const localOverride = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || '';
       valid = localOverride ? (pwd === localOverride) : (pwd === 'botschool');
       if (!valid) {
-        localFails.push(now);
-        localStorage.setItem('cf_bf_fails', JSON.stringify(localFails));
-        if (localFails.length >= 5) {
-          if (submitBtn) submitBtn.disabled = false;
-          enforceSiteIpBlockOverlay('Access Denied: Brute-force attack detected (5 failed login attempts). Access locked across the site.');
-          return;
-        }
-        const rem = Math.max(0, 5 - localFails.length);
-        loginErrorMsg = `Incorrect password. ${rem} attempt${rem === 1 ? '' : 's'} remaining before lockout.`;
+        loginErrorMsg = 'Incorrect password.';
       }
     }
 

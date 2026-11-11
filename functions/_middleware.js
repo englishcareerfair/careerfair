@@ -2,27 +2,25 @@
  * Cloudflare Pages Edge Middleware
  * High-Performance Anti-DDoS, Edge Rate Limiter & Zero-Usage Shield
  * 
- * Features:
- * 1. Global in-memory rate-limiter (Sliding Window per IP).
- * 2. Instant Zero-Usage Drop (HTTP 429 / 403 with 0 bytes body, Connection: close)
- *    so attacks NEVER hit functions, consume D1 reads, or exhaust execution time.
- * 3. In-memory TTL cache for D1 ban list (refreshed every 60s instead of EVERY request).
- * 4. Bot & malformed probe heuristics (empty UA probes, scanner paths like .env, wp-login, etc.)
+ * Configured:
+ * - DDoS Protection: Maximum 25 requests in 60 seconds per IP.
+ * - If exceeded, drops the connection with 429 and temporary ban with 0 payload/D1 reads.
+ * - Scanner probe trap: Immediate drop for malicious bots (.env, wp-login, etc.)
+ * - Whitelist: Protected Administrator IP bypasses all rate limits.
  */
 
 // ── In-Memory Edge State (persists across requests on the same Cloudflare Edge isolate) ──
-const IP_RATE_LIMITS = new Map(); // ip -> { count: number, resetAt: number, penaltyLevel: number }
+const IP_RATE_LIMITS = new Map(); // ip -> { count: number, resetAt: number }
 const AUTO_BANNED_IPS = new Map(); // ip -> banExpiresAt (timestamp)
 
 let CACHED_BLOCKED_SET = new Set();
 let LAST_BLOCKED_FETCH_MS = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60s memory cache for D1 ban list
 
-// ── DDoS Defense Thresholds (Tailored for Career Fair Exhibition) ──
-const RATE_WINDOW_MS = 10 * 1000;      // 10-second sliding inspection window
-const MAX_REQUESTS_PER_WINDOW = 60;    // Max 60 requests per 10s (~6 req/s is normal human surfing)
-const BURST_BAN_THRESHOLD = 120;       // >120 requests in 10s = automated DDoS attack -> instant 2-hour auto-ban
-const BAN_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours temporary ban
+// ── DDoS Defense Thresholds: 25 requests in 60 seconds ──
+const RATE_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
+const MAX_REQUESTS_PER_WINDOW = 25;    // Max 25 requests in 60s
+const BAN_DURATION_MS = 60 * 60 * 1000; // 1 hour temporary ban on violation
 
 // Malicious scanning path triggers (common automated exploit scanners)
 const SUSPICIOUS_PATTERNS = [
@@ -114,6 +112,7 @@ export async function onRequest(context) {
   if (IMMUNE_WHITELIST_IPS.has(clientIp)) {
     return next(); // Immune admin IP bypasses all rate-limits, scanners, and blocks
   }
+
   const now = Date.now();
 
   if (clientIp) {
@@ -129,13 +128,12 @@ export async function onRequest(context) {
           statusText: "Too Many Requests - DDoS Protection Triggered",
           headers: {
             "Connection": "close",
-            "Retry-After": "7200",
+            "Retry-After": "3600",
             "Cache-Control": "no-store",
             "X-DDoS-Protection": "Auto-Banned"
           }
         });
       } else {
-        // Ban expired
         AUTO_BANNED_IPS.delete(clientIp);
       }
     }
@@ -156,11 +154,11 @@ export async function onRequest(context) {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // 3. SLIDING-WINDOW DDoS RATE LIMITER (In-Memory, 0 DB Reads)
+    // 3. SLIDING-WINDOW DDoS RATE LIMITER (25 requests in 60s)
     // ─────────────────────────────────────────────────────────────
     let tracker = IP_RATE_LIMITS.get(clientIp);
     if (!tracker || now > tracker.resetAt) {
-      tracker = { count: 1, resetAt: now + RATE_WINDOW_MS, penaltyLevel: tracker?.penaltyLevel || 0 };
+      tracker = { count: 1, resetAt: now + RATE_WINDOW_MS };
       IP_RATE_LIMITS.set(clientIp, tracker);
     } else {
       tracker.count++;
@@ -172,32 +170,21 @@ export async function onRequest(context) {
         }
       }
 
-      // Check if requests exceed extreme DDoS flood limit -> AUTO-BAN
-      if (tracker.count > BURST_BAN_THRESHOLD) {
-        AUTO_BANNED_IPS.set(clientIp, now + BAN_DURATION_MS);
-        return new Response(null, {
-          status: 429,
-          statusText: "Too Many Requests - DDoS Auto-Ban Triggered",
-          headers: {
-            "Connection": "close",
-            "Retry-After": "7200",
-            "Cache-Control": "no-store"
-          }
-        });
-      }
-
-      // Check if requests exceed normal high-rate window limit -> SOFT THROTTLE
+      // If more than 25 requests in 60 seconds -> trigger DDoS protection & ban for 1 hour
       if (tracker.count > MAX_REQUESTS_PER_WINDOW) {
+        AUTO_BANNED_IPS.set(clientIp, now + BAN_DURATION_MS);
         return new Response(
           JSON.stringify({
-            error: "Too many requests. Please slow down to protect system resources.",
-            retry_after_seconds: Math.ceil((tracker.resetAt - now) / 1000)
+            error: "Too many requests (DDoS protection triggered: limit is 25 requests in 60 seconds). Please slow down.",
+            retry_after_seconds: 3600
           }),
           {
             status: 429,
+            statusText: "Too Many Requests",
             headers: {
               "Content-Type": "application/json",
-              "Retry-After": String(Math.ceil((tracker.resetAt - now) / 1000)),
+              "Connection": "close",
+              "Retry-After": "3600",
               "Cache-Control": "no-store"
             }
           }
