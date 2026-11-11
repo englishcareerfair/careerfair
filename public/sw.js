@@ -1,5 +1,5 @@
 // Career Fair 2026 - Service Worker
-const CACHE_NAME = 'cf-cache-v25.2-brute-force-autoban';
+const CACHE_NAME = 'cf-cache-v26.0-encrypted-auth';
 
 // Critical shell assets to pre-cache
 const STATIC_ASSETS = [

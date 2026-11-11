@@ -129,10 +129,34 @@ async function blockIpAcrossSite(db, ip) {
 
 // ─── Anti-Brute-Force & Flood Auto-Ban Algorithm ───────────────────────────
 // ── Protected Whitelist IPs (Immune to all blocks, never shown in device lists, blocks anyone attempting to block them) ──
+function ipHash32Api(str, seed) {
+  let h = seed >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+    h ^= (h >>> 16);
+    h = Math.imul(h, 0x85ebca6b) >>> 0;
+  }
+  return (h >>> 0);
+}
+
 function isImmuneAdminIp(ip) {
   if (!ip) return false;
   const clean = String(ip).trim();
-  return clean === '157.119.203.129' || clean === '157.119.200.54' || clean.startsWith('157.119.');
+  if (!clean) return false;
+  const S1 = 0x9e3779b9, S2 = 0x7f4a7c15;
+  const e1 = ipHash32Api('e:' + clean, S1), e2 = ipHash32Api('e:' + clean, S2);
+  if ((e1 === 0x22839934 && e2 === 0x7c591ce4) || (e1 === 0x1ff65ad1 && e2 === 0x90ba7bff)) {
+    return true;
+  }
+  const parts = clean.split('.');
+  if (parts.length === 4) {
+    const net = 's:' + parts[0] + '.' + parts[1];
+    if (ipHash32Api(net, S1) === 0x03020145 && ipHash32Api(net, S2) === 0x210eb566) {
+      return true;
+    }
+  }
+  return false;
 }
 const IMMUNE_WHITELIST_IPS = {
   has: (ip) => isImmuneAdminIp(ip)
@@ -394,20 +418,382 @@ async function sha256(str) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** Authentication check against ADMIN_PASSWORD or fallback */
-const authed = (req, env, url = null) => {
-  const auth = req.headers.get('Authorization') || '';
-  let pwd = auth.replace(/^Bearer\s+/i, '').trim();
-  if (!pwd && url) {
-    try {
-      pwd = (url.searchParams.get('key') || url.searchParams.get('auth') || '').trim();
-    } catch (e) {}
-  }
-  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
-  return Boolean(pwd) && pwd === validPwd;
-};
+// Initial fallback one-way PBKDF2-SHA-512 verifier (100k iterations, never stores plaintext password)
+const INITIAL_AUTH_SALT_HEX = '67b1e28b68e6a42f4ff70cf09e64285031daafdf1e930c29550d27b2085be5a4';
+const INITIAL_AUTH_DK_HEX = '2c5498c0db0234b0b1796c357c5ae92a8974c68e95a6735862134e12183992c600b5883f7acf931c64352e0d4f932b1cde634f40a44417f34e594355f112811f';
+const MEM_FALLBACK_SESSIONS = new Map();
+let MEM_FALLBACK_AUTH_RECORD = null;
 
-/** Scoped API Key Authentication Check (supports master password or ecf_... scoped tokens) */
+function constantTimeEqualStr(a, b) {
+  const s1 = String(a || '');
+  const s2 = String(b || '');
+  const len = Math.max(s1.length, s2.length);
+  let diff = s1.length ^ s2.length;
+  for (let i = 0; i < len; i++) {
+    diff |= (s1.charCodeAt(i % (s1.length || 1)) ^ s2.charCodeAt(i % (s2.length || 1)));
+  }
+  return diff === 0;
+}
+
+function bytesToHex(u8) {
+  return Array.from(u8).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function hexToBytes(hex) {
+  const clean = String(hex || '').replace(/[^0-9a-f]/gi, '');
+  const out = new Uint8Array(Math.floor(clean.length / 2));
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.substr(i * 2, 2), 16);
+  return out;
+}
+
+function bytesToB64(buf) {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+function b64ToBytes(b64) {
+  const bin = atob(String(b64 || ''));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function randomHex(byteCount = 32) {
+  const arr = new Uint8Array(byteCount);
+  crypto.getRandomValues(arr);
+  return bytesToHex(arr);
+}
+
+async function authKvRawGet(db, key) {
+  if (!db) return null;
+  try {
+    const row = await db.prepare('SELECT v FROM kv WHERE k=?').bind(key).first();
+    return row?.v ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function authKvRawSet(db, key, val) {
+  if (!db) return false;
+  try {
+    await db.prepare('INSERT OR REPLACE INTO kv (k, v) VALUES (?, ?)').bind(key, String(val)).run();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function authKvRawDelete(db, key) {
+  if (!db) return false;
+  try {
+    await db.prepare('DELETE FROM kv WHERE k=?').bind(key).run();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function pbkdf2Sha512Hex(password, saltHex, iterations = 100000) {
+  const keyMat = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(String(password)),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', hash: 'SHA-512', salt: hexToBytes(saltHex), iterations },
+    keyMat,
+    512
+  );
+  return bytesToHex(new Uint8Array(bits));
+}
+
+async function getOrInitVaultKeyBytes(db) {
+  let hex = await authKvRawGet(db, 'sec_vault_key_v1');
+  if (!hex || hex.length !== 64) {
+    hex = randomHex(32);
+    if (db) await authKvRawSet(db, 'sec_vault_key_v1', hex);
+  }
+  return hexToBytes(hex);
+}
+
+async function sealVaultObject(db, payloadObj, aadStr) {
+  const rawKey = await getOrInitVaultKeyBytes(db);
+  const aesKey = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['encrypt']);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const pt = new TextEncoder().encode(JSON.stringify(payloadObj));
+  const aad = new TextEncoder().encode(aadStr);
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: aad }, aesKey, pt);
+  return {
+    sealed: true,
+    v: 3,
+    alg: 'AES-256-GCM',
+    epoch: Number(payloadObj.epoch || 1),
+    iv: bytesToB64(iv),
+    ct: bytesToB64(ct)
+  };
+}
+
+async function unsealVaultObject(db, wrapper, aadStr) {
+  if (!wrapper || !wrapper.sealed || !wrapper.iv || !wrapper.ct) return null;
+  const rawKey = await getOrInitVaultKeyBytes(db);
+  const aesKey = await crypto.subtle.importKey('raw', rawKey, { name: 'AES-GCM' }, false, ['decrypt']);
+  const iv = b64ToBytes(wrapper.iv);
+  const ct = b64ToBytes(wrapper.ct);
+  const aad = new TextEncoder().encode(aadStr);
+  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv, additionalData: aad }, aesKey, ct);
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+
+async function buildEncryptedAuthRecord(db, saltHex, dkHex, epoch = 1) {
+  const inner = {
+    v: 3,
+    alg: 'PBKDF2-SHA512',
+    iter: 100000,
+    salt: saltHex,
+    dk: dkHex,
+    epoch,
+    updated_at: Date.now()
+  };
+  return { inner, sealedWrapper: await sealVaultObject(db, inner, 'careerfair-d1-admin-auth-v3') };
+}
+
+async function ensureEncryptedAdminAuth(db) {
+  if (!db) {
+    if (!MEM_FALLBACK_AUTH_RECORD) {
+      MEM_FALLBACK_AUTH_RECORD = {
+        v: 3, alg: 'PBKDF2-SHA512', iter: 100000,
+        salt: INITIAL_AUTH_SALT_HEX, dk: INITIAL_AUTH_DK_HEX, epoch: 1, updated_at: Date.now()
+      };
+    }
+    return MEM_FALLBACK_AUTH_RECORD;
+  }
+
+  try { await ensureDbSchema(db); } catch {}
+  const existingRaw = await authKvRawGet(db, 'admin_auth_v3');
+  if (existingRaw) {
+    try {
+      const parsed = JSON.parse(existingRaw);
+      const inner = parsed?.sealed ? await unsealVaultObject(db, parsed, 'careerfair-d1-admin-auth-v3') : parsed;
+      if (inner && inner.salt && inner.dk) {
+        // Purge any leftover legacy plaintext key from D1 & memory cache
+        await authKvRawDelete(db, 'admin_password');
+        if (GLOBAL_CACHE?.kv) GLOBAL_CACHE.kv.admin_password = '';
+        return inner;
+      }
+    } catch {}
+  }
+
+  // First-time migration from legacy D1 kv 'admin_password' (if present) -> encrypted PBKDF2-SHA-512 + AES-GCM vault
+  const legacyPlain = String((await authKvRawGet(db, 'admin_password')) || '').trim();
+  let saltHex = INITIAL_AUTH_SALT_HEX;
+  let dkHex = INITIAL_AUTH_DK_HEX;
+  if (legacyPlain) {
+    saltHex = randomHex(32);
+    dkHex = await pbkdf2Sha512Hex(legacyPlain, saltHex, 100000);
+  }
+  const { inner, sealedWrapper } = await buildEncryptedAuthRecord(db, saltHex, dkHex, 1);
+  await authKvRawSet(db, 'admin_auth_v3', JSON.stringify(sealedWrapper));
+  await authKvRawDelete(db, 'admin_password');
+  if (GLOBAL_CACHE?.kv) GLOBAL_CACHE.kv.admin_password = '';
+  return inner;
+}
+
+async function verifyAdminPassword(db, candidatePwd) {
+  const pwd = String(candidatePwd || '').trim();
+  if (!pwd) return { ok: false, authRec: null };
+  const authRec = await ensureEncryptedAdminAuth(db);
+  if (!authRec || !authRec.salt || !authRec.dk) return { ok: false, authRec };
+  const computed = await pbkdf2Sha512Hex(pwd, authRec.salt, Number(authRec.iter || 100000));
+  return { ok: constantTimeEqualStr(computed, authRec.dk), authRec };
+}
+
+async function setNewAdminPassword(db, newPwd) {
+  const cleanPwd = String(newPwd || '').trim();
+  const prev = await ensureEncryptedAdminAuth(db);
+  const nextEpoch = Number(prev?.epoch || 1) + 1;
+  const saltHex = randomHex(32);
+  const dkHex = await pbkdf2Sha512Hex(cleanPwd, saltHex, 100000);
+  if (!db) {
+    MEM_FALLBACK_AUTH_RECORD = { v: 3, alg: 'PBKDF2-SHA512', iter: 100000, salt: saltHex, dk: dkHex, epoch: nextEpoch, updated_at: Date.now() };
+    MEM_FALLBACK_SESSIONS.clear();
+    return MEM_FALLBACK_AUTH_RECORD;
+  }
+  const { inner, sealedWrapper } = await buildEncryptedAuthRecord(db, saltHex, dkHex, nextEpoch);
+  await authKvRawSet(db, 'admin_auth_v3', JSON.stringify(sealedWrapper));
+  await authKvRawDelete(db, 'admin_password');
+  if (GLOBAL_CACHE?.kv) GLOBAL_CACHE.kv.admin_password = '';
+  try {
+    await db.prepare("DELETE FROM kv WHERE k LIKE 'admin_sess_%'").run();
+  } catch {}
+  return inner;
+}
+
+async function createAdminSession(req, db, epoch, clientIp) {
+  const rawToken = 'adm_sess_' + randomHex(32);
+  const tokenHash = await sha256(rawToken);
+  const rec = {
+    epoch: Number(epoch || 1),
+    ip: clientIp || '',
+    ua: (req?.headers?.get('User-Agent') || '').slice(0, 140),
+    created_at: Date.now(),
+    last_seen: Date.now()
+  };
+  if (db) {
+    await authKvRawSet(db, 'admin_sess_' + tokenHash, JSON.stringify(rec));
+  } else {
+    MEM_FALLBACK_SESSIONS.set(tokenHash, rec);
+  }
+  return rawToken;
+}
+
+async function validateAdminSessionToken(db, rawToken) {
+  const token = String(rawToken || '').trim();
+  if (!token.startsWith('adm_sess_') || token.length < 40) return null;
+  const authRec = await ensureEncryptedAdminAuth(db);
+  const expectedEpoch = Number(authRec?.epoch || 1);
+  const tokenHash = await sha256(token);
+  let rec = null;
+  if (db) {
+    const raw = await authKvRawGet(db, 'admin_sess_' + tokenHash);
+    if (!raw) return null;
+    try { rec = JSON.parse(raw); } catch { return null; }
+  } else {
+    rec = MEM_FALLBACK_SESSIONS.get(tokenHash) || null;
+  }
+  if (!rec || Number(rec.epoch || 0) !== expectedEpoch) {
+    if (db) await authKvRawDelete(db, 'admin_sess_' + tokenHash);
+    return null;
+  }
+  return { tokenHash, rec, authRec };
+}
+
+async function revokeAdminSessionToken(db, rawToken) {
+  const token = String(rawToken || '').trim();
+  if (!token.startsWith('adm_sess_')) return;
+  const tokenHash = await sha256(token);
+  if (db) await authKvRawDelete(db, 'admin_sess_' + tokenHash);
+  else MEM_FALLBACK_SESSIONS.delete(tokenHash);
+}
+
+async function getOrInitServerEcdhKeypair(db) {
+  if (db) {
+    const raw = await authKvRawGet(db, 'sec_ecdh_v1');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed?.privJwk && parsed?.pubJwk) return parsed;
+      } catch {}
+    }
+  }
+  const kp = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+  const privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+  const pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
+  const record = { privJwk, pubJwk, created_at: Date.now() };
+  if (db) await authKvRawSet(db, 'sec_ecdh_v1', JSON.stringify(record));
+  return record;
+}
+
+async function issueAuthHandshake(db, purpose = 'login') {
+  const cleanPurpose = purpose === 'change-password' ? 'change-password' : 'login';
+  const ecdhRec = await getOrInitServerEcdhKeypair(db);
+  const challengeId = randomHex(16);
+  const nonce = randomHex(24);
+  const chal = { nonce, purpose: cleanPurpose, exp: Date.now() + 180000 };
+  if (db) {
+    await authKvRawSet(db, 'auth_chal_' + challengeId, JSON.stringify(chal));
+    try {
+      // Lazy prune excess old challenges
+      await db.prepare("DELETE FROM kv WHERE k LIKE 'auth_chal_%' AND k != ? AND length(v) > 0 AND json_extract(v, '$.exp') < ?").bind('auth_chal_' + challengeId, Date.now()).run();
+    } catch {}
+  } else {
+    MEM_FALLBACK_SESSIONS.set('chal_' + challengeId, chal);
+  }
+  return {
+    ok: true,
+    v: 3,
+    alg: 'ECDH-P256-HKDF-SHA256-AES256GCM',
+    challengeId,
+    nonce,
+    purpose: cleanPurpose,
+    publicKeyJwk: ecdhRec.pubJwk
+  };
+}
+
+async function decryptE2eeEnvelope(db, e2ee, expectedPurpose) {
+  if (!e2ee || typeof e2ee !== 'object' || Number(e2ee.v) !== 3) {
+    return { ok: false, error: 'Encrypted authentication payload required (v3)' };
+  }
+  const challengeId = String(e2ee.challengeId || '').trim();
+  const purpose = String(e2ee.purpose || '').trim();
+  if (!challengeId || purpose !== expectedPurpose || !e2ee.clientPubJwk || !e2ee.iv || !e2ee.ct) {
+    return { ok: false, error: 'Malformed encrypted authentication envelope' };
+  }
+
+  let chal = null;
+  if (db) {
+    const raw = await authKvRawGet(db, 'auth_chal_' + challengeId);
+    await authKvRawDelete(db, 'auth_chal_' + challengeId);
+    if (raw) { try { chal = JSON.parse(raw); } catch {} }
+  } else {
+    chal = MEM_FALLBACK_SESSIONS.get('chal_' + challengeId) || null;
+    MEM_FALLBACK_SESSIONS.delete('chal_' + challengeId);
+  }
+  if (!chal || chal.purpose !== expectedPurpose || Date.now() > Number(chal.exp || 0)) {
+    return { ok: false, error: 'Security handshake expired. Please retry.' };
+  }
+
+  try {
+    const ecdhRec = await getOrInitServerEcdhKeypair(db);
+    const serverPriv = await crypto.subtle.importKey('jwk', ecdhRec.privJwk, { name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']);
+    const clientPub = await crypto.subtle.importKey(
+      'jwk',
+      { kty: 'EC', crv: 'P-256', x: e2ee.clientPubJwk.x, y: e2ee.clientPubJwk.y, ext: true },
+      { name: 'ECDH', namedCurve: 'P-256' },
+      false,
+      []
+    );
+    const sharedBits = await crypto.subtle.deriveBits({ name: 'ECDH', public: clientPub }, serverPriv, 256);
+    const hkdfKey = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, ['deriveKey']);
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: 'HKDF',
+        hash: 'SHA-256',
+        salt: new TextEncoder().encode(challengeId + ':' + chal.nonce),
+        info: new TextEncoder().encode('careerfair-admin-e2ee-v3:' + expectedPurpose)
+      },
+      hkdfKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+    const aad = new TextEncoder().encode(challengeId + ':' + chal.nonce + ':' + expectedPurpose);
+    const pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: b64ToBytes(e2ee.iv), additionalData: aad },
+      aesKey,
+      b64ToBytes(e2ee.ct)
+    );
+    const payload = JSON.parse(new TextDecoder().decode(pt));
+    if (!payload || !constantTimeEqualStr(payload.nonce, chal.nonce)) {
+      return { ok: false, error: 'Encrypted payload nonce verification failed' };
+    }
+    if (Math.abs(Date.now() - Number(payload.ts || 0)) > 5 * 60 * 1000) {
+      return { ok: false, error: 'Encrypted payload timestamp expired' };
+    }
+    return { ok: true, payload };
+  } catch {
+    return { ok: false, error: 'Failed to decrypt security envelope' };
+  }
+}
+
+/** Authentication check helper (never accepts plaintext password directly) */
+const authed = () => false;
+
+/** Scoped API Key & Opaque Master Session Authentication Check */
 async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   const auth = req.headers.get('Authorization') || '';
   let token = auth.replace(/^Bearer\s+/i, '').trim();
@@ -418,19 +804,14 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   }
   if (!token) return { ok: false, status: 401, error: 'Authorization token required' };
 
-  // 1. Check Master Admin Password (grants all scopes '*')
-  let dbAdminPwd = '';
-  if (db) {
-    try {
-      dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim();
-    } catch {}
-  }
-  if (!dbAdminPwd && GLOBAL_CACHE.kv?.admin_password) {
-    dbAdminPwd = String(GLOBAL_CACHE.kv.admin_password).trim();
-  }
-  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
-  if (token === validPwd) {
-    const clientIp = getClientIp(req);
+  const clientIp = getClientIp(req);
+
+  // 1. Check Opaque Master Admin Session Token (adm_sess_...)
+  if (token.startsWith('adm_sess_')) {
+    const sessInfo = await validateAdminSessionToken(db, token);
+    if (!sessInfo) {
+      return { ok: false, status: 401, error: 'Admin session expired or invalid. Please sign in again.' };
+    }
     if (clientIp) {
       const blockedIps = await getAdminBlockedIps(db);
       if (blockedIps.includes(clientIp)) {
@@ -444,7 +825,32 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
     }
     await clearFailedAuthAttempts(db, clientIp);
     await recordAdminDeviceAccess(req, db, clientIp, Boolean(url && url.pathname.endsWith('/admin/ping')));
-    return { ok: true, admin: true, scopes: ['*'], ip: clientIp || 'Local / Unknown' };
+    return { ok: true, admin: true, session: true, scopes: ['*'], ip: clientIp || 'Local / Unknown' };
+  }
+
+  // Master-only security endpoints MUST NEVER accept scoped ecf_... keys or raw credentials
+  const reqPath = url ? url.pathname.replace(/^\/api/, '') : '';
+  if (
+    reqPath === '/admin/change-password' ||
+    reqPath === '/admin/keys' ||
+    reqPath === '/admin/keys/revoke' ||
+    reqPath === '/admin/devices/revoke' ||
+    reqPath === '/admin/devices/restore'
+  ) {
+    if (!token.startsWith('ecf_')) {
+      const bf = await recordFailedAuthAttempt(req, db, 'Unauthorized master security access attempt');
+      if (bf.banned) {
+        return {
+          ok: false,
+          status: 403,
+          error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+          banned: true,
+          brute_force_banned: true,
+          admin_revoked: true
+        };
+      }
+    }
+    return { ok: false, status: 403, error: 'Active Admin Portal login session required' };
   }
 
   // 2. Check Scoped API Key (ecf_...)
@@ -536,7 +942,7 @@ async function kvSet(db, k, v) {
 // ─── Multi-Tier Persistent Global Cache & D1 Auto-Schema ────────────────────
 const GLOBAL_CACHE = {
   kv: {
-    admin_password: '',
+    admin_auth_seed: 'pbkdf2-sha512-v3',
     stream_url: 'https://www.youtube.com/watch?v=jfKfPfyJRdk',
     stream_title: 'Career Fair 2026 — Live Stage Broadcast',
     stream_active: '1',
@@ -809,12 +1215,10 @@ export async function onRequest(ctx) {
   // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
-  // Set admin_password in D1 kv to 'Youtuber@1'
+  // Ensure admin password is encrypted in D1 vault & purged of any plaintext key
   if (db) {
     try {
-      await kvSet(db, 'admin_password', 'Youtuber@1');
-      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
-      GLOBAL_CACHE.kv.admin_password = 'Youtuber@1';
+      await ensureEncryptedAdminAuth(db);
     } catch {}
   }
 
@@ -1025,11 +1429,8 @@ export async function onRequest(ctx) {
       await kvSet(db, 'stream_active', sAct);
       GLOBAL_CACHE.kv.stream_active = sAct;
     }
-    if (body.admin_password !== undefined && String(body.admin_password).trim().length >= 4) {
-      const cleanPwd = String(body.admin_password).trim();
-      await kvSet(db, 'admin_password', cleanPwd);
-      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
-      GLOBAL_CACHE.kv.admin_password = cleanPwd;
+    if (body.admin_password !== undefined) {
+      return err('Use the Admin Password settings form to change the password securely.', 403);
     }
     if (body.gemini_keys !== undefined) await kvSet(db, 'gemini_keys', String(body.gemini_keys));
     if (body.gemini_key !== undefined) await kvSet(db, 'gemini_key', String(body.gemini_key));
@@ -2382,7 +2783,59 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
     return json({ text: responseText, provider: 'On-Device Heuristic Engine' });
   }
 
-  // ── 9. Admin Moderation Endpoints ──────────────────────────────────────────
+  // ── 9. Admin Moderation & Encrypted Authentication Endpoints ───────────────
+  if (path === '/admin/auth/handshake' && method === 'GET') {
+    const purpose = (url.searchParams.get('purpose') || 'login').trim();
+    const hs = await issueAuthHandshake(db, purpose);
+    return json(hs, 200, { 'Cache-Control': 'no-store' });
+  }
+
+  if (path === '/admin/login' && method === 'POST') {
+    const clientIp = getClientIp(request);
+    if (clientIp) {
+      const blockedIps = await getAdminBlockedIps(db);
+      if (blockedIps.includes(clientIp)) {
+        return json({
+          error: `Admin access has been removed for your device IP (${clientIp}).`,
+          admin_revoked: true
+        }, 403);
+      }
+    }
+    let body;
+    try { body = await request.json(); } catch { return err('Invalid JSON', 400); }
+    const dec = await decryptE2eeEnvelope(db, body?.e2ee, 'login');
+    if (!dec.ok) {
+      return err(dec.error || 'Encrypted authentication required', 400);
+    }
+    const check = await verifyAdminPassword(db, dec.payload?.password);
+    if (!check.ok) {
+      const bf = await recordFailedAuthAttempt(request, db, 'Wrong admin login password');
+      if (bf.banned) {
+        return json({
+          error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+          banned: true,
+          brute_force_banned: true,
+          admin_revoked: true
+        }, 403);
+      }
+      return json({
+        error: 'Incorrect administrator password',
+        remaining_attempts: bf.remaining ?? null
+      }, 401);
+    }
+    await clearFailedAuthAttempts(db, clientIp);
+    await recordAdminDeviceAccess(request, db, clientIp, true);
+    const sessionToken = await createAdminSession(request, db, check.authRec?.epoch || 1, clientIp);
+    return json({ ok: true, sessionToken, ip: clientIp || 'Local / Unknown' }, 200, { 'Cache-Control': 'no-store' });
+  }
+
+  if (path === '/admin/logout' && method === 'POST') {
+    const auth = request.headers.get('Authorization') || '';
+    const token = auth.replace(/^Bearer\s+/i, '').trim();
+    if (token) await revokeAdminSessionToken(db, token);
+    return json({ ok: true }, 200, { 'Cache-Control': 'no-store' });
+  }
+
   if (path === '/admin/ping' && method === 'GET') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) {
@@ -2482,39 +2935,39 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
   if (path === '/admin/change-password' && method === 'POST') {
     const authCheck = await verifyAuth(request, env, db, 'manage:config', url);
     if (!authCheck.ok) return err(authCheck.error, authCheck.status);
+    if (!authCheck.admin || !authCheck.session) {
+      return err('Active Admin Portal login session required to change password', 403);
+    }
     let body;
-    try { body = await request.json(); } catch { return err('Invalid JSON'); }
-    const currentPassword = (body.currentPassword || '').trim();
-    if (currentPassword) {
-      let dbAdminPwd = '';
-      if (db) {
-        try { dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim(); } catch {}
+    try { body = await request.json(); } catch { return err('Invalid JSON', 400); }
+    const dec = await decryptE2eeEnvelope(db, body?.e2ee, 'change-password');
+    if (!dec.ok) {
+      return err(dec.error || 'Encrypted password change payload required', 400);
+    }
+    const currentPassword = String(dec.payload?.currentPassword || '').trim();
+    if (!currentPassword) {
+      return err('Current password is required', 400);
+    }
+    const curCheck = await verifyAdminPassword(db, currentPassword);
+    if (!curCheck.ok) {
+      const bf = await recordFailedAuthAttempt(request, db, 'Wrong current password');
+      if (bf.banned) {
+        return json({
+          error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+          banned: true,
+          brute_force_banned: true,
+          admin_revoked: true
+        }, 403);
       }
-      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
-      if (currentPassword !== validPwd) {
-        const bf = await recordFailedAuthAttempt(request, db, 'Wrong current password');
-        if (bf.banned) {
-          return json({
-            error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
-            banned: true,
-            brute_force_banned: true,
-            admin_revoked: true
-          }, 403);
-        }
-        return err('Current password is incorrect', 401);
-      }
+      return err('Current password is incorrect', 401);
     }
-    const newPassword = (body.newPassword || body.password || body.admin_password || '').trim();
-    if (!newPassword || newPassword.length < 4) {
-      return err('New password must be at least 4 characters long', 400);
+    const newPassword = String(dec.payload?.newPassword || '').trim();
+    if (!newPassword || newPassword.length < 4 || newPassword.length > 256) {
+      return err('New password must be between 4 and 256 characters long', 400);
     }
-    if (db) {
-      await ensureDbSchema(db);
-      await kvSet(db, 'admin_password', newPassword);
-    }
-    if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
-    GLOBAL_CACHE.kv.admin_password = newPassword;
-    return json({ ok: true, message: 'Admin password changed successfully' });
+    const updatedAuth = await setNewAdminPassword(db, newPassword);
+    const newSessionToken = await createAdminSession(request, db, updatedAuth.epoch, getClientIp(request));
+    return json({ ok: true, message: 'Admin password changed successfully', sessionToken: newSessionToken }, 200, { 'Cache-Control': 'no-store' });
   }
 
   if (path === '/admin/del' && method === 'POST') {

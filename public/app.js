@@ -64,7 +64,15 @@ const STATE = window.STATE = {
   activeTab: 'hero',
   studentName: '',
   studentClass: '',
-  adminKey: sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1',
+  adminKey: (function () {
+    try {
+      localStorage.removeItem('cf_admin_key');
+      localStorage.removeItem('cf_admin_permanent');
+      localStorage.removeItem('cf_local_admin_pwd');
+      sessionStorage.removeItem('cf_admin_key');
+      return sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
+    } catch { return ''; }
+  })(),
   config: {
     pass: 70,
     banner: 'Welcome to Career Fair 2026 · Explore 32+ Careers Where English Opens Doors!',
@@ -159,16 +167,128 @@ window.capitalizeName = capitalizeName;
 // Universal Global D1 API Client (Unified across careerwithenglish, futureofenglish & mobile devices)
 const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 
+function ipHash32Client(str, seed) {
+  let h = seed >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+    h ^= (h >>> 16);
+    h = Math.imul(h, 0x85ebca6b) >>> 0;
+  }
+  return (h >>> 0);
+}
+
+function isImmuneClientIp(ip) {
+  if (!ip) return false;
+  const clean = String(ip).trim();
+  if (!clean) return false;
+  const S1 = 0x9e3779b9, S2 = 0x7f4a7c15;
+  const e1 = ipHash32Client('e:' + clean, S1), e2 = ipHash32Client('e:' + clean, S2);
+  if ((e1 === 0x22839934 && e2 === 0x7c591ce4) || (e1 === 0x1ff65ad1 && e2 === 0x90ba7bff)) {
+    return true;
+  }
+  const parts = clean.split('.');
+  if (parts.length === 4) {
+    const net = 's:' + parts[0] + '.' + parts[1];
+    if (ipHash32Client(net, S1) === 0x03020145 && ipHash32Client(net, S2) === 0x210eb566) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function cfBytesToB64(buf) {
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+
+async function encryptAdminAuthPayload(purpose, payloadObj) {
+  if (!window.crypto || !window.crypto.subtle) {
+    throw new Error('Encrypted browser cryptography requires a secure HTTPS context.');
+  }
+  const hsPath = `api/admin/auth/handshake?purpose=${encodeURIComponent(purpose)}&_t=${Date.now()}`;
+  let hsRes = await fetch(getApiUrl(hsPath), { cache: 'no-store' });
+  if (!hsRes.ok && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+    hsRes = await fetch(`${PRIMARY_D1_ORIGIN}/${hsPath}`, { cache: 'no-store' });
+  }
+  if (!hsRes.ok) {
+    throw new Error('Unable to initiate encrypted security handshake.');
+  }
+  const hs = await hsRes.json();
+  if (!hs || !hs.ok || !hs.challengeId || !hs.nonce || !hs.publicKeyJwk) {
+    throw new Error('Invalid security handshake from server.');
+  }
+
+  const serverPub = await crypto.subtle.importKey(
+    'jwk',
+    { kty: 'EC', crv: 'P-256', x: hs.publicKeyJwk.x, y: hs.publicKeyJwk.y, ext: true },
+    { name: 'ECDH', namedCurve: 'P-256' },
+    false,
+    []
+  );
+  const clientKp = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveBits']
+  );
+  const sharedBits = await crypto.subtle.deriveBits(
+    { name: 'ECDH', public: serverPub },
+    clientKp.privateKey,
+    256
+  );
+  const hkdfKey = await crypto.subtle.importKey('raw', sharedBits, 'HKDF', false, ['deriveKey']);
+  const aesKey = await crypto.subtle.deriveKey(
+    {
+      name: 'HKDF',
+      hash: 'SHA-256',
+      salt: new TextEncoder().encode(hs.challengeId + ':' + hs.nonce),
+      info: new TextEncoder().encode('careerfair-admin-e2ee-v3:' + purpose)
+    },
+    hkdfKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+
+  const padLen = 16 + (crypto.getRandomValues(new Uint8Array(1))[0] % 32);
+  const padBytes = crypto.getRandomValues(new Uint8Array(padLen));
+  const plainObj = Object.assign({}, payloadObj, {
+    nonce: hs.nonce,
+    ts: Date.now(),
+    pad: cfBytesToB64(padBytes)
+  });
+
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const aad = new TextEncoder().encode(hs.challengeId + ':' + hs.nonce + ':' + purpose);
+  const pt = new TextEncoder().encode(JSON.stringify(plainObj));
+  const ct = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv, additionalData: aad },
+    aesKey,
+    pt
+  );
+  const clientPubJwk = await crypto.subtle.exportKey('jwk', clientKp.publicKey);
+  return {
+    v: 3,
+    challengeId: hs.challengeId,
+    purpose,
+    clientPubJwk: { kty: clientPubJwk.kty, crv: clientPubJwk.crv, x: clientPubJwk.x, y: clientPubJwk.y },
+    iv: cfBytesToB64(iv),
+    ct: cfBytesToB64(ct)
+  };
+}
+
 function enforceSiteIpBlockOverlay(message) {
   const currentDevIp = (STATE?.currentIp || '').trim();
-  if (currentDevIp && (currentDevIp === '157.119.203.129' || currentDevIp === '157.119.200.54' || currentDevIp.startsWith('157.119.'))) {
+  if (currentDevIp && isImmuneClientIp(currentDevIp)) {
     console.warn('Ignoring site IP block overlay for protected admin IP:', currentDevIp);
     return;
   }
   try {
     STATE.adminKey = '';
-    sessionStorage.removeItem('cf_admin_key');
-    localStorage.removeItem('cf_admin_key');
+    sessionStorage.removeItem('cf_admin_session');
+    localStorage.removeItem('cf_admin_session');
   } catch {}
   try {
     if (typeof cancelTutorialScroll === 'function') cancelTutorialScroll();
@@ -215,7 +335,7 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
   }
 
   const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-  const adminKey = STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key') || '';
+  const adminKey = STATE.adminKey || sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
   if (adminKey && !headers['Authorization']) {
     headers['Authorization'] = 'Bearer ' + adminKey;
   }
@@ -246,8 +366,9 @@ async function fetchApi(endpoint, options = {}, maybeBody = null) {
       }
       if (cleanEndpoint.startsWith('admin/') && STATE.adminKey) {
         STATE.adminKey = '';
-        sessionStorage.removeItem('cf_admin_key');
-        localStorage.removeItem('cf_admin_key');
+        sessionStorage.removeItem('cf_admin_session');
+        localStorage.removeItem('cf_admin_session');
+        updateHeaderBookletVisibility();
         const g = $('#admin-gate-screen');
         const w = $('#admin-workspace-screen');
         if (g && w) { g.hidden = false; w.hidden = true; }
@@ -1636,7 +1757,7 @@ function updateHeaderBookletVisibility() {
   const btn = document.getElementById('btn-header-dossier');
   if (!btn) return;
   // Admin users get booklet access from the very start
-  const isAdmin = Boolean(STATE.adminKey || sessionStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_key'));
+  const isAdmin = Boolean(STATE.adminKey || sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session'));
   // For non-admin visitors, booklet is only available during active session after completing tour/feedback,
   // and is removed once the site is reloaded
   const isUnlockedInSession = sessionStorage.getItem('cf_booklet_session_unlocked') === 'true';
@@ -11985,7 +12106,7 @@ async function loadLeaderboard(filterPack = 'All') {
   }
 
   const isMobileScreen = window.innerWidth <= 768;
-  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_session') || sessionStorage.getItem('cf_admin_session'));
 
   scores.forEach((sc, i) => {
     const tr = document.createElement('tr');
@@ -12261,7 +12382,7 @@ async function loadFeedbackWall() {
         : '';
 
       const isMobileScreen = window.innerWidth <= 768;
-  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_key'));
+  const isAdmin = !isMobileScreen && Boolean(STATE.adminKey || localStorage.getItem('cf_admin_session') || sessionStorage.getItem('cf_admin_session'));
       const adminActionsHtml = isAdmin
         ? `<div class="admin-feedback-actions">
              <button type="button" class="btn btn-sm btn-admin-feedback" title="Change User Name (Admin)" style="background:rgba(0,240,255,0.12);color:#38bdf8;border:1px solid rgba(0,240,255,0.3);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;" data-id="${escapeHtml(String(f.id || ''))}" data-name="${encodeURIComponent(f.name || '')}" data-comment="${encodeURIComponent(f.comment || '')}" onclick="window.adminChangeFeedbackName(this.dataset.id, decodeURIComponent(this.dataset.name || ''), decodeURIComponent(this.dataset.comment || ''))">
@@ -12484,12 +12605,10 @@ function renderAdminView() {
   const workspaceScreen = $('#admin-workspace-screen');
   if (!gateScreen || !workspaceScreen) return;
 
-  // Auto-restore admin key from permanent storage or master fallback if missing
+  // Restore opaque admin session token ONLY if previously signed in on this browser
   if (!STATE.adminKey) {
-    STATE.adminKey = localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1';
     try {
-      localStorage.setItem('cf_admin_key', STATE.adminKey);
-      sessionStorage.setItem('cf_admin_key', STATE.adminKey);
+      STATE.adminKey = sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
     } catch {}
   }
 
@@ -12498,7 +12617,7 @@ function renderAdminView() {
     workspaceScreen.hidden = false;
     initAdminWorkspace();
 
-    // Verify stored admin key against live backend so old/changed passwords cannot stay logged in
+    // Verify opaque session token against live backend so revoked/expired sessions cannot stay logged in
     (async () => {
       try {
         let res = await fetch(getApiUrl('api/admin/ping'), {
@@ -12515,11 +12634,16 @@ function renderAdminView() {
             enforceSiteIpBlockOverlay(errBody.error);
             return;
           }
-          // Recover with master default rather than kicking out
-          STATE.adminKey = 'Youtuber@1';
-          localStorage.setItem('cf_admin_key', 'Youtuber@1');
-          localStorage.setItem('cf_admin_permanent', 'Youtuber@1');
-          sessionStorage.setItem('cf_admin_key', 'Youtuber@1');
+          STATE.adminKey = '';
+          try {
+            sessionStorage.removeItem('cf_admin_session');
+            localStorage.removeItem('cf_admin_session');
+          } catch {}
+          gateScreen.hidden = false;
+          workspaceScreen.hidden = true;
+          updateHeaderBookletVisibility();
+          loadLeaderboard();
+          loadFeedbackWall();
         }
       } catch (_) {}
     })();
@@ -14087,19 +14211,36 @@ function initAdminWorkspace() {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Updating...';
       }
+      const sessToken = STATE.adminKey || sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
+      if (!sessToken) {
+        if (statusEl) {
+          statusEl.textContent = '❌ Active Admin Portal session required.';
+          statusEl.style.color = '#ef4444';
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Update Admin Password 💾';
+        }
+        return;
+      }
+
       if (statusEl) {
-        statusEl.textContent = 'Updating password...';
+        statusEl.textContent = 'Encrypting & updating password...';
         statusEl.style.color = 'var(--text-muted)';
       }
 
       try {
+        const e2ee = await encryptAdminAuthPayload('change-password', {
+          currentPassword: curPwd,
+          newPassword: newPwd
+        });
         const reqOpts = {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + curPwd
+            'Authorization': 'Bearer ' + sessToken
           },
-          body: JSON.stringify({ currentPassword: curPwd, newPassword: newPwd })
+          body: JSON.stringify({ e2ee })
         };
         let res = await fetch(getApiUrl('api/admin/change-password'), reqOpts);
         if (!res.ok && res.status !== 400 && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
@@ -14111,19 +14252,22 @@ function initAdminWorkspace() {
         const data = await res.json().catch(() => null);
 
         if (res.ok && data?.ok) {
-          STATE.adminKey = newPwd;
-          sessionStorage.setItem('cf_admin_key', newPwd);
-          localStorage.setItem('cf_admin_key', newPwd);
-          localStorage.removeItem('cf_local_admin_pwd');
-          if (STATE.config) STATE.config.admin_password = newPwd;
+          const nextSess = data.sessionToken || sessToken;
+          STATE.adminKey = nextSess;
+          sessionStorage.setItem('cf_admin_session', nextSess);
+          localStorage.setItem('cf_admin_session', nextSess);
 
           if (statusEl) {
-            statusEl.textContent = '✅ Admin password updated successfully!';
+            statusEl.textContent = '✅ Admin password updated securely!';
             statusEl.style.color = '#10b981';
           }
           showToast('Admin password updated! 🔑');
           formChangePwd.reset();
         } else {
+          if (res.status === 403 && (data?.banned || data?.brute_force_banned)) {
+            enforceSiteIpBlockOverlay(data.error);
+            return;
+          }
           const errMsg = data?.error || data?.message || 'Failed to update password. Please check your current password.';
           if (statusEl) {
             statusEl.textContent = '❌ ' + errMsg;
@@ -14132,27 +14276,12 @@ function initAdminWorkspace() {
           showToast(errMsg);
         }
       } catch (err) {
-        // Offline / local fallback: verify current password locally first
-        const localCur = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || 'Youtuber@1';
-        if (curPwd !== localCur) {
-          if (statusEl) {
-            statusEl.textContent = '❌ Current password is incorrect.';
-            statusEl.style.color = '#ef4444';
-          }
-          showToast('Current password is incorrect.');
-        } else {
-          STATE.adminKey = newPwd;
-          sessionStorage.setItem('cf_admin_key', newPwd);
-          localStorage.setItem('cf_admin_key', newPwd);
-          localStorage.setItem('cf_local_admin_pwd', newPwd);
-          if (STATE.config) STATE.config.admin_password = newPwd;
-          if (statusEl) {
-            statusEl.textContent = '✅ Saved locally (offline fallback mode)';
-            statusEl.style.color = '#10b981';
-          }
-          showToast('Admin password updated locally! 🔑');
-          formChangePwd.reset();
+        const msg = err?.message || 'Unable to reach authentication server. Please check connection.';
+        if (statusEl) {
+          statusEl.textContent = '❌ ' + msg;
+          statusEl.style.color = '#ef4444';
         }
+        showToast(msg);
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
@@ -14162,14 +14291,40 @@ function initAdminWorkspace() {
     });
   }
 
-  // Export handlers with secure admin authorization token
+  async function downloadProtectedCsv(endpoint, filename) {
+    const key = STATE.adminKey || localStorage.getItem('cf_admin_session') || sessionStorage.getItem('cf_admin_session') || '';
+    if (!key) {
+      showToast('Please log into the Admin Portal first.');
+      return;
+    }
+    try {
+      const res = await fetch(getApiUrl('api/' + endpoint), {
+        headers: { 'Authorization': 'Bearer ' + key }
+      });
+      if (!res.ok) {
+        showToast('Export failed: unauthorized or expired session.');
+        return;
+      }
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(objUrl), 4000);
+    } catch {
+      showToast('Unable to export CSV right now.');
+    }
+  }
+
+  // Export handlers with secure admin session authorization header
   $('#btn-export-scores-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || '';
-    window.open(`/api/admin/export?key=${encodeURIComponent(key)}`);
+    downloadProtectedCsv('admin/export', 'careerfair-scores.csv');
   });
   $('#btn-export-feedback-csv')?.addEventListener('click', () => {
-    const key = STATE.adminKey || localStorage.getItem('cf_admin_key') || sessionStorage.getItem('cf_admin_key') || '';
-    window.open(`/api/admin/export-feedback?key=${encodeURIComponent(key)}`);
+    downloadProtectedCsv('admin/export-feedback', 'careerfair-feedback.csv');
   });
 
   // ── Admin Live Stream Controls ───────────────────────────────────────────
@@ -14574,13 +14729,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Apply saved theme (Light or Dark) silently on boot
   setTheme(STATE.theme, true);
 
-  // Initialize permanent admin session
+  // Restore only a previously authenticated opaque admin session token (never auto-login strangers)
   try {
-    const savedAdmin = localStorage.getItem('cf_admin_key') || localStorage.getItem('cf_admin_permanent') || 'Youtuber@1';
-    STATE.adminKey = savedAdmin;
-    localStorage.setItem('cf_admin_key', savedAdmin);
-    localStorage.setItem('cf_admin_permanent', savedAdmin);
-    sessionStorage.setItem('cf_admin_key', savedAdmin);
+    localStorage.removeItem('cf_admin_key');
+    localStorage.removeItem('cf_admin_permanent');
+    localStorage.removeItem('cf_local_admin_pwd');
+    sessionStorage.removeItem('cf_admin_key');
+    const savedSession = localStorage.getItem('cf_admin_session') || sessionStorage.getItem('cf_admin_session') || '';
+    STATE.adminKey = savedSession;
+    if (savedSession) {
+      localStorage.setItem('cf_admin_session', savedSession);
+      sessionStorage.setItem('cf_admin_session', savedSession);
+      // Verify saved session silently against server; purge if expired or revoked
+      fetch(getApiUrl('api/admin/ping'), {
+        headers: { 'Authorization': 'Bearer ' + savedSession }
+      }).then(async res => {
+        if (res.status === 401 || res.status === 403) {
+          STATE.adminKey = '';
+          try {
+            localStorage.removeItem('cf_admin_session');
+            sessionStorage.removeItem('cf_admin_session');
+          } catch {}
+          updateHeaderBookletVisibility();
+          loadLeaderboard();
+          loadFeedbackWall();
+        }
+      }).catch(() => {});
+    }
   } catch {}
 
   // Initialize navigation & core handlers
@@ -14801,7 +14976,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {}
   }, 15000);
 
-  // Admin login submission
+  // Admin login submission (E2EE ECDH + AES-256-GCM)
   $('#admin-login-form')?.addEventListener('submit', async e => {
     e.preventDefault();
     const pwd = ($('#admin-pwd-input')?.value || '').trim();
@@ -14812,86 +14987,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     const submitBtn = $('#admin-login-form button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
 
-    let valid = false;
-    let backendResponded = false;
+    let sessionToken = '';
     let loginErrorMsg = 'Incorrect password.';
 
-    // Live Cloudflare backend authentication verification
     try {
-      let res = await fetch(getApiUrl('api/admin/ping'), {
-        headers: { 'Authorization': 'Bearer ' + pwd }
-      });
-      if (!res.ok && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
-        res = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/ping', {
-          headers: { 'Authorization': 'Bearer ' + pwd }
-        });
+      const e2ee = await encryptAdminAuthPayload('login', { password: pwd });
+      const loginOpts = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ e2ee })
+      };
+      let res = await fetch(getApiUrl('api/admin/login'), loginOpts);
+      if (!res.ok && res.status !== 400 && res.status !== 401 && res.status !== 403 && window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
+        res = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/login', loginOpts);
       }
       if (res.ok) {
         const data = await res.json().catch(() => null);
-        valid = Boolean(data && data.ok);
-        backendResponded = true;
-      } else if (res.status === 401 || res.status === 403) {
+        if (data && data.ok && data.sessionToken) {
+          sessionToken = data.sessionToken;
+        }
+      } else {
         const errData = await res.json().catch(() => null);
         if (res.status === 403 && (errData?.banned || errData?.admin_revoked || errData?.brute_force_banned)) {
           if (submitBtn) submitBtn.disabled = false;
           enforceSiteIpBlockOverlay(errData.error);
           return;
         }
-        if (res.status === 401) {
-          loginErrorMsg = errData?.error || 'Incorrect password.';
-        } else if (res.status === 403 && errData?.error) {
-          loginErrorMsg = errData.error;
-        }
-        valid = false;
-        backendResponded = true;
+        loginErrorMsg = errData?.error || 'Incorrect password.';
       }
     } catch (err) {
-      // Try PRIMARY_D1_ORIGIN if relative /api failed due to network/local server
-      if (window.location.protocol !== 'file:' && window.location.hostname !== 'careerwithenglish.pages.dev') {
-        try {
-          const fallbackRes = await fetch(PRIMARY_D1_ORIGIN + '/api/admin/ping', {
-            headers: { 'Authorization': 'Bearer ' + pwd }
-          });
-          if (fallbackRes.ok) {
-            const data = await fallbackRes.json().catch(() => null);
-            valid = Boolean(data && data.ok);
-            backendResponded = true;
-          } else if (fallbackRes.status === 401 || fallbackRes.status === 403) {
-            const errData = await fallbackRes.json().catch(() => null);
-            if (fallbackRes.status === 403 && (errData?.banned || errData?.admin_revoked || errData?.brute_force_banned)) {
-              if (submitBtn) submitBtn.disabled = false;
-              enforceSiteIpBlockOverlay(errData.error);
-              return;
-            }
-            if (fallbackRes.status === 401) {
-          loginErrorMsg = errData?.error || 'Incorrect password.';
-        } else if (fallbackRes.status === 403 && errData?.error) {
-          loginErrorMsg = errData.error;
-        }
-            valid = false;
-            backendResponded = true;
-          }
-        } catch (_) {}
-      }
-    }
-
-    if (!backendResponded) {
-      // Offline fallback
-      const localOverride = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || '';
-      valid = localOverride ? (pwd === localOverride) : (pwd === 'Youtuber@1');
-      if (!valid) {
-        loginErrorMsg = 'Incorrect password.';
-      }
+      loginErrorMsg = err?.message || 'Unable to reach security server. Please check your connection.';
     }
 
     if (submitBtn) submitBtn.disabled = false;
 
-    if (valid) {
+    if (sessionToken) {
       try { localStorage.removeItem('cf_bf_fails'); } catch {}
-      STATE.adminKey = pwd;
-      sessionStorage.setItem('cf_admin_key', pwd);
-      localStorage.setItem('cf_admin_key', pwd);
-      localStorage.setItem('cf_admin_permanent', pwd);
+      STATE.adminKey = sessionToken;
+      sessionStorage.setItem('cf_admin_session', sessionToken);
+      localStorage.setItem('cf_admin_session', sessionToken);
       $('#admin-gate-screen').hidden = true;
       $('#admin-workspace-screen').hidden = false;
       initAdminWorkspace();
@@ -14905,6 +15039,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.open(getApiUrl('api/export/data?format=csv'), '_blank');
       });
 
+      updateHeaderBookletVisibility();
       loadFeedbackWall();
       loadLeaderboard();
       showToast('Admin Control Room Unlocked 🔓');
@@ -14915,17 +15050,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Admin lock / switch session
   $('#btn-admin-lock')?.addEventListener('click', () => {
+    const tok = STATE.adminKey || sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
+    if (tok) {
+      fetch(getApiUrl('api/admin/logout'), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok }
+      }).catch(() => {});
+    }
     STATE.adminKey = '';
-    sessionStorage.removeItem('cf_admin_key');
-    localStorage.removeItem('cf_admin_key');
+    sessionStorage.removeItem('cf_admin_session');
+    localStorage.removeItem('cf_admin_session');
+    updateHeaderBookletVisibility();
     renderAdminView();
     showToast('Admin console locked.');
   });
 
   $('#btn-admin-logout')?.addEventListener('click', () => {
+    const tok = STATE.adminKey || sessionStorage.getItem('cf_admin_session') || localStorage.getItem('cf_admin_session') || '';
+    if (tok) {
+      fetch(getApiUrl('api/admin/logout'), {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok }
+      }).catch(() => {});
+    }
     STATE.adminKey = '';
-    sessionStorage.removeItem('cf_admin_key');
-    localStorage.removeItem('cf_admin_key');
+    sessionStorage.removeItem('cf_admin_session');
+    localStorage.removeItem('cf_admin_session');
+    updateHeaderBookletVisibility();
     renderAdminView();
     loadFeedbackWall();
     loadLeaderboard();
@@ -15139,11 +15290,7 @@ window.renderAdminDevices = async function() {
     }
 
     const IMMUNE_CLIENT_IPS = {
-  has: (ip) => {
-    if (!ip) return false;
-    const clean = String(ip).trim();
-    return clean === '157.119.203.129' || clean === '157.119.200.54' || clean.startsWith('157.119.');
-  }
+  has: (ip) => isImmuneClientIp(ip)
 };
     const rawDevs = Array.isArray(res.devices) ? res.devices : [];
     const devices = rawDevs.filter(d => d && !IMMUNE_CLIENT_IPS.has(d.ip));
@@ -15984,7 +16131,7 @@ function initAdminImportControls() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${STATE.adminKey || localStorage.getItem('cf_admin_key') || ''}`
+          'Authorization': `Bearer ${STATE.adminKey || localStorage.getItem('cf_admin_session') || sessionStorage.getItem('cf_admin_session') || ''}`
         },
         body: JSON.stringify({ scores, feedback, titles, user_titles: titles })
       });
