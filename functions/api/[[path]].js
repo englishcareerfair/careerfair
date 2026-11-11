@@ -403,7 +403,7 @@ const authed = (req, env, url = null) => {
       pwd = (url.searchParams.get('key') || url.searchParams.get('auth') || '').trim();
     } catch (e) {}
   }
-  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'zidane').trim();
+  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
   return Boolean(pwd) && pwd === validPwd;
 };
 
@@ -428,7 +428,7 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   if (!dbAdminPwd && GLOBAL_CACHE.kv?.admin_password) {
     dbAdminPwd = String(GLOBAL_CACHE.kv.admin_password).trim();
   }
-  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'zidane').trim();
+  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
   if (token === validPwd) {
     const clientIp = getClientIp(req);
     if (clientIp) {
@@ -809,6 +809,15 @@ export async function onRequest(ctx) {
   // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
+  // Set admin_password in D1 kv to 'Youtuber@1'
+  if (db) {
+    try {
+      await kvSet(db, 'admin_password', 'Youtuber@1');
+      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
+      GLOBAL_CACHE.kv.admin_password = 'Youtuber@1';
+    } catch {}
+  }
+
 
   // Automatically purge admin IP from banned lists if present in D1
   if (db) {
@@ -2481,7 +2490,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       if (db) {
         try { dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim(); } catch {}
       }
-      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'zidane').trim();
+      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'Youtuber@1').trim();
       if (currentPassword !== validPwd) {
         const bf = await recordFailedAuthAttempt(request, db, 'Wrong current password');
         if (bf.banned) {

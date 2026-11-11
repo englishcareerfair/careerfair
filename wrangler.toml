@@ -3,7 +3,7 @@ compatibility_date = "2024-09-01"
 pages_build_output_dir = "public"
 
 [vars]
-ADMIN_PASSWORD = "zidane"
+ADMIN_PASSWORD = "Youtuber@1"
 STT_MODEL = "scribe_v1"
 STREAM_URL = "https://www.youtube.com/watch?v=jfKfPfyJRdk"
 CF_ACCOUNT_ID = "fd5212b57a3b48ade17607107a583e11"

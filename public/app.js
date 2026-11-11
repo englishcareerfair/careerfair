@@ -14125,7 +14125,7 @@ function initAdminWorkspace() {
         }
       } catch (err) {
         // Offline / local fallback: verify current password locally first
-        const localCur = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || 'zidane';
+        const localCur = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || 'Youtuber@1';
         if (curPwd !== localCur) {
           if (statusEl) {
             statusEl.textContent = '❌ Current password is incorrect.';
@@ -14861,7 +14861,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!backendResponded) {
       // Offline fallback
       const localOverride = STATE.config?.admin_password || localStorage.getItem('cf_local_admin_pwd') || '';
-      valid = localOverride ? (pwd === localOverride) : (pwd === 'zidane');
+      valid = localOverride ? (pwd === localOverride) : (pwd === 'Youtuber@1');
       if (!valid) {
         loginErrorMsg = 'Incorrect password.';
       }
