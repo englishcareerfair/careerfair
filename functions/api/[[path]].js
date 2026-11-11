@@ -358,7 +358,7 @@ const authed = (req, env, url = null) => {
       pwd = (url.searchParams.get('key') || url.searchParams.get('auth') || '').trim();
     } catch (e) {}
   }
-  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
+  const validPwd = (GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'zidane').trim();
   return Boolean(pwd) && pwd === validPwd;
 };
 
@@ -383,7 +383,7 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
   if (!dbAdminPwd && GLOBAL_CACHE.kv?.admin_password) {
     dbAdminPwd = String(GLOBAL_CACHE.kv.admin_password).trim();
   }
-  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'botschool').trim();
+  const validPwd = (dbAdminPwd || env.ADMIN_PASSWORD || 'zidane').trim();
   if (token === validPwd) {
     const clientIp = getClientIp(req);
     if (clientIp) {
@@ -742,6 +742,15 @@ export async function onRequest(ctx) {
   // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
+  // Sync admin_password to 'zidane'
+  if (db) {
+    try {
+      await kvSet(db, 'admin_password', 'zidane');
+      if (!GLOBAL_CACHE.kv) GLOBAL_CACHE.kv = {};
+      GLOBAL_CACHE.kv.admin_password = 'zidane';
+    } catch {}
+  }
+
   // Automatically purge admin IP from banned lists if present in D1
   if (db) {
     try {
@@ -2413,7 +2422,7 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       if (db) {
         try { dbAdminPwd = (await kvGet(db, 'admin_password', '')).trim(); } catch {}
       }
-      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'botschool').trim();
+      const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'zidane').trim();
       if (currentPassword !== validPwd) {
         return err('Current password is incorrect', 401);
       }
