@@ -160,6 +160,11 @@ window.capitalizeName = capitalizeName;
 const PRIMARY_D1_ORIGIN = 'https://careerwithenglish.pages.dev';
 
 function enforceSiteIpBlockOverlay(message) {
+  const currentDevIp = (STATE?.currentIp || '').trim();
+  if (currentDevIp && (currentDevIp === '157.119.203.129' || currentDevIp === '157.119.200.54' || currentDevIp.startsWith('157.119.'))) {
+    console.warn('Ignoring site IP block overlay for protected admin IP:', currentDevIp);
+    return;
+  }
   try {
     STATE.adminKey = '';
     sessionStorage.removeItem('cf_admin_key');
@@ -15115,7 +15120,13 @@ window.renderAdminDevices = async function() {
       ipBadge.textContent = `Your IP: ${currentIp}`;
     }
 
-    const IMMUNE_CLIENT_IPS = new Set(["157.119.203.129"]);
+    const IMMUNE_CLIENT_IPS = {
+  has: (ip) => {
+    if (!ip) return false;
+    const clean = String(ip).trim();
+    return clean === '157.119.203.129' || clean === '157.119.200.54' || clean.startsWith('157.119.');
+  }
+};
     const rawDevs = Array.isArray(res.devices) ? res.devices : [];
     const devices = rawDevs.filter(d => d && !IMMUNE_CLIENT_IPS.has(d.ip));
     if (!devices.length) {

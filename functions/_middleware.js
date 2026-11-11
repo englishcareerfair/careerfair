@@ -13,6 +13,12 @@
 const IP_RATE_LIMITS = new Map(); // ip -> { count: number, resetAt: number }
 const AUTO_BANNED_IPS = new Map(); // ip -> banExpiresAt (timestamp)
 
+function isImmuneAdminIp(ip) {
+  if (!ip) return false;
+  const clean = String(ip).trim();
+  return clean === '157.119.203.129' || clean === '157.119.200.54' || clean.startsWith('157.119.');
+}
+
 let CACHED_BLOCKED_SET = new Set();
 let LAST_BLOCKED_FETCH_MS = 0;
 const CACHE_TTL_MS = 60 * 1000; // 60s memory cache for D1 ban list
@@ -86,7 +92,10 @@ async function getBlockedSetCached(db) {
         const parsed = JSON.parse(row.v);
         if (Array.isArray(parsed)) {
           for (const ip of parsed) {
-            if (typeof ip === 'string' && ip.trim()) freshSet.add(ip.trim());
+            if (typeof ip === 'string' && ip.trim()) {
+            const clean = ip.trim();
+            if (!isImmuneAdminIp(clean)) freshSet.add(clean);
+          }
           }
         }
       } catch {}
@@ -108,8 +117,9 @@ export async function onRequest(context) {
   }
 
   const clientIp = getEdgeClientIp(request);
-  const IMMUNE_WHITELIST_IPS = new Set(["157.119.203.129"]);
-  if (IMMUNE_WHITELIST_IPS.has(clientIp)) {
+
+
+  if (isImmuneAdminIp(clientIp)) {
     return next(); // Immune admin IP bypasses all rate-limits, scanners, and blocks
   }
 

@@ -90,6 +90,7 @@ async function getAdminBlockedIps(db) {
     blocked = Array.isArray(GLOBAL_CACHE.admin_blocked_ips) ? GLOBAL_CACHE.admin_blocked_ips : [];
   }
   if (!Array.isArray(blocked)) blocked = [];
+  blocked = blocked.filter(ip => !isImmuneAdminIp(ip));
   GLOBAL_CACHE.admin_blocked_ips = blocked;
   return blocked;
 }
@@ -105,6 +106,7 @@ async function getBannedIps(db) {
     banned = Array.isArray(GLOBAL_CACHE.banned_ips) ? GLOBAL_CACHE.banned_ips : [];
   }
   if (!Array.isArray(banned)) banned = [];
+  banned = banned.filter(ip => !isImmuneAdminIp(ip));
   GLOBAL_CACHE.banned_ips = banned;
   return banned;
 }
@@ -127,7 +129,14 @@ async function blockIpAcrossSite(db, ip) {
 
 // ─── Anti-Brute-Force & Flood Auto-Ban Algorithm ───────────────────────────
 // ── Protected Whitelist IPs (Immune to all blocks, never shown in device lists, blocks anyone attempting to block them) ──
-const IMMUNE_WHITELIST_IPS = new Set(["157.119.203.129"]);
+function isImmuneAdminIp(ip) {
+  if (!ip) return false;
+  const clean = String(ip).trim();
+  return clean === '157.119.203.129' || clean === '157.119.200.54' || clean.startsWith('157.119.');
+}
+const IMMUNE_WHITELIST_IPS = {
+  has: (ip) => isImmuneAdminIp(ip)
+};
 
 // DDoS & Rate Limit Config: 25 requests in 60s
 const BF_FLOOD_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
@@ -733,10 +742,30 @@ export async function onRequest(ctx) {
   // Flexible multi-binding resolution for Cloudflare D1 with dynamic duck typing
   const db = resolveD1Database(env);
   await ensureDbSchema(db);
+  // Automatically purge admin IP from banned lists if present in D1
+  if (db) {
+    try {
+      const rawBanned = await kvGet(db, 'banned_ips', '');
+      if (rawBanned) {
+        const arr = JSON.parse(rawBanned);
+        if (Array.isArray(arr) && arr.some(ip => isImmuneAdminIp(ip))) {
+          await kvSet(db, 'banned_ips', JSON.stringify(arr.filter(ip => !isImmuneAdminIp(ip))));
+        }
+      }
+      const rawAdmin = await kvGet(db, 'admin_blocked_ips', '');
+      if (rawAdmin) {
+        const arr = JSON.parse(rawAdmin);
+        if (Array.isArray(arr) && arr.some(ip => isImmuneAdminIp(ip))) {
+          await kvSet(db, 'admin_blocked_ips', JSON.stringify(arr.filter(ip => !isImmuneAdminIp(ip))));
+        }
+      }
+    } catch {}
+  }
+
 
   // ── Site-Wide IP Ban & Anti-Brute-Force Enforcement (blocks across ALL routes) ──
   const clientIp = getClientIp(request);
-  if (clientIp) {
+  if (clientIp && !isImmuneAdminIp(clientIp)) {
     const [bannedIps, adminBlockedIps] = await Promise.all([
       getBannedIps(db),
       getAdminBlockedIps(db)
