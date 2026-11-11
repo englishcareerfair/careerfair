@@ -144,6 +144,10 @@ const BF_BURST_MAX_REQS = 3;               // Maximum 3 requests in 1 second
 const BF_FLOOD_WINDOW_MS = 60 * 1000;      // 60-second sliding inspection window
 const BF_FLOOD_MAX_REQS = 25;              // Maximum 25 requests in 60 seconds
 
+// Anti-Brute-Force Config: Ban if more than 2 incorrect responses in 1 second
+const BF_AUTH_BURST_WINDOW_MS = 1000;      // 1-second sliding inspection window for failed auth
+const BF_AUTH_BURST_MAX_FAILS = 2;         // >2 incorrect attempts in 1s -> auto-ban
+
 async function getBruteForceTracker(db) {
   let tracker = {};
   if (db) {
@@ -214,8 +218,38 @@ async function recordBruteForceBan(db, ip, reason, attempts, ua = '') {
 }
 
 async function recordFailedAuthAttempt(req, db, label = 'Invalid credentials') {
-  // Anti-brute-force auto-ban removed per user request: invalid password attempts will NOT ban any IP
-  return { banned: false, remaining_attempts: null };
+  const clientIp = getClientIp(req);
+  if (!clientIp || isImmuneAdminIp(clientIp)) {
+    return { banned: false, ip: clientIp };
+  }
+
+  const now = Date.now();
+  const tracker = GLOBAL_CACHE.brute_force_tracker || (await getBruteForceTracker(db));
+  const entry = tracker[clientIp] || { auth_fails: [], req_times: [] };
+  entry.auth_fails = (Array.isArray(entry.auth_fails) ? entry.auth_fails : [])
+    .filter(ts => now - ts <= BF_AUTH_BURST_WINDOW_MS);
+  entry.auth_fails.push(now);
+  tracker[clientIp] = entry;
+  GLOBAL_CACHE.brute_force_tracker = tracker;
+
+  const count = entry.auth_fails.length;
+  // If more than 2 incorrect attempts in 1 second -> Immediate auto-ban
+  if (count > BF_AUTH_BURST_MAX_FAILS) {
+    const reason = `Brute-force attack detected: ${count} incorrect responses in 1 second`;
+    await blockIpAcrossSite(db, clientIp);
+    await recordBruteForceBan(db, clientIp, reason, count, req.headers.get('user-agent') || '');
+    await saveBruteForceTracker(db, tracker);
+    return {
+      banned: true,
+      ip: clientIp,
+      reason
+    };
+  }
+
+  if (db) {
+    await saveBruteForceTracker(db, tracker);
+  }
+  return { banned: false, ip: clientIp, fail_count: count };
 }
 
 async function clearFailedAuthAttempts(db, ip) {
@@ -426,6 +460,17 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
       keyRecord = GLOBAL_CACHE.api_keys.find(k => k.key_hash === keyHash && !k.revoked);
     }
     if (!keyRecord) {
+      const bf = await recordFailedAuthAttempt(req, db, 'Invalid or revoked API key');
+      if (bf.banned) {
+        return {
+          ok: false,
+          status: 403,
+          error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+          banned: true,
+          brute_force_banned: true,
+          admin_revoked: true
+        };
+      }
       return { ok: false, status: 401, error: 'Invalid or revoked API key' };
     }
 
@@ -453,6 +498,17 @@ async function verifyAuth(req, env, db, requiredScope = null, url = null) {
     return { ok: true, admin: false, scopes, keyRecord };
   }
 
+  const bf = await recordFailedAuthAttempt(req, db, 'Invalid admin password');
+  if (bf.banned) {
+    return {
+      ok: false,
+      status: 403,
+      error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+      banned: true,
+      brute_force_banned: true,
+      admin_revoked: true
+    };
+  }
   return { ok: false, status: 401, error: 'Invalid credentials' };
 }
 
@@ -2427,6 +2483,15 @@ Instructions: ${prompt || 'Provide constructive, inspiring, and concise guidance
       }
       const validPwd = (dbAdminPwd || GLOBAL_CACHE.kv?.admin_password || env.ADMIN_PASSWORD || 'zidane').trim();
       if (currentPassword !== validPwd) {
+        const bf = await recordFailedAuthAttempt(request, db, 'Wrong current password');
+        if (bf.banned) {
+          return json({
+            error: `Access Denied: ${bf.reason}. Your IP (${bf.ip}) has been automatically banned across the site.`,
+            banned: true,
+            brute_force_banned: true,
+            admin_revoked: true
+          }, 403);
+        }
         return err('Current password is incorrect', 401);
       }
     }
